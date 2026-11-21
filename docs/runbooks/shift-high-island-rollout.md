@@ -301,7 +301,7 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
       ssh <bot host> docker logs --tail 50 passionseed-discord-bot | grep shift-quests
       ```
 
-      Expect `[shift-quests] database schema 22 (bot needs 2)` once every
+      Expect `[shift-quests] database schema 23 (bot needs 2)` once every
       migration is applied. From 8 the bot runs the live post, from 9 the
       island news post, from 10 it draws roots, from 19 it posts the nightly
       island news card, from 20 it sends the staff channel a note when that
@@ -315,7 +315,10 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
       `[shift-quests] nightly island news: missed-night staff note on (schema 20)`,
       no restart needed. Schema 22 (the deep fire) works the same way: the
       bot reads the version every 60 seconds and logs
-      `[shift-quests] deep fire on (schema 22)`, no restart needed.
+      `[shift-quests] deep fire on (schema 22)`, no restart needed. Schema
+      23 (the come-back DM) too: below it the delivery loop reads the
+      version again every minute and starts queueing by itself, with no log
+      line and no restart.
 - [ ] Register the slash commands (REST calls only; it never starts a second
       bot):
 
@@ -509,6 +512,105 @@ The bot runs on its own host (`bot/deploy.sh`), not on Vercel.
       island place disappears on the next page load, no new rooms are built
       (within a minute), and a room still in use stays guarded until its
       owner leaves, then is deleted.
+- [ ] The come-back DM and the return card (schema 23,
+      `20261121090000_shift_quest_away`; design in
+      `docs/designs/shift-island-away.md`, rules in
+      `docs/features/shift-high-quests.md`). Nothing shows and nothing is
+      sent until `/admin feature away on`, which stays **off** (the default)
+      until every new Thai string, web and bot, has had the three-model
+      review in the root `AGENTS.md`.
+      1. Before anything, read the live aggregates (read-only, counts only,
+         no names or ids; works on schema 22 and 23) in the SQL editor and
+         keep the result:
+
+         ```sql
+         -- Students by days since their last write (Bangkok) and why they are left alone.
+         WITH students AS (
+           SELECT m.notify_dm, m.reminders_opt_in,
+             (GREATEST(
+               m.onboarded_at,
+               (SELECT max(x.created_at) FROM public.shift_quest_progress x WHERE x.member_id = m.id),
+               (SELECT max(x.created_at) FROM public.shift_quest_instances x WHERE x.member_id = m.id),
+               (SELECT max(x.created_at) FROM public.shift_quest_submissions x WHERE x.submitted_by = m.id),
+               (SELECT max(GREATEST(x.started_at, x.ended_at)) FROM public.shift_quest_work_sessions x WHERE x.member_id = m.id),
+               (SELECT max(x.created_at) FROM public.shift_quest_help_requests x WHERE x.member_id = m.id),
+               (SELECT max(x.created_at) FROM public.shift_quest_evidence_photos x WHERE x.member_id = m.id),
+               (SELECT max(x.created_at) FROM public.shift_quest_peer_checks x WHERE x.peer_id = m.id)
+             ) AT TIME ZONE 'Asia/Bangkok')::date AS last_day,
+             CASE
+               -- Their own quest, or their team's milestone (as shift_quest__away_held).
+               WHEN EXISTS (SELECT 1 FROM public.shift_quest_instances i
+                            WHERE i.member_id = m.id AND i.state IN ('submitted', 'appealed'))
+                 OR EXISTS (SELECT 1 FROM public.shift_quest_project_members pm
+                            JOIN public.shift_quest_instances i ON i.project_id = pm.project_id AND i.milestone IS NOT NULL
+                            WHERE pm.member_id = m.id AND pm.status = 'active'
+                              AND i.state IN ('submitted', 'appealed')) THEN 'waiting'
+               WHEN EXISTS (SELECT 1 FROM public.shift_quest_instances i WHERE i.member_id = m.id AND i.state = 'paused')
+                AND NOT EXISTS (SELECT 1 FROM public.shift_quest_instances i
+                                WHERE i.member_id = m.id AND i.state IN ('active', 'clarification')) THEN 'resting'
+               ELSE 'other'
+             END AS held
+           FROM public.shift_quest_members m
+           WHERE cardinality(m.roles) = 0 AND m.onboarded_at IS NOT NULL AND m.erased_at IS NULL
+         )
+         SELECT
+           CASE WHEN d = 0 THEN '0' WHEN d <= 2 THEN '1-2' WHEN d <= 6 THEN '3-6' ELSE '7+' END AS days_since_last_write,
+           held,
+           count(*) AS students,
+           count(*) FILTER (WHERE notify_dm) AS dm_nudges_on,
+           count(*) FILTER (WHERE reminders_opt_in) AS reminders_on
+         FROM (SELECT s.*, (now() AT TIME ZONE 'Asia/Bangkok')::date - s.last_day AS d FROM students s) t
+         GROUP BY 1, 2
+         ORDER BY 1, 2;
+         ```
+
+      2. Order: the migration first, on the founder's go and only after
+         schema 22 (`20261120120000_shift_quest_deep_fire`) is in
+         production (`supabase db push`, as in section B: check the dry
+         run lists exactly the files you expect), then
+         merge (Vercel ships the website), then deploy the bot (section F)
+         and register the slash commands again (above) so `/admin feature`
+         offers `away`. Each part copes with being early: before the
+         migration the website shows no strip, settings line or card (it
+         logs the missing `shift_quest_away_state` once, SQLSTATE 42883),
+         and the bot queues nothing and picks schema 23 up within a minute
+         without a restart. Applying it changes nothing anyone sees: check
+         `select away_enabled, away_after_days, away_hour from public.shift_quest_settings`
+         reads `false`, `7`, `17`, and run the checks file (section C).
+      3. Smoke test while the switch is still off: `/admin status` lists the
+         come-back switch as off; a student's `/settings` has no 🌱 line; the
+         island has no strip, ตั้งค่า line or card.
+      4. After the Thai review, the founder runs
+         `/admin feature name:away state:on`. A student with at least one
+         check-in or journal note sees the one-line strip in the team sheet;
+         a student back after 7 days or more (`away_after_days`, counted
+         inside the season and from the end of any wait on a review or
+         rest; and not resting or waiting on a review) gets the return card
+         once, during a season; DMs are queued only at 17:00 Bangkok
+         (`away_hour`), during a season, to students who said yes. Off
+         without a deploy: `/admin feature name:away state:off` hides the
+         strip, the settings line (except for a student who said yes, who
+         can still turn it off) and the card on the next page load, and the
+         claim drops any come-back DM still queued.
+      5. A week after turning it on, read the same aggregates again, plus
+         these counts (schema 23 only; never select the lines here, read
+         them without names in the island's admin overview, "คนที่ห่างเกาะ"):
+
+         ```sql
+         SELECT 'consent' AS what, COALESCE(m.away_dm::text, 'unasked') AS value, count(*) AS n
+         FROM public.shift_quest_members m
+         WHERE cardinality(m.roles) = 0 AND m.onboarded_at IS NOT NULL AND m.erased_at IS NULL
+         GROUP BY 2
+         UNION ALL
+         SELECT 'dm', o.status, count(*) FROM public.shift_quest_outbox o WHERE o.kind = 'away' GROUP BY 2
+         UNION ALL
+         SELECT 'answer', COALESCE(a.reason, 'skipped'), count(*) FROM public.shift_quest_away_answers a GROUP BY 2
+         ORDER BY 1, 2;
+         ```
+
+      A rollback to an older bot queues no come-back DMs; one already
+      queued is claimed and fails permanently as an unknown kind (nothing
+      is sent). A rollback of the website hides the strip and the card.
 - [ ] Island invitation RSVPs: every RSVP should lead to the Discord role
       `SHIFT high`. Nothing grants it automatically yet: until it does, staff
       read the new RSVPs (`shift_island_rsvps`, newest first, in the SQL

@@ -146,5 +146,55 @@ export interface IslandNews {
   hidden?: { slot: number; name: string }[];
 }
 
-export const ISLAND_CONSENT_VERSION = "island-2026-11-11";
+/**
+ * The come-back DM and the return card (code name away, shift_quest_away_state,
+ * migration 20261121090000_shift_quest_away.sql, schema 23). Plan:
+ * docs/designs/shift-island-away.md.
+ */
+export const AWAY_REASONS = ["busy", "stuck", "unclear", "team", "island", "break"] as const;
+export type AwayReason = (typeof AWAY_REASONS)[number];
+/** The return card's optional line, in characters (char_length in the database). */
+export const AWAY_LINE_MAX = 140;
+
+/** What shift_quest_away_state answers for the viewer, checked (lib/supabase/shift-quests/away.ts). */
+export interface AwayState {
+  /** settings.away_enabled: off hides the strip, the settings line and the card. */
+  enabled: boolean;
+  /** settings.away_after_days: how long away before the DM, said on the consent strip only. */
+  days: number;
+  /** The viewer's own choice: true (send), false (do not), null (never asked). Staff: null. */
+  dm: boolean | null;
+  /** Ask once on the island: a student who has written at least once and never answered. */
+  askConsent: boolean;
+  /** The return card is due: back after a stretch away, not answered or skipped yet. gapFrom: YYYY-MM-DD, Bangkok. */
+  askReturn: { gapFrom: string } | null;
+}
+
+/** An admin count: an integer, or "1-2" for one or two, so nobody can be singled out. */
+export type AwayCount = number | "1-2";
+
+/** One nameless line of the return card, by its Monday week. Never a member, a name, a plot or an exact date. */
+export interface AwayLine {
+  id: string;
+  /** YYYY-MM-DD, the Monday of the week it was written (Bangkok). */
+  week: string;
+  reason: AwayReason | null;
+  line: string;
+}
+
+/** shift_quest_admin_away (admins only): counts, and the lines without names. */
+export interface AwayReport {
+  consent: { yes: AwayCount; no: AwayCount; unasked: AwayCount };
+  awayNow: { resting: AwayCount; waiting: AwayCount; other: AwayCount };
+  dms: { queued: AwayCount; sent: AwayCount; unreachable: AwayCount; dropped: AwayCount };
+  answers: { byReason: Record<AwayReason, AwayCount>; skipped: AwayCount; cameByDm: AwayCount };
+  /** The last 90 days, newest week first. */
+  lines: AwayLine[];
+}
+
+/**
+ * The island notice's version. Bumped for the come-back DM and the return
+ * answers (2026-11-21); a bump cancels no consent already on file.
+ */
+export const ISLAND_CONSENT_VERSION = "island-2026-11-21";
 export const STAFF_AWARD_KEYS = ["taught-next-shift", "helped-most"] as const;

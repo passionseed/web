@@ -228,6 +228,46 @@ describe("admin status card", () => {
     expect(feature).toContain('"value":"campfire_call_ping"');
   });
 
+  it("lists the come-back switch (schema 23) and hides it on an older database", () => {
+    const s = status();
+    expect(bodyText(renderView(statusView(s as never)))).not.toContain("ชวนกลับเกาะ");
+    Object.assign(s.settings, { away_enabled: false });
+    expect(bodyText(renderView(statusView(s as never)))).toContain("⚪ ชวนกลับเกาะ (DM และการ์ดตอนกลับมา): ปิด");
+    Object.assign(s.settings, { away_enabled: true });
+    const body = bodyText(renderView(statusView(s as never)));
+    expect(body).toContain("✅ ชวนกลับเกาะ (DM และการ์ดตอนกลับมา): เปิด");
+    // Its line follows the campfire switches when the database has those too.
+    Object.assign(s.settings, { campfire_call_enabled: true, campfire_call_ping: true });
+    const both = bodyText(renderView(statusView(s as never)));
+    expect(both.indexOf("ชวนกลับเกาะ")).toBeGreaterThan(both.indexOf("แท็กนักเรียนตอนเรียกรวม"));
+  });
+
+  it("/admin feature away passes through admin_set, and is offered as a choice", async () => {
+    const c = ctx(() => status());
+    for (const state of ["on", "off"]) {
+      const set = interaction("command", { options: options({ name: "away", state }) });
+      await COMMAND_HANDLERS.get("admin feature")!(set.i, c);
+      expect((c.api.call as jest.Mock).mock.calls.at(-1)).toEqual(["shift_quest_admin_set", "1111111111", "away", state]);
+      expectCard(set.sent[0]);
+    }
+    const feature = questCommands()
+      .find((cmd) => cmd.name === "admin")!
+      .options!.find((o) => o.name === "feature") as { options?: { name: string; choices?: { name: string; value: string }[] }[] };
+    const choices = feature.options!.find((o) => o.name === "name")!.choices!;
+    const away = choices.find((ch) => ch.value === "away")!;
+    expect(away.name).toBe("away (ชวนกลับเกาะ: DM และการ์ดตอนกลับมา)");
+    // Discord's limits: 25 choices, 100 characters a name.
+    expect(choices.length).toBeLessThanOrEqual(25);
+    for (const ch of choices) expect(ch.name.length).toBeLessThanOrEqual(100);
+  });
+
+  it("refuses /admin feature away to a reviewer before any database call", async () => {
+    const c = ctx(() => status(), ["reviewer"]);
+    const set = interaction("command", { options: options({ name: "away", state: "on" }) });
+    await expect(COMMAND_HANDLERS.get("admin feature")!(set.i, c)).rejects.toThrow();
+    expect(c.api.call).not.toHaveBeenCalled();
+  });
+
   describe("/admin channel with a voice channel", () => {
     const GUILD = "900000000000000000";
     /** A voice channel whose permissions open to the given roles only. */

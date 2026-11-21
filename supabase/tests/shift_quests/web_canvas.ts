@@ -167,6 +167,12 @@ const WEB_ALLOWLIST = [
   "shift_quest_island_visitors(text)",
   // 20261120120000_shift_quest_deep_fire.
   "shift_quest_deepfire(text)",
+  // 20261121090000_shift_quest_away.
+  "shift_quest_away_state(text)",
+  "shift_quest_away_set(text,boolean)",
+  "shift_quest_away_answer(text,date,text,text)",
+  "shift_quest_admin_away(text)",
+  "shift_quest_admin_away_reveal(text,uuid)",
 ];
 
 let failures = 0;

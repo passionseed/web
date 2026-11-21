@@ -164,6 +164,15 @@ but reversal reasons are written by an admin and kept forever: never put a
 name or personal detail in one. Messages already posted in Discord are not
 deleted by the bot; an admin removes those by hand.
 
+The come-back DM and the return card (schema 23) store the member's choice
+(`away_dm`: yes, no or never asked, and `away_dm_at`) and one row per
+stretch away in `shift_quest_away_answers`: the day the stretch began, one
+of six reasons or none (a skip), an optional line of at most 140
+characters, and whether a come-back DM for that stretch was sent. Lines
+are cleared after 90 days; reasons and rows stay. No history of days away
+is stored: it is computed when read. `/data` exports the choice and the
+answers, and erasure deletes the answers and clears the choice.
+
 The last admin cannot be erased; grant another admin first.
 
 ## Invariants and where they are enforced
@@ -221,9 +230,13 @@ race) are fixed and covered by the regression block in `db_rules.ts`.
 These are defaults, easy to change; flag any that are wrong.
 
 - **No DMs by default.** Private notices live in `/inbox` (ephemeral). A
-  student can opt in to a content-free DM nudge, and opt-in reminders are
-  DMs. The bot never reads DMs, matching the safeguarding rules in
-  `bot/README.md`.
+  student can opt in to a content-free DM nudge, opt-in reminders are DMs,
+  and from schema 23 a student who said yes on the island gets the
+  come-back DM (outbox kind `away`): one link to the island after a stretch
+  away, never a question (see "The come-back DM and the return card"
+  below). Those three are the only DM kinds; the outbox claim drops any
+  other kind addressed to a DM. The bot never reads DMs, matching the
+  safeguarding rules in `bot/README.md`.
 - **Submission previews are held in memory** for 30 minutes before the
   student picks who sees it. A bot restart loses an unconfirmed preview,
   never a submitted one.
@@ -745,11 +758,15 @@ photos and the web review page, the peer check and project invitations. From
 schema 17 (`20261118100000_shift_quest_web_everything.sql`, below) it also
 runs the inbox, settings, sharing, data rights, review, help, fulfillment and
 admin functions: the website does every flow but Discord's. Schema 18 added
-`_island_visitors` and schema 22 `_deepfire` (the deep fire's lobby link and
-whether the bot is ready). Never: a helper
+`_island_visitors`, schema 22 `_deepfire` (the deep fire's lobby link and
+whether the bot is ready), and schema 23 the come-back DM and return card's
+five: `_away_state` and `_away_set` (also the bot's, for `/settings`), and
+the website-only `_away_answer`, `_admin_away` and `_admin_away_reveal`.
+Never: a helper
 (`shift_quest__*`), a raw function that takes someone else's Discord id, the
-outbox, the live and digest posts, voice presence, the campfire rounds or the
-deep fire's heartbeat (`shift_quest_deepfire_beat`).
+outbox, the live and digest posts, voice presence, the campfire rounds, the
+deep fire's heartbeat (`shift_quest_deepfire_beat`) or the come-back DM's
+queue (`shift_quest_enqueue_away`).
 Each migration grants by full signature and stops if one is missing; the
 early ones revoked every `shift_quest_*` function from the role first, later
 ones grant only. `run-local.sh` (`check_privileges`), `web_board.ts`,
@@ -1221,6 +1238,141 @@ Tested in `supabase/tests/shift_quests/deepfire.ts`,
 `bot/src/quests/__tests__/deepfire.test.ts`, `deepfire-state.test.ts` and
 `lib/supabase/shift-quests/__tests__/deepfire.test.ts`.
 
+### The come-back DM and the return card (schema 23)
+
+`20261121090000_shift_quest_away.sql` (not applied yet; after schema 22, on
+the founder's go) answers the founder's ask to find out why students go
+quiet, with consent first. Safeguarding section 4
+(`docs/project/PROJECTSEED-SAFEGUARDING.md`) forbids a bot DM that asks a
+student anything or collects a reply, consent or not, so the DM is only a
+pointer and the question is asked on the island. Code name `away` (`quiet`
+already means a team hidden from the public view). Everything below is off
+while `settings.away_enabled` is false, the default: no strip, no settings
+line, no card, no DM. One exception: a student who said yes still sees the
+settings line, which then offers only "off", so a yes can always be taken
+back.
+
+- **Consent first, on the island.** Once, a one-line strip in the team
+  sheet (`components/shift/island/away/AwayStrip.tsx`, under the consent
+  banner and only when that shows nothing) asks whether the bot may send
+  one short DM after N days away, with two equal buttons, ส่งได้ and
+  ไม่ต้อง. It shows to a student (no role) who has written at least one
+  journal row and never chose (`away_dm` null); while it waits, the chip's
+  lamp dot names it last. The choice can be changed in the island's ตั้งค่า
+  fold ("DM ชวนกลับเกาะ", students only) and in Discord `/settings` (one line
+  and one button; never asked counts as off, so Discord only offers "on").
+  While the switch is off both show the line only to a student who said yes
+  (`useAwayDm`, `awayLineShown` in `bot/src/quests/away.ts`), offering only
+  "off".
+  It is never asked in a DM. `shift_quest_away_set(actor, on)` saves it
+  (staff are `not_allowed`), audits `away_dm_on` or `away_dm_off`, and a no
+  drops any come-back DM still queued.
+- **The DM asks nothing.** Kind `away`, params `{}`: a title, one line, the
+  note that it was sent because they turned it on (off in settings) and the
+  usual "the bot does not read or answer private messages" line, plus one
+  Link button to the island (`AWAY_DM` in `bot/src/quests/copy.ts`). No
+  question, no day count, no project, no guilt words. Without an island
+  address (`SHIFT_ISLAND_URL` or `NEXT_PUBLIC_SITE_URL`) it fails
+  permanently and nothing is sent; it is never posted to a channel.
+- **Who gets it, and when.** The bot calls `shift_quest_enqueue_away()`
+  every minute from schema 23 (below it, it only reads the version again,
+  so the migration is picked up without a restart). The database checks the
+  switch, the hour (`away_hour`, 17 Bangkok by default, 9 to 19) and an
+  active season (status active, today between its start and end) first,
+  then queues one DM for each student who said yes, is onboarded, not
+  erased and reachable on Discord, is neither resting (a paused quest and
+  none active) nor waiting on a mentor (a quest of theirs, or a milestone
+  quest of a team they are active on, submitted or appealed), has been away
+  `away_after_days` or more (7 by default, 3 to 21; time on hold and the
+  break between seasons never count, see Activity), has not
+  answered the card for that stretch, and got no come-back DM in 14 days.
+  The dedupe key `away:<member>:<last active day>` keeps it to one per
+  stretch. At send time `shift_quest_outbox_claim` checks again (consent,
+  the switch and season, a student, 09:00 to 19:59 Bangkok, still away on
+  the same stretch (no write and no end of a hold since), not resting or
+  waiting, no answer) and drops it as `opted_out` otherwise.
+- **Activity** is the Bangkok day of the member's latest write: a journal
+  row (a check-in tap or a note), a quest started, a submission, a work
+  session started or ended (its intention and reflection), a help request,
+  an evidence photo, a peer check; never before their onboarding day, nor
+  before the day before the active season started (the break between seasons
+  is never time away). The end of a hold starts a fresh stretch
+  (`shift_quest__away_hold_end`): a decision on work they waited on
+  (`submissions.decided_at`: a mentor's review or appeal decision, or a
+  withdrawal, on their own quests and their active team's milestone quests)
+  and a quest of theirs resumed or archived (the `quest_resume` and
+  `quest_archive` audit rows: the end of a rest). So the days spent waiting
+  on a mentor or resting never count as days away, and on the day a hold
+  ends there is no card and no DM. Browsing, voice and the deep fire leave
+  no record and do not count. It is computed when read; no history of days
+  away is stored.
+- **The return card.** When any student, DM or not, comes back after a
+  stretch of N days or more, `shift_quest_away_state` names the stretch
+  (`ask_return.gap_from`, the last active day before today) and the island
+  opens `ReturnSheet` once on arrival, after the crossing and the story,
+  unless something else was opened or tapped first (then it waits for the
+  next page load). "ช่วยเราปรับเกาะหน่อย": six one-tap reasons (busy, stuck,
+  unclear, team, island, break), an optional line of at most 140
+  characters with the quest form's privacy hint and contact-details
+  warning, the 1323 helpline, who reads the answers (including that an
+  admin can see who wrote a line if worried about someone's safety, and that
+  every look is recorded: never a promise of secrecy), and one Send.
+  Closing it saves a skip, so it never reopens for that stretch. After
+  Send, "stuck" offers the existing group help (`StuckSheet`), never a
+  private adult reply; "island" links to the suggestions channel; "unclear"
+  points to the next step; "break" points to ขอพัก where the screen has it
+  (with a plot; without one it thanks and closes). An answer already kept
+  from another tab (`{saved: false}`), or a refreshed page that no longer
+  names the stretch, closes the card without a word and without a skip. A
+  card passed before a claim stays passed on the claimed island (IslandApp
+  holds the page's latch), and a quest the next-step card is still starting
+  passes it too. Never shown to staff, to a student who is resting or
+  waiting on a mentor (their own quest or their team's milestone), on the
+  day a hold ends, or outside an active season that covers today.
+  `shift_quest_away_answer(actor, gap_from, reason, line)` refuses a
+  stretch that is not the one due (`not_found`, also outside a season),
+  keeps only the first
+  answer (`{saved: false}` after), records whether a come-back DM for that
+  stretch was sent, and audits `away_answer` without the reason or text.
+- **Who reads it.** Admins only, in the island's admin overview
+  ("คนที่ห่างเกาะ", `AwayAdmin.tsx`) through `shift_quest_admin_away(actor)`: counts of
+  consent, students away now (resting, waiting, other), DMs (queued, sent,
+  unreachable, dropped) and answers by reason, each an integer or "1-2"
+  when it is one or two, and the lines of the last 90 days grouped by
+  Monday week, without names, member ids, plots or exact dates. Mentors
+  (reviewers) are refused and never see answers, and nobody replies. Lines
+  are cleared after 90 days by the bot's minute call. Only
+  `shift_quest_admin_away_reveal(actor, answer)`, behind a confirm, shows
+  who wrote a line still in the report, for a safeguarding concern; every
+  reveal is audited (`away_reveal`, with the answer id).
+- **The switch.** `/admin feature away` (`shift_quest__set_feature`,
+  audited `settings_away`); `shift_quest_admin_status` reports
+  `away_enabled`. The website's settings control does not take it: the
+  switch stays in Discord. Keep it off until the new Thai copy (web and
+  bot, all marked DRAFT) has had the three-model review.
+- **Data rights.** `/data` exports `"away": {dm, decided_at, answers}` and
+  the bot's `/data` card says what is kept; erasure deletes the answers and
+  clears the choice; an admin's own reset clears theirs. The island notice
+  gained a row for the come-back DM and the return answers (version
+  `island-2026-11-21`; the bump asks nobody again and cancels no consent).
+- **Grants.** The bot: `shift_quest_enqueue_away`, `_away_state` and
+  `_away_set`. The website: `_away_state`, `_away_set`, `_away_answer`,
+  `_admin_away` and `_admin_away_reveal`. The helpers
+  (`shift_quest__away_*`): nobody. The answers table has RLS on, no
+  policies and no Data API access. The website reads the state through
+  `readAwayState` (`lib/supabase/shift-quests/away.ts`), which falls back to
+  null (nothing shows) before the migration, logging the missing function
+  once.
+
+Design and decisions:
+[`docs/designs/shift-island-away.md`](../designs/shift-island-away.md).
+Tested in `supabase/tests/shift_quests/away.ts`,
+`bot/src/quests/__tests__/away.test.ts` (with `outbox.test.ts`,
+`student-cards.test.ts` and `admin.test.ts`),
+`lib/supabase/shift-quests/__tests__/away.test.ts`, `away-actions.test.ts`,
+and `components/shift/island/__tests__/away.test.tsx` and
+`IslandApp.test.tsx`.
+
 ## Admin: reset my own island (testing)
 
 `20261115120000_shift_quest_admin_reset_self.sql` adds
@@ -1233,7 +1385,8 @@ start. Anyone else gets `not_authorized`. It only touches the caller's rows:
 - **Removed:** their quests and what hangs off them (submissions with their
   contributions, reviews, appeals), their help requests and shares, their
   own notices about those, their journal (taps, notes, the roots) and work
-  sessions. Queued messages about them are set to `dropped` with
+  sessions, and (schema 23) their return-card answers and come-back DM
+  choice. Queued messages about them are set to `dropped` with
   `last_error = 'reset'`; sent ones stay.
 - **Their current project, when they are its only active member:** they
   leave it, it is archived, its plot row is deleted (the slot is free), and

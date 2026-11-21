@@ -1,7 +1,7 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ComponentProps } from "react";
 
-import { checkIn, loadCampfire, setResting, startMainQuest } from "@/app/shift/island/actions";
+import { answerAway, checkIn, loadCampfire, setAwayDm, setResting, startMainQuest } from "@/app/shift/island/actions";
 import { loadWallet } from "@/app/shift/island/wallet-actions";
 
 import type { PlazaSpotId } from "@/lib/shift-island/live/plaza";
@@ -11,7 +11,8 @@ import type { BoardRef } from "@/lib/supabase/shift-quests/board";
 import type { IslandPageData, MyTree } from "@/lib/supabase/shift-quests/types";
 
 import { IDS, MAIN_TITLES, makeBoard } from "../__fixtures__/board";
-import { DEEPFIRE, HUD, MENU, NEXT_STEP, PLOT, RESULTS, TODAY, TREE } from "../copy";
+import { AWAY, DEEPFIRE, HUD, MENU, NEXT_STEP, NO_PROJECT, PLOT, RESULTS, STUCK, TODAY, TREE } from "../copy";
+import { ARRIVAL_MS } from "../away/useReturnArrival";
 import { IslandApp } from "../IslandApp";
 import type { IslandViewport } from "../IslandViewport";
 import { CHARACTER as CHARACTER_COPY, PLAYER, PLAYER_MENU, SHOP, WALLET } from "../player/copy";
@@ -48,6 +49,8 @@ jest.mock("@/app/shift/island/actions", () => ({
   createProject: jest.fn(),
   respondInvite: jest.fn(),
   loadCampfire: jest.fn(),
+  answerAway: jest.fn(async () => ({ ok: true, data: { saved: true } })),
+  setAwayDm: jest.fn(async () => ({ ok: true, data: null })),
 }));
 jest.mock("@/app/shift/island/wallet-actions", () => ({
   loadWallet: jest.fn(),
@@ -60,7 +63,11 @@ jest.mock("@/app/shift/island/consent-actions", () => ({
   requestParentLink: jest.fn(),
 }));
 jest.mock("@/app/shift/island/news-actions", () => ({ hideTeamNews: jest.fn() }));
-jest.mock("@/app/shift/island/admin-actions", () => ({ resetMyIsland: jest.fn() }));
+jest.mock("@/app/shift/island/admin-actions", () => ({
+  resetMyIsland: jest.fn(),
+  loadAwayReport: jest.fn(async () => ({ ok: true, data: null })),
+  revealAwayAnswer: jest.fn(),
+}));
 jest.mock("@/app/shift/island/tree-actions", () => ({ plantSeed: jest.fn(), pickGift: jest.fn(), equipItem: jest.fn() }));
 // The close-up canvas (jsdom has no 2D canvas): only that it is there.
 jest.mock("../tree/TreeCanvas", () => {
@@ -1336,5 +1343,262 @@ describe("admin Island overview", () => {
     openMenu();
     expect(screen.queryByRole("button", { name: MENU.admin })).not.toBeInTheDocument();
     expect(screen.queryByText(/Admin-visible team/)).not.toBeInTheDocument();
+  });
+});
+
+describe("the come-back DM and the return card (schema 23)", () => {
+  const GAP = "2026-11-10";
+  const away = (over: Partial<NonNullable<IslandPageData["away"]>> = {}): NonNullable<IslandPageData["away"]> => ({
+    enabled: true,
+    days: 7,
+    dm: false,
+    askConsent: false,
+    askReturn: { gapFrom: GAP },
+    ...over,
+  });
+  const card = () => screen.queryByRole("dialog", { name: AWAY.card.title });
+  /** The arrival's beat, on the fake clock. */
+  const beat = () => act(() => jest.advanceTimersByTime(ARRIVAL_MS + 50));
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    window.localStorage.setItem(STORY_SEEN_KEY, "seen");
+    (answerAway as jest.Mock).mockClear();
+    (setAwayDm as jest.Mock).mockClear();
+    (checkIn as jest.Mock).mockClear();
+  });
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it("opens the card once on arrival, a beat after the island shows, and pauses the island under it", () => {
+    render(<IslandApp page={page({ away: away() })} picture={null} />);
+    expect(card()).toBeNull();
+    beat();
+    expect(card()).not.toBeNull();
+    expect(viewport()).toHaveAttribute("data-paused", "true");
+  });
+
+  it("counts closing it as a skip and never reopens it on this page", () => {
+    render(<IslandApp page={page({ away: away() })} picture={null} />);
+    beat();
+    fireEvent.keyDown(card() as HTMLElement, { key: "Escape" });
+    expect(answerAway).toHaveBeenCalledWith({ gapFrom: GAP, reason: null, line: null });
+    expect(card()).toBeNull();
+    beat();
+    beat();
+    expect(card()).toBeNull();
+    expect(answerAway).toHaveBeenCalledTimes(1);
+  });
+
+  it("waits for the story on a browser that has not seen it", () => {
+    window.localStorage.removeItem(STORY_SEEN_KEY);
+    render(<IslandApp page={page({ away: away() })} picture={null} />);
+    beat();
+    expect(card()).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "story-open" }));
+    beat();
+    expect(card()).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "story-close" }));
+    beat();
+    expect(card()).not.toBeNull();
+  });
+
+  it("waits for the crossing", () => {
+    // The ticket's ?at=voyage sails across even on a browser that has crossed before.
+    render(<IslandApp page={page({ away: away() })} picture={null} voyage />);
+    expect(screen.getByTestId("voyage")).toBeInTheDocument();
+    beat();
+    expect(card()).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "voyage-done" }));
+    beat();
+    expect(card()).not.toBeNull();
+  });
+
+  it("never opens between the check-in tap and the work", () => {
+    const fresh = page({ away: away() });
+    fresh.island = { ...fresh.island, taps_today: 0 };
+    render(<IslandApp page={fresh} picture={null} />);
+    fireEvent.click(cardButton());
+    fireEvent.click(screen.getByRole("button", { name: "close-detail" }));
+    beat();
+    beat();
+    expect(card()).toBeNull();
+  });
+
+  it("never opens while the quest the student tapped เริ่มเลย on is still starting", async () => {
+    let finish: (value: unknown) => void = () => undefined;
+    (startMainQuest as jest.Mock).mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }));
+    const board = makeBoard();
+    board.main = board.main.map((m) => ({ ...m, in_flight: null, mine: null }));
+    board.side = board.side.map((side) => ({ ...side, mine: null }));
+    board.proposed = [];
+    render(<IslandApp page={page({ board, away: away() })} picture={null} />);
+    fireEvent.click(cardButton(`เริ่มที่: ${MAIN_TITLES[0]}`));
+    // Starting takes longer than the arrival's beat on a phone.
+    beat();
+    beat();
+    expect(card()).toBeNull();
+    await act(async () => finish({ ok: true, data: { instanceId: IDS.m2Instance, version: 1 } }));
+    expect(screen.getByTestId("detail")).toHaveTextContent(JSON.stringify({ kind: "main", milestone: 1 }));
+    beat();
+    expect(card()).toBeNull();
+    expect(answerAway).not.toHaveBeenCalled();
+  });
+
+  it("closes an open card quietly when the refreshed page no longer asks (answered in another tab)", () => {
+    const { rerender } = render(<IslandApp page={page({ away: away() })} picture={null} />);
+    beat();
+    expect(card()).not.toBeNull();
+    rerender(<IslandApp page={page({ away: away({ askReturn: null }) })} picture={null} />);
+    expect(card()).toBeNull();
+    expect(answerAway).not.toHaveBeenCalled();
+  });
+
+  it("never opens over a sheet the page opened with", () => {
+    render(<IslandApp page={page({ away: away() })} picture={null} initialPanel="board" />);
+    beat();
+    expect(card()).toBeNull();
+    fireEvent.keyDown(screen.getByRole("dialog", { name: "กระดานเควสต์" }), { key: "Escape" });
+    beat();
+    expect(card()).toBeNull();
+  });
+
+  it.each([
+    ["the card is not due", { away: away({ askReturn: null }) }],
+    ["the away state did not read", { away: null }],
+    ["the viewer is staff", { away: away(), me: { name: "พี่บิ๊ก", avatarUrl: null, staff: true } }],
+  ])("stays shut when %s", (_label, over) => {
+    render(<IslandApp page={page(over)} picture={null} />);
+    beat();
+    expect(card()).toBeNull();
+  });
+
+  it("opens the group help after stuck", async () => {
+    render(<IslandApp page={page({ away: away() })} picture={null} />);
+    beat();
+    const sheet = card() as HTMLElement;
+    fireEvent.click(within(sheet).getByRole("radio", { name: AWAY.card.reasons.stuck }));
+    fireEvent.click(within(sheet).getByRole("button", { name: AWAY.card.send }));
+    fireEvent.click(await within(sheet).findByRole("button", { name: AWAY.card.after.stuckAction }));
+    expect(screen.getByRole("dialog", { name: STUCK.heading })).toBeInTheDocument();
+    expect(card()).toBeNull();
+    expect(answerAway).toHaveBeenCalledTimes(1);
+  });
+
+  it("asks a student back without a plot too, where stuck thanks and closes", async () => {
+    const unclaimed = page({ away: away() });
+    unclaimed.island = { ...unclaimed.island, project: null };
+    unclaimed.board = null;
+    render(<IslandApp page={unclaimed} picture={null} />);
+    beat();
+    const sheet = card() as HTMLElement;
+    expect(viewport()).toHaveAttribute("data-paused", "true");
+    fireEvent.click(within(sheet).getByRole("radio", { name: AWAY.card.reasons.stuck }));
+    fireEvent.click(within(sheet).getByRole("button", { name: AWAY.card.send }));
+    await waitFor(() => expect(card()).toBeNull());
+    expect(answerAway).toHaveBeenCalledWith({ gapFrom: GAP, reason: "stuck", line: null });
+  });
+
+  it("thanks and closes after a break without a plot, where there is no ขอพัก to point to", async () => {
+    const unclaimed = page({ away: away() });
+    unclaimed.island = { ...unclaimed.island, project: null };
+    unclaimed.board = null;
+    render(<IslandApp page={unclaimed} picture={null} />);
+    beat();
+    const sheet = card() as HTMLElement;
+    fireEvent.click(within(sheet).getByRole("radio", { name: AWAY.card.reasons.break }));
+    fireEvent.click(within(sheet).getByRole("button", { name: AWAY.card.send }));
+    await waitFor(() => expect(card()).toBeNull());
+    expect(screen.queryByText(AWAY.card.after.break)).toBeNull();
+    expect(answerAway).toHaveBeenCalledWith({ gapFrom: GAP, reason: "break", line: null });
+  });
+
+  it("points a break to ขอพัก on the claimed island", async () => {
+    render(<IslandApp page={page({ away: away() })} picture={null} />);
+    beat();
+    const sheet = card() as HTMLElement;
+    fireEvent.click(within(sheet).getByRole("radio", { name: AWAY.card.reasons.break }));
+    fireEvent.click(within(sheet).getByRole("button", { name: AWAY.card.send }));
+    expect(await within(sheet).findByText(AWAY.card.after.break)).toBeInTheDocument();
+  });
+
+  it("never interrupts the claim a student without a plot started first", () => {
+    const unclaimed = page({ away: away() });
+    unclaimed.island = { ...unclaimed.island, project: null };
+    unclaimed.board = null;
+    render(<IslandApp page={unclaimed} picture={null} />);
+    fireEvent.click(screen.getByRole("button", { name: NO_PROJECT.action }));
+    beat();
+    expect(card()).toBeNull();
+  });
+
+  it("keeps a card passed before the claim passed on the newly claimed island", () => {
+    const unclaimed = page({ away: away() });
+    unclaimed.island = { ...unclaimed.island, project: null };
+    unclaimed.board = null;
+    const { rerender } = render(<IslandApp page={unclaimed} picture={null} />);
+    fireEvent.click(screen.getByRole("button", { name: NO_PROJECT.action }));
+    beat();
+    // The claim went through: the refreshed page has the plot, and the database still names the stretch.
+    rerender(<IslandApp page={page({ away: away() })} picture={null} />);
+    beat();
+    beat();
+    expect(card()).toBeNull();
+    expect(answerAway).not.toHaveBeenCalled();
+  });
+
+  it("asks for the DM once in the chip's sheet, with the chip's lamp dot last in line", async () => {
+    render(<IslandApp page={page({ away: away({ dm: null, askConsent: true, askReturn: null }) })} picture={null} />);
+    expect(door()).toHaveAccessibleName(expect.stringContaining(AWAY.chip));
+    const sheet = openMenu();
+    const strip = within(sheet).getByRole("region", { name: AWAY.strip.label });
+    expect(strip).toHaveTextContent(AWAY.strip.ask(7));
+    fireEvent.click(within(strip).getByRole("button", { name: AWAY.strip.yes }));
+    expect(setAwayDm).toHaveBeenCalledWith(true);
+    await waitFor(() => expect(within(sheet).queryByRole("region", { name: AWAY.strip.label })).toBeNull());
+    expect(door()).not.toHaveAccessibleName(expect.stringContaining(AWAY.chip));
+  });
+
+  it("puts the lamp dot's other reasons first", () => {
+    render(<IslandApp page={page({ unread: 2, away: away({ dm: null, askConsent: true, askReturn: null }) })} picture={null} />);
+    expect(door()).toHaveAccessibleName(expect.stringContaining(RESULTS.discord(2)));
+    expect(door()).not.toHaveAccessibleName(expect.stringContaining(AWAY.chip));
+  });
+
+  it("keeps the choice as one switch in the ตั้งค่า fold", async () => {
+    render(<IslandApp page={page({ away: away({ askReturn: null }) })} picture={null} />);
+    const sheet = openMenu();
+    const fold = within(sheet).getByText(MENU.settings).closest("details") as HTMLElement;
+    const line = within(fold).getByRole("button", { name: new RegExp(AWAY.setting) });
+    expect(line).toHaveAttribute("aria-pressed", "false");
+    expect(line).toHaveTextContent(MENU.off);
+    await act(async () => {
+      fireEvent.click(line);
+    });
+    expect(setAwayDm).toHaveBeenCalledWith(true);
+    expect(line).toHaveAttribute("aria-pressed", "true");
+    expect(line).toHaveTextContent(MENU.on);
+  });
+
+  it("has no switch while the feature is off, or for staff", () => {
+    const { unmount } = render(<IslandApp page={page({ away: away({ enabled: false, askReturn: null }) })} picture={null} />);
+    expect(within(openMenu()).queryByRole("button", { name: new RegExp(AWAY.setting) })).toBeNull();
+    unmount();
+    render(<IslandApp page={page({ away: away({ askReturn: null }), me: { name: "พี่บิ๊ก", avatarUrl: null, staff: true } })} picture={null} />);
+    expect(within(openMenu()).queryByRole("button", { name: new RegExp(AWAY.setting) })).toBeNull();
+  });
+
+  it("keeps a student's yes reachable while the feature is off, so it can be turned off", async () => {
+    render(<IslandApp page={page({ away: away({ enabled: false, dm: true, askReturn: null }) })} picture={null} />);
+    const sheet = openMenu();
+    expect(within(sheet).queryByRole("region", { name: AWAY.strip.label })).toBeNull();
+    const line = within(sheet).getByRole("button", { name: new RegExp(AWAY.setting) });
+    expect(line).toHaveAttribute("aria-pressed", "true");
+    await act(async () => {
+      fireEvent.click(line);
+    });
+    expect(setAwayDm).toHaveBeenCalledWith(false);
+    expect(line).toHaveAttribute("aria-pressed", "false");
   });
 });

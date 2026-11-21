@@ -6,6 +6,7 @@ import { PixelIcon } from "@/components/shift/poster/pixel/PixelRects";
 import type { CharacterStats, IslandConsent } from "@/lib/supabase/shift-quests/playerTypes";
 import type { IslandPageData, IslandProject, MyTree, ViewerCard } from "@/lib/supabase/shift-quests/types";
 
+import { AwayStrip } from "../away/AwayStrip";
 import { ConsentBanner } from "../consent/ConsentBanner";
 import { InviteFriends } from "../InviteFriends";
 import { ProjectInvites } from "../NoProject";
@@ -46,6 +47,12 @@ interface CharacterSheetProps {
   onOpenAdmin?: () => void;
   /** ขอพัก, a quiet button under the tree's stage; absent while the team rests (the home card wakes it). */
   onRest?: () => void;
+  /**
+   * The come-back DM's consent strip (schema 23), asked once: given only while
+   * the database asks and nothing was chosen yet. It shows only when the
+   * consent banner shows nothing, so the sheet never opens on two asks.
+   */
+  away?: { days: number; pending: boolean; onAnswer: (on: boolean) => void } | null;
 }
 
 /** A pixel progress bar: `total` cells, the first `filled` lit. Decorative; the line beside it says the number. */
@@ -63,9 +70,10 @@ export function Cells({ filled, total, tone, size }: { filled: number; total: nu
 /**
  * From the HUD chip, the island's one door to everything that is not the next
  * step, titled with the team's name like the chip: the consent step while it
- * waits, who you are and the tree's stage (with a quiet ขอพัก), the admin's
- * overview for admins, what mentors said (ResultsList), the tree, coins, the
- * team, then the short menu with its closed ตั้งค่า fold (MenuFoot).
+ * waits (else the come-back DM's one-time ask), who you are and the tree's
+ * stage (with a quiet ขอพัก), the admin's overview for admins, what mentors
+ * said (ResultsList), the tree, coins, the team, then the short menu with its
+ * closed ตั้งค่า fold (MenuFoot).
  * Progress only: no ranking, no comparison with anyone.
  */
 export function CharacterSheet({
@@ -86,6 +94,7 @@ export function CharacterSheet({
   foot = null,
   onOpenAdmin,
   onRest,
+  away = null,
 }: CharacterSheetProps) {
   const onOpenChange = (next: boolean) => {
     if (!next) onClose();
@@ -96,6 +105,8 @@ export function CharacterSheet({
     <IslandSheet open={open} onOpenChange={onOpenChange} title={project.name}>
       <div className={world.sheetStack}>
         <ConsentBanner consent={consent} onOpen={onOpenConsent} />
+        {/* One ask at a time: the DM strip waits while the consent banner shows. */}
+        {away && (!consent || consent.ok) ? <AwayStrip days={away.days} pending={away.pending} onAnswer={away.onAnswer} /> : null}
 
         <div className={styles.charHead}>
           {/* The name is right beside it: the picture adds nothing for a screen reader. */}

@@ -187,7 +187,8 @@ describe("errors", () => {
 describe("copy", () => {
   it("renders every message kind the database queues", () => {
     const sql = questMigrations();
-    const kinds = new Set<string>(["celebration", "recognition", "intention", "nudge", "reminder"]);
+    // The DM kinds (nudge, reminder, and away from 20261121090000) are queued without shift_quest__post.
+    const kinds = new Set<string>(["celebration", "recognition", "intention", "nudge", "reminder", "away"]);
     for (const match of sql.matchAll(/shift_quest__post\(\s*[^,]+,\s*'[a-z]+',\s*'([a-z_]+)'\s*,/g)) kinds.add(match[1]);
     expect(kinds.has("review_needed")).toBe(true);
     for (const kind of kinds) {

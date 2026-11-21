@@ -224,7 +224,7 @@ display.
 
 ## Safeguarding constraints — not optional
 
-`docs/project/PROJECTSEED-SAFEGUARDING.md` §3 permits bot DMs under three rules,
+`docs/project/PROJECTSEED-SAFEGUARDING.md` §4 permits bot DMs under three rules,
 and the code implements all three. Do not relax them without changing that
 policy first.
 
@@ -261,9 +261,11 @@ The short version for whoever runs the bot:
   (one upsert per command; other commands are left alone).
 - Its delivery loop posts queued messages every 10 seconds and touches the
   same health file as shift-voice, so the Docker `HEALTHCHECK` covers it.
-- It never reads message content and never DMs anyone who did not opt in in
-  `/settings`. DMs it does send are content-free nudges ("there is an update,
-  use /inbox"), which keeps the safeguarding rules below intact.
+- It never reads message content and never DMs anyone who did not opt in.
+  DMs it does send are content-free: the nudge ("there is an update, use
+  /inbox") and the reminder, both opted into in `/settings`, and from schema
+  23 the come-back DM (outbox kind `away`, below), opted into on the island
+  or in `/settings`. That keeps the safeguarding rules above intact.
 - Tests: `pnpm test:db:quests` needs Postgres 15 or newer, finds it on `PATH`
   or in the usual install folders (`PG_BIN=<folder>` picks one) and says how to
   install it when missing. On throwaway databases it applies every shift_quest
@@ -551,6 +553,34 @@ The short version for whoever runs the bot:
     or bot messages in a room, and the evening guest never counts the rooms.
     In SHIFT cohort weeks shift-voice records voice time in every channel,
     these rooms included.
+- The come-back DM (`bot/src/quests/away.ts`, copy `AWAY_DM` in `copy.ts`,
+  schema 23, `20261121090000_shift_quest_away`; design in
+  `docs/designs/shift-island-away.md`): a student who said yes (on the
+  island's one-line strip, its ตั้งค่า, or the 🌱 button in `/settings`) gets
+  one short DM after a stretch away from the island. It is a pointer, never a
+  question (safeguarding §4): a title, one line, one "🌐 เปิดเกาะบนเว็บ" link
+  button (no interaction), why it came and where to turn it off, and "the bot
+  does not read or answer private messages". No question, no day count, no
+  project. Without an island address (`SHIFT_ISLAND_URL` or
+  `NEXT_PUBLIC_SITE_URL`) it fails permanently and nothing is sent. The
+  question about why lives on the island, in a card the website opens once
+  when anyone comes back; its answers are read by admins without names,
+  never by mentors. The database decides everything: each minute the
+  delivery loop calls `shift_quest_enqueue_away()` (students only, onboarded,
+  never resting or waiting on a review of their own quest or their team's
+  milestone, at most one per stretch and per 14 days, queued at the set hour,
+  17:00 Bangkok by default, during a season; time on hold and the break
+  between seasons never count as time away, and a mentor's decision or the
+  end of a rest starts a fresh stretch), and the claim drops a come-back DM
+  outside 09:00 to 19:59 Bangkok or for someone who came back (or whose hold
+  ended) meanwhile. `/admin feature away` turns the whole
+  feature on (off by default; it shows in `/admin status` from schema 23).
+  Below schema 23 the loop only re-reads the version each minute and starts
+  by itself once the migration is applied; `/settings` shows the line only
+  from 23, while the switch is on (or, while it is off, to a student who said
+  yes, offering only "off", so a yes can always be taken back), and never to
+  staff. A new command choice:
+  run `pnpm bot:register` once after deploying.
 - Quest card (`bot/src/quests/handlers/board.ts`, copy `QB` in
   `island/copy.ts`): "📜 กระดานเควสต์" on the island card and the live post's
   panel shows the website's quest board in Discord, read with the same

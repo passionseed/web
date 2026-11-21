@@ -9,7 +9,7 @@ import type { Session } from "@/bot/src/quests/api";
 import type { CanvasLinkState } from "@/lib/shift-island/quest-canvas";
 import type { TreeStyle } from "@/lib/shift-island/tree-style";
 
-import type { CharacterStats, IslandConsent, IslandNews } from "./playerTypes";
+import type { AwayState, CharacterStats, IslandConsent, IslandNews } from "./playerTypes";
 
 export type { Session as QuestSession } from "@/bot/src/quests/api";
 
@@ -356,6 +356,13 @@ export interface IslandPageData {
    * The deep fire's sheet says so only then. Absent reads as false.
    */
   cohortWeek?: boolean;
+  /**
+   * The come-back DM and the return card (shift_quest_away_state, schema 23):
+   * the switch, the viewer's own DM choice, and whether to ask for it or open
+   * the return card. Optional so older fixtures keep compiling. null: an
+   * older database or a failed read; no strip, no settings line, no card.
+   */
+  away?: AwayState | null;
 }
 
 /**

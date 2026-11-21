@@ -8,8 +8,12 @@ import { ISLAND_CONSENT_VERSION } from "@/lib/supabase/shift-quests/playerTypes"
  * /shift/island/parent/{token} and by a student confirming their own age.
  * Same shape as SHIFT_NOTICE (one emoji row per point, rendered aria-hidden
  * by PdpaNotice). What it covers: the team showing up in public (the island,
- * Discord posts and shares), the shop and prizes, and, as a separate optional
- * item, the AI island news. Until consent the student plays privately.
+ * Discord posts and shares), the shop and prizes, and, as separate optional
+ * items, the AI island news and the come-back DM (with who reads the return
+ * answers). Until consent the student plays privately.
+ *
+ * The come-back DM and the return answers were added on 2026-11-21 (version
+ * island-2026-11-21); the bump cancels no consent already on file.
  *
  * DRAFT COPY for the founder's Thai review. Bump ISLAND_CONSENT_VERSION
  * (lib/supabase/shift-quests/playerTypes.ts) whenever a row changes in
@@ -68,6 +72,19 @@ export const ISLAND_NOTICE: { title: string; version: string; rows: readonly See
       lead: "ข่าวเกาะที่สรุปโดย AI (เลือกได้)",
       short: "ยินยอมแยก ไม่ยินยอมก็เล่นเกาะได้ครบ แค่ทีมไม่ขึ้นข่าวเกาะ",
       text: "วันละครั้ง AI (Claude ของ Anthropic) อ่านข้อมูลโปรเจกต์ของทีม ชื่อเควสต์ที่ผ่าน หลักฐานที่ส่งในการ์ดเควสต์ และจำนวนวันที่ลงมือ แล้วเขียนสรุปสั้นๆ ว่าทีมทำอะไรอยู่ ขึ้นใน “ข่าวเกาะ” บนเว็บและในห้อง Discord ของ SHIFT ระบบลบชื่อคนและช่องทางติดต่อออกก่อนส่งให้ AI สรุปไม่มีชื่อใคร และทีมงานซ่อนสรุปได้ทุกเมื่อ ทีมขึ้นข่าวเมื่อทุกคนในทีมยินยอมเรื่องนี้ ผู้ให้บริการ AI อยู่นอกประเทศไทย ส่วนนี้ยินยอมแยก ไม่ยินยอมก็เล่นเกาะได้ครบทุกอย่าง",
+    },
+    {
+      // DRAFT (2026-11-21): the come-back DM and the return card (docs/designs/shift-island-away.md).
+      emoji: "📨",
+      lead: "DM ชวนกลับเกาะ (เลือกได้) และคำตอบตอนกลับมา",
+      // Never a promise of secrecy (safeguarding 7.3): the audited admin reveal is in the gist too.
+      short: "บอทส่ง DM สั้นๆ ได้เฉพาะคนที่เลือกเอง คำตอบตอนกลับมาไม่แสดงชื่อ เว้นแต่มีเรื่องความปลอดภัย",
+      items: [
+        "นักเรียนเลือกเองบนเกาะว่าจะให้บอทส่ง DM สั้นๆ หนึ่งข้อความหรือไม่ เมื่อห่างเกาะไปสักพัก ข้อความมีแค่ลิงก์กลับเกาะ ไม่ถามอะไร และบอทไม่อ่านข้อความตอบ ปิดได้ทุกเมื่อในตั้งค่า",
+        "เมื่อกลับมาหลังห่างไปสักพัก เกาะถามหนึ่งครั้งว่าอะไรทำให้แวะเกาะยาก เลือกตอบหรือปิดไปก็ได้ และพิมพ์เล่าเพิ่มได้สั้นๆ ถ้าอยาก",
+        "ทีมงานเห็นคำตอบเป็นจำนวนรวมและข้อความสั้นแบบไม่มีชื่อ พี่เลี้ยงไม่เห็น และไม่มีใครตอบกลับ",
+        "ข้อความสั้นถูกลบหลัง 90 วัน ชื่อผู้เขียนเปิดดูได้เฉพาะแอดมิน เมื่อห่วงเรื่องความปลอดภัย และระบบบันทึกทุกครั้งที่เปิดดู",
+      ],
     },
     {
       emoji: "📍",

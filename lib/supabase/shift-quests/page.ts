@@ -6,6 +6,7 @@ import { readMyTree, readStyles, withStyles, type StylesBySlot } from "@/bot/src
 import type { CanvasLinkState } from "@/lib/shift-island/quest-canvas";
 import { roundsInSession } from "@/lib/shift/voiceWindow";
 
+import { readAwayState } from "./away";
 import { campfireOf } from "./campfire";
 import { linkedCanvasAvailable } from "./canvas";
 import { characterOf } from "./character";
@@ -161,12 +162,14 @@ async function canvasLinkOf(api: QuestApi, actor: string, userId: string): Promi
  * news, which fall back to null too (no stats or coin pill, nothing gated,
  * no news), public roots (schema 10), which fall back to none, and today's
  * visitors (schema 18), which fall back to null (no figures in the plaza), and
- * the deep fire (schema 22), which falls back to null (no deep fire drawn). Own
- * roots (schema 11) override only the member plot, falling back to its outsider value.
+ * the deep fire (schema 22), which falls back to null (no deep fire drawn), and
+ * the away state (schema 23), which falls back to null (no DM strip, no
+ * settings line, no return card). Own roots (schema 11) override only the
+ * member plot, falling back to its outsider value.
  */
 export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData> {
   const api = questApi();
-  const [islandRaw, mapRaw, suggestUrl, character, consent, news, roots, styles, visitors, deepfire] = await Promise.all([
+  const [islandRaw, mapRaw, suggestUrl, character, consent, news, roots, styles, visitors, deepfire, away] = await Promise.all([
     api.call<IslandView>("shift_quest_island", viewer.actor),
     api.call<IslandMapData>("shift_quest_island_map", viewer.actor),
     suggestUrlOf(api, viewer.actor),
@@ -182,6 +185,8 @@ export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData
     soft(visitorsOf(api, viewer.actor)),
     // Schema 22: the deep fire's lobby link and whether its keeper is there. Null before it, unset or on any failure.
     soft(deepfireOf(api, viewer.actor)),
+    // Schema 23: the come-back DM choice and the return card. Null before it or on any failure: none of it shows.
+    soft(readAwayState(api, viewer.actor)),
   ]);
   const island = normalizeIsland(islandRaw);
   // The database checks the application role again. Fail closed if unavailable.
@@ -255,6 +260,7 @@ export async function getIslandPage(viewer: ReadyViewer): Promise<IslandPageData
     deepfire,
     // The deep fire's sheet says shift-voice records voice time only in a SHIFT cohort week.
     cohortWeek: roundsInSession().size > 0,
+    away,
   };
 }
 

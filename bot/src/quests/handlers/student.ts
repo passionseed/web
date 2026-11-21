@@ -6,6 +6,7 @@
 import type { ButtonBuilder } from "discord.js";
 
 import type { Session } from "../api";
+import { awayLineShown, awaySettingFrom, readAwaySetting, type AwaySetting } from "../away";
 import { isEligible, requireEligible, requireMember, requireStudent, type Ctx } from "../context";
 import { DAY_NAMES, STAFF_AWARD_LABEL, T, bkkDate, renderInbox, safe } from "../copy";
 import { cid, isUuid } from "../ids";
@@ -433,6 +434,8 @@ function dataView(): View {
     title: T.dataTitle,
     blocks: [
       { kind: "text", text: T.dataBody },
+      // The come-back DM's choice and the island's return card (schema 23): written so it is true before either is on.
+      { kind: "subtext", text: T.dataAway },
       { kind: "subtext", text: T.dataRights },
     ],
     rows: buttonRows([
@@ -462,7 +465,22 @@ async function callPings(ctx: Ctx): Promise<boolean> {
   }
 }
 
-function settingsView(prefs: Session["prefs"], remindersLive: boolean, callPing: boolean): View {
+/**
+ * The come-back DM's facts for /settings (schema 23, ../away): null, so no
+ * line and no button, for staff, below schema 23, while /admin feature away is
+ * off (except for a student who said yes, who can still turn it off), or when
+ * the read fails.
+ */
+function awaySetting(ctx: Ctx): Promise<AwaySetting | null> {
+  return readAwaySetting(ctx.api, ctx.userId, ctx.session.roles);
+}
+
+/** What /settings shows besides the saved preferences, read side by side. */
+async function settingsReads(ctx: Ctx): Promise<[boolean, AwaySetting | null]> {
+  return Promise.all([callPings(ctx), awaySetting(ctx)]);
+}
+
+function settingsView(prefs: Session["prefs"], remindersLive: boolean, callPing: boolean, away: AwaySetting | null = null): View {
   const blocks: Block[] = [{ kind: "subtext", text: T.onlyYou }];
   if (prefs?.reminders_opt_in && prefs.reminder_hour !== null) {
     blocks.push({ kind: "text", text: T.remindersOn(prefs.reminder_days.map((d) => DAY_NAMES[d]).join(" "), prefs.reminder_hour) });
@@ -471,6 +489,8 @@ function settingsView(prefs: Session["prefs"], remindersLive: boolean, callPing:
     blocks.push({ kind: "text", text: T.remindersOff });
   }
   blocks.push({ kind: "text", text: prefs?.notify_dm ? T.dmOn : T.dmOff });
+  // The come-back DM (schema 23): one line, on only when the student said yes; never asked here, only changed.
+  if (away) blocks.push({ kind: "text", text: away.dm === true ? T.awayOn(away.days) : T.awayOff(away.days) });
   // The 18:50 campfire call's role ping is not a reminder: how to stop it (call.ts), only while it pings.
   if (callPing) blocks.push({ kind: "subtext", text: T.callPing });
   return {
@@ -482,6 +502,7 @@ function settingsView(prefs: Session["prefs"], remindersLive: boolean, callPing:
         button(cid("rem_on"), T.btnRemindersOn, ButtonStyle.Primary),
         button(cid("rem_off"), T.btnRemindersOff, ButtonStyle.Secondary, !prefs?.reminders_opt_in),
         prefs?.notify_dm ? button(cid("dm", "off"), T.btnDmOff) : button(cid("dm", "on"), T.btnDmOn),
+        ...(away ? [away.dm === true ? button(cid("away", "off"), T.btnAwayOff) : button(cid("away", "on"), T.btnAwayOn)] : []),
       ]),
       ...buttonRows([islandButton()]),
     ],
@@ -531,7 +552,8 @@ export const student: HandlerSet = {
 
     async settings(i, ctx) {
       requireStudent(ctx);
-      await show(i, settingsView(ctx.session.prefs, ctx.session.settings.reminders, await callPings(ctx)));
+      const [callPing, away] = await settingsReads(ctx);
+      await show(i, settingsView(ctx.session.prefs, ctx.session.settings.reminders, callPing, away));
     },
 
     async data(i, ctx) {
@@ -710,7 +732,7 @@ export const student: HandlerSet = {
         const days = selectValues(i, "days").map(Number);
         const hour = Number(selectValues(i, "hour")[0]);
         const session = await ctx.api.call<Session>("shift_quest_update_prefs", ctx.userId, true, days, hour, null);
-        await show(i, settingsView(session.prefs, session.settings.reminders, await callPings(ctx)));
+        await show(i, settingsView(session.prefs, session.settings.reminders, ...(await settingsReads(ctx))));
         return;
       }
       const prefs = ctx.session.prefs;
@@ -741,13 +763,29 @@ export const student: HandlerSet = {
     async rem_off(i, ctx) {
       requireStudent(ctx);
       const session = await ctx.api.call<Session>("shift_quest_update_prefs", ctx.userId, false, null, null, null);
-      await show(i, settingsView(session.prefs, session.settings.reminders, await callPings(ctx)), { replace: true });
+      await show(i, settingsView(session.prefs, session.settings.reminders, ...(await settingsReads(ctx))), { replace: true });
     },
 
     async dm(i, ctx, [state]) {
       requireStudent(ctx);
       const session = await ctx.api.call<Session>("shift_quest_update_prefs", ctx.userId, null, null, null, state === "on");
-      await show(i, settingsView(session.prefs, session.settings.reminders, await callPings(ctx)), { replace: true });
+      await show(i, settingsView(session.prefs, session.settings.reminders, ...(await settingsReads(ctx))), { replace: true });
+    },
+
+    /**
+     * 🌱 in /settings: the come-back DM on or off (shift_quest_away_set, schema
+     * 23), which answers with the new state. The database refuses staff, and
+     * on off drops a come-back DM still waiting to go.
+     */
+    async away(i, ctx, [state]) {
+      requireStudent(ctx);
+      if (state !== "on" && state !== "off") return;
+      const away = awaySettingFrom(await ctx.api.call<unknown>("shift_quest_away_set", ctx.userId, state === "on"));
+      await show(
+        i,
+        settingsView(ctx.session.prefs, ctx.session.settings.reminders, await callPings(ctx), awayLineShown(away) ? away : null),
+        { replace: true }
+      );
     },
 
     // --- Personal data -------------------------------------------------------------

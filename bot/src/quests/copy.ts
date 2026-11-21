@@ -468,6 +468,19 @@ export const T = {
   btnRemindersOff: "ปิดการเตือน",
   btnDmOn: "✉️ เปิดแจ้งทาง DM",
   btnDmOff: "ปิดแจ้งทาง DM",
+  /**
+   * The come-back DM's line in /settings (schema 23, 20261121090000_shift_quest_away): one short DM, only a link to
+   * the island, after a stretch away. Shown to students only, while /admin feature away is on. days is the database's
+   * away_after_days (left out when unknown). Never asked by DM; the island asks first. DRAFT for the Thai review.
+   */
+  awayOn: (days: number | null) =>
+    `🌱 DM ชวนกลับเกาะ${days ? ` เมื่อห่างเกาะ ${days} วัน` : ""}: **เปิด** (ครั้งเดียว มีแค่ลิงก์เปิดเกาะ)`,
+  /** Off, or never chosen: either way no DM goes. DRAFT. */
+  awayOff: (days: number | null) => `🌱 DM ชวนกลับเกาะ${days ? ` เมื่อห่างเกาะ ${days} วัน` : ""}: **ปิด**`,
+  /** DRAFT. */
+  btnAwayOn: "🌱 เปิด DM ชวนกลับเกาะ",
+  /** DRAFT. */
+  btnAwayOff: "ปิด DM ชวนกลับเกาะ",
   remindersTitle: "ตั้งการเตือน",
   remindersDays: "วัน",
   remindersHour: "เวลา (เวลาไทย)",
@@ -485,6 +498,14 @@ export const T = {
   dataTitle: "🔒 ข้อมูลของคุณ",
   dataBody:
     "**เราเก็บเฉพาะสิ่งที่คุณบันทึกในบอทนี้**\nไม่เก็บข้อความแชท เสียง หรือหน้าจอ\nกองไฟบนเกาะเก็บแค่ว่าใครอยู่ในห้องกองไฟตอนนี้ และลบทันทีเมื่อออก\nตอนแขกแวะมาที่กองไฟ ระบบจะเก็บว่าทีมไหนมีคนนั่งช่วงพักนั้นและผลลุ้นของทีม แล้วลบในวันถัดไป ไม่เก็บว่าใครในทีมนั่งหรือนั่งตอนไหน (ถ้าทีมมีคุณคนเดียว ข้อมูลของทีมก็คือของคุณ) ลุคที่ทีมได้จะเป็นของขวัญของทีม เก็บไว้พร้อมวันที่ได้\nในรอบ SHIFT บอทบันทึกการเข้าห้องเสียง (เวลา ไมค์ กล้อง แชร์จอ) ตามนโยบายที่ประกาศไว้",
+  /**
+   * /data: the come-back DM's choice and the island's return card (schema 23). The answers are read by admins
+   * without names, never by mentors, nobody replies, the short lines go after 90 days, and only an audited admin
+   * action shows who wrote a line, for a safeguarding concern. Conditional, so it reads true before the feature is
+   * on. DRAFT for the Thai review.
+   */
+  dataAway:
+    "🌱 **DM ชวนกลับเกาะ** เก็บว่าคุณเลือกรับหรือไม่ และเลือกเมื่อไร\n**การ์ด “ช่วยเราปรับเกาะหน่อย”** ถ้าคุณตอบ ทีมแอดมินเห็นเหตุผลและข้อความสั้นๆ แบบไม่มีชื่อ พี่เลี้ยงไม่เห็น ไม่มีใครตอบกลับ ข้อความสั้นถูกลบหลัง 90 วัน ถ้ามีเรื่องความปลอดภัยของใครสักคน แอดมินเปิดดูได้ว่าใครเขียน และระบบบันทึกทุกครั้ง",
   dataRights: "ส่งออกได้ทันที ขอแก้ไขหรือลบได้ ทีมจะดำเนินการตามนโยบายที่ประกาศไว้",
   btnExport: "📦 ส่งออกข้อมูลของฉัน",
   btnCorrection: "✏️ ขอแก้ไขข้อมูล",
@@ -563,6 +584,8 @@ export const DAY_NAMES = ["อาทิตย์", "จันทร์", "อั
 const ERRORS: Record<string, string> = {
   not_started: T.notStarted,
   not_authorized: T.staffOnly,
+  // A role the function does not serve (20261121090000: the come-back DM is for students only). DRAFT.
+  not_allowed: "บัญชีนี้ทำรายการนี้ไม่ได้",
   bad_input: "ข้อมูลไม่ถูกต้อง ลองใหม่อีกครั้ง",
   // Website project invitations use the same refusal vocabulary as the web gate.
   invalid_input: "ข้อมูลไม่ถูกต้อง ลองใหม่อีกครั้ง",
@@ -753,6 +776,23 @@ export const TREE_GREW = {
   stageEmoji: ["🟫", "🌱", "🌱", "🌿", "🌳", "🌳", "🍎", "🌸"],
 };
 
+/**
+ * The come-back DM (kind 'away', schema 23, 20261121090000_shift_quest_away),
+ * sent only to a student who chose it, after a stretch away from the island.
+ * Safeguarding section 4: broadcast only. It asks nothing (no question mark,
+ * no question word), counts nothing (no digits: never how many days), names
+ * nothing (no project, team or quest) and carries no guilt (never ยังไม่ได้,
+ * พลาด, หายไป, เมื่อวาน, สตรีค or ติดต่อกัน). Its only button is the island's
+ * link (outbox.ts), never an interaction; the question about why is asked on
+ * the island. DRAFT for the three-model Thai review.
+ */
+export const AWAY_DM = {
+  title: "🏝️ เกาะ SHIFT เปิดอยู่เสมอ",
+  body: "แวะมาได้เมื่อพร้อม",
+  /** Why this DM came, and where to turn it off (plain text in a DM: commands there cannot run). */
+  why: "ส่งมาเพราะคุณเปิดรับข้อความนี้ไว้ ปิดได้ในตั้งค่าบนเกาะ หรือ /settings ในเซิร์ฟเวอร์",
+};
+
 /** Renders a queued message. Returns null for an unknown kind (it fails permanently). */
 export function renderOutbox(
   kind: string,
@@ -838,6 +878,9 @@ export function renderOutbox(
       };
     case "nudge":
       return { title: T.dmNudgeTitle, body: T.dmNudge, note: T.dmNoReplies, mentionUserIds: [] };
+    case "away":
+      // Params are '{}': the same few words for everyone, nothing about the student.
+      return { title: AWAY_DM.title, body: AWAY_DM.body, note: `${AWAY_DM.why}\n${T.dmNoReplies}`, mentionUserIds: [] };
     case "reminder":
       return {
         title: T.dmReminderTitle,
