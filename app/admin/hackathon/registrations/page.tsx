@@ -4,6 +4,7 @@ import { AdminEmptyState, AdminErrorState } from "@/components/admin/shared/Admi
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { formatBangkokDateTime } from "@/lib/admin/queue-tools/format";
 import { requireAdmin } from "@/lib/admin/requireAdmin";
+import { getClaimCounts, type ClaimCount } from "@/lib/supabase/elemental-claims";
 import {
   listRegistrations,
   type AdminRegistration,
@@ -25,7 +26,22 @@ function slipNote(check: unknown): string | null {
   return `SlipOK: ${c.kind}${c.code ? ` (${c.code})` : ""}`;
 }
 
-function RegistrationCard({ r }: { r: AdminRegistration }) {
+/**
+ * Discord /join codes used out of issued for one sign-up (E26). Paid sign-ups
+ * always show it, so "0/0" means staff have not issued codes yet; others show
+ * it only if codes exist (a sign-up cancelled after its codes went out).
+ */
+function ClaimBadge({ r, count }: { r: AdminRegistration; count: ClaimCount | undefined }) {
+  if (r.status !== "paid" && !count) return null;
+  const c = count ?? { claimed: 0, issued: 0 };
+  return (
+    <Badge variant="outline" title="Discord /join codes used out of issued">
+      {c.claimed}/{c.issued} claimed
+    </Badge>
+  );
+}
+
+function RegistrationCard({ r, claims }: { r: AdminRegistration; claims: Map<string, ClaimCount> | null }) {
   return (
     <li className="space-y-3 rounded-lg border bg-muted/30 p-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -41,6 +57,7 @@ function RegistrationCard({ r }: { r: AdminRegistration }) {
         </span>
         {r.wantsTeamMatching && <Badge variant="outline">match with a team</Badge>}
         {r.source && <Badge variant="outline">src: {r.source}</Badge>}
+        {claims && <ClaimBadge r={r} count={claims.get(r.id)} />}
       </div>
 
       <ol className="space-y-1 text-sm">
@@ -79,14 +96,28 @@ function RegistrationCard({ r }: { r: AdminRegistration }) {
   );
 }
 
+function claimTotal(claims: Map<string, ClaimCount>): ClaimCount {
+  let claimed = 0;
+  let issued = 0;
+  for (const c of claims.values()) {
+    claimed += c.claimed;
+    issued += c.issued;
+  }
+  return { claimed, issued };
+}
+
 export default async function AdminHackathonRegistrationsPage() {
   await requireAdmin();
   let rows: AdminRegistration[] | null = null;
+  // Claim counts never block the list: null (no migration yet, read failed) hides the badges.
+  const claimsRead = getClaimCounts();
   try {
     rows = await listRegistrations(ELEMENTAL.slug);
   } catch (error) {
     console.error("[admin/hackathon/registrations] failed to load", error);
   }
+  const claims = await claimsRead;
+  const claimSum = claims ? claimTotal(claims) : null;
 
   if (rows === null) {
     return (
@@ -117,6 +148,11 @@ export default async function AdminHackathonRegistrationsPage() {
           <span className="font-medium">{ELEMENTAL.edition}:</span> {seats} paid seats in {paid.length} sign-ups,
           ฿{baht.toLocaleString()} in total. {rows.filter((r) => r.status === "review").length} slips need a check.
         </p>
+        {claimSum && (
+          <p className="mt-1 text-muted-foreground">
+            Discord: {claimSum.claimed}/{claimSum.issued} codes claimed.
+          </p>
+        )}
         {sources.length > 0 && (
           <p className="mt-1 text-muted-foreground">
             Paid seats by link: {sources.map(([k, n]) => `${k} ${n}`).join(" · ")}
@@ -128,7 +164,7 @@ export default async function AdminHackathonRegistrationsPage() {
       ) : (
         <ul className="space-y-3">
           {sorted.map((r) => (
-            <RegistrationCard key={r.id} r={r} />
+            <RegistrationCard key={r.id} r={r} claims={claims} />
           ))}
         </ul>
       )}
