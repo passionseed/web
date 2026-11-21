@@ -50,12 +50,17 @@ export const ELEMENTAL = {
     { date: "2026-12-06", time: "19:00–20:00", th: "เวิร์กช็อป: การนำเสนอ", kind: "workshop" },
     { date: "2026-12-07", time: "23:00", th: "ส่งคลิปผลงาน", kind: "due" },
   ],
+  /**
+   * The five elements. `problem` and `examples` are the broad descriptions
+   * Angpao asked for in the sponsor deck (2026-11-20): each element covers
+   * any problem of its kind.
+   */
   elements: [
-    { key: "water", en: "Water", th: "น้ำ" },
-    { key: "earth", en: "Earth", th: "ดิน" },
-    { key: "air", en: "Air", th: "ลม" },
-    { key: "fire", en: "Fire", th: "ไฟ" },
-    { key: "aether", en: "Aether", th: "ธาตุที่ 5" },
+    { key: "water", en: "Water", th: "น้ำ", problem: "ภัยในแหล่งน้ำ", examples: "เช่น น้ำเสียจากโรงงาน สารปนเปื้อนในแม่น้ำ ไมโครพลาสติก น้ำที่คนใช้ดื่มและทำเกษตร" },
+    { key: "earth", en: "Earth", th: "ดิน", problem: "ภัยจากขยะ ดิน และสารพิษ", examples: "เช่น ขยะอิเล็กทรอนิกส์ การลักลอบทิ้งหรือฝังกลบขยะ สารเคมีตกค้างในพื้นที่เกษตร ขยะที่ไม่ได้คัดแยก" },
+    { key: "air", en: "Air", th: "ลม", problem: "ภัยในอากาศที่เราหายใจ", examples: "เช่น ฝุ่น PM2.5 ควันจากการเผาในที่โล่ง ไอเสียจากโรงงานใกล้บ้าน การปล่อยคาร์บอน" },
+    { key: "fire", en: "Fire", th: "ไฟ", problem: "ภัยจากไฟและความร้อน", examples: "เช่น อัคคีภัยในโรงงาน ผับบาร์ หรืออาคาร โกดังเก็บสารเคมี การเผาไร่และป่า" },
+    { key: "aether", en: "Aether", th: "ธาตุที่ 5", problem: "ภัยที่มองไม่เห็น", examples: "เช่น ข่าวปลอม การอ้างว่ารักษ์โลกเกินจริง ขยะที่ไม่มีใครบันทึกว่าไปที่ไหน พลังงานที่แอปและ AI ใช้" },
   ],
 } as const;
 
