@@ -1,9 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
-import { ELEMENTAL, prizeTotal, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
+import { ELEMENTAL, prizeTotal, thaiDayRange } from "@/components/hackathon/poster/elemental/facts";
 import { formatThaiDate } from "@/lib/content/shift-cohort";
 
 import { trirong } from "./fonts";
@@ -23,16 +22,18 @@ const ELEMENT_LINES: Record<string, string> = {
 
 const ORDER = ["earth", "water", "air", "fire", "aether"] as const;
 
-function Fact({ label, value, note }: { label: string; value: string; note?: string }) {
+function HeroFact({ above, big, below }: { above?: string; big: string; below?: string }) {
   return (
-    <div className="border-t pt-3" style={{ borderColor: "rgba(29,33,31,0.2)" }}>
-      <p className="text-xs" style={{ fontFamily: EL_FONT.mono, color: EL.inkSoft }}>
-        [{label}]
+    <div className="min-w-0">
+      <p className="text-xs sm:text-sm" style={{ fontFamily: EL_FONT.mono, color: EL.creamSoft }}>
+        {above ?? "\u00a0"}
       </p>
-      <p className="mt-1 text-2xl sm:text-3xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
-        {value}
+      <p className="mt-1 text-xl leading-tight sm:text-4xl lg:text-5xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
+        {big}
       </p>
-      {note && <p className="text-sm" style={{ color: EL.inkSoft }}>{note}</p>}
+      <p className="mt-1 text-xs sm:text-sm" style={{ color: EL.creamSoft }}>
+        {below ?? "\u00a0"}
+      </p>
     </div>
   );
 }
@@ -62,57 +63,95 @@ function SignUpButton({ href, open }: { href: string; open: boolean }) {
 export function ElementalLanding({ joinHref, open }: { joinHref: string; open: boolean }) {
   return (
     <main className={`${trirong.variable} min-h-screen`} style={{ backgroundColor: EL.cream, color: EL.ink }}>
-      {/* Hero: the words on the left, the key visual on the right */}
-      <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 pb-16 pt-10 sm:px-8 md:grid-cols-[1fr_minmax(0,440px)] md:pt-16">
-        <div>
-          <p className="text-xs sm:text-sm" style={{ fontFamily: EL_FONT.mono, color: EL.inkSoft }}>
-            [{ELEMENTAL.series} × PassionSeed]
-          </p>
-          <h1 className="mt-3" style={{ fontFamily: EL_FONT.display, lineHeight: 1.02 }}>
-            <span className="block text-6xl sm:text-8xl" style={{ fontWeight: 200 }}>
-              {ELEMENTAL.edition}
-            </span>
-            <span className="block text-6xl sm:text-8xl" style={{ fontWeight: 300, fontStyle: "italic" }}>
-              Hackathon
-            </span>
-          </h1>
-          <p className="mt-4 text-2xl sm:text-3xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
-            ดิน · น้ำ · ลม · ไฟ
-          </p>
-          <p className="mt-6 max-w-lg text-lg leading-relaxed">
-            ปัญหาสิ่งแวดล้อมส่วนใหญ่ไม่ได้เกิดขึ้นเอง มีคนทำให้มันเกิด รวมทีมมาสร้างทางแก้ของจริง
-            ตลอดวันหยุดยาว {ELEMENTAL.days} วัน {ELEMENTAL.venueTh} อยู่ที่ไหนก็ร่วมได้
-          </p>
+      {/*
+        Hero: the animated key visual is the whole first screen (the same
+        plate as the poster, without its type, from scripts/render-elemental-plate.mjs).
+        The type is live text on top. Reduced motion gets the still.
+      */}
+      <section className="el-hero relative isolate flex min-h-[100svh] flex-col overflow-hidden" style={{ backgroundColor: "#2a2b26", color: EL.cream }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/hackathon/elemental/hero-still.webp"
+          alt="หุบเขาริมแม่น้ำที่สงบ ถูกพิกเซลของไฟ ควัน น้ำเสีย และขยะกัดกิน"
+          width={1080}
+          height={1350}
+          className="absolute inset-0 -z-20 h-full w-full object-cover"
+          style={{ objectPosition: "var(--el-pos)" }}
+        />
+        <video
+          className="absolute inset-0 -z-20 h-full w-full object-cover motion-reduce:hidden"
+          style={{ objectPosition: "var(--el-pos)" }}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          poster="/hackathon/elemental/hero-still.webp"
+          aria-hidden="true"
+        >
+          <source src="/hackathon/elemental/hero.webm" type="video/webm" />
+          <source src="/hackathon/elemental/hero.mp4" type="video/mp4" />
+        </video>
+        {/* Keep the fire in frame: it sits right of centre on the poster. */}
+        <style>{`.el-hero{--el-pos:72% 50%;--el-scrim:linear-gradient(0deg,rgba(15,15,13,.92) 0%,rgba(15,15,13,.7) 30%,rgba(15,15,13,0) 58%),linear-gradient(180deg,rgba(15,15,13,.6) 0%,rgba(15,15,13,0) 34%)}@media(min-width:768px){.el-hero{--el-pos:55% 64%;--el-scrim:linear-gradient(90deg,rgba(15,15,13,.72) 0%,rgba(15,15,13,.4) 42%,rgba(15,15,13,0) 70%),linear-gradient(0deg,rgba(15,15,13,.88) 0%,rgba(15,15,13,.55) 22%,rgba(15,15,13,0) 48%),linear-gradient(180deg,rgba(15,15,13,.5) 0%,rgba(15,15,13,0) 28%)}}`}</style>
+        {/* Scrims: ink behind the words on the left and under the facts */}
+        <div
+          className="absolute inset-0 -z-10"
+          style={{
+            background: "var(--el-scrim)",
+          }}
+        />
 
-          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Fact label="วันที่" value={thaiDateLine()} note={`หยุดยาว ${ELEMENTAL.days} วัน · ${ELEMENTAL.venueTh}`} />
-            <Fact label="รางวัลรวม" value={`${prizeTotal()} บาท`} />
-            <Fact
-              label="ค่าสมัคร"
-              value={`฿${ELEMENTAL.groupPriceBaht} / คน`}
-              note={`มากับเพื่อน · คนเดียว ฿${ELEMENTAL.priceBaht}`}
-            />
+        <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pb-8 pt-6 sm:px-8 sm:pb-10 sm:pt-8">
+          {/* Co-brand lockup */}
+          <div className="flex items-center gap-3 sm:gap-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/hackathon/HackLogo.png" alt={ELEMENTAL.series} width={125} height={50} className="h-8 w-auto sm:h-10" style={{ filter: "brightness(0) invert(1)", opacity: 0.9 }} />
+            <span className="text-sm" style={{ fontFamily: EL_FONT.mono, color: EL.creamSoft }}>×</span>
+            <span className="flex items-center gap-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/passion-seed-logo.png" alt="" width={50} height={50} className="h-8 w-8 sm:h-10 sm:w-10" />
+              <span className="text-lg sm:text-2xl" style={{ fontFamily: EL_FONT.display, fontWeight: 400 }}>PassionSeed</span>
+            </span>
           </div>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <SignUpButton href={joinHref} open={open} />
-            {open && (
-              <p className="text-sm" style={{ color: EL.inkSoft }}>
-                รับสมัครถึง {formatThaiDate(ELEMENTAL.registrationClosesOn)}
+          {/* Title */}
+          <div className="mt-8 md:mt-14">
+            <h1 style={{ fontFamily: EL_FONT.display, lineHeight: 1.02, letterSpacing: "-0.01em" }}>
+              <span className="block text-6xl sm:text-8xl xl:text-9xl" style={{ fontWeight: 200 }}>
+                {ELEMENTAL.edition}
+              </span>
+              <span className="block text-6xl sm:text-8xl xl:text-9xl" style={{ fontWeight: 300, fontStyle: "italic" }}>
+                Hackathon
+              </span>
+            </h1>
+            <p className="mt-3 text-2xl sm:text-4xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
+              ดิน · น้ำ · ลม · ไฟ
+            </p>
+          </div>
+
+          {/* Bottom group: the pitch and the button, then the three facts people decide on */}
+          <div className="mt-auto pt-10">
+            <div className="md:max-w-[34rem]">
+              <p className="max-w-md text-base leading-relaxed sm:text-lg" style={{ color: EL.creamSoft }}>
+                ปัญหาสิ่งแวดล้อมส่วนใหญ่ไม่ได้เกิดขึ้นเอง มีคนทำให้มันเกิด รวมทีมมาสร้างทางแก้ของจริง
+                ตลอดวันหยุดยาว {ELEMENTAL.days} วัน {ELEMENTAL.venueTh} อยู่ที่ไหนก็ร่วมได้
               </p>
-            )}
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <SignUpButton href={joinHref} open={open} />
+                {open && (
+                  <p className="text-sm" style={{ color: EL.creamSoft }}>
+                    รับสมัครถึง {formatThaiDate(ELEMENTAL.registrationClosesOn)}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="mt-8 grid grid-cols-3 gap-3 border-t pt-5 sm:gap-8 sm:pt-6" style={{ borderColor: "rgba(243,239,230,0.25)" }}>
+              <HeroFact above="วันที่" big={thaiDayRange()} below={`${ELEMENTAL.startDate.slice(0, 4)} · หยุดยาว ${ELEMENTAL.days} วัน`} />
+              <HeroFact above="รางวัลรวมมูลค่า" big={`${prizeTotal()} บาท`} />
+              <HeroFact above="มากับเพื่อน" big={`฿${ELEMENTAL.groupPriceBaht} / คน`} below={`คนเดียว ฿${ELEMENTAL.priceBaht}`} />
+            </div>
           </div>
-        </div>
-
-        <div className="mx-auto w-full max-w-[440px]">
-          <Image
-            src="/hackathon/poster/elemental/sheets/elemental-key.webp"
-            alt="โปสเตอร์ Elemental Hackathon: หุบเขาริมแม่น้ำที่สงบ ถูกพิกเซลของไฟ ควัน น้ำเสีย และขยะกัดกิน"
-            width={1080}
-            height={1350}
-            priority
-            className="h-auto w-full rounded-xl shadow-xl"
-          />
         </div>
       </section>
 
