@@ -15,7 +15,9 @@ DO $$
 DECLARE
   bad text;
 BEGIN
-  ASSERT (SELECT count(*) FROM el_tables) = 14, 'expected 14 elemental tables, got ' || (SELECT count(*) FROM el_tables);
+  -- 14 here; elemental_canvas_links (20261123100100_elemental_testers_canvas.sql) is checked by these rules too.
+  ASSERT (SELECT count(*) FROM el_tables WHERE relname <> 'elemental_canvas_links') = 14,
+    'expected 14 core elemental tables, got ' || (SELECT count(*) FROM el_tables WHERE relname <> 'elemental_canvas_links');
   SELECT string_agg(relname, ', ') INTO bad FROM el_tables t
   WHERE NOT (SELECT relrowsecurity FROM pg_class WHERE oid = t.oid);
   ASSERT bad IS NULL, 'RLS off on ' || bad;
