@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/utils/supabase/admin";
 import type { Registration } from "@/lib/hackathon/elemental/registration";
+import type { RegistrationTotalsRow } from "@/lib/hackathon/elemental/seats";
 
 /**
  * Paid hackathon sign-ups (hackathon_event_registrations). Every call uses
@@ -240,4 +241,35 @@ export async function setRegistrationStatus(
     })
     .eq("id", id);
   if (error) throw error;
+}
+
+/**
+ * Totals-only rows for the Elemental progress page: status, group size,
+ * tracked link and two timestamps (sign-up and payment) for the per-day pace.
+ * No names, contacts or slips leave the database.
+ */
+export async function listRegistrationTotals(eventSlug: string): Promise<RegistrationTotalsRow[]> {
+  const db = createAdminClient();
+  const PAGE = 1000;
+  const out: RegistrationTotalsRow[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await db
+      .from("hackathon_event_registrations")
+      .select("id, status, member_count, source, created_at, paid_at")
+      .eq("event_slug", eventSlug)
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, from + PAGE - 1);
+    if (error) throw error;
+    for (const r of data ?? []) {
+      out.push({
+        status: r.status as RegistrationStatus,
+        memberCount: r.member_count,
+        source: r.source,
+        createdAt: r.created_at ?? null,
+        paidAt: r.paid_at ?? null,
+      });
+    }
+    if (!data || data.length < PAGE) return out;
+  }
 }
