@@ -77,9 +77,13 @@ describe("onboard gate for a signed-in user who has not finished onboard", () =>
     }
   );
 
+  // The URL parser already folds a bare /%2e%2e/ segment, so these keep the
+  // dot segment past parsing (an escaped slash), and only the decoded check in
+  // the exemption can catch them.
   it.each([
-    "/whiteboard/%2e%2e/dashboard",
-    "/hackathon/%2E%2E/me",
+    "/whiteboard/..%2Fdashboard",
+    "/hackathon/%2e%2e%2fme",
+    "/whiteboard/%2E%2E%2F%2E%2E%2Fdashboard",
   ])("does not exempt the escaped look-alike %s", async (path) => {
     const response = await visit(path);
     expect(response.headers.get("location")).toBe(`${ORIGIN}/onboard`);
