@@ -401,7 +401,9 @@ async function air() {
 
 // ---------- FIRE: the forest catches, like the key visual's fire ----------
 async function fire() {
-  const F = { x: 760, base: 1010 };
+  // The base sits on the real ground, where the trees meet the meadow (about
+  // y 1065 in the photo): the forest above it is a slope, not a floor.
+  const F = { x: 760, base: 1066 };
   // The untouched photo: the burning trees take their tones from it, not from the glow.
   const orig = img.slice();
   const origAt = (x, y) => {
@@ -544,8 +546,8 @@ async function fire() {
       const n = fbm(x * 0.012, 4.2, 88, 3);
       const fade = 1 - smooth(200, 320, Math.abs(x - F.x));
       if (n < 0.38 || fade <= 0) continue; // gaps between pieces
-      const topY = F.base - 6 - 70 * smooth(0.38, 0.8, n) * fade * (0.6 + 0.8 * fbm(x * 0.05, 9.1, 89, 2));
-      const botY = F.base + 18 + 22 * fbm(x * 0.03, 2.2, 90, 2);
+      const topY = F.base - 4 - 50 * smooth(0.38, 0.8, n) * fade * (0.6 + 0.8 * fbm(x * 0.05, 9.1, 89, 2));
+      const botY = F.base + 8 + 14 * fbm(x * 0.03, 2.2, 90, 2);
       for (let y = Math.floor(topY / cc) * cc; y < botY; y += cc) {
         const edge = Math.min(y - topY, botY - y) / 20;
         if (edge < 1 && bayer(x / cc, y / cc) > edge) continue;
