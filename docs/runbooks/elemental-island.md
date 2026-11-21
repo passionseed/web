@@ -29,7 +29,7 @@ read -rs NAME && export NAME     # paste, press Enter
 
 | When | Who | What | Section |
 |---|---|---|---|
-| Sat 21 Nov | Big | `#reports` made by hand in the real server | G |
+| Sat 21 Nov | Big | `#reports` made by hand in the real server | E |
 | Wed 25 Nov | Big | Migrations PR (E16) merged, `supabase db push`, bot password | B, C |
 | Wed 25 to Sat 28 | Big | Discord application, both servers' roles and channels, element boards | D, E, F |
 | Fri 27 Nov | agents | This runbook, the end-to-end test, the rehearsal checklist | A |
@@ -152,7 +152,7 @@ pnpm exec tsx scripts/elemental/set-role-password.ts --check   # "Check passed."
 | View Channels, Send Messages, Read Message History | Posts, invites, the picker; re-reading pins and card-override images |
 | Embed Links, Attach Files | `/report` embeds; the island, card and legend file |
 | Create Public Threads, Send Messages in Threads | One `/tester` mirror thread per element in the staff channel |
-| Pin Messages (or Manage Messages) | The team welcome and the canvas link pins |
+| Pin Messages | The team welcome and the canvas link pins (since 12 Jan 2026 Manage Messages no longer allows pinning) |
 | Add Reactions, Use Application Commands | A channel overwrite may only grant what the bot holds; team members get these |
 
 ## E. Both servers: roles, channels, categories

@@ -51,7 +51,7 @@ import { createRolePool } from "../../pg";
 import { createElementalApi, type ElementalApi } from "../api";
 import { setChannelPortFactory, type ChannelInfo, type GuildChannelPort, type PlannedOverwrite } from "../channels";
 import type { ElementalEventName, ElementalListener, ElementalRuntime } from "../context";
-import { CANVAS } from "../copy/canvas";
+import { CANVAS, canvasErrorText } from "../copy/canvas";
 import { JOIN } from "../copy/join";
 import { REPORT } from "../copy/report";
 import { SCHEDULE } from "../copy/schedule";
@@ -357,7 +357,7 @@ describe("Elemental end to end", () => {
     return { slot: team.slot, channelId: team.channel };
   }
 
-  /** Every row of the real edition, for the cleanup check. */
+  /** Every row of the real edition (tables with an edition column, plus invites and canvas links by team), for the cleanup check. */
   function realEditionSnapshot(): string {
     const tables = psql(`SELECT string_agg(table_name, ',' ORDER BY table_name) FROM information_schema.columns
                          WHERE table_schema = 'public' AND table_name LIKE 'elemental\\_%' AND column_name = 'edition'`).split(",");
@@ -368,6 +368,9 @@ describe("Elemental end to end", () => {
     return psql(`SELECT jsonb_build_object(${parts.join(", ")},
       'invites', (SELECT coalesce(jsonb_agg(to_jsonb(i) ORDER BY to_jsonb(i)::text), '[]') FROM public.elemental_team_invites i
                   JOIN public.elemental_teams t ON t.id = i.team_id WHERE t.edition = 'elemental-2026'),
+      'canvas_links', (SELECT coalesce(jsonb_agg(to_jsonb(l) ORDER BY to_jsonb(l)::text), '[]') FROM public.elemental_canvas_links l
+                       JOIN public.elemental_teams t ON t.id = l.team_id WHERE t.edition = 'elemental-2026'),
+      'edition', (SELECT to_jsonb(e) FROM public.elemental_editions e WHERE e.key = 'elemental-2026'),
       'settings', (SELECT to_jsonb(s) FROM public.elemental_settings s WHERE s.guild_id = '${REAL}'),
       'boards', (SELECT jsonb_agg(w.elements ORDER BY w.id) FROM public.whiteboards w WHERE w.id IN ('${BOARDS[REAL].join("','")}')))::text`);
   }
@@ -612,6 +615,7 @@ describe("Elemental end to end", () => {
     // A water team cannot link the fire board.
     const wrongBoard = await link(4, teamB.channelId, FIRE_BOARD, "frame-a");
     expect(psql(`SELECT count(*) FROM public.elemental_canvas_links`)).toBe("0");
+    expect(last(wrongBoard)).toContain(canvasErrorText("wrong_element_board", "fire")!);
     expect(last(wrongBoard)).not.toContain(CANVAS.linked(teamB.slot));
 
     expect(last(await link(1, teamA.channelId, FIRE_BOARD, "frame-a"))).toContain(CANVAS.linked(teamA.slot));
