@@ -279,9 +279,11 @@ describe("/el export", () => {
   test("the header is exactly the Teams-tab columns, in order", async () => {
     const { db, rt } = setup();
     seed(db);
-    const { csv } = await runExport(rt);
+    const { csv, file } = await runExport(rt);
     expect(csv).not.toBeNull();
-    expect(csv!.startsWith("﻿")).toBe(true);
+    // The UTF-8 byte-order mark is the file's first three bytes (Excel needs it for Thai).
+    expect([...file!.attachment.subarray(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
+    expect(csv!.startsWith("\uFEFF")).toBe(true);
     const firstLine = csv!.slice(1).split("\r\n")[0];
     expect(firstLine).toBe("team_id,slot,project,element,counted_testers,handin_url,handin_late");
     expect([...COLUMNS]).toEqual(["team_id", "slot", "project", "element", "counted_testers", "handin_url", "handin_late"]);
@@ -394,7 +396,7 @@ describe("pieces", () => {
 
   test("toCsv: BOM, CRLF, a trailing line end", () => {
     const out = toCsv([]);
-    expect(out).toBe(`﻿${COLUMNS.join(",")}\r\n`);
+    expect(out).toBe(`\uFEFF${COLUMNS.join(",")}\r\n`);
   });
 
   test("fileName uses Bangkok time and a safe edition", () => {

@@ -114,7 +114,7 @@ export function csvField(value: string | number | boolean | null | undefined): s
  */
 export function toCsv(rows: readonly ExportRow[]): string {
   const lines = [COLUMNS.join(","), ...rows.map((row) => COLUMNS.map((c) => csvField(row[c])).join(","))];
-  return `﻿${lines.join("\r\n")}\r\n`;
+  return `\uFEFF${lines.join("\r\n")}\r\n`;
 }
 
 /** elemental-teams-<edition>-<YYYYMMDD>-<HHMM>.csv, Bangkok time. */
