@@ -533,6 +533,36 @@ async function fire() {
       const k = Math.round(l * 2.2 + heat * 1.6 + up * 0.9 - 1.3 + (hash(x, y, 155) - 0.5));
       rect(x, y, tc, levels[clamp(k, 0, 5)]);
     }
+  // Charred logs across the fire's base, from the key visual: a dot matrix
+  // of the photo over black, in front of the flames, so their bottom isn't
+  // a flat cut-off line.
+  // A ragged skyline of char, not a bar: its top rises and dips, it breaks
+  // into pieces, and its edges dither, so the flames' base is broken up.
+  {
+    const cc = 10;
+    for (let x = F.x - 320; x < F.x + 320; x += cc) {
+      const n = fbm(x * 0.012, 4.2, 88, 3);
+      const fade = 1 - smooth(200, 320, Math.abs(x - F.x));
+      if (n < 0.38 || fade <= 0) continue; // gaps between pieces
+      const topY = F.base - 6 - 70 * smooth(0.38, 0.8, n) * fade * (0.6 + 0.8 * fbm(x * 0.05, 9.1, 89, 2));
+      const botY = F.base + 18 + 22 * fbm(x * 0.03, 2.2, 90, 2);
+      for (let y = Math.floor(topY / cc) * cc; y < botY; y += cc) {
+        const edge = Math.min(y - topY, botY - y) / 20;
+        if (edge < 1 && bayer(x / cc, y / cc) > edge) continue;
+        for (let yy = y; yy < y + cc; yy++)
+          for (let xx = x; xx < x + cc; xx++) {
+            const l = lum(origAt(xx, yy));
+            put(xx, yy, xx % 3 < 2 && yy % 3 < 2 ? [0.25 + l * 0.6, 0.22 + l * 0.5, 0.2 + l * 0.45].map((v) => clamp(v)) : P.ink);
+          }
+      }
+    }
+  }
+  // A few embers glowing on the logs.
+  for (let k = 0; k < 30; k++) {
+    const x = Math.round((F.x - 260 + hash(k, 1, 85) * 520) / 5) * 5;
+    const y = Math.round((F.base - 20 + hash(k, 2, 85) * 36) / 5) * 5;
+    rect(x, y, 5, hash(k, 3, 85) < 0.5 ? P.yellow : P.orange, 0.9);
+  }
   // Embers drifting onto the meadow.
   for (let k = 0; k < 60; k++) {
     const x = Math.round((F.x - 420 + hash(k, 1, 83) * 760) / 5) * 5;
