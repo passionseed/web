@@ -2,52 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL, prizeTotal, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
 import { formatThaiDate } from "@/lib/content/shift-cohort";
 
-import styles from "./elemental-cinema.module.css";
+import { EditorialLink } from "./EditorialLink";
 import { KEY_VISUAL_MEDIA } from "./media";
-
-function EditorialLink({
-  href,
-  children,
-  className,
-  style,
-}: {
-  href: string;
-  children: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
-}) {
-  const ref = useRef<HTMLAnchorElement>(null);
-  const [inView, setInView] = useState(false);
-
-  useEffect(() => {
-    const node = ref.current;
-    if (!node) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => setInView(entry.isIntersecting),
-      { threshold: 0.6 }
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <Link
-      ref={ref}
-      href={href}
-      className={`${styles.textLink} ${inView ? styles.textLinkInView : ""} ${className ?? ""}`}
-      style={style}
-    >
-      {children}
-    </Link>
-  );
-}
 
 export function ElementalHero({ joinHref, open }: { joinHref: string; open: boolean }) {
   const runwayRef = useRef<HTMLElement>(null);
@@ -88,12 +50,7 @@ export function ElementalHero({ joinHref, open }: { joinHref: string; open: bool
   };
 
   return (
-    <section
-      ref={runwayRef}
-      id="top"
-      className="relative h-[130svh] w-full"
-      style={{ backgroundColor: "#0c0d0c" }}
-    >
+    <section ref={runwayRef} id="top" className="relative h-[130svh] w-full" style={{ backgroundColor: "#0c0d0c" }}>
       <div className="sticky top-0 flex h-[100svh] flex-col justify-between overflow-hidden">
         {/* Full-bleed valley with scroll parallax */}
         <motion.div
@@ -141,95 +98,116 @@ export function ElementalHero({ joinHref, open }: { joinHref: string; open: bool
         {/* Ink title sitting directly on the pale blue sky, rising in parallax on scroll */}
         <motion.div
           style={reduceMotion ? undefined : { y: titleY, opacity: titleOpacity }}
-          className="relative z-10 mx-auto w-full max-w-7xl px-5 pt-[12svh] will-change-transform sm:px-10 sm:pt-[13svh]"
+          className="relative z-10 mx-auto w-full max-w-7xl px-5 pt-[12svh] will-change-transform sm:px-10 sm:pt-[10svh]"
         >
+          {/* Sized by height too, so on short screens the title stays above the smoke. */}
           <h1 style={{ fontFamily: EL_FONT.display, color: EL.ink, lineHeight: 0.92 }}>
-            <span
-              className="block tracking-tight"
-              style={{ fontSize: "clamp(4rem, 13vw, 10.5rem)", fontWeight: 200 }}
-            >
+            <span className="block tracking-tight" style={{ fontSize: "clamp(4rem, min(13vw, 15svh), 9.5rem)", fontWeight: 200 }}>
               {ELEMENTAL.edition}
             </span>
             <span
               className="block italic tracking-tight"
-              style={{ fontSize: "clamp(3.6rem, 11.4vw, 9.2rem)", fontWeight: 300 }}
+              style={{ fontSize: "clamp(3.6rem, min(11.4vw, 13.2svh), 8.4rem)", fontWeight: 300 }}
             >
               Hackathon
             </span>
           </h1>
+        </motion.div>
+
+        {/* The poster's line sits on the dark ground, over the row of facts (as on
+            the poster), not on the sky, where the pixel smoke passes through. */}
+        <div className="relative z-10 w-full">
           <p
-            className="mt-4 max-w-xl"
+            className="mx-auto w-full max-w-7xl px-5 pb-5 sm:px-10 sm:pb-6"
             style={{
               fontFamily: EL_FONT.display,
-              fontSize: "clamp(1.2rem, 2.3vw, 2rem)",
-              fontWeight: 200,
-              color: EL.ink,
+              fontSize: "clamp(1.35rem, 2.6vw, 2.25rem)",
+              fontWeight: 300,
+              color: EL.cream,
             }}
           >
             สิ่งแวดล้อมไม่ควรถูกทิ้งเพราะเงิน
           </p>
-        </motion.div>
 
-        {/* Quiet bottom detail strip: Space Mono [tags], hairlines only, no card */}
-        <div className="relative z-10 w-full border-t border-[#f3efe6]/20 bg-[#0c0d0c]/80">
-          <div className="mx-auto grid max-w-7xl grid-cols-2 md:grid-cols-4">
-            <div className="border-b border-r border-[#f3efe6]/18 px-5 py-4 sm:px-8 sm:py-5 md:border-b-0">
-              <p className="text-[11px] text-[#d6d0c4]" style={{ fontFamily: EL_FONT.mono }}>
-                [วันที่]
-              </p>
-              <p className="mt-1 text-lg text-[#faf8f4] sm:text-2xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
-                {thaiDateLine()}
-              </p>
-              <p className="mt-0.5 text-xs text-[#e0dad0]" style={{ fontFamily: "var(--font-bai-jamjuree), sans-serif" }}>
-                หยุดยาว {ELEMENTAL.days} วัน · {ELEMENTAL.venueTh}
-              </p>
-            </div>
+          {/* Quiet bottom detail strip: Space Mono [tags], hairlines only, no card */}
+          <div className="relative z-10 w-full border-t border-[#f3efe6]/20 bg-[#0c0d0c]/80">
+            <div className="mx-auto grid max-w-7xl grid-cols-2 md:grid-cols-4">
+              <div className="border-b border-r border-[#f3efe6]/18 px-5 py-4 sm:px-8 sm:py-5 md:border-b-0">
+                <p className="text-[11px] text-[#d6d0c4]" style={{ fontFamily: EL_FONT.mono }}>
+                  [วันที่]
+                </p>
+                <p
+                  className="mt-1 text-lg text-[#faf8f4] sm:text-2xl"
+                  style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}
+                >
+                  {thaiDateLine()}
+                </p>
+                <p
+                  className="mt-0.5 text-xs text-[#e0dad0]"
+                  style={{ fontFamily: "var(--font-bai-jamjuree), sans-serif" }}
+                >
+                  หยุดยาว {ELEMENTAL.days} วัน · {ELEMENTAL.venueTh}
+                </p>
+              </div>
 
-            <div className="border-b border-[#f3efe6]/18 px-5 py-4 sm:px-8 sm:py-5 md:border-b-0 md:border-r">
-              <p className="text-[11px] text-[#d6d0c4]" style={{ fontFamily: EL_FONT.mono }}>
-                [รางวัลรวม]
-              </p>
-              <p className="mt-1 text-lg text-[#faf8f4] sm:text-2xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
-                {prizeTotal()} บาท
-              </p>
-              <p className="mt-0.5 text-xs text-[#e0dad0]" style={{ fontFamily: "var(--font-bai-jamjuree), sans-serif" }}>
-                มือใหม่แข่งได้ มีเวิร์กช็อปและพี่เลี้ยง
-              </p>
-            </div>
+              <div className="border-b border-[#f3efe6]/18 px-5 py-4 sm:px-8 sm:py-5 md:border-b-0 md:border-r">
+                <p className="text-[11px] text-[#d6d0c4]" style={{ fontFamily: EL_FONT.mono }}>
+                  [รางวัลรวม]
+                </p>
+                <p
+                  className="mt-1 text-lg text-[#faf8f4] sm:text-2xl"
+                  style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}
+                >
+                  {prizeTotal()} บาท
+                </p>
+                <p
+                  className="mt-0.5 text-xs text-[#e0dad0]"
+                  style={{ fontFamily: "var(--font-bai-jamjuree), sans-serif" }}
+                >
+                  มือใหม่แข่งได้ มีเวิร์กช็อปและพี่เลี้ยง
+                </p>
+              </div>
 
-            <div className="border-r border-[#f3efe6]/18 px-5 py-4 sm:px-8 sm:py-5">
-              <p className="text-[11px] text-[#d6d0c4]" style={{ fontFamily: EL_FONT.mono }}>
-                [ค่าสมัคร]
-              </p>
-              <p className="mt-1 text-lg text-[#faf8f4] sm:text-2xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
-                ฿{ELEMENTAL.groupPriceBaht} / คน
-              </p>
-              <p className="mt-0.5 text-xs text-[#e0dad0]" style={{ fontFamily: "var(--font-bai-jamjuree), sans-serif" }}>
-                มากับเพื่อน · คนเดียว ฿{ELEMENTAL.priceBaht}
-              </p>
-            </div>
+              <div className="border-r border-[#f3efe6]/18 px-5 py-4 sm:px-8 sm:py-5">
+                <p className="text-[11px] text-[#d6d0c4]" style={{ fontFamily: EL_FONT.mono }}>
+                  [ค่าสมัคร]
+                </p>
+                <p
+                  className="mt-1 text-lg text-[#faf8f4] sm:text-2xl"
+                  style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}
+                >
+                  ฿{ELEMENTAL.groupPriceBaht} / คน
+                </p>
+                <p
+                  className="mt-0.5 text-xs text-[#e0dad0]"
+                  style={{ fontFamily: "var(--font-bai-jamjuree), sans-serif" }}
+                >
+                  มากับเพื่อน · คนเดียว ฿{ELEMENTAL.priceBaht}
+                </p>
+              </div>
 
-            <div className="flex flex-col justify-between px-5 py-4 sm:px-8 sm:py-5">
-              <p className="text-[11px] text-[#d6d0c4]" style={{ fontFamily: EL_FONT.mono }}>
-                [ปิดรับสมัคร {formatThaiDate(ELEMENTAL.registrationClosesOn, false)}]
-              </p>
-              <div className="mt-1">
-                {open ? (
-                  <EditorialLink
-                    href={joinHref}
-                    className="text-xl italic sm:text-2xl"
-                    style={{ fontFamily: EL_FONT.display, fontWeight: 300, color: EL.flameCore }}
-                  >
-                    สมัคร →
-                  </EditorialLink>
-                ) : (
-                  <span
-                    className="text-lg text-[#f3efe6]/40"
-                    style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}
-                  >
-                    ปิดรับสมัครแล้ว
-                  </span>
-                )}
+              <div className="flex flex-col justify-between px-5 py-4 sm:px-8 sm:py-5">
+                <p className="text-[11px] text-[#d6d0c4]" style={{ fontFamily: EL_FONT.mono }}>
+                  [ปิดรับสมัคร {formatThaiDate(ELEMENTAL.registrationClosesOn, false)}]
+                </p>
+                <div className="mt-1">
+                  {open ? (
+                    <EditorialLink
+                      href={joinHref}
+                      className="text-xl italic sm:text-2xl"
+                      style={{ fontFamily: EL_FONT.display, fontWeight: 300, color: EL.flameCore }}
+                    >
+                      สมัคร →
+                    </EditorialLink>
+                  ) : (
+                    <span
+                      className="text-lg text-[#f3efe6]/40"
+                      style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}
+                    >
+                      ปิดรับสมัครแล้ว
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>

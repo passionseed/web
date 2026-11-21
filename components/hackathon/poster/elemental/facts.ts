@@ -36,6 +36,12 @@ export const ELEMENTAL = {
   venueTh: "ออนไลน์ทาง Discord",
   /** Largest group on one sign-up. */
   maxGroupSize: 5,
+  /**
+   * Sponsor packages, paid in cash or in goods of the same value (Angpao,
+   * 2026-11-20; company-brain numbers.md). What each one gets is in the
+   * sponsor deck.
+   */
+  sponsorPackagesBaht: [10000, 5000, 1000],
   /** Team size: 2 to 5 (Angpao, 2026-11-20; company-brain numbers.md). */
   teamMin: 2,
   teamMax: 5,
