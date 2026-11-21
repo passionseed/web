@@ -153,6 +153,10 @@ END $$;
 DO $$
 BEGIN
   PERFORM public.elemental_bot_report_add(pg_temp.g_real(), pg_temp.uid(9), 'someone was unkind in voice', 'campfire');
+  -- A staff link writes the registration seat into the audit detail.
+  PERFORM public.elemental_bot_staff_link(pg_temp.g_real(), pg_temp.staff(), pg_temp.uid(60),
+    pg_temp.reg('elemental-2026', 'paid', 1), 1);
+  ASSERT EXISTS (SELECT 1 FROM public.elemental_audit WHERE action = 'staff_link' AND detail ? 'registration_id'), 'staff_link audit';
   PERFORM public.elemental_bot_team_set_channel(pg_temp.g_real(), (SELECT id FROM t WHERE name = 'water1'), pg_temp.chan(20));
   UPDATE public.elemental_lesson_progress SET answer = 'we asked three shop owners';
   PERFORM pg_temp.expect_error($q$SELECT public.elemental_purge_edition('elemental-2026', 'purge elemental-2026')$q$, 'retention_not_reached');
@@ -176,7 +180,9 @@ BEGIN
   ASSERT (SELECT d5 FROM totals_before) = public.elemental_bot_totals('elemental-2026', DATE '2026-12-05'), 'purge changed 5 Dec totals';
   ASSERT (SELECT island FROM totals_before) = (SELECT jsonb_agg(to_jsonb(i) ORDER BY i.slot) FROM public.elemental_island_public('elemental-2026') i),
     'purge changed the public island';
-  ASSERT (SELECT count(*) FROM public.elemental_members WHERE edition = 'elemental-2026') = 8, 'purge should keep member rows (counts)';
+  ASSERT (SELECT count(*) FROM public.elemental_members WHERE edition = 'elemental-2026') = 9, 'purge should keep member rows (counts)';
+  ASSERT NOT EXISTS (SELECT 1 FROM public.elemental_audit WHERE edition = 'elemental-2026' AND (detail ? 'registration_id' OR detail ? 'position')),
+    'registration seats left in the audit log';
   -- Any value shaped like a Discord id, anywhere in the edition's rows, is gone.
   SELECT string_agg(src, ', ') INTO leftover FROM (
     SELECT 'members' AS src FROM public.elemental_members WHERE edition = 'elemental-2026' AND to_jsonb(elemental_members)::text ~ '"[0-9]{17,20}"'

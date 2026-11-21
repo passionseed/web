@@ -158,6 +158,42 @@ describe("elemental core under concurrency", () => {
     expect(psql(`SELECT count(*) FROM public.elemental_members WHERE claim_id = (SELECT id FROM public.elemental_claims WHERE code = '${code}')`)).toBe("1");
   });
 
+  it("answers already_claimed when one person races two codes", async () => {
+    psql(`DO $$
+      DECLARE reg uuid;
+      BEGIN
+        INSERT INTO public.hackathon_event_registrations (event_slug, status, team_name, member_count, amount_baht, contact_email, contact_phone)
+        VALUES ('elemental-2026', 'paid', 'Twin Group', 2, 0, 'test@example.invalid', '0') RETURNING id INTO reg;
+        INSERT INTO public.hackathon_event_registration_members (registration_id, position, full_name, age, school, parent_name, parent_phone, parent_consent)
+        SELECT reg, k, 'Member', 16, 'Test School', 'Parent', '0', true FROM generate_series(1, 2) AS k;
+      END $$;`);
+    const codes = psql("SELECT code FROM public.elemental_issue_claims('elemental-2026') WHERE team_name = 'Twin Group' ORDER BY position").split("\n");
+    expect(codes).toHaveLength(2);
+    const a = await botClient();
+    const b = await botClient();
+    try {
+      await a.query("BEGIN");
+      await a.query("SELECT public.elemental_bot_claim($1, $2, $3) AS r", [GUILD, codes[0], uid(110)]);
+      // B inserts the same person's member row while A's is uncommitted, so it waits on A.
+      const second = b.query("SELECT public.elemental_bot_claim($1, $2, $3) AS r", [GUILD, codes[1], uid(110)]).then(
+        () => "ok",
+        (error: Error) => error.message,
+      );
+      let waiting = 0;
+      for (let i = 0; i < 50 && !waiting; i++) {
+        waiting = Number(psql("SELECT count(*) FROM pg_locks WHERE locktype = 'transactionid' AND NOT granted"));
+        if (!waiting) await new Promise((resolve) => setTimeout(resolve, 50));
+      }
+      expect(waiting).toBe(1);
+      await a.query("COMMIT");
+      expect(await second).toBe("el:already_claimed");
+      expect(psql(`SELECT used_by IS NULL FROM public.elemental_claims WHERE code = '${codes[1]}'`)).toBe("t");
+    } finally {
+      await a.end();
+      await b.end();
+    }
+  });
+
   it("lets elemental_bot log in, call its functions and read nothing", async () => {
     psql("ALTER ROLE elemental_bot WITH LOGIN PASSWORD 'harness-only-pass'");
     const client = new Client({ connectionString: connectionString("elemental", "elemental_bot", "harness-only-pass") });

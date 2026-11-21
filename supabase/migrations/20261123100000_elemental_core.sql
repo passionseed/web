@@ -1076,7 +1076,9 @@ BEGIN
   UPDATE public.elemental_badges SET awarded_by = NULL WHERE edition = v_edition.key;
   UPDATE public.elemental_posts SET message_id = NULL WHERE edition = v_edition.key;
   DELETE FROM public.elemental_reports WHERE edition = v_edition.key;
-  UPDATE public.elemental_audit SET actor = NULL, target = NULL WHERE edition = v_edition.key;
+  -- staff_link rows also name the registration seat; drop that link too.
+  UPDATE public.elemental_audit SET actor = NULL, target = NULL, detail = detail - 'registration_id' - 'position'
+  WHERE edition = v_edition.key;
   UPDATE public.elemental_editions SET purged_at = now() WHERE key = v_edition.key;
   PERFORM public.elemental__audit(v_edition.key, NULL, 'purge_edition', NULL,
     jsonb_build_object('members', v_members, 'entries', v_entries));
@@ -1281,9 +1283,17 @@ BEGIN
     PERFORM public.elemental__fail('wrong_edition');
   END IF;
 
-  INSERT INTO public.elemental_members (edition, discord_user_id, registration_member_id, claim_id)
-  VALUES (v_edition.key, v_user, v_claim.registration_member_id, v_claim.id)
-  RETURNING * INTO v_member;
+  BEGIN
+    INSERT INTO public.elemental_members (edition, discord_user_id, registration_member_id, claim_id)
+    VALUES (v_edition.key, v_user, v_claim.registration_member_id, v_claim.id)
+    RETURNING * INTO v_member;
+  EXCEPTION WHEN unique_violation THEN
+    -- A concurrent /join with another code, or /el link, got there first.
+    IF EXISTS (SELECT 1 FROM public.elemental_members WHERE edition = v_edition.key AND discord_user_id = v_user) THEN
+      PERFORM public.elemental__fail('already_claimed');
+    END IF;
+    PERFORM public.elemental__fail('code_used');
+  END;
   UPDATE public.elemental_claims SET used_at = now(), used_by = v_user WHERE id = v_claim.id;
   PERFORM public.elemental__audit(v_edition.key, v_user, 'claim', v_user, jsonb_build_object('claim_kind', v_claim.kind));
   RETURN public.elemental__member_json(v_member, v_edition.kind, false);
