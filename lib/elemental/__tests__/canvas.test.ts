@@ -325,6 +325,24 @@ describe("rewriteNote and buildTombstone", () => {
     expect(rewriteNote([rect, text], "again", 6)[1].version).toBe(3);
   });
 
+  it("gives two rewrites of the same copy different nonces, and a retry the same note", () => {
+    const a = rewriteNote(note, "first edit", 5);
+    const b = rewriteNote(note, "second edit", 5);
+    expect(a[0].version).toBe(b[0].version);
+    expect(a[0].versionNonce).not.toBe(b[0].versionNonce);
+    expect(a[1].versionNonce).not.toBe(b[1].versionNonce);
+    expect(rewriteNote(note, "first edit", 5)).toEqual(a);
+  });
+
+  it("wraps a rewrite to the note's current width", () => {
+    const wide: Note = [{ ...note[0], width: 480 }, note[1]];
+    const words = "word ".repeat(12).trim();
+    const [rect, text] = rewriteNote(wide, words, 5);
+    expect(rect.width).toBe(480);
+    expect(text.text).toBe(layoutNoteText(words, 480).text);
+    expect(text.text.split("\n").length).toBeLessThan(layoutNoteText(words).text.split("\n").length);
+  });
+
   it("deletes with a version bump and nothing else changed", () => {
     const gone = buildTombstone(note[0], 9);
     expect(gone.isDeleted).toBe(true);

@@ -28,7 +28,7 @@
  * not pixels. How a note looks is a browser check on the dry-run list.
  */
 import { build } from "esbuild";
-import { readFileSync, realpathSync, writeFileSync, mkdtempSync } from "node:fs";
+import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -292,6 +292,8 @@ async function main() {
   const ex = await loadBundle<Excalidraw>('export { convertToExcalidrawElements, restoreElements } from "@excalidraw/excalidraw";', ROOT, outDir, "excalidraw");
   // fractional-indexing is Excalidraw's own dependency, resolved from its folder (pnpm keeps it there).
   const fi = await loadBundle<FracIndexing>('export { generateKeyBetween } from "fractional-indexing";', excalidrawDir, outDir, "fractional-indexing");
+
+  rmSync(outDir, { recursive: true, force: true });
 
   checkKeyBetween(fi);
   const note = checkRoundTrip(ex);

@@ -148,7 +148,13 @@ function hash31(value: string): number {
 }
 
 const seedFor = (id: string) => hash31(`seed:${id}`);
-const nonceFor = (id: string, version: number) => hash31(`nonce:${id}:${version}`);
+/**
+ * A rewrite salts its nonce with the new text: two rewrites built from the same
+ * copy (an edit racing a resync) then differ in nonce as they differ in text,
+ * so Excalidraw never takes one for the other. A retry of the same write still
+ * builds the same element.
+ */
+const nonceFor = (id: string, version: number, salt = "") => hash31(`nonce:${id}:${version}${salt ? `:${salt}` : ""}`);
 
 // ---------------------------------------------------------------------------
 // Text: an estimate of Excalidraw's wrapping. The browser re-measures bound
@@ -262,7 +268,7 @@ function base(
   type: "rectangle" | "text",
   box: Box,
   colors: { stroke: string; background: string },
-  rest: { frameId: string; index: string; version: number; updated: number; strokeWidth: number; roughness: number },
+  rest: { frameId: string; index: string; version: number; updated: number; strokeWidth: number; roughness: number; salt?: string },
 ): BaseElement {
   return {
     id,
@@ -285,7 +291,7 @@ function base(
     roundness: null,
     seed: seedFor(id),
     version: rest.version,
-    versionNonce: nonceFor(id, rest.version),
+    versionNonce: nonceFor(id, rest.version, rest.salt),
     isDeleted: false,
     boundElements: [],
     updated: rest.updated,
@@ -294,7 +300,16 @@ function base(
   };
 }
 
-function textElement(rect: NoteRectangle, layout: Layout, original: string, index: string, version: number, updated: number, ownerIds: { createdBy: string; updatedBy: string }): NoteText {
+function textElement(
+  rect: NoteRectangle,
+  layout: Layout,
+  original: string,
+  index: string,
+  version: number,
+  updated: number,
+  ownerIds: { createdBy: string; updatedBy: string },
+  salt?: string,
+): NoteText {
   const id = rect.boundElements[0].id;
   return {
     ...base(
@@ -302,7 +317,7 @@ function textElement(rect: NoteRectangle, layout: Layout, original: string, inde
       "text",
       { x: rect.x + BOUND_TEXT_PADDING, y: rect.y + BOUND_TEXT_PADDING, width: layout.textWidth, height: layout.textHeight },
       { stroke: NOTE_TEXT_COLOR, background: "transparent" },
-      { frameId: rect.frameId!, index, version, updated, strokeWidth: 2, roughness: 1 },
+      { frameId: rect.frameId!, index, version, updated, strokeWidth: 2, roughness: 1, salt },
     ),
     type: "text",
     text: layout.text,
@@ -366,17 +381,18 @@ export function buildNote(input: BuildNoteInput): Note {
 export function rewriteNote(prev: Note, text: string, now = Date.now()): Note {
   const [oldRect, oldText] = prev;
   const original = normalizeNoteText(text);
-  const layout = layoutNoteText(original);
+  // Wrap to the note as it stands now (students may have widened it).
+  const layout = layoutNoteText(original, Math.max(oldRect.width, 2 * BOUND_TEXT_PADDING + 40));
   const version = oldRect.version + 1;
   const rect: NoteRectangle = {
     ...oldRect,
     height: layout.rectHeight,
     version,
-    versionNonce: nonceFor(oldRect.id, version),
+    versionNonce: nonceFor(oldRect.id, version, original),
     isDeleted: false,
     updated: now,
   };
-  return [rect, textElement(rect, layout, original, oldText.index, oldText.version + 1, now, { ...oldText.customData })];
+  return [rect, textElement(rect, layout, original, oldText.index, oldText.version + 1, now, { ...oldText.customData }, original)];
 }
 
 /** A deleted copy of a note's element, one version higher, so the merge removes it everywhere. Apply to both elements of a note. */
