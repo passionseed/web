@@ -23,7 +23,7 @@ Where facts live:
 
 `main` is protected and every merge to it deploys to production on Vercel.
 
-1. **Never push to `main`.** Create a branch (`fix/...`, `feat/...`, `docs/...`) and open a pull request.
+1. **Never push to `main`.** Work on a branch and reach `main` through a pull request. For project work, use a shared project branch (below).
    Write its description for a person reading on a phone, in the order of
    [`.github/pull_request_template.md`](.github/pull_request_template.md): a one-sentence **TL;DR**,
    before → after, a **Preview** with the preview link and a direct link to each changed page,
@@ -33,6 +33,30 @@ Where facts live:
 3. **Check the Vercel preview** linked on the pull request for any UI change.
 4. **Squash-merge.** The branch is deleted automatically after merging.
 5. **Admin bypass is for emergencies only** (production down). Open a follow-up pull request explaining the bypass.
+
+### Shared project branches
+
+Several people and agents often work on one project at once. Each project
+gets one shared branch, and review happens once, when the project is done.
+
+1. **Project branch:** `proj/<name>`, cut from the latest `origin/main` and
+   pushed right away. Everyone on the project works off it. List live ones
+   with `git branch -r --list 'origin/proj/*'`.
+2. **Your work:** your own worktree and branch off the project branch
+   (`git worktree add ../web-<topic> -b <topic> origin/proj/<name>`). Commit
+   small and often.
+3. **Share fast, no PR:** when a piece works and `pnpm lint && pnpm test &&
+   pnpm build` passes, merge it into `proj/<name>` with `git merge --no-ff`
+   and push. Pull `proj/<name>` into your branch often so conflicts stay
+   small. Never force-push a project branch. Vercel builds a preview for
+   every push.
+4. **One PR when done:** merge the latest `origin/main` into `proj/<name>`,
+   run the checks, then open one pull request from `proj/<name>` to `main`.
+   Say what's in it and link the preview pages that changed. Merging still
+   needs a person to say so.
+
+Production fixes and anything urgent skip this: branch off `main` and open a
+pull request right away.
 
 CI builds with placeholder Supabase env vars, so the build must never depend on
 reaching a real service at build or prerender time.
