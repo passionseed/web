@@ -1,0 +1,104 @@
+-- Shared fixtures for the Elemental core SQL tests (\ir helpers.psql).
+-- Every id here is made up: guilds 80000000000000000x, people 9000000000000000nn,
+-- channels 70000000000000nnnn. No real names, contacts, Discord ids or schools.
+
+-- People and guilds.
+CREATE FUNCTION pg_temp.uid(n integer) RETURNS text LANGUAGE sql IMMUTABLE AS $$
+  SELECT (900000000000000000 + n)::text;
+$$;
+CREATE FUNCTION pg_temp.chan(n integer) RETURNS text LANGUAGE sql IMMUTABLE AS $$
+  SELECT (700000000000000000 + n)::text;
+$$;
+CREATE FUNCTION pg_temp.g_real() RETURNS text LANGUAGE sql IMMUTABLE AS $$ SELECT '800000000000000001' $$;
+CREATE FUNCTION pg_temp.g_dry() RETURNS text LANGUAGE sql IMMUTABLE AS $$ SELECT '800000000000000002' $$;
+CREATE FUNCTION pg_temp.staff() RETURNS text LANGUAGE sql IMMUTABLE AS $$ SELECT '900000000000009999' $$;
+
+-- Both guilds, team creation open since an hour ago.
+CREATE FUNCTION pg_temp.setup() RETURNS void LANGUAGE sql AS $$
+  INSERT INTO public.elemental_settings (guild_id, edition, team_create_opens_at)
+  VALUES (pg_temp.g_real(), 'elemental-2026', now() - interval '1 hour'),
+         (pg_temp.g_dry(), 'elemental-dryrun', now() - interval '1 hour');
+$$;
+
+-- A registration with n member rows (positions 1..n), made-up data, under-20 consent filled.
+CREATE FUNCTION pg_temp.reg(p_slug text, p_status text, n integer, p_matching boolean DEFAULT false)
+RETURNS uuid LANGUAGE plpgsql AS $$
+DECLARE
+  v uuid;
+BEGIN
+  INSERT INTO public.hackathon_event_registrations
+    (event_slug, status, team_name, member_count, amount_baht, contact_email, contact_phone, wants_team_matching)
+  VALUES (p_slug, p_status, 'Test Group', greatest(n, 1), 0, 'test@example.invalid', '0', p_matching)
+  RETURNING id INTO v;
+  INSERT INTO public.hackathon_event_registration_members
+    (registration_id, position, full_name, age, school, parent_name, parent_phone, parent_consent)
+  SELECT v, k, 'Member ' || k, 16, 'Test School', 'Parent', '0', true FROM generate_series(1, n) AS k;
+  RETURN v;
+END;
+$$;
+
+CREATE FUNCTION pg_temp.member_row(p_reg uuid, p_pos integer) RETURNS uuid LANGUAGE sql AS $$
+  SELECT id FROM public.hackathon_event_registration_members WHERE registration_id = p_reg AND position = p_pos;
+$$;
+
+-- Person n claims a fresh paid seat in the real guild (or a rehearsal code in the dry-run guild).
+CREATE FUNCTION pg_temp.claimed(n integer, p_guild text DEFAULT NULL, p_matching boolean DEFAULT false)
+RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE
+  v_guild text := coalesce(p_guild, pg_temp.g_real());
+  v_code text;
+BEGIN
+  IF v_guild = pg_temp.g_dry() THEN
+    SELECT code INTO v_code FROM public.elemental_issue_rehearsal_claims('elemental-dryrun', 1);
+  ELSE
+    v_code := (public.elemental__insert_claim('elemental-2026', 'member',
+      pg_temp.member_row(pg_temp.reg('elemental-2026', 'paid', 1, p_matching), 1))).code;
+  END IF;
+  RETURN public.elemental_bot_claim(v_guild, v_code, pg_temp.uid(n));
+END;
+$$;
+
+-- A live team made by staff from people a..b (claimed first), in the real guild.
+CREATE FUNCTION pg_temp.team(p_name text, p_element text, a integer, b integer, p_slots integer[] DEFAULT NULL, p_guild text DEFAULT NULL)
+RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE
+  v_guild text := coalesce(p_guild, pg_temp.g_real());
+  k integer;
+BEGIN
+  FOR k IN a .. b LOOP
+    IF public.elemental_bot_member_get(v_guild, pg_temp.uid(k)) IS NULL THEN
+      PERFORM pg_temp.claimed(k, v_guild);
+    END IF;
+  END LOOP;
+  RETURN public.elemental_bot_team_create_staff(v_guild, pg_temp.staff(), p_name, p_element,
+    ARRAY(SELECT pg_temp.uid(g.n) FROM generate_series(a, b) AS g(n)), p_slots);
+END;
+$$;
+
+-- Asserts that the SQL raises 'el:<code>' (or exactly p_code when it has no 'el:').
+CREATE FUNCTION pg_temp.expect_error(p_sql text, p_code text) RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
+  BEGIN
+    EXECUTE p_sql;
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM = 'el:' || p_code OR SQLERRM = p_code OR SQLSTATE = p_code THEN
+      RETURN;
+    END IF;
+    RAISE EXCEPTION 'expected % from [%], got [%] (%)', p_code, p_sql, SQLERRM, SQLSTATE;
+  END;
+  RAISE EXCEPTION 'expected % from [%], but it succeeded', p_code, p_sql;
+END;
+$$;
+
+-- The DETAIL of the error the SQL raises (NULL if it succeeds).
+CREATE FUNCTION pg_temp.error_detail(p_sql text) RETURNS text LANGUAGE plpgsql AS $$
+DECLARE
+  v text;
+BEGIN
+  EXECUTE p_sql;
+  RETURN NULL;
+EXCEPTION WHEN OTHERS THEN
+  GET STACKED DIAGNOSTICS v = PG_EXCEPTION_DETAIL;
+  RETURN v;
+END;
+$$;
