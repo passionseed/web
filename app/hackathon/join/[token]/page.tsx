@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { DiscordClaim } from "@/components/hackathon/elemental/DiscordClaim";
 import { trirong } from "@/components/hackathon/elemental/fonts";
 import { PaidBadge, PayWithSlip } from "@/components/hackathon/elemental/PayWithSlip";
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
 import { SHIFT_PAYMENT } from "@/lib/content/shift-cohort";
+import { getMemberClaimCodes } from "@/lib/supabase/elemental-claims";
 import { getRegistrationByToken } from "@/lib/supabase/hackathon-event-registrations";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +27,8 @@ export default async function ElementalPayPage({ params }: { params: Promise<{ t
   if (!reg) notFound();
 
   const who = reg.teamName ?? reg.memberNicknames.join(", ");
+  // Each member's /join code, read only once the seat is paid (E26).
+  const claimCodes = reg.status === "paid" ? await getMemberClaimCodes(reg.id) : null;
 
   return (
     <main className={`${trirong.variable} min-h-screen px-4 py-10 sm:px-8 sm:py-16`} style={{ backgroundColor: EL.cream, color: EL.ink }}>
@@ -45,6 +49,7 @@ export default async function ElementalPayPage({ params }: { params: Promise<{ t
             <p style={{ color: EL.inkSoft }}>
               งานจัด{ELEMENTAL.venueTh} ทีมงานจะส่งลิงก์เข้า Discord ทางอีเมลและเบอร์โทรที่ให้ไว้ ก่อนวันงาน มีคำถามทักไลน์ {SHIFT_PAYMENT.lineId}
             </p>
+            <DiscordClaim memberNames={reg.memberNicknames} codes={claimCodes} />
             <Link href="/hackathon" className="inline-block text-sm underline underline-offset-4" style={{ color: EL.inkSoft }}>
               กลับหน้า {ELEMENTAL.edition} Hackathon
             </Link>
