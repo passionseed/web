@@ -4,10 +4,26 @@
 #
 #   bot/deploy.sh <ssh-host>              # deploy HEAD
 #   bot/deploy.sh <ssh-host> --rollback   # run the previous image again
+#   bot/deploy.sh --print-plan            # print the container, folder, env file
+#                                         # and cron line; no SSH, no host needed
+#
+# Which container: one host can run several bot containers, each with its own
+# folder, bot.env and watchdog. Three local variables pick one; unset, they are
+# today's container exactly:
+#   BOT_NAME      container and image name   (default passionseed-discord-bot)
+#   BOT_APP_DIR   folder on the host, relative to the host's home unless it
+#                 starts with /   (default passionseed/<BOT_NAME without its
+#                 "passionseed-" prefix>, so passionseed/discord-bot)
+#   BOT_ENV_FILE  env file, relative to BOT_APP_DIR unless it starts with /
+#                 (default bot.env)
+# e.g. BOT_NAME=passionseed-discord-bot-elemental bot/deploy.sh --print-plan
+# Any target other than the default (another name, folder or env file) asks
+# you to type the container name again here, before any SSH (deploy and
+# --rollback alike).
 #
 # A deploy, in order; each step stops it on failure:
 #   1. Stage only what the bot imports (bot/, two lib files, the living-island
-#      drawing code in lib/shift-island/live, tsconfig.json)
+#      drawing code in lib/shift-island/live, lib/elemental, tsconfig.json)
 #      plus a package.json pinned to the versions installed here (DEPS).
 #   2. Build the image on the host, tagged with the revision only.
 #   3. Smoke check: run the new image once with --network none and bot.env
@@ -19,33 +35,118 @@
 #      to report it healthy. If it is not, stop it and start the previous
 #      image again.
 #   5. Healthy: tag it latest, tag the image it replaced previous (what
-#      --rollback runs), install bot/watchdog.py in the host's crontab and
-#      remove older images.
+#      --rollback runs), install bot/watchdog.py in the host's crontab (one
+#      line per container folder, with --name and --app) and remove older
+#      images.
 #
-# Secrets stay on the host in ~/passionseed/discord-bot/bot.env and
-# alert-webhook (bot/README.md, "Deploying"); this script never reads or
-# sends them. Only the container and the smoke check see bot.env.
+# Secrets stay on the host in the container's folder (by default
+# ~/passionseed/discord-bot/bot.env and alert-webhook; bot/README.md,
+# "Deploying"); this script never reads or sends them. Only the container and
+# the smoke check see bot.env.
 set -euo pipefail
 
 usage() {
-  echo "usage: bot/deploy.sh <ssh-host> [--rollback]" >&2
+  echo "usage: bot/deploy.sh <ssh-host> [--rollback] | bot/deploy.sh --print-plan" >&2
   exit 2
 }
-HOST="${1:-}"
-[ -n "$HOST" ] || usage
+# --print-plan is read before the host, so it works with no host at all.
+HOST=""
 MODE=deploy
-case "${2:-}" in
-  "") ;;
-  --rollback) MODE=rollback ;;
-  *) usage ;;
-esac
+for arg in "$@"; do
+  case "$arg" in
+    --print-plan) MODE=plan ;;
+    --rollback) [ "$MODE" = plan ] || MODE=rollback ;;
+    -*) usage ;;
+    *)
+      [ -z "$HOST" ] || usage
+      HOST="$arg"
+      ;;
+  esac
+done
+[ "$MODE" = plan ] || [ -n "$HOST" ] || usage
 
-# Everything the remote steps share. Sent as the head of every remote script.
-read -r -d '' REMOTE_COMMON <<'COMMON' || true
+# Which container. Defaults are today's container, byte for byte.
+DEFAULT_NAME=passionseed-discord-bot
+NAME="${BOT_NAME:-$DEFAULT_NAME}"
+APP_DIR="${BOT_APP_DIR:-passionseed/${NAME#passionseed-}}"
+ENV_REL="${BOT_ENV_FILE:-bot.env}"
+# NAME is both the container name and the image repository, so it follows
+# Docker's stricter image rule (lowercase, separators between letters/digits).
+# Paths use plain characters with no . or .. parts, so the values are safe in
+# the remote script, the cron line and docker commands alike, and one folder
+# has one spelling (the shared-folder check and the cron dedupe compare text).
+if ! [[ "$NAME" =~ ^[a-z0-9]+((\.|_|__|-+)[a-z0-9]+)*$ ]]; then
+  echo "BOT_NAME '$NAME' is not a valid image and container name (lowercase letters, digits, single . _ or - between them)." >&2
+  exit 2
+fi
+for path in "$APP_DIR" "$ENV_REL"; do
+  if ! [[ "$path" =~ ^/?[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)*$ ]] || [[ "/$path/" == */../* ]] || [[ "/$path/" == */./* ]]; then
+    echo "'$path' is not a plain path (letters, digits, _ . - and /, no . or .. parts)." >&2
+    exit 2
+  fi
+done
+
+# Two containers must never share a folder: its watchdog state, webhook and
+# cron line belong to one container.
+if [ "$NAME" != "$DEFAULT_NAME" ] && [ "${APP_DIR%/}" = "passionseed/discord-bot" ]; then
+  echo "passionseed/discord-bot is $DEFAULT_NAME's folder. Give $NAME its own BOT_APP_DIR." >&2
+  exit 2
+fi
+
+# Shell lines that set APP, ENV_FILE and NAME on the host. A relative folder
+# stays relative to the host's $HOME, which only the host knows.
+case "$APP_DIR" in
+  /*) APP_LINE="APP=$(printf %q "$APP_DIR")" ; APP_SHOWN="$APP_DIR" ;;
+  *) APP_LINE="APP=\"\$HOME\"/$(printf %q "$APP_DIR")" ; APP_SHOWN="~/$APP_DIR" ;;
+esac
+case "$ENV_REL" in
+  /*) ENV_LINE="ENV_FILE=$(printf %q "$ENV_REL")" ; ENV_SHOWN="$ENV_REL" ;;
+  *) ENV_LINE="ENV_FILE=\"\$APP\"/$(printf %q "$ENV_REL")" ; ENV_SHOWN="$APP_SHOWN/$ENV_REL" ;;
+esac
+NAME_LINE="NAME=$(printf %q "$NAME")"
+# How to run this script again for the same container (the rollback hint):
+# empty for today's container in its own folder.
+RERUN=""
+[ "$NAME" = "$DEFAULT_NAME" ] || RERUN+="BOT_NAME=$(printf %q "$NAME") "
+[ "$APP_DIR" = "passionseed/${NAME#passionseed-}" ] || RERUN+="BOT_APP_DIR=$(printf %q "$APP_DIR") "
+[ "$ENV_REL" = bot.env ] || RERUN+="BOT_ENV_FILE=$(printf %q "$ENV_REL") "
+REMOTE_VARS="$(printf '%s\n' "$APP_LINE" "$ENV_LINE" "$NAME_LINE" "RERUN=$(printf %q "$RERUN")")"
+
+# The watchdog's cron line on the host. One line per container folder: the
+# deploy adds it when no line names $APP/watchdog.py yet.
+cron_line() {
+  local app="$1"
+  echo "*/5 * * * * python3 $app/watchdog.py --name $NAME --app $app >> $app/watchdog.log 2>&1"
+}
+
+if [ "$MODE" = plan ]; then
+  echo "container: $NAME"
+  echo "app dir:   $APP_SHOWN"
+  echo "env file:  $ENV_SHOWN"
+  echo "webhook:   $APP_SHOWN/alert-webhook"
+  echo "cron line: $(cron_line "$APP_SHOWN")"
+  echo "(~ is the host's home. Nothing was sent: this plan makes no SSH call.)"
+  exit 0
+fi
+
+# The remote runs over ssh with no terminal, so a non-default container (or
+# today's container in another folder) is confirmed here, before any SSH call.
+if [ -n "$RERUN" ]; then
+  echo "This is not the default target ($DEFAULT_NAME in ~/passionseed/discord-bot)." >&2
+  echo "It targets container $NAME, folder $APP_SHOWN, env file $ENV_SHOWN on $HOST ($MODE)." >&2
+  printf 'Type the container name to continue: ' >&2
+  CONFIRM=""
+  read -r CONFIRM || true
+  if [ "$CONFIRM" != "$NAME" ]; then
+    echo "Not confirmed; nothing was sent to $HOST." >&2
+    exit 1
+  fi
+fi
+
+# Everything the remote steps share. Sent as the head of every remote script,
+# after REMOTE_VARS (APP, ENV_FILE, NAME and RERUN, set above).
+read -r -d '' REMOTE_COMMON_BODY <<'COMMON' || true
 set -euo pipefail
-APP="$HOME/passionseed/discord-bot"
-ENV_FILE="$APP/bot.env"
-NAME=passionseed-discord-bot
 REVISION_LABEL=org.opencontainers.image.revision
 
 if [ ! -f "$ENV_FILE" ]; then
@@ -109,6 +210,7 @@ show_logs() {
   docker logs --tail 30 "$NAME" 2>&1 | sed 's/^/  /' >&2 || true
 }
 COMMON
+REMOTE_COMMON="$(printf '%s\n%s' "$REMOTE_VARS" "$REMOTE_COMMON_BODY")"
 
 if [ "$MODE" = rollback ]; then
   read -r -d '' REMOTE_ROLLBACK <<'ROLLBACK' || true
@@ -143,7 +245,8 @@ cd "$ROOT"
 DEPS=(discord.js @discordjs/voice @supabase/supabase-js pg tsx gifenc)
 # lib/shift-island/live: the web's living-island drawing code, which draws the bot's moving island GIF.
 # components/shift/island/story/scenes.ts: the story's scenes, shared with the web story (bot/src/quests/story.ts).
-FILES=(bot lib/content/shift-cohort.ts lib/content/shift-island-economy.ts lib/supabase/shift-quests/board.ts lib/supabase/shift-quests/types.ts lib/shift/voiceWindow.ts lib/shift-island/live lib/shift-island/rounds-rules.ts lib/shift-island/tree-style.ts lib/shift-island/tree-copy.ts lib/shift-island/tree-closeup.ts components/shift/island/story/scenes.ts tsconfig.json)
+# lib/elemental: the Elemental hackathon module's pure core (bot/src/elemental).
+FILES=(bot lib/content/shift-cohort.ts lib/content/shift-island-economy.ts lib/supabase/shift-quests/board.ts lib/supabase/shift-quests/types.ts lib/shift/voiceWindow.ts lib/shift-island/live lib/shift-island/rounds-rules.ts lib/shift-island/tree-style.ts lib/shift-island/tree-copy.ts lib/shift-island/tree-closeup.ts components/shift/island/story/scenes.ts lib/elemental tsconfig.json)
 
 read -r -d '' REMOTE_DEPLOY <<'DEPLOY' || true
 ARCHIVE="$1"
@@ -217,8 +320,9 @@ if [ -n "$OLD_ID" ] && [ "$OLD_ID" != "$(docker image inspect -f '{{.Id}}' "$IMA
 fi
 
 # The watchdog alerts staff when the container stops or turns unhealthy.
+# One cron line per container folder, naming its container and folder.
 install -m 755 "$CONTEXT/bot/watchdog.py" "$APP/watchdog.py"
-CRON_LINE="*/5 * * * * python3 $APP/watchdog.py >> $APP/watchdog.log 2>&1"
+CRON_LINE="*/5 * * * * python3 $APP/watchdog.py --name $NAME --app $APP >> $APP/watchdog.log 2>&1"
 if ! crontab -l 2>/dev/null | grep -qF "$APP/watchdog.py"; then
   # No crontab yet makes crontab -l fail, which must not end the deploy.
   { crontab -l 2>/dev/null || true; echo "$CRON_LINE"; } | crontab -
@@ -235,9 +339,15 @@ PREVIOUS="none"
 docker image inspect "$NAME:previous" >/dev/null 2>&1 && PREVIOUS="$(revision_of "$NAME:previous")"
 STATE=healthy
 [ "$HEALTH" = file ] || STATE="up for a minute (its modules write no health file)"
-echo "Running $REV, $STATE. Previous: $PREVIOUS (bot/deploy.sh <ssh-host> --rollback). Logs: docker logs -f $NAME"
+echo "Running $REV, $STATE. Previous: $PREVIOUS (${RERUN}bot/deploy.sh <ssh-host> --rollback). Logs: docker logs -f $NAME"
 DEPLOY
 
+for path in "${FILES[@]}"; do
+  if ! git cat-file -e "HEAD:$path" 2>/dev/null; then
+    echo "$path is not in HEAD, but the image needs it (FILES). Commit it or check out a branch that has it." >&2
+    exit 1
+  fi
+done
 if [ -n "$(git status --porcelain -- "${FILES[@]}")" ]; then
   echo "Uncommitted changes in the bot's files. Commit first: the deploy ships HEAD." >&2
   exit 1
