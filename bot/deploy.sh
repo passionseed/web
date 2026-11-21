@@ -17,7 +17,9 @@
 #   BOT_ENV_FILE  env file, relative to BOT_APP_DIR unless it starts with /
 #                 (default bot.env)
 # e.g. BOT_NAME=passionseed-discord-bot-elemental bot/deploy.sh --print-plan
-# A name other than the default asks you to type it again here, before any SSH.
+# Any target other than the default (another name, folder or env file) asks
+# you to type the container name again here, before any SSH (deploy and
+# --rollback alike).
 #
 # A deploy, in order; each step stops it on failure:
 #   1. Stage only what the bot imports (bot/, two lib files, the living-island
@@ -68,15 +70,18 @@ DEFAULT_NAME=passionseed-discord-bot
 NAME="${BOT_NAME:-$DEFAULT_NAME}"
 APP_DIR="${BOT_APP_DIR:-passionseed/${NAME#passionseed-}}"
 ENV_REL="${BOT_ENV_FILE:-bot.env}"
-# Docker's container name rule, and plain path characters, so the values are
-# safe in the remote script, the cron line and docker commands alike.
-if ! [[ "$NAME" =~ ^[A-Za-z0-9][A-Za-z0-9_.-]*$ ]]; then
-  echo "BOT_NAME '$NAME' is not a valid container name (letters, digits, _ . -)." >&2
+# NAME is both the container name and the image repository, so it follows
+# Docker's stricter image rule (lowercase, separators between letters/digits).
+# Paths use plain characters with no . or .. parts, so the values are safe in
+# the remote script, the cron line and docker commands alike, and one folder
+# has one spelling (the shared-folder check and the cron dedupe compare text).
+if ! [[ "$NAME" =~ ^[a-z0-9]+((\.|_|__|-+)[a-z0-9]+)*$ ]]; then
+  echo "BOT_NAME '$NAME' is not a valid image and container name (lowercase letters, digits, single . _ or - between them)." >&2
   exit 2
 fi
 for path in "$APP_DIR" "$ENV_REL"; do
-  if ! [[ "$path" =~ ^/?[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)*$ ]] || [[ "/$path/" == */../* ]]; then
-    echo "'$path' is not a plain path (letters, digits, _ . - and /, no ..)." >&2
+  if ! [[ "$path" =~ ^/?[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)*$ ]] || [[ "/$path/" == */../* ]] || [[ "/$path/" == */./* ]]; then
+    echo "'$path' is not a plain path (letters, digits, _ . - and /, no . or .. parts)." >&2
     exit 2
   fi
 done

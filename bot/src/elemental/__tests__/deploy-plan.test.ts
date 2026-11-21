@@ -120,6 +120,15 @@ describe("bot/deploy.sh --print-plan", () => {
     expect(deploy(["--print-plan"], { BOT_APP_DIR: "../x" }).code).toBe(2);
     expect(deploy(["--print-plan"], { BOT_APP_DIR: "a/$(id)" }).code).toBe(2);
     expect(deploy(["--print-plan"], { BOT_NAME: ELEMENTAL, BOT_APP_DIR: "passionseed/discord-bot" }).code).toBe(2);
+    // Image repositories are lowercase, so a name docker build would reject is refused up front.
+    expect(deploy(["--print-plan"], { BOT_NAME: "passionseed-discord-bot-Elemental" }).code).toBe(2);
+    expect(deploy(["--print-plan"], { BOT_NAME: "bot..x" }).code).toBe(2);
+    // A . part would spell the shared folder another way and slip past the check above.
+    expect(deploy(["--print-plan"], { BOT_NAME: ELEMENTAL, BOT_APP_DIR: "passionseed/./discord-bot" }).code).toBe(2);
+    expect(deploy(["--print-plan"], { BOT_NAME: ELEMENTAL, BOT_APP_DIR: "./passionseed/discord-bot" }).code).toBe(2);
+    expect(deploy(["--print-plan"], { BOT_ENV_FILE: "./bot.env" }).code).toBe(2);
+    // Ordinary names still pass.
+    expect(deploy(["--print-plan"], { BOT_NAME: "passionseed-discord-bot.v2_x" }).code).toBe(0);
   });
 
   test("with no host and no --print-plan it prints usage", () => {
