@@ -1,0 +1,143 @@
+-- Shared fixtures for the Elemental tester and canvas SQL tests (\ir helpers.psql).
+-- Builds on the core fixtures (made-up guilds, people 9000000000000000nn,
+-- channels 70000000000000nnnn). Site accounts are made-up UUIDs 00000000-0000-4000-8000-0000000000xx.
+-- No real names, contacts, Discord ids or schools.
+\ir ../core/helpers.psql
+
+-- Site accounts: the board owner (staff), and students with a Discord identity.
+CREATE FUNCTION pg_temp.acct(p text) RETURNS uuid LANGUAGE sql IMMUTABLE AS $$
+  SELECT ('00000000-0000-4000-8000-0000000000' || p)::uuid;
+$$;
+CREATE FUNCTION pg_temp.owner() RETURNS uuid LANGUAGE sql IMMUTABLE AS $$ SELECT pg_temp.acct('a0') $$;
+CREATE FUNCTION pg_temp.board(p text) RETURNS uuid LANGUAGE sql IMMUTABLE AS $$ SELECT pg_temp.acct(p) $$;
+
+-- A frame (project canvas when p_project is set), at a fixed place.
+CREATE FUNCTION pg_temp.frame(p_id text, p_index text, p_project text, p_owner uuid, p_editors uuid[] DEFAULT '{}', p_deleted boolean DEFAULT false)
+RETURNS jsonb LANGUAGE sql IMMUTABLE AS $$
+  SELECT jsonb_build_object(
+    'id', p_id, 'type', 'frame', 'x', 100, 'y', 100, 'width', 2000, 'height', 1500, 'index', p_index,
+    'version', 3, 'versionNonce', 11, 'isDeleted', p_deleted, 'name', 'Canvas', 'frameId', NULL,
+    'updated', floor(extract(epoch FROM now()) * 1000)::bigint,
+    'customData', CASE WHEN p_project IS NULL THEN jsonb_build_object('createdBy', p_owner::text)
+      ELSE jsonb_build_object('project', p_project, 'owner', p_owner::text, 'createdBy', p_owner::text,
+                              'editors', to_jsonb(ARRAY(SELECT e::text FROM unnest(p_editors) AS e))) END);
+$$;
+
+-- A canvas zone (tinted rectangle) and its label, inside a frame.
+CREATE FUNCTION pg_temp.zone(p_id text, p_frame text, p_kind text, p_index text)
+RETURNS jsonb LANGUAGE sql IMMUTABLE AS $$
+  SELECT jsonb_build_array(
+    jsonb_build_object('id', p_id, 'type', 'rectangle', 'x', 124, 'y', 300, 'width', 1200, 'height', 400,
+      'index', p_index, 'version', 2, 'versionNonce', 5, 'isDeleted', false, 'frameId', p_frame, 'locked', true,
+      'customData', jsonb_build_object('zone', p_kind)),
+    jsonb_build_object('id', p_id || '-label', 'type', 'text', 'x', 148, 'y', 320, 'width', 300, 'height', 60,
+      'index', p_index || 'V', 'version', 2, 'versionNonce', 6, 'isDeleted', false, 'frameId', p_frame, 'locked', true,
+      'text', 'Test', 'customData', jsonb_build_object('zoneLabel', p_kind)));
+$$;
+
+/**
+ * A note as lib/elemental/canvas buildNote makes it: [rectangle, bound text],
+ * ids 'el-<entry>-r' and '-t'. The rectangle sits in the zone's first slot.
+ */
+CREATE FUNCTION pg_temp.note(
+  p_entry uuid, p_frame text, p_rindex text, p_tindex text, p_version integer, p_text text,
+  p_kind text DEFAULT 'test', p_source text DEFAULT 'tester', p_owner text DEFAULT 'someone-else')
+RETURNS jsonb LANGUAGE sql IMMUTABLE AS $$
+  SELECT jsonb_build_array(
+    jsonb_build_object(
+      'id', 'el-' || p_entry || '-r', 'type', 'rectangle', 'x', 148, 'y', 396, 'width', 240, 'height', 200, 'angle', 0,
+      'strokeColor', '#a8d8ff', 'backgroundColor', '#a8d8ff', 'fillStyle', 'solid', 'strokeWidth', 1,
+      'strokeStyle', 'solid', 'roughness', 0, 'opacity', 100, 'groupIds', '[]'::jsonb, 'frameId', p_frame,
+      'index', p_rindex, 'roundness', jsonb_build_object('type', 3, 'value', 10), 'seed', 101, 'version', p_version,
+      'versionNonce', 200 + p_version, 'isDeleted', false,
+      'boundElements', jsonb_build_array(jsonb_build_object('id', 'el-' || p_entry || '-t', 'type', 'text')),
+      'updated', floor(extract(epoch FROM now()) * 1000)::bigint, 'link', NULL, 'locked', false,
+      'customData', jsonb_build_object('card', p_kind, 'source', p_source, 'createdBy', p_owner, 'updatedBy', p_owner)),
+    jsonb_build_object(
+      'id', 'el-' || p_entry || '-t', 'type', 'text', 'x', 153, 'y', 401, 'width', 200, 'height', 24.3, 'angle', 0,
+      'strokeColor', '#1e1e1e', 'backgroundColor', 'transparent', 'fillStyle', 'solid', 'strokeWidth', 2,
+      'strokeStyle', 'solid', 'roughness', 1, 'opacity', 100, 'groupIds', '[]'::jsonb, 'frameId', p_frame,
+      'index', p_tindex, 'roundness', NULL, 'seed', 102, 'version', p_version, 'versionNonce', 300 + p_version,
+      'isDeleted', false, 'boundElements', '[]'::jsonb,
+      'updated', floor(extract(epoch FROM now()) * 1000)::bigint, 'link', NULL, 'locked', false,
+      'customData', jsonb_build_object('createdBy', p_owner, 'updatedBy', p_owner),
+      'text', p_text, 'fontSize', 18, 'fontFamily', 6, 'textAlign', 'left', 'verticalAlign', 'top',
+      'containerId', 'el-' || p_entry || '-r', 'originalText', p_text, 'autoResize', true, 'lineHeight', 1.35));
+$$;
+
+-- A board element by id.
+CREATE FUNCTION pg_temp.el(p_board uuid, p_id text) RETURNS jsonb LANGUAGE sql AS $$
+  SELECT el FROM public.whiteboards w, jsonb_array_elements(w.elements) el WHERE w.id = p_board AND el ->> 'id' = p_id;
+$$;
+CREATE FUNCTION pg_temp.copies(p_board uuid, p_id text) RETURNS integer LANGUAGE sql AS $$
+  SELECT count(*)::integer FROM public.whiteboards w, jsonb_array_elements(w.elements) el WHERE w.id = p_board AND el ->> 'id' = p_id;
+$$;
+
+/**
+ * The world most tests start from, in the real guild:
+ *   accounts a0 (board owner), a1 (person 1's Discord login), a3 (person 3's), a9 (no team);
+ *   boards f1 (fire), f2 (water), f3 (not an Elemental board), all owned by a0;
+ *   on f1: frame-a (project, owner a1), zone-a-test, frame-plain (no project),
+ *          frame-other (owner a9), frame-b (owner a9, editors a1 and a3),
+ *          frame-c (owner a1), frame-gone (deleted; holds the board's highest index 'a9'),
+ *          and an element with an invalid index;
+ *   on f2: frame-w (owner a1);
+ *   teams (fire): 'Ember Watch' people 1-2 channel 1 (slot 12), 'Spark Line' people 3-4 channel 2,
+ *          'Kiln Notes' people 5-6 channel 3; all active.
+ */
+CREATE FUNCTION pg_temp.world() RETURNS void LANGUAGE plpgsql AS $$
+DECLARE
+  t jsonb;
+  k integer;
+BEGIN
+  PERFORM pg_temp.setup();
+  INSERT INTO auth.users (id) SELECT pg_temp.acct(x) FROM unnest(ARRAY['a0', 'a1', 'a3', 'a9']) AS x;
+  INSERT INTO auth.identities (provider, provider_id, user_id) VALUES
+    ('discord', pg_temp.uid(1), pg_temp.acct('a1')),
+    ('discord', pg_temp.uid(3), pg_temp.acct('a3')),
+    ('discord', pg_temp.uid(50), pg_temp.acct('a9')),
+    -- Same id under another provider: never counts.
+    ('google', pg_temp.uid(5), pg_temp.acct('a9'));
+  INSERT INTO public.whiteboards (id, owner_id, title, elements) VALUES
+    (pg_temp.board('f1'), pg_temp.owner(), 'Fire board',
+      jsonb_build_array(
+        pg_temp.frame('frame-a', 'a0', 'proj-a', pg_temp.acct('a1')),
+        pg_temp.frame('frame-plain', 'a2', NULL, pg_temp.acct('a1')),
+        pg_temp.frame('frame-other', 'a3', 'proj-o', pg_temp.acct('a9')),
+        pg_temp.frame('frame-b', 'a4', 'proj-b', pg_temp.acct('a9'), ARRAY[pg_temp.acct('a1'), pg_temp.acct('a3')]),
+        pg_temp.frame('frame-c', 'a5', 'proj-c', pg_temp.acct('a1')),
+        pg_temp.frame('frame-gone', 'a9', 'proj-g', pg_temp.acct('a1'), '{}', true),
+        jsonb_build_object('id', 'odd', 'type', 'line', 'x', 0, 'y', 0, 'width', 1, 'height', 1, 'index', 'zz0', 'version', 1))
+      || pg_temp.zone('zone-a-test', 'frame-a', 'test', 'a1')
+      || pg_temp.zone('zone-a-ship', 'frame-a', 'ship', 'a6')),
+    (pg_temp.board('f2'), pg_temp.owner(), 'Water board', jsonb_build_array(pg_temp.frame('frame-w', 'a0', 'proj-w', pg_temp.acct('a1')))),
+    (pg_temp.board('f3'), pg_temp.owner(), 'Other board', jsonb_build_array(pg_temp.frame('frame-x', 'a0', 'proj-x', pg_temp.acct('a1'))));
+  -- The ship zone sits lower in the frame than the test zone.
+  UPDATE public.whiteboards SET elements = (
+    SELECT jsonb_agg(CASE WHEN el ->> 'id' = 'zone-a-ship' THEN el || '{"y": 800}'::jsonb
+                          WHEN el ->> 'id' = 'zone-a-ship-label' THEN el || '{"y": 820}'::jsonb ELSE el END)
+    FROM jsonb_array_elements(elements) el) WHERE id = pg_temp.board('f1');
+  INSERT INTO public.elemental_boards (edition, board_id, element) VALUES
+    ('elemental-2026', pg_temp.board('f1'), 'fire'),
+    ('elemental-2026', pg_temp.board('f2'), 'water');
+
+  k := 0;
+  FOREACH t IN ARRAY ARRAY[
+    pg_temp.team('Ember Watch', 'fire', 1, 2, '{12}'),
+    pg_temp.team('Spark Line', 'fire', 3, 4, '{40}'),
+    pg_temp.team('Kiln Notes', 'fire', 5, 6, '{41}')] LOOP
+    k := k + 1;
+    PERFORM public.elemental_bot_team_set_channel(pg_temp.g_real(), (t ->> 'team_id')::uuid, pg_temp.chan(k));
+  END LOOP;
+END;
+$$;
+
+CREATE FUNCTION pg_temp.team_id(p_slot integer) RETURNS uuid LANGUAGE sql AS $$
+  SELECT id FROM public.elemental_teams WHERE edition = 'elemental-2026' AND slot = p_slot;
+$$;
+
+-- /tester by person n in channel c, with only the required fields.
+CREATE FUNCTION pg_temp.tester(n integer, c integer, p_who text DEFAULT 'a parent at the market', p_tried text DEFAULT 'the map on a phone')
+RETURNS jsonb LANGUAGE sql AS $$
+  SELECT public.elemental_bot_tester_add(pg_temp.g_real(), pg_temp.chan(c), pg_temp.uid(n), p_who, p_tried, NULL, NULL);
+$$;
