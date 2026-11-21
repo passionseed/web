@@ -88,6 +88,26 @@ describe("gen-slot-pool", () => {
     }
   });
 
+  it("is checked when loaded: a corrupted pool fails loudly", () => {
+    const good = JSON.parse(readFileSync(DEFAULT_OUT, "utf8"));
+    const corrupt = (edit: (pool: typeof good) => void) => {
+      const pool = JSON.parse(JSON.stringify(good));
+      edit(pool);
+      return () =>
+        jest.isolateModules(() => {
+          jest.doMock("../island/slot-pool.json", () => pool);
+          // eslint-disable-next-line @typescript-eslint/no-require-imports -- a fresh module load inside isolateModules
+          require("../island/sectors");
+        });
+    };
+    expect(corrupt(() => undefined)).not.toThrow();
+    expect(corrupt((p) => (p.preference.fire[199] = 0))).toThrow(/slot-pool.json is invalid/);
+    expect(corrupt((p) => p.preference.fire.reverse())).toThrow(/slot-pool.json is invalid/);
+    expect(corrupt((p) => (p.sectors.water[0] = p.sectors.earth[0]))).toThrow(/slot-pool.json is invalid/);
+    expect(corrupt((p) => (p.order = [...p.order].reverse()))).toThrow(/slot-pool.json is invalid/);
+    jest.dontMock("../island/slot-pool.json");
+  });
+
   it("matches the committed slot-pool.json (rerun the generator if SPOTS changed)", () => {
     expect(readFileSync(DEFAULT_OUT, "utf8")).toBe(renderSlotPool());
     expect(JSON.parse(renderSlotPool())).toEqual(buildSlotPool());

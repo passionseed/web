@@ -55,6 +55,9 @@ function checkPool(raw: typeof pool): SlotPool {
     }
     const prefs = preference[element] ?? fail(`no ${element} preference`);
     if (prefs.length !== ELEMENTAL_SLOTS || new Set(prefs).size !== ELEMENTAL_SLOTS) fail(`${element} preference`);
+    if (prefs.some((slot) => !Number.isInteger(slot) || slot < 1 || slot > ELEMENTAL_SLOTS)) fail(`${element} preference slot`);
+    // A team fills its own sector before it overflows.
+    if (sectors[element].some((slot, k) => prefs[k] !== slot)) fail(`${element} preference does not start with its sector`);
   }
   if (seen.size !== ELEMENTAL_SLOTS) fail("sectors do not cover every slot");
   return raw as unknown as SlotPool;
