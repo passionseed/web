@@ -341,12 +341,12 @@ describe("registration", () => {
     expect(postCalls.map((c) => (c.body as { name: string }).name)).toEqual(["join", "team", "report", "join", "team", "report"]);
   });
 
-  test("registerElementalCommands registers the registry's commands by POST (none while every feature is a stub)", async () => {
+  test("registerElementalCommands registers the registry's commands by POST (one per built command)", async () => {
     const { rest } = fakeRest();
     const log = jest.spyOn(console, "log").mockImplementation(() => undefined);
     const posts = await registerElementalCommands("token", [GUILD], rest);
     log.mockRestore();
-    expect(posts).toBe(0);
+    expect(posts).toBe(buildRegistry(FEATURES).commands.length);
     expect(rest.put).not.toHaveBeenCalled();
   });
 
