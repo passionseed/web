@@ -30,7 +30,7 @@ import { resolvePublicEdition, type ElementalPublicEdition } from "@/lib/supabas
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 
-import { checkAnswer, getLesson, isFinalPart, lessonNoteText } from "./lessons";
+import { checkAnswer, currentPart, getLesson, isFinalPart, lessonNoteText, type Lesson } from "./lessons";
 
 /** Why a viewer can only watch. */
 export type LessonWatchReason = "signed_out" | "no_discord" | "not_claimed" | "no_team" | "unavailable";
@@ -45,7 +45,7 @@ export type LessonSaveResult =
       part: number;
       /** This part finishes the lesson. */
       final: boolean;
-      /** The viewer has finished this lesson (now or before). */
+      /** This save is on the last part and that part is finished (by this save or an earlier one). False on any other part. */
       finished: boolean;
       /** This save finished it for the first time. */
       firstFinish: boolean;
@@ -120,6 +120,34 @@ async function viewerIdentity(): Promise<Identity> {
 }
 
 const isObject = (v: unknown): v is Record<string, unknown> => Boolean(v) && typeof v === "object" && !Array.isArray(v);
+
+/**
+ * Whether the viewer may save the lesson's last part: every stop before it is
+ * answered. SQL does not check this, and the last part finishes the lesson and
+ * earns the badge, so a hand-made request must not skip the lesson. True when
+ * there is no member row: SQL then answers not_claimed. Throws on a read error.
+ */
+async function lastPartOpen(db: Admin, edition: ElementalPublicEdition, discordUserId: string, lesson: Lesson): Promise<boolean> {
+  const { data: member, error: memberError } = await db
+    .from("elemental_members")
+    .select("id")
+    .eq("edition", edition)
+    .eq("discord_user_id", discordUserId)
+    .maybeSingle();
+  if (memberError) throw memberError;
+  if (!isObject(member) || typeof member.id !== "string") return true;
+  const { data: rows, error: rowsError } = await db
+    .from("elemental_lesson_progress")
+    .select("part, answer")
+    .eq("edition", edition)
+    .eq("member_id", member.id)
+    .eq("lesson_id", lesson.id);
+  if (rowsError) throw rowsError;
+  const answered = (Array.isArray(rows) ? rows : [])
+    .filter((r) => isObject(r) && typeof r.part === "number" && typeof r.answer === "string")
+    .map((r) => (r as { part: number }).part);
+  return currentPart(lesson, answered) === lesson.parts.length - 1;
+}
 
 // ---------------------------------------------------------------------------
 // Canvas: a do-it-now answer as a 'reference' note.
@@ -207,7 +235,8 @@ async function writeLessonNote(db: Admin, edition: ElementalPublicEdition, progr
 /**
  * Saves one part of a lesson for the signed-in viewer. Order: the lesson and
  * answer are checked, then contacts are refused, then the session is read;
- * only a viewer with a Discord identity reaches the database.
+ * only a viewer with a Discord identity reaches the database. The last part
+ * is refused (bad_part) until every stop before it is answered.
  */
 export async function saveLessonAnswer(input: LessonSaveInput): Promise<LessonSaveResult> {
   const raw: Partial<Record<keyof LessonSaveInput, unknown>> = isObject(input) ? input : {};
@@ -234,6 +263,9 @@ export async function saveLessonAnswer(input: LessonSaveInput): Promise<LessonSa
   }
   let data: unknown;
   try {
+    if (final && lesson.parts.length > 1 && !(await lastPartOpen(db, edition, viewer.discordUserId, lesson))) {
+      return { ok: false, error: "bad_part" };
+    }
     const reply = await db.rpc("elemental_web_lesson_answer", {
       p_edition: edition,
       p_discord_user_id: viewer.discordUserId,

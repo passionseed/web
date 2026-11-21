@@ -160,7 +160,7 @@ function query(table: string) {
     if (table === "elemental_teams") return [{ status: "active" }];
     if (table === "elemental_lesson_progress") {
       return db.progress
-        .filter((p) => `member-${p.member}` === filters.member_id)
+        .filter((p) => `member-${p.member}` === filters.member_id && (filters.lesson_id === undefined || p.lesson === filters.lesson_id))
         .map((p) => ({ lesson_id: p.lesson, part: p.part, answer: p.answer, final: p.final, finished_at: p.finished ? "2026-12-05T12:00:00Z" : null }));
     }
     return [];
@@ -208,6 +208,14 @@ const L2 = LESSONS[1];
 /** The first part of a lesson with a stop of this kind. */
 const partOf = (lesson: Lesson, kind: string) => lesson.parts.findIndex((p) => p.stop?.kind === kind);
 const writes = () => mockRpc.mock.calls.filter(([fn]) => fn === "elemental_bot_canvas_write");
+const answerCalls = () => mockRpc.mock.calls.filter(([fn]) => fn === "elemental_web_lesson_answer");
+/** Stores answers to every stop before the lesson's last part, straight into the fake table. */
+function answerEarlierStops(member: string, lesson: Lesson) {
+  for (let part = 0; part < lesson.parts.length - 1; part++) {
+    const id = `0000000${db.progress.length}-0000-4000-8000-000000000001`;
+    db.progress.push({ id, member, team: db.teamOf.get(member) ?? "", lesson: lesson.id, part, answer: "a", final: false, finished: false });
+  }
+}
 
 // --- Schema ------------------------------------------------------------------
 
@@ -328,9 +336,10 @@ describe("saveLessonAnswer", () => {
 
   it("passes the edition, the viewer and whether the part finishes the lesson", async () => {
     signedInWithDiscord(MEMBER_A);
+    answerEarlierStops(MEMBER_A, L1);
     await saveLessonAnswer({ lessonId: L1.id, part: 0, answer: "an idea", edition: "elemental-dryrun" });
     await saveLessonAnswer({ lessonId: L1.id, part: L1.parts.length - 1, edition: "somewhere-else" });
-    const answers = mockRpc.mock.calls.filter(([fn]) => fn === "elemental_web_lesson_answer").map(([, a]) => a);
+    const answers = answerCalls().map(([, a]) => a);
     expect(answers).toEqual([
       { p_edition: "elemental-dryrun", p_discord_user_id: MEMBER_A, p_lesson_id: L1.id, p_part: 0, p_answer: "an idea", p_final: false },
       { p_edition: "elemental-2026", p_discord_user_id: MEMBER_A, p_lesson_id: L1.id, p_part: L1.parts.length - 1, p_answer: null, p_final: true },
@@ -339,6 +348,8 @@ describe("saveLessonAnswer", () => {
 
   it("finishing twice gives the team one badge", async () => {
     const last = L1.parts.length - 1;
+    answerEarlierStops(MEMBER_A, L1);
+    answerEarlierStops(MEMBER_B, L1);
     signedInWithDiscord(MEMBER_A);
     const first = await saveLessonAnswer({ lessonId: L1.id, part: last });
     const again = await saveLessonAnswer({ lessonId: L1.id, part: last });
@@ -348,6 +359,21 @@ describe("saveLessonAnswer", () => {
     expect(again).toMatchObject({ ok: true, finished: true, firstFinish: false, badgeAwarded: false });
     expect(teammate).toMatchObject({ ok: true, finished: true, firstFinish: true, badgeAwarded: false });
     expect(db.badges).toEqual(new Set([`team-1:lesson:${L1.id}`]));
+  });
+
+  it("refuses the last part until every stop before it is answered: no answer, no badge", async () => {
+    signedInWithDiscord(MEMBER_A);
+    const last = L1.parts.length - 1;
+    expect(await saveLessonAnswer({ lessonId: L1.id, part: last })).toEqual({ ok: false, error: "bad_part" });
+    for (let part = 0; part < last - 1; part++) {
+      const stop = L1.parts[part].stop!;
+      await saveLessonAnswer({ lessonId: L1.id, part, answer: stop.kind === "choice" ? stop.options[0].id : "an idea" });
+    }
+    expect(await saveLessonAnswer({ lessonId: L1.id, part: last })).toEqual({ ok: false, error: "bad_part" });
+    expect(answerCalls().some(([, a]) => (a as { p_final: boolean }).p_final)).toBe(false);
+    expect(db.badges.size).toBe(0);
+    await saveLessonAnswer({ lessonId: L1.id, part: last - 1, answer: "we tried it" });
+    expect(await saveLessonAnswer({ lessonId: L1.id, part: last })).toMatchObject({ ok: true, final: true, badgeAwarded: true });
   });
 
   it("puts a do-it-now answer on the team canvas as a 'reference' note from the lesson", async () => {
@@ -368,6 +394,7 @@ describe("saveLessonAnswer", () => {
 
   it("saving the do-it-now part again rewrites the same note", async () => {
     signedInWithDiscord(MEMBER_A);
+    answerEarlierStops(MEMBER_A, L2);
     const part = partOf(L2, "do_it_now");
     await saveLessonAnswer({ lessonId: L2.id, part, answer: "first try" });
     const again = await saveLessonAnswer({ lessonId: L2.id, part, answer: "second try" });
