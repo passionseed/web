@@ -220,6 +220,12 @@ run two processes.
   bot needs View Channel, Send Messages and Attach Files in news, the campfire
   voice channel's chat and the staff channel, plus Read Message History in
   the staff channel.
+- **First-person bell** (`features/bell.ts`): when a team's first tester is
+  counted, news gets one post, `NN · element · project` plus the island with
+  that plot's lantern lit. Nothing about the tester or who logged it. Claimed
+  per team (`elemental_bot_post_claim`, kind `bell`), so it rings once per
+  team. If staff removed the entry before the post went, nothing is sent; a
+  failed send is retried after 1, 5 and 15 minutes.
 - **Features** live in `bot/src/elemental/features/*.ts`, one file each, from
   a fixed list in `registry.ts`. A feature that fails to start is turned off
   alone; the module keeps running.
