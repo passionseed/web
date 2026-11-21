@@ -6,7 +6,7 @@ import { AVATAR_GRID } from "@/components/radar/guide/story/pixel-art";
 
 import { CAST_LOOK, END_HOST, endHostSpot, headTop, spriteSize, stageXs, STAGE_FLOOR, STAGE_SPAN, SAFE, STORY_FRAME } from "../story/cast";
 import { nextFitSize, overflowFactor } from "../story/fit";
-import { AVATAR_FRAMES, MOTHER_FRAMES, topRow } from "../story/sprites";
+import { AVATAR_FRAMES, FRIEND_FRAMES, MOTHER_FRAMES, topRow } from "../story/sprites";
 import { blinking, HOST_LISTENER_FILTER, idleBob, mouthOpen } from "../story/StoryCast";
 import { endUrlSize, END_COLUMN } from "../story/StoryEndCard";
 import { bigBand, BOX_TOP, bigFontSize, hookScale, lineLength, phraseParts, phrases } from "../story/StoryText";
@@ -128,13 +128,13 @@ describe("story stage", () => {
   });
 
   it("knows where each head starts", () => {
-    expect(headTop("student")).toBe(STAGE_FLOOR - spriteSize("student").h + CAST_LOOK.student.cell);
+    expect(headTop("student")).toBe(STAGE_FLOOR - spriteSize("student").h + topRow(AVATAR_FRAMES.idle) * CAST_LOOK.student.cell);
     expect(headTop("parent")).toBeLessThan(headTop("student"));
     expect(headTop("host")).toBe(STAGE_FLOOR - spriteSize("host").h);
   });
 
-  it("draws the mother as her own sprite, not a palette swap of the student", () => {
-    for (const frames of [AVATAR_FRAMES, MOTHER_FRAMES]) {
+  it("draws the friend and the mother as their own sprites, not palette swaps of the student", () => {
+    for (const frames of [AVATAR_FRAMES, FRIEND_FRAMES, MOTHER_FRAMES]) {
       for (const grid of [frames.idle, frames.talk, frames.blink]) {
         expect(grid).toHaveLength(AVATAR_GRID.h);
         grid.forEach((row) => expect(row).toHaveLength(AVATAR_GRID.w));
@@ -142,12 +142,16 @@ describe("story stage", () => {
       expect(frames.blink).not.toEqual(frames.idle);
       expect(frames.talk).not.toEqual(frames.idle);
     }
+    expect(CAST_LOOK.friend.frames).toBe(FRIEND_FRAMES);
     expect(CAST_LOOK.parent.frames).toBe(MOTHER_FRAMES);
+    expect(FRIEND_FRAMES.idle).not.toEqual(AVATAR_FRAMES.idle);
     expect(MOTHER_FRAMES.idle).not.toEqual(AVATAR_FRAMES.idle);
-    // An apron and a skirt that the student's sprite does not have.
-    expect(MOTHER_FRAMES.idle.join("")).toContain("A");
-    expect(AVATAR_FRAMES.idle.join("")).not.toContain("A");
-    expect(topRow(MOTHER_FRAMES.idle)).toBe(1);
+    // A blouse and a skirt that the student's sprite does not have.
+    expect(MOTHER_FRAMES.idle.join("")).toMatch(/[OP]/);
+    expect(AVATAR_FRAMES.idle.join("")).not.toMatch(/[OP]/);
+    // The bun makes her the tallest; the friend is a row shorter than the student.
+    expect(topRow(MOTHER_FRAMES.idle)).toBe(0);
+    expect(topRow(FRIEND_FRAMES.idle)).toBeGreaterThan(topRow(AVATAR_FRAMES.idle));
   });
 
   it("breathes and blinks from the frame number, inside the hook", () => {

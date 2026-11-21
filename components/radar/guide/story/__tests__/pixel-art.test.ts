@@ -73,7 +73,7 @@ describe("host sprite grids", () => {
 
   it("the avatar drops the headset and wears the accent", () => {
     const pal = avatarPalette("#5cff5c");
-    expect(pal.O).toBe("transparent");
+    for (const grid of Object.values(AVATAR_GRIDS)) expect(grid.join("")).not.toContain("O");
     expect(pal.J).toBe("#5cff5c");
     const runs = gridRuns(AVATAR_GRIDS.idle, pal);
     expect(runs.some((r) => r.color === "#5cff5c")).toBe(true);

@@ -5,12 +5,12 @@
  * cell is a whole number of device pixels.
  *
  * The student is the profile card's avatar (AVATAR_GRIDS) in a violet hoodie.
- * The friend wears headphones and a teal hoodie; the mother is her own sprite
- * (sprites.ts: long hair, an apron). The host is P'Seed (GuideNPC).
+ * The friend (ponytail, teal tee) and the mother (bun, blouse, pha sin) are
+ * their own sprites in sprites.ts. The host is P'Seed (GuideNPC).
  */
 import { GUIDE_HOST } from "../../../../lib/radar-guide/story";
 import { AVATAR_GRID, HOST_GRID, HOST_GRIDS, STORY_PALETTE, avatarPalette, type PixelPalette } from "../../guide/story/pixel-art";
-import { AVATAR_FRAMES, MOTHER_FRAMES, MOTHER_PALETTE, topRow, type AvatarFrames } from "./sprites";
+import { AVATAR_FRAMES, FRIEND_FRAMES, FRIEND_PALETTE, MOTHER_FRAMES, MOTHER_PALETTE, topRow, type AvatarFrames } from "./sprites";
 import type { CastWho } from "./storyTimeline";
 
 export const STORY_FRAME = { width: 432, height: 768, scale: 2.5 } as const;
@@ -61,14 +61,14 @@ export const CAST_LOOK: Readonly<Record<CastWho, CastLook>> = {
     color: "#2fb59a",
     ink: STORY_PALETTE.ink,
     cell: 6,
-    palette: { ...avatarPalette("#2fb59a", "#1d7a68"), H: "#1f1426", O: STORY_PALETTE.magenta },
-    frames: AVATAR_FRAMES,
+    palette: FRIEND_PALETTE,
+    frames: FRIEND_FRAMES,
   },
   parent: {
     nameTh: "แม่",
     color: "#e0663f",
     ink: STORY_PALETTE.ink,
-    cell: 6.4,
+    cell: 6,
     palette: MOTHER_PALETTE,
     frames: MOTHER_FRAMES,
   },
