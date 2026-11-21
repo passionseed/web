@@ -752,8 +752,19 @@ DECLARE
   v_cap integer;
   v_live integer;
   v_slot integer;
+  v_staff text;
 BEGIN
   SELECT * INTO v_team FROM public.elemental_teams WHERE id = p_team_id FOR UPDATE;
+  -- Never a staff account on a team (someone linked as staff after accepting).
+  SELECT m.discord_user_id INTO v_staff
+  FROM public.elemental_team_invites i
+  JOIN public.elemental_members m ON m.edition = v_team.edition AND m.discord_user_id = i.discord_user_id
+  WHERE i.team_id = p_team_id AND i.state = 'accepted' AND m.is_staff
+  ORDER BY m.discord_user_id
+  LIMIT 1;
+  IF v_staff IS NOT NULL THEN
+    PERFORM public.elemental__fail('staff_member', v_staff);
+  END IF;
   SELECT coalesce((SELECT team_cap FROM public.elemental_settings WHERE edition = v_team.edition), 175) INTO v_cap;
   SELECT count(*) INTO v_live FROM public.elemental_teams
   WHERE edition = v_team.edition AND public.elemental__is_live(status);
@@ -892,6 +903,33 @@ DROP TRIGGER IF EXISTS elemental_editions_guard ON public.elemental_editions;
 CREATE TRIGGER elemental_editions_guard
   BEFORE UPDATE ON public.elemental_editions
   FOR EACH ROW EXECUTE FUNCTION public.elemental__editions_guard();
+
+/**
+ * Safeguarding backstop (AGENTS.md: no private adult-student channels; judges
+ * see no team chats): a staff member row is never on a live team, whatever
+ * path writes it (bot functions, staff scripts, the service role). Every
+ * function that puts people on a team refuses staff first with
+ * el:staff_member; this trigger catches anything that slips past them.
+ */
+CREATE OR REPLACE FUNCTION public.elemental__members_staff_guard()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  IF NEW.is_staff AND NEW.team_id IS NOT NULL
+     AND EXISTS (SELECT 1 FROM public.elemental_teams t
+                 WHERE t.id = NEW.team_id AND public.elemental__is_live(t.status)) THEN
+    PERFORM public.elemental__fail('staff_member', NEW.discord_user_id);
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS elemental_members_staff_guard ON public.elemental_members;
+CREATE TRIGGER elemental_members_staff_guard
+  BEFORE INSERT OR UPDATE OF team_id, is_staff ON public.elemental_members
+  FOR EACH ROW EXECUTE FUNCTION public.elemental__members_staff_guard();
 
 -- ---------------------------------------------------------------------------
 -- Service role: codes, public island, reset, purge
@@ -1304,9 +1342,11 @@ $$;
  * /el link: a Host links a Discord account to a registration member row by
  * registration id and position (lost or misused code), through the same
  * checks as /join. With p_registration_id NULL it records a staff account
- * (is_staff, no registration). The member row's code, if any, is used up.
+ * (is_staff, no registration) and cancels their open invites to pending
+ * teams; an account on a live team is refused (staff_teamed, DETAIL: that
+ * Discord id). The member row's code, if any, is used up.
  * Errors: as elemental_bot_claim, plus member_linked (DETAIL: the Discord id
- * already holding that member row).
+ * already holding that member row), staff_teamed.
  */
 CREATE OR REPLACE FUNCTION public.elemental_bot_staff_link(
   p_guild_id text, p_actor text, p_user text, p_registration_id uuid, p_position integer)
@@ -1333,8 +1373,17 @@ BEGIN
       INSERT INTO public.elemental_members (edition, discord_user_id, is_staff)
       VALUES (v_edition.key, v_user, true) RETURNING * INTO v_member;
     ELSIF NOT v_member.is_staff THEN
+      -- Staff are never on a team: move or archive the team first.
+      IF public.elemental__live_team_of(v_member) IS NOT NULL THEN
+        PERFORM public.elemental__fail('staff_teamed', v_user);
+      END IF;
       UPDATE public.elemental_members SET is_staff = true, updated_at = now() WHERE id = v_member.id RETURNING * INTO v_member;
     END IF;
+    -- Open invites to pending teams (theirs included) can no longer be used.
+    UPDATE public.elemental_team_invites o SET state = 'cancelled', responded_at = now()
+    FROM public.elemental_teams ot
+    WHERE o.discord_user_id = v_user AND o.state IN ('pending', 'accepted')
+      AND ot.id = o.team_id AND ot.edition = v_edition.key AND ot.status = 'pending';
     PERFORM public.elemental__audit(v_edition.key, v_actor, 'staff_link', v_user, jsonb_build_object('staff', true));
     RETURN public.elemental__member_json(v_member, v_edition.kind, false);
   END IF;
@@ -1472,8 +1521,28 @@ $$;
 -- elemental_bot: teams
 -- ---------------------------------------------------------------------------
 
-/** A claimed member who is not on a live team, or the error for it. */
-CREATE OR REPLACE FUNCTION public.elemental__free_member(p_edition text, p_user text, p_unclaimed text, p_teamed text)
+/**
+ * Staff are never on a team (AGENTS.md safeguarding: no private adult-student
+ * channels; judges see no team chats). Staff is either the member row's
+ * is_staff (/el link with no registration) or p_flag, which the bot sets when
+ * the person holds a Host, Helper, Mentor, Judge or Safety role in the guild.
+ * Error: staff_member (DETAIL: that Discord id).
+ */
+CREATE OR REPLACE FUNCTION public.elemental__refuse_staff(p_member public.elemental_members, p_user text, p_flag boolean)
+RETURNS void
+LANGUAGE plpgsql
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  IF coalesce(p_flag, false) OR coalesce(p_member.is_staff, false) THEN
+    PERFORM public.elemental__fail('staff_member', p_user);
+  END IF;
+END;
+$$;
+
+/** A claimed, non-staff member who is not on a live team, or the error for it. */
+CREATE OR REPLACE FUNCTION public.elemental__free_member(
+  p_edition text, p_user text, p_unclaimed text, p_teamed text, p_staff boolean DEFAULT false)
 RETURNS public.elemental_members
 LANGUAGE plpgsql
 SET search_path = public, pg_temp
@@ -1481,9 +1550,13 @@ AS $$
 DECLARE
   v public.elemental_members := public.elemental__member(p_edition, p_user);
 BEGIN
+  IF coalesce(p_staff, false) THEN
+    PERFORM public.elemental__fail('staff_member', p_user);
+  END IF;
   IF v.id IS NULL THEN
     PERFORM public.elemental__fail(p_unclaimed, p_user);
   END IF;
+  PERFORM public.elemental__refuse_staff(v, p_user, false);
   IF public.elemental__live_team_of(v) IS NOT NULL THEN
     PERFORM public.elemental__fail(p_teamed, p_user);
   END IF;
@@ -1491,9 +1564,9 @@ BEGIN
 END;
 $$;
 
-/** 1-4 other claimed, free members (deduplicated), or the error. */
+/** p_min..p_max other claimed, free, non-staff members (deduplicated), or the error. */
 CREATE OR REPLACE FUNCTION public.elemental__check_people(
-  p_edition text, p_creator text, p_others text[], p_min integer, p_max integer)
+  p_edition text, p_creator text, p_others text[], p_min integer, p_max integer, p_staff_ids text[] DEFAULT NULL)
 RETURNS text[]
 LANGUAGE plpgsql
 SET search_path = public, pg_temp
@@ -1509,7 +1582,8 @@ BEGIN
   END IF;
   FOREACH v IN ARRAY v_others LOOP
     PERFORM public.elemental__user(v);
-    PERFORM public.elemental__free_member(p_edition, v, 'invitee_not_claimed', 'invitee_teamed');
+    PERFORM public.elemental__free_member(p_edition, v, 'invitee_not_claimed', 'invitee_teamed',
+      v = ANY (coalesce(p_staff_ids, '{}'::text[])));
   END LOOP;
   RETURN v_others;
 END;
@@ -1523,10 +1597,13 @@ $$;
  * returns the same team; otherwise the creator's older pending team is
  * archived. Errors: team_create_closed, bad_project_name, pii (DETAIL
  * project_name), bad_element, team_size, not_claimed, already_teamed,
- * invitee_not_claimed / invitee_teamed (DETAIL: that Discord id).
+ * invitee_not_claimed / invitee_teamed, staff_member (DETAIL: that Discord
+ * id). Nobody may be staff: a member row marked is_staff, or a Discord id in
+ * p_staff_ids (the people the bot found holding a staff role).
  */
 CREATE OR REPLACE FUNCTION public.elemental_bot_team_create(
-  p_guild_id text, p_creator text, p_project_name text, p_element text, p_invitees text[])
+  p_guild_id text, p_creator text, p_project_name text, p_element text, p_invitees text[],
+  p_staff_ids text[] DEFAULT NULL)
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -1550,8 +1627,9 @@ BEGIN
   v_element := public.elemental__element(p_element);
 
   PERFORM public.elemental__lock(v_edition);
-  PERFORM public.elemental__free_member(v_edition, v_creator, 'not_claimed', 'already_teamed');
-  v_others := public.elemental__check_people(v_edition, v_creator, p_invitees, 1, 4);
+  PERFORM public.elemental__free_member(v_edition, v_creator, 'not_claimed', 'already_teamed',
+    v_creator = ANY (coalesce(p_staff_ids, '{}'::text[])));
+  v_others := public.elemental__check_people(v_edition, v_creator, p_invitees, 1, 4, p_staff_ids);
 
   -- A retry of the same request returns the team it made.
   SELECT t.id INTO v_existing
@@ -1596,11 +1674,15 @@ $$;
  * lowest free; at most team_cap live teams (el:island_full). After that,
  * accepting joins the live team up to 5 people. Repeating returns the same
  * state. Returns the team plus activated (this call took it live) and joined.
+ * Staff never join: p_is_staff (the bot saw a staff role) or an is_staff
+ * member row is refused, even on a repeat.
  * Errors: team_not_found, team_archived, invite_not_found, invite_closed,
- * invite_expired, not_claimed, already_teamed, team_full, island_full.
+ * invite_expired, not_claimed, staff_member, already_teamed, team_full,
+ * island_full.
  */
 CREATE OR REPLACE FUNCTION public.elemental_bot_team_accept(
-  p_guild_id text, p_team_id uuid, p_user text, p_candidate_slots integer[] DEFAULT NULL)
+  p_guild_id text, p_team_id uuid, p_user text, p_candidate_slots integer[] DEFAULT NULL,
+  p_is_staff boolean DEFAULT false)
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -1631,9 +1713,13 @@ BEGIN
     PERFORM public.elemental__fail('invite_not_found');
   END IF;
   v_member := public.elemental__member(v_edition, v_user);
+  IF coalesce(p_is_staff, false) THEN
+    PERFORM public.elemental__fail('staff_member', v_user);
+  END IF;
   IF v_member.id IS NULL THEN
     PERFORM public.elemental__fail('not_claimed');
   END IF;
+  PERFORM public.elemental__refuse_staff(v_member, v_user, false);
 
   IF v_invite.state = 'accepted' THEN
     RETURN public.elemental__team_json(v_team.id) || jsonb_build_object('activated', false, 'joined', false, 'repeated', true);
@@ -1713,10 +1799,13 @@ $$;
 /**
  * /el team-create: staff make a live team from 2-5 claimed, free members
  * (matched solos); everyone counts as accepted. Ignores the create window.
+ * Never a staff account among them: an is_staff member row or a Discord id
+ * in p_staff_ids (people the bot found holding a staff role) is refused with
+ * staff_member (DETAIL: that Discord id).
  */
 CREATE OR REPLACE FUNCTION public.elemental_bot_team_create_staff(
   p_guild_id text, p_actor text, p_project_name text, p_element text, p_members text[],
-  p_candidate_slots integer[] DEFAULT NULL)
+  p_candidate_slots integer[] DEFAULT NULL, p_staff_ids text[] DEFAULT NULL)
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -1732,7 +1821,7 @@ DECLARE
   v_team public.elemental_teams;
 BEGIN
   PERFORM public.elemental__lock(v_edition);
-  v_people := public.elemental__check_people(v_edition, NULL, p_members, 2, 5);
+  v_people := public.elemental__check_people(v_edition, NULL, p_members, 2, 5, p_staff_ids);
   INSERT INTO public.elemental_teams (edition, project_name, element, status, created_by, created_by_staff)
   VALUES (v_edition, v_name, v_element, 'pending', v_actor, true)
   RETURNING * INTO v_team;
@@ -1926,8 +2015,11 @@ $$;
 /**
  * /el team-move-member: moves a claimed member onto the live team at
  * p_to_slot (at most 5 people). Returns {from: team|null, to: team}.
+ * Staff are refused (staff_member, DETAIL: that Discord id): an is_staff
+ * member row, or p_is_staff when the bot saw a staff role on the person.
  */
-CREATE OR REPLACE FUNCTION public.elemental_bot_member_move(p_guild_id text, p_actor text, p_user text, p_to_slot integer)
+CREATE OR REPLACE FUNCTION public.elemental_bot_member_move(
+  p_guild_id text, p_actor text, p_user text, p_to_slot integer, p_is_staff boolean DEFAULT false)
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -1943,9 +2035,13 @@ DECLARE
 BEGIN
   PERFORM public.elemental__lock(v_settings.edition);
   v_member := public.elemental__member(v_settings.edition, v_user);
+  IF coalesce(p_is_staff, false) THEN
+    PERFORM public.elemental__fail('staff_member', v_user);
+  END IF;
   IF v_member.id IS NULL THEN
     PERFORM public.elemental__fail('not_claimed', v_user);
   END IF;
+  PERFORM public.elemental__refuse_staff(v_member, v_user, false);
   v_to := public.elemental__team_by_slot(v_settings.edition, p_to_slot);
   v_from := public.elemental__live_team_of(v_member);
   IF v_from = v_to.id THEN
