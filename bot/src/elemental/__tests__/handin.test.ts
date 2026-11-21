@@ -1,6 +1,9 @@
 /**
  * @jest-environment node
  */
+import fs from "node:fs";
+import path from "node:path";
+
 import { InteractionContextType, MessageFlags, type Client } from "discord.js";
 
 import { isValidIndex, noteIds } from "../../../../lib/elemental/canvas";
@@ -8,7 +11,7 @@ import { ElementalError, type ElementalApi } from "../api";
 import type { RepliableInteraction } from "../context";
 import { COMMON } from "../copy/common";
 import { HANDIN, bangkokStamp, shipNoteText } from "../copy/handin";
-import { ACTIONS, HANDIN_HOSTS, feature, handinDrafts, onCanvasLinked, parseHandinUrl, submittedAt } from "../features/handin";
+import { ACTIONS, HANDIN_HOSTS, HANDIN_URL_MAX, feature, handinDrafts, onCanvasLinked, parseHandinUrl, submittedAt } from "../features/handin";
 import { createRuntime, handleElementalInteraction } from "../index";
 import { createKeyedQueue } from "../queue";
 import { registry } from "../registry";
@@ -274,10 +277,17 @@ describe("registration", () => {
     expect(feature.events?.["canvas.linked"]).toBeDefined();
   });
 
-  test("the bot's host list is exactly SQL's (elemental_bot_handin)", () => {
-    expect([...HANDIN_HOSTS].sort()).toEqual(
-      ["youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be", "drive.google.com", "tiktok.com", "www.tiktok.com", "m.tiktok.com", "vm.tiktok.com", "vt.tiktok.com"].sort()
-    );
+  test("the bot's host list, length cap and link checks are exactly SQL's (elemental_bot_handin)", () => {
+    const sql = fs.readFileSync(path.join(__dirname, "../../../../supabase/migrations/20261123100100_elemental_testers_canvas.sql"), "utf8");
+    const body = sql.slice(sql.indexOf("FUNCTION public.elemental_bot_handin("));
+    const fnBody = body.slice(0, body.indexOf("\n$$;"));
+    const list = /v_host NOT IN \(([^)]*)\)/.exec(fnBody)?.[1] ?? "";
+    const sqlHosts = [...list.matchAll(/'([^']+)'/g)].map((m) => m[1]);
+    expect(sqlHosts.length).toBeGreaterThan(0);
+    expect([...HANDIN_HOSTS].sort()).toEqual(sqlHosts.sort());
+    expect(fnBody).toContain(`char_length(v_url) > ${HANDIN_URL_MAX}`);
+    expect(fnBody).toContain("'^https://[^[:space:]/?#@]+([/?#][^[:space:]]*)?$'");
+    expect(fnBody).toContain("'^https://([^/?#:]+)(?::443)?(?:[/?#]|$)'");
   });
 });
 
