@@ -43,12 +43,12 @@
  * script exits 2. It never reads .env files.
  */
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { cpus, loadavg, tmpdir } from "node:os";
 import { join } from "node:path";
 import { performance } from "node:perf_hooks";
 
-import { Pool, type PoolConfig } from "pg";
+import { Client, Pool, type PoolConfig } from "pg";
 
 import { stampAuthor } from "../../lib/whiteboard/core";
 
@@ -155,10 +155,19 @@ function homebrewBin(): string {
   return found;
 }
 
-/** Removes temp clusters left by an earlier run that was killed (its postmaster is gone). */
+/**
+ * Removes temp clusters left by an earlier run that was killed (its postmaster is gone). Only
+ * folders older than 10 minutes: a run started at the same time may still be inside initdb, with
+ * no postmaster.pid yet.
+ */
 function sweepStale(base: string): void {
   for (const name of readdirSync(base).filter((n) => n.startsWith("wbload-"))) {
     const dir = join(base, name);
+    try {
+      if (Date.now() - statSync(dir).mtimeMs < 10 * 60 * 1000) continue;
+    } catch {
+      continue;
+    }
     const pidFile = join(dir, "data", "postmaster.pid");
     const pid = existsSync(pidFile) ? Number(readFileSync(pidFile, "utf8").split("\n")[0]) : 0;
     let alive = false;
@@ -206,6 +215,30 @@ function startThrowaway(engine: string): Throwaway {
   if (engine === "docker") return startDocker();
   if (engine === "local") return startLocal();
   return dockerUp() ? startDocker() : startLocal();
+}
+
+/**
+ * Waits until the server answers over the connection the load test will use. The Docker image
+ * first runs a temporary socket-only server while it sets itself up, so a TCP connect that works
+ * means the real server is up (as in scripts/whiteboard-sql-check.ts).
+ */
+async function waitReady(db: Throwaway): Promise<void> {
+  assertStartedHere(db.url);
+  let last: unknown;
+  for (let i = 0; i < 120; i++) {
+    const client = new Client(db.config);
+    try {
+      await client.connect();
+      await client.query("SELECT 1");
+      await client.end();
+      return;
+    } catch (error) {
+      last = error;
+      await client.end().catch(() => undefined);
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+  }
+  throw new Error(`Postgres did not start: ${String((last as Error)?.message ?? last)}`);
 }
 
 function openPool(db: Throwaway, max: number): Pool {
@@ -448,7 +481,14 @@ const newTally = (): Tally => ({ samples: [], errors: 0, errorSamples: [], dropp
 /** One save as the API makes it: one transaction around whiteboard_merge_elements. */
 async function save(pool: Pool, boardId: string, elements: El[], tally: Tally): Promise<void> {
   const t0 = performance.now();
-  const client = await pool.connect();
+  let client;
+  try {
+    client = await pool.connect();
+  } catch (error) {
+    tally.errors++;
+    if (tally.errorSamples.length < 3) tally.errorSamples.push(String((error as Error).message).slice(0, 200));
+    return;
+  }
   const t1 = performance.now();
   try {
     await client.query("BEGIN");
@@ -745,6 +785,7 @@ async function main(): Promise<number> {
   const results: Result[] = [];
   try {
     console.log(`Database: ${db.label}`);
+    await waitReady(db);
     warnIfBusy("before");
     const admin = openPool(db, 2);
     const files = await applyMigrations(admin);
@@ -791,7 +832,7 @@ async function main(): Promise<number> {
   const { teams: best, judged } = recommendTeams(results, editorsPerTeam);
   console.log(
     `\nA scenario is ok when nothing failed, at least 90% of the wanted saves happened, and p95 total ` +
-      `(pool wait + lock wait + merge) is at most ${SLOW_SAVE_MS} ms (one save interval).`,
+      `(pool wait + lock wait + merge) is at most ${SLOW_SAVE_MS} ms (the save debounce, whatever --save-every is).`,
   );
   console.log(
     `Judged at ${editorsPerTeam} editors saving per team: ` +
