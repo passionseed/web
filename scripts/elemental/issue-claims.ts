@@ -149,8 +149,37 @@ export function claimsMessages(rows: ClaimRow[]): string {
 }
 
 function writePrivate(file: string, content: string): void {
+  // Tighten an existing file before new codes go into it.
+  if (fs.existsSync(file)) fs.chmodSync(file, 0o600);
   fs.writeFileSync(file, content, { encoding: "utf8", mode: 0o600 });
   fs.chmodSync(file, 0o600);
+}
+
+/**
+ * Writes the output files and returns how to put them back as they were. The
+ * files are written before COMMIT, so a failed write issues nothing; a failed
+ * COMMIT undoes the files (rehearsal codes cannot be fetched again).
+ */
+function writeOutputs(files: { file: string; content: string }[]): () => void {
+  const previous = files.map(({ file }) => ({ file, content: fs.existsSync(file) ? fs.readFileSync(file, "utf8") : null }));
+  try {
+    for (const { file, content } of files) writePrivate(file, content);
+  } catch (error) {
+    restore(previous);
+    throw error;
+  }
+  return () => restore(previous);
+}
+
+function restore(previous: { file: string; content: string | null }[]): void {
+  for (const { file, content } of previous) {
+    try {
+      if (content === null) fs.rmSync(file, { force: true });
+      else writePrivate(file, content);
+    } catch {
+      // Best effort: the error that got us here is reported instead.
+    }
+  }
 }
 
 function failure(error: unknown, secrets: string[], options: Options): string {
@@ -196,9 +225,16 @@ export async function run(argv: string[], deps: Deps, now: () => Date = () => ne
     return 1;
   }
 
+  const day = bangkokDay(now());
+  const csv = path.join(options.outDir, `claims-${day}.csv`);
+  const messages = path.join(options.outDir, `claims-${day}-messages.txt`);
+  const rehearsalFile = path.join(options.outDir, `rehearsal-${day}.csv`);
   let open = false;
   let claims: ClaimRow[] = [];
   let rehearsalCodes: string[] = [];
+  let rehearsalTotal = 0;
+  let undoFiles: (() => void) | null = null;
+  let writing = false;
   try {
     await client.query("BEGIN");
     open = true;
@@ -208,6 +244,14 @@ export async function run(argv: string[], deps: Deps, now: () => Date = () => ne
         options.rehearsal,
       ]);
       rehearsalCodes = rows.map((r) => String(r.code));
+      if (!options.dryRun) {
+        const existing = fs.existsSync(rehearsalFile)
+          ? fs.readFileSync(rehearsalFile, "utf8").split("\n").slice(1).filter(Boolean)
+          : [];
+        rehearsalTotal = existing.length + rehearsalCodes.length;
+        writing = true;
+        undoFiles = writeOutputs([{ file: rehearsalFile, content: ["code", ...existing, ...rehearsalCodes].join("\n") + "\n" }]);
+      }
     } else {
       const { rows } = await client.query(
         `SELECT registration_id::text AS registration_id, team_name, "position", code, state
@@ -221,28 +265,39 @@ export async function run(argv: string[], deps: Deps, now: () => Date = () => ne
         code: r.code === null || r.code === undefined ? null : String(r.code),
         state: r.state as ClaimRow["state"],
       }));
+      if (!options.dryRun) {
+        writing = true;
+        undoFiles = writeOutputs([
+          { file: csv, content: claimsCsv(claims) },
+          { file: messages, content: claimsMessages(claims) },
+        ]);
+      }
     }
+    writing = false;
     await client.query(options.dryRun ? "ROLLBACK" : "COMMIT");
     open = false;
   } catch (error) {
     if (open) await client.query("ROLLBACK").catch(() => undefined);
-    deps.err(error instanceof StopError ? error.message : failure(error, admin.secrets, options));
+    undoFiles?.();
+    deps.err(
+      error instanceof StopError
+        ? error.message
+        : writing
+          ? `Could not write the output files in ${options.outDir}`
+          : failure(error, admin.secrets, options),
+    );
     deps.err("Nothing was issued.");
     return 1;
   } finally {
     await client.end().catch(() => undefined);
   }
 
-  const day = bangkokDay(now());
   const prefix = options.dryRun ? "Dry run (rolled back, no file written): would issue" : "Issued";
 
   if (options.rehearsal !== null) {
     deps.out(`${prefix} ${rehearsalCodes.length} rehearsal codes for ${options.edition}.`);
     if (options.dryRun) return 0;
-    const file = path.join(options.outDir, `rehearsal-${day}.csv`);
-    const existing = fs.existsSync(file) ? fs.readFileSync(file, "utf8").split("\n").slice(1).filter(Boolean) : [];
-    writePrivate(file, ["code", ...existing, ...rehearsalCodes].join("\n") + "\n");
-    deps.out(`  ${path.relative(process.cwd(), file) || file} (${existing.length + rehearsalCodes.length} codes today)`);
+    deps.out(`  ${path.relative(process.cwd(), rehearsalFile) || rehearsalFile} (${rehearsalTotal} codes today)`);
     return 0;
   }
 
@@ -262,10 +317,6 @@ export async function run(argv: string[], deps: Deps, now: () => Date = () => ne
   }
   if (options.dryRun) return 0;
 
-  const csv = path.join(options.outDir, `claims-${day}.csv`);
-  const messages = path.join(options.outDir, `claims-${day}-messages.txt`);
-  writePrivate(csv, claimsCsv(claims));
-  writePrivate(messages, claimsMessages(claims));
   deps.out(`  ${path.relative(process.cwd(), csv) || csv}`);
   deps.out(`  ${path.relative(process.cwd(), messages) || messages}`);
   return 0;

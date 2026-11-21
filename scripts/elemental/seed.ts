@@ -239,9 +239,10 @@ export function eventSchedule(dates: EventDates): Schedule {
 export interface GuildSeed {
   guildId: string;
   edition: EditionKey;
-  roleIds: Record<string, string>;
-  channelIds: Record<string, string>;
-  elementCategoryIds: Record<string, string[]>;
+  /** null when the key is absent from the JSON: the database value is kept. */
+  roleIds: Record<string, string> | null;
+  channelIds: Record<string, string> | null;
+  elementCategoryIds: Record<string, string[]> | null;
   boards: Record<ElementKey, string[]>;
   /** Rehearsal guilds only; the event guild's comes from the flags. */
   schedule: Schedule | null;
@@ -357,12 +358,12 @@ export function parseConfig(input: unknown): { config: SeedConfig; warnings: str
       );
     }
 
-    const ids = (field: string, allowed: readonly string[]): Record<string, string> => {
+    const ids = (field: string, allowed: readonly string[]): Record<string, string> | null => {
       const src = raw[field];
       const out: Record<string, string> = {};
       if (src === undefined) {
-        warnings.push(`${label}: no ${field}`);
-        return out;
+        warnings.push(`${label}: no ${field} (left as it is in the database)`);
+        return null;
       }
       if (!isObject(src)) {
         problems.push(`${label}.${field}: must be an object`);
@@ -380,10 +381,10 @@ export function parseConfig(input: unknown): { config: SeedConfig; warnings: str
     const roleIds = ids("role_ids", ROLE_KEYS);
     const channelIds = ids("channel_ids", CHANNEL_KEYS);
 
-    const elementCategoryIds: Record<string, string[]> = {};
     const cats = raw.element_category_ids;
+    const elementCategoryIds: Record<string, string[]> | null = cats === undefined ? null : {};
     if (cats !== undefined && !isObject(cats)) problems.push(`${label}.element_category_ids: must be an object`);
-    else if (isObject(cats)) {
+    else if (isObject(cats) && elementCategoryIds) {
       for (const [key, list] of Object.entries(cats)) {
         if (!(ELEMENT_KEYS as readonly string[]).includes(key)) problems.push(`${label}.element_category_ids: unknown element ${key}`);
         else if (!Array.isArray(list) || !list.every((id) => typeof id === "string" && SNOWFLAKE.test(id))) {
@@ -391,8 +392,9 @@ export function parseConfig(input: unknown): { config: SeedConfig; warnings: str
         } else elementCategoryIds[key] = list as string[];
       }
     }
-    const noCats = ELEMENT_KEYS.filter((el) => !elementCategoryIds[el]?.length);
-    if (noCats.length) warnings.push(`${label}.element_category_ids: no category yet for ${noCats.join(", ")}`);
+    const noCats = ELEMENT_KEYS.filter((el) => !elementCategoryIds?.[el]?.length);
+    if (elementCategoryIds === null) warnings.push(`${label}: no element_category_ids (left as it is in the database)`);
+    else if (noCats.length) warnings.push(`${label}.element_category_ids: no category yet for ${noCats.join(", ")}`);
 
     // Boards: every element needs at least one.
     const boards = {} as Record<ElementKey, string[]>;
@@ -516,15 +518,20 @@ async function seedSettings(client: DbClient, guild: GuildSeed, schedule: Schedu
     );
   }
 
-  const columns: string[] = ["guild_id", "edition", "role_ids", "channel_ids", "element_category_ids"];
-  const values: unknown[] = [
-    guild.guildId,
-    guild.edition,
-    JSON.stringify(guild.roleIds),
-    JSON.stringify(guild.channelIds),
-    JSON.stringify(guild.elementCategoryIds),
-  ];
-  const casts: string[] = ["text", "text", "jsonb", "jsonb", "jsonb"];
+  const columns: string[] = ["guild_id", "edition"];
+  const values: unknown[] = [guild.guildId, guild.edition];
+  const casts: string[] = ["text", "text"];
+  // An id map left out of the JSON keeps its database value (the default {} on a new row).
+  for (const [column, ids] of [
+    ["role_ids", guild.roleIds],
+    ["channel_ids", guild.channelIds],
+    ["element_category_ids", guild.elementCategoryIds],
+  ] as const) {
+    if (ids === null) continue;
+    columns.push(column);
+    values.push(JSON.stringify(ids));
+    casts.push("jsonb");
+  }
   if (schedule) {
     columns.push("schedule");
     values.push(JSON.stringify(schedule));

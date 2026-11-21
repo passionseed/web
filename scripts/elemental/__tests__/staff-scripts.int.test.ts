@@ -207,6 +207,18 @@ describe("seed.ts", () => {
     expect(await seededState()).toEqual(before);
   });
 
+  it("keeps id maps that the JSON leaves out", async () => {
+    const before = await seededState();
+    const config = baseConfig();
+    delete (config.guilds[0] as Partial<GuildJson>).channel_ids;
+    delete (config.guilds[0] as Partial<GuildJson>).element_category_ids;
+    const run = deps();
+    expect(await seed(["--config", writeConfig(config, "no-channels.json")], run.d)).toBe(0);
+    expect(run.err.join("\n")).toMatch(/no channel_ids \(left as it is in the database\)/);
+    expect(run.out.join("\n")).toMatch(/guild 800000000000000001 -> elemental-2026 \(event\): settings unchanged/);
+    expect(await seededState()).toEqual(before);
+  });
+
   it("errors clearly when an element has no board", async () => {
     const before = await seededState();
     const config = baseConfig();
@@ -320,13 +332,27 @@ describe("issue-claims.ts", () => {
     expect(fs.readFileSync(path.join(out, "claims-2026-11-29.csv"), "utf8").trimEnd().split("\n")).toEqual(csv);
   });
 
+  it("issues nothing when the files cannot be written", async () => {
+    registration("elemental-2026", "paid", 1);
+    const before = await query("SELECT count(*)::int AS n FROM public.elemental_claims");
+    const blocked = path.join(tmp, "blocked");
+    // A folder where the messages file goes: the CSV is written, the messages file fails.
+    fs.mkdirSync(path.join(blocked, "claims-2026-11-30-messages.txt"), { recursive: true });
+    const run = deps();
+    expect(await issueClaims(["--out-dir", blocked], run.d, () => new Date("2026-11-30T03:00:00Z"))).toBe(1);
+    expect(run.err.join("\n")).toMatch(/Could not write the output files/);
+    expect(run.err.join("\n")).toMatch(/Nothing was issued\./);
+    expect(fs.existsSync(path.join(blocked, "claims-2026-11-30.csv"))).toBe(false);
+    expect(await query("SELECT count(*)::int AS n FROM public.elemental_claims")).toEqual(before);
+  });
+
   it("issues nothing and writes nothing on --dry-run", async () => {
     registration("elemental-2026", "paid", 2);
     const before = await query<{ n: number }>("SELECT count(*)::int AS n FROM public.elemental_claims");
     const dryOut = path.join(tmp, "dry-claims");
     const run = deps();
     expect(await issueClaims(["--dry-run", "--out-dir", dryOut], run.d)).toBe(0);
-    expect(run.out.join("\n")).toMatch(/Dry run .* 3 paid registrations, 2 new, 8 already issued/);
+    expect(run.out.join("\n")).toMatch(/Dry run .* 4 paid registrations, 3 new, 8 already issued/);
     expect(await query("SELECT count(*)::int AS n FROM public.elemental_claims")).toEqual(before);
     expect(fs.existsSync(dryOut)).toBe(false);
   });
