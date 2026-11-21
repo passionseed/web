@@ -272,6 +272,8 @@ describe("renderIsland", () => {
     expect(render([plot, plot])).toThrow(expect.objectContaining({ code: "duplicate_slot" }));
     expect(render([{ ...plot, element: "metal" }])).toThrow(expect.objectContaining({ code: "bad_element", detail: `slot ${plot.slot}` }));
     expect(render([null])).toThrow(expect.objectContaining({ code: "bad_slot" }));
+    // A string where a slot belongs is never echoed back.
+    expect(render([{ ...plot, slot: "Someone" }])).toThrow(expect.objectContaining({ code: "bad_slot", detail: "string" }));
   });
 
   it("normalizes health to 0..1 per element", () => {

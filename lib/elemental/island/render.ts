@@ -78,7 +78,9 @@ function readPlots(scene: Pick<ElementalScene, "plots">): PlotPlacement[] {
   return plots
     .map((p) => {
       const slot = p?.slot;
-      if (typeof slot !== "number" || !Number.isInteger(slot) || slot < 1 || slot > ELEMENTAL_SLOTS) throw new ElementalSceneError("bad_slot", String(slot));
+      // The detail echoes a number only: a stray string (a name passed by mistake) never reaches an error or a log.
+      if (typeof slot !== "number") throw new ElementalSceneError("bad_slot", typeof slot);
+      if (!Number.isInteger(slot) || slot < 1 || slot > ELEMENTAL_SLOTS) throw new ElementalSceneError("bad_slot", String(slot));
       if (seen.has(slot)) throw new ElementalSceneError("duplicate_slot", String(slot));
       seen.add(slot);
       if (!isElement(p.element)) throw new ElementalSceneError("bad_element", `slot ${slot}`);

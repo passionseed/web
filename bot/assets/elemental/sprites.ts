@@ -14,9 +14,11 @@ export const FLAG_ELEMENTS = ["water", "earth", "air", "fire", "aether"] as cons
 export type FlagElement = (typeof FLAG_ELEMENTS)[number];
 
 /**
- * Each element's flag cloth and mark colours. Cloth colours come from the
- * Elemental brand tokens (components/hackathon/poster/elemental/brand.ts):
- * toxic cyan, burnt earth, ash, flame and aether violet.
+ * Each element's flag cloth and mark colours, after the Elemental brand
+ * tokens (components/hackathon/poster/elemental/brand.ts). Water, fire and
+ * aether cloths are the tokens toxicCyan, flame and aetherViolet; the marks
+ * for earth, fire and aether are burnt, flameCore and aetherLilac. Earth's and
+ * air's cloths are lighter than burnt and ash, so they read on the grass.
  */
 export const ELEMENT_COLOURS: Readonly<Record<FlagElement, { readonly cloth: string; readonly mark: string }>> = {
   water: { cloth: "#38C9C2", mark: "#1E6F7A" },
