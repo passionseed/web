@@ -1,6 +1,4 @@
 import { Trirong } from "next/font/google";
-import type { ReactNode } from "react";
-
 import { EL, EL_FONT } from "./brand";
 import { ELEMENTAL, prizeTotal, thaiDayRange } from "./facts";
 
@@ -15,7 +13,7 @@ import { ELEMENTAL, prizeTotal, thaiDayRange } from "./facts";
  */
 
 const trirong = Trirong({
-  weight: ["200", "300", "600"],
+  weight: ["200", "300", "400", "500", "600"],
   style: ["normal", "italic"],
   subsets: ["thai", "latin"],
   variable: "--font-trirong",
@@ -132,30 +130,32 @@ function GlyphLetter({ ch, el, on }: { ch: string; el: GlyphElement; on: boolean
   );
 }
 
-function PixelTrophy({ cell }: { cell: number }) {
-  const w = TROPHY[0].length;
-  const h = TROPHY.length;
+/** Pixel art from rows of characters, one cell per character. */
+function Pixels({ rows, fill, cell }: { rows: readonly string[]; fill: Record<string, string>; cell: number }) {
+  const w = rows[0].length;
+  const h = rows.length;
   return (
     <svg width={w * cell} height={h * cell} viewBox={`0 0 ${w} ${h}`} shapeRendering="crispEdges" aria-hidden="true" style={{ display: "block", flex: "none" }}>
-      {TROPHY.flatMap((row, y) =>
-        Array.from(row).map((c, x) => (TROPHY_FILL[c] ? <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={TROPHY_FILL[c]} /> : null)),
-      )}
+      {rows.flatMap((row, y) => Array.from(row).map((c, x) => (fill[c] ? <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={fill[c]} /> : null)))}
     </svg>
   );
 }
 
-/**
- * One of the three facts at the bottom: a small line, the big number, a
- * small line. Three facts, three sizes, so the eye knows what leads.
- */
-function Fact({ above, big, below, align = "left" }: { above?: ReactNode; big: ReactNode; below?: ReactNode; align?: "left" | "center" | "right" }) {
+/** The small icons in the facts row, 9x9. */
+const ICON = {
+  date: ["#.......#", "#########", "#########", "#.......#", "#.#.#.#.#", "#.......#", "#.#.#.#.#", "#.......#", "#########"],
+  online: ["..#####..", ".#.....#.", "#..###..#", "..#...#..", ".#..#..#.", "...#.#...", "....#....", ".........", "....#...."],
+  prize: ["#########", "#.#####.#", ".#.###.#.", "...###...", "....#....", "....#....", "..#####..", ".#######.", "........."],
+  friends: [".##...##.", "####.####", ".##...##.", ".........", "###...###", "####.####", "####.####", ".........", "........."],
+} as const;
+
+/** One fact in the bottom row: an icon and a few words, all the same size. */
+function Fact({ icon, children }: { icon: keyof typeof ICON; children: string }) {
   return (
-    <div className="flex flex-col" style={{ textAlign: align, color: EL.cream, fontFamily: EL_FONT.display }}>
-      {/* Both small lines always take their space, so the three big numbers share one baseline. */}
-      <span style={{ fontWeight: 300, fontSize: 24, lineHeight: "32px", color: EL.creamSoft }}>{above ?? "\u00a0"}</span>
-      <span style={{ fontWeight: 300, fontSize: 58, lineHeight: "66px", letterSpacing: "-0.01em" }}>{big}</span>
-      <span style={{ fontWeight: 300, fontSize: 24, lineHeight: "32px", color: EL.creamSoft }}>{below ?? "\u00a0"}</span>
-    </div>
+    <span className="flex items-center gap-[10px] whitespace-nowrap">
+      <Pixels rows={ICON[icon]} fill={{ "#": EL.cream }} cell={3} />
+      <span>{children}</span>
+    </span>
   );
 }
 
@@ -169,8 +169,8 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
         <defs>
           <linearGradient id="el-key-foot" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor="#0f0f0d" stopOpacity="0" />
-            <stop offset="0.55" stopColor="#0f0f0d" stopOpacity="0.55" />
-            <stop offset="1" stopColor="#0f0f0d" stopOpacity="0.85" />
+            <stop offset="0.45" stopColor="#0f0f0d" stopOpacity="0.6" />
+            <stop offset="1" stopColor="#0f0f0d" stopOpacity="0.88" />
           </linearGradient>
           <filter id="el-key-grain" x="0" y="0" width="100%" height="100%">
             <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4" stitchTiles="stitch" />
@@ -192,7 +192,7 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
             {l.ch}
           </text>
         ))}
-        <rect y={1040} width={W} height={H - 1040} fill="url(#el-key-foot)" />
+        <rect y={H - 360} width={W} height={360} fill="url(#el-key-foot)" />
       </svg>
 
       {/* Title lockup: series above, English title, the Thai elements as its second half */}
@@ -209,9 +209,9 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
           </span>
         </div>
         {/* Says it's a competition, for students who don't know the word "hackathon". */}
-        <div className="mt-[18px] flex items-center gap-[14px]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 42, lineHeight: "50px", marginLeft: 4 }}>
+        <div className="mt-[22px] flex items-center gap-[14px]" style={{ fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 40, lineHeight: "50px", marginLeft: 4 }}>
           <span>งานแข่ง</span>
-          <PixelTrophy cell={4} />
+          <Pixels rows={TROPHY} fill={TROPHY_FILL} cell={4} />
         </div>
         <h1 className="m-0" style={{ fontFamily: EL_FONT.display, lineHeight: 1.02, letterSpacing: "-0.01em" }}>
           <span className="block" style={{ fontWeight: 200, fontSize: 124 }}>
@@ -223,17 +223,21 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
             Hackathon
           </span>
         </h1>
-        {/* The line under the title (Bunyasit, 2026-11-20). */}
-        <div className="mt-[8px]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 42, lineHeight: "56px", marginLeft: 4 }}>
-          สิ่งแวดล้อมไม่ควรถูกทิ้งเพราะเงิน
-        </div>
       </div>
 
-      {/* Three facts: when, the prize, the price with the friend deal leading */}
-      <div className="absolute inset-x-[56px] bottom-[44px] flex items-end justify-between">
-        <Fact big={thaiDayRange()} below={`${ELEMENTAL.startDate.slice(0, 4)} · หยุดยาว ${ELEMENTAL.days} วัน`} />
-        <Fact align="center" above="รางวัลรวมมูลค่า" big={`${prizeTotal()} บาท`} />
-        <Fact align="right" above="มากับเพื่อน" big={`฿${ELEMENTAL.groupPriceBaht} / คน`} below={`คนเดียว ฿${ELEMENTAL.priceBaht}`} />
+      {/*
+        The line on the dark ground at the bottom, in cream (Bunyasit,
+        2026-11-20), then one quiet row of facts: when, online, the prize and
+        the friend price.
+      */}
+      <div className="absolute inset-x-[56px] bottom-[52px]" style={{ fontFamily: EL_FONT.display, color: EL.cream }}>
+        <div style={{ fontWeight: 500, fontSize: 50, lineHeight: "64px", marginBottom: 30 }}>สิ่งแวดล้อมไม่ควรถูกทิ้งเพราะเงิน</div>
+        <div className="flex items-center justify-between" style={{ fontWeight: 400, fontSize: 30 }}>
+          <Fact icon="date">{thaiDayRange()}</Fact>
+          <Fact icon="online">ออนไลน์</Fact>
+          <Fact icon="prize">{`รางวัลรวม ${prizeTotal()} บาท`}</Fact>
+          <Fact icon="friends">{`มากับเพื่อน ฿${ELEMENTAL.groupPriceBaht}`}</Fact>
+        </div>
       </div>
 
       {/* Grain over the type too, so it sits in the same film */}
