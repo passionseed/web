@@ -176,17 +176,26 @@ interface Sent {
 
 let messageSeq = 0;
 
-/** Discord REST only: posts are recorded, a channel can be made to fail. */
+/**
+ * Discord REST only: posts are recorded, a channel can be made to fail. Like
+ * Discord, an enforced nonce is unique per author (the one bot) across every
+ * channel and guild: a repeat returns the first message and posts nothing.
+ */
 function fakeDiscord() {
   const sent: Sent[] = [];
   const failing = new Set<string>();
+  const nonces = new Map<string, string>();
   const createDM = jest.fn();
   const post = jest.fn(async (route: string, opts: { body: Sent["body"]; files?: Sent["files"] }) => {
     const channelId = route.split("/")[2];
     if (failing.has(channelId)) throw Object.assign(new Error("Internal Server Error"), { status: 500 });
+    const nonce = opts.body.enforce_nonce ? opts.body.nonce : undefined;
+    if (nonce && nonces.has(nonce)) return { id: nonces.get(nonce) };
     sent.push({ channelId, body: opts.body, files: opts.files ?? [] });
     messageSeq += 1;
-    return { id: `7${String(messageSeq).padStart(17, "0")}` };
+    const id = `7${String(messageSeq).padStart(17, "0")}`;
+    if (nonce) nonces.set(nonce, id);
+    return { id };
   });
   const get = jest.fn(async (route: string) => {
     if (route === Routes.channelMessage(CHANNEL.mirror, OVERRIDE_MESSAGE)) {
@@ -339,6 +348,21 @@ describe("the 20:30 card", () => {
     await poller.tick();
     expect(cards(inChannel(s.sent, CHANNEL.news))).toHaveLength(1);
     expect(cards(s.sent)).toHaveLength(2);
+  });
+
+  test("the real and rehearsal guilds both post when their schedules share a day and time", async () => {
+    const s = setup();
+    s.settings.set(REHEARSAL, settingsRow(REHEARSAL, { schedule: EVENT_SCHEDULE }));
+    const poller = s.scheduler();
+    for (const time of ["19:00", "19:55", "20:30"]) {
+      s.at(EVENT_DAY, time);
+      await poller.tick();
+    }
+    expect(cards(inChannel(s.sent, CHANNEL.news))).toHaveLength(1);
+    expect(cards(inChannel(s.sent, R_CHANNEL.news))).toHaveLength(1);
+    expect(inChannel(s.sent, CHANNEL.campfire).length).toBe(inChannel(s.sent, R_CHANNEL.campfire).length);
+    expect(inChannel(s.sent, R_CHANNEL.news)).toHaveLength(3);
+    for (const m of s.sent) expect(m.body.nonce!.length).toBeLessThanOrEqual(25);
   });
 
   test("changing card_at moves the post", async () => {
@@ -516,6 +540,22 @@ describe("missed posts", () => {
     await poller.tick();
     expect(inChannel(s.sent, CHANNEL.mirror).filter((m) => m.body.content?.includes(SCHEDULE.postName.card))).toHaveLength(1);
     expect([...s.posts.keys()]).toContain(`elemental-2026|${MISSED_KIND}|card:${EVENT_DAY}`);
+  });
+
+  test("a claim left by a crash shortly before the check is taken over once its lease passes: one note, one card", async () => {
+    const s = setup();
+    // A poller claimed the card at 20:40 (after earlier failures) and died before sending.
+    s.at(EVENT_DAY, "20:40");
+    s.posts.set(`elemental-2026|${GROUP_KIND.card}|${EVENT_DAY}`, { status: "claimed", claimedAt: s.clock.now });
+    const restarted = s.scheduler(s.runtime());
+    for (let sec = 60; sec <= 15 * 60; sec += 30) {
+      s.at(EVENT_DAY, "20:40", sec);
+      await restarted.tick();
+    }
+    const notes = inChannel(s.sent, CHANNEL.mirror).filter((m) => m.body.content?.includes(SCHEDULE.postName.card));
+    expect(notes).toHaveLength(1);
+    expect(cards(s.sent)).toHaveLength(1);
+    expect(s.posts.get(`elemental-2026|${GROUP_KIND.card}|${EVENT_DAY}`)?.status).toBe("sent");
   });
 
   test("a post that went on time never gets a note", async () => {

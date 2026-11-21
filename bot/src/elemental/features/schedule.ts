@@ -54,7 +54,8 @@ import { roleId } from "../roles";
  * a POST discord.js retries returns the first message.
  *
  * Missed post: 15 minutes after a post's time, a probe claims its group with
- * a 10-minute lease. False means sent (or being sent right now). True means
+ * a 10-minute lease (every poll until this poller saw it sent or the note is
+ * settled). False means sent (or being sent right now). True means
  * not sent (never claimed, failed, or stuck): the probe releases the group as
  * 'failed' (parts already sent stay sent) and claims the note
  * (sch_missed, "<post>:<day>"), so staff get exactly one note per post.
@@ -351,8 +352,24 @@ export interface Part {
   files: FileOut[];
 }
 
-function nonceFor(abbr: string, day: string, index = ""): string {
-  return `el${abbr}${day.replace(/-/g, "")}${index}`.slice(0, 25);
+/** A short stable tag of the guild (FNV-1a, base 36, at most 7 characters). */
+function guildTag(guildId: string): string {
+  let h = 0x811c9dc5;
+  for (let k = 0; k < guildId.length; k++) {
+    h ^= guildId.charCodeAt(k);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(36);
+}
+
+/**
+ * Discord checks an enforced nonce against every message the same author
+ * (this bot) sent in the past few minutes, in any channel or guild. The guild
+ * tag keeps the real and rehearsal guilds' posts of the same day apart, so
+ * neither swallows the other's. At most 2 + 2 + 7 + 8 + 2 = 21 characters.
+ */
+function nonceFor(guildId: string, abbr: string, day: string, index = ""): string {
+  return `el${abbr}${guildTag(guildId)}${day.replace(/-/g, "")}${index}`.slice(0, 25);
 }
 
 function file(name: string, img: Img, description: string): FileOut {
@@ -360,13 +377,14 @@ function file(name: string, img: Img, description: string): FileOut {
 }
 
 function campfireParts(settings: ElementalSettings, day: string, island: Island, png: Buffer | null): Part[] {
+  const g = settings.guildId;
   const channelId = settings.channels.campfire ?? settings.channels.news ?? null;
   const teams = island.legend.length;
   const parts: Part[] = [
     {
       kind: PART_KIND.campfire,
       key: day,
-      nonce: nonceFor("ci", day),
+      nonce: nonceFor(g, "ci", day),
       channelId,
       content: teams ? SCHEDULE.campfireHeader(teams) : SCHEDULE.campfireEmpty,
       files: png ? [file("island", { data: png, contentType: "image/png" }, SCHEDULE.islandAlt)] : [],
@@ -377,14 +395,14 @@ function campfireParts(settings: ElementalSettings, day: string, island: Island,
     parts.push({
       kind: PART_KIND.legend,
       key: `${day}#file`,
-      nonce: nonceFor("lg", day, "f"),
+      nonce: nonceFor(g, "lg", day, "f"),
       channelId,
       content: legend.summary,
       files: [{ name: legend.file.name, data: legend.file.data, contentType: "text/plain; charset=utf-8" }],
     });
   } else {
     legend.messages.forEach((content, i) =>
-      parts.push({ kind: PART_KIND.legend, key: `${day}#${i}`, nonce: nonceFor("lg", day, String(i)), channelId, content, files: [] })
+      parts.push({ kind: PART_KIND.legend, key: `${day}#${i}`, nonce: nonceFor(g, "lg", day, String(i)), channelId, content, files: [] })
     );
   }
   return parts;
@@ -409,7 +427,7 @@ export async function buildParts(env: Env, settings: ElementalSettings, kind: No
       {
         kind: PART_KIND.card,
         key: day,
-        nonce: nonceFor("cd", day),
+        nonce: nonceFor(settings.guildId, "cd", day),
         channelId: news,
         content: SCHEDULE.caption(caption),
         files: img ? [file("card", img, SCHEDULE.cardAlt)] : [],
@@ -428,7 +446,7 @@ export async function buildParts(env: Env, settings: ElementalSettings, kind: No
       {
         kind: PART_KIND.opening,
         key: day,
-        nonce: nonceFor("op", day),
+        nonce: nonceFor(settings.guildId, "op", day),
         channelId: news,
         content: SCHEDULE.opening(settings.channels.start_here ?? null),
         files: img ? [file("island", img, SCHEDULE.islandAlt)] : [],
@@ -443,7 +461,7 @@ export async function buildParts(env: Env, settings: ElementalSettings, kind: No
     {
       kind: PART_KIND.call,
       key: day,
-      nonce: nonceFor("ca", day),
+      nonce: nonceFor(settings.guildId, "ca", day),
       channelId: news,
       content: SCHEDULE.call(settings.channels.campfire ?? null),
       files: [],
@@ -614,10 +632,13 @@ export function createScheduler(rt: ElementalRuntime, deps: ScheduleDeps = {}): 
             done.add(id);
           }
         }
-        if (!checked.has(id) && now >= due.getTime() + MISSED_AFTER_MS && now < endOfDay(day)) {
+        // Probe until settled. A 'done' probe means sent OR held by a claim
+        // younger than the lease (another poller, or one that crashed mid-send),
+        // so it settles nothing: the next tick probes again, and once a dead
+        // claim passes the lease the probe takes it over and the post goes.
+        if (!checked.has(id) && !done.has(id) && now >= due.getTime() + MISSED_AFTER_MS && now < endOfDay(day)) {
           const result = await checkMissed(env, settings, kind, day, bangkokTime(due));
-          if (result !== "failed") checked.add(id);
-          if (result === "done") done.add(id);
+          if (result === "noted" || result === "already") checked.add(id);
         }
       } catch (error) {
         console.error(`[elemental] schedule: ${kind} check failed (${reasonOf(error)})`);
