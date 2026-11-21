@@ -35,12 +35,15 @@ afterEach(() => {
 });
 
 /** A clean environment: no BOT_* from the developer's shell. */
+type Env = Record<string, string | undefined>;
+
 function env(extra: Record<string, string> = {}): NodeJS.ProcessEnv {
-  const base: NodeJS.ProcessEnv = {};
+  const base: Env = {};
   for (const [k, v] of Object.entries(process.env)) {
     if (!k.startsWith("BOT_")) base[k] = v;
   }
-  return { ...base, PATH: `${bin}:${process.env.PATH}`, FAKE_DIR: tmp, COLUMNS: "200", ...extra };
+  const out: Env = { ...base, PATH: `${bin}:${process.env.PATH}`, FAKE_DIR: tmp, COLUMNS: "200", ...extra };
+  return out as NodeJS.ProcessEnv;
 }
 
 function deploy(args: string[], extra: Record<string, string> = {}, input = "") {
@@ -58,7 +61,7 @@ function remoteVars(): { APP: string; ENV_FILE: string; NAME: string; RERUN: str
   const r = spawnSync(
     "bash",
     ["-c", `${head.join("\n")}\nprintf '%s|%s|%s|%s' "$APP" "$ENV_FILE" "$NAME" "$RERUN"`],
-    { env: { PATH: process.env.PATH, HOME: "/srv/h" }, encoding: "utf8" },
+    { env: { PATH: process.env.PATH, HOME: "/srv/h" } as Env as NodeJS.ProcessEnv, encoding: "utf8" },
   );
   const [APP, ENV_FILE, NAME, RERUN] = r.stdout.split("|");
   return { APP, ENV_FILE, NAME, RERUN, rest: lines.slice(head.length).join("\n") };
