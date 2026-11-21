@@ -128,7 +128,7 @@ describe("pii-cases.json (shared with the SQL check)", () => {
     const tokens = [
       "0", "8", "1", "2", "6", "9", "๐", "๘", "+", "66", " ", "-", ".", "(", ")", "@", "＠", "a", "b", "k",
       "x", "m", "i", "g", "e", "_", ":", "：", "=", "line", "Line", "ไลน์", "id", "ID", "ig", "fb", "insta",
-      "tiktok", "twitter", "ไอจี", "เฟส", ".com", ".co", "co", "th", "​", "ร้าน", "เบอร์",
+      "tiktok", "twitter", "ไอจี", "เฟส", ".com", ".co", "co", "th", "\u200b", "ร้าน", "เบอร์",
     ];
     let seed = 0x5eed;
     const next = () => {

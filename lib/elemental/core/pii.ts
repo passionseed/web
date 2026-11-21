@@ -34,7 +34,11 @@ export type PiiResult<F extends string = string> = { ok: true } | PiiRefusal<F>;
 // ordinary words would trip them (they are refused only with a colon, below).
 const SOCIAL_LATIN = "ig|insta(?:gram)?|fb|facebook|tiktok|twitter";
 const SOCIAL_THAI = "ไอจี|อินสตา(?:แกรม)?|เฟส(?:บุ๊ก|บุ๊ค)?|ติ๊กต็อก|ติ๊กต๊อก|ทวิต(?:เตอร์)?";
-const URL_TLDS = "com|net|org|co|th|io|me|ly|gg|app|dev|xyz|link|to|tv|info|biz|page|site|online|shop|store";
+// The same without bare "เฟส", which is also the everyday word for "phase"
+// ("เฟส 2"): bare "เฟส" takes a short handle only after a colon.
+const SOCIAL_THAI_NAMED = "ไอจี|อินสตา(?:แกรม)?|เฟสบุ๊ก|เฟสบุ๊ค|ติ๊กต็อก|ติ๊กต๊อก|ทวิต(?:เตอร์)?";
+// "ee" and "be" catch lin.ee (LINE) and youtu.be links; "gl" catches goo.gl.
+const URL_TLDS = "com|net|org|co|th|io|me|ly|gg|app|dev|xyz|link|to|tv|info|biz|page|site|online|shop|store|ee|be|gl";
 
 /**
  * Checked in this order; the first match names the kind. Each rule is a
@@ -67,11 +71,16 @@ const RULES: readonly { kind: PiiKind; re: RegExp }[] = [
   { kind: "social", re: new RegExp(`(?:^|[^a-z])(?:${SOCIAL_LATIN})\\s*[:：=]?\\s*@?[a-z0-9_.]{3,}`, "i") },
   // ...and any length once the label ends ("ig: x", "fb a").
   { kind: "social", re: new RegExp(`(?:^|[^a-z])(?:${SOCIAL_LATIN})(?![a-z])\\s*[:：=]?\\s*@?[a-z0-9_.]`, "i") },
-  { kind: "social", re: new RegExp(`(?:${SOCIAL_THAI})\\s*[:：=]?\\s*@?[a-z0-9_.]`, "i") },
-  // Short labels only with a colon or equals sign: "x: name", "tt: name", "yt: name" (new).
+  // Thai labels: piiFlags' rule as it is (a handle of 3 or more, so "เฟส abc")...
+  { kind: "social", re: new RegExp(`(?:${SOCIAL_THAI})\\s*[:：=]?\\s*@?[a-z0-9_.]{3,}`, "i") },
+  // ...any length after a named label ("ไอจี a") or a colon ("เฟส: a"), but not "เฟส 2".
+  { kind: "social", re: new RegExp(`(?:${SOCIAL_THAI_NAMED})\\s*[:：=]?\\s*@?[a-z0-9_.]`, "i") },
+  { kind: "social", re: new RegExp(`(?:${SOCIAL_THAI})\\s*[:：]\\s*@?[a-z0-9_.]`, "i") },
+  // Short labels only with a colon: "x: name", "tt: name", "yt: name" (new).
+  // Not "=", so a sum such as "x = 5" passes.
   {
     kind: "social",
-    re: /(?:^|[^a-z])(?:x|tt|yt|youtube|discord|snap(?:chat)?|threads|telegram|whatsapp)\s*[:：=]\s*@?[a-z0-9_.]/i,
+    re: /(?:^|[^a-z])(?:x|tt|yt|youtube|discord|snap(?:chat)?|threads|telegram|whatsapp)\s*[:：]\s*@?[a-z0-9_.]/i,
   },
   // @handles of any length (piiFlags needs 3 or more characters).
   { kind: "handle", re: /@[a-z0-9_]/i },
@@ -82,7 +91,8 @@ function arabicDigits(text: string): string {
   return text.replace(/[๐-๙]/g, (d) => String(d.charCodeAt(0) - 0x0e50));
 }
 
-const INVISIBLE = /[­​-‍⁠﻿]/g;
+// Soft hyphen, zero-width space/non-joiner/joiner, word joiner, BOM.
+const INVISIBLE = /[\u00ad\u200b-\u200d\u2060\ufeff]/g;
 
 /**
  * The text as piiFlags reads it (Thai digits made Arabic), plus a folded copy:

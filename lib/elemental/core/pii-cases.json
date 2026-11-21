@@ -44,8 +44,12 @@
     { "text": "www.example.org", "kind": "url" },
     { "text": "example.com", "kind": "url" },
     { "text": "line.me/ti/p/abc", "kind": "url" },
-    { "text": "dis​cord.gg/abc", "kind": "url" },
-    { "text": "081​234​5678", "kind": "phone" }
+    { "text": "dis\u200bcord.gg/abc", "kind": "url" },
+    { "text": "081\u200b234\u200b5678", "kind": "phone" },
+    { "text": "lin.ee/abc", "kind": "url" },
+    { "text": "youtu.be/abc", "kind": "url" },
+    { "text": "เฟส abc", "kind": "social" },
+    { "text": "เฟส: a", "kind": "social" }
   ],
   "pass": [
     { "text": "แม่ของเพื่อนที่เชียงราย" },
@@ -69,6 +73,8 @@
     { "text": "met at the market @ 5pm" },
     { "text": "e.g. a friend" },
     { "text": "ม.5" },
+    { "text": "เฟส 2 ของงาน" },
+    { "text": "x = 5" },
     { "text": "" }
   ]
 }
