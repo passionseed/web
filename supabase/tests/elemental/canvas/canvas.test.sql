@@ -184,6 +184,10 @@ BEGIN
       ('bad_field', jsonb_set(good, '{0,isDeleted}', 'true')),
       ('bad_field', jsonb_set(good, '{0,version}', '"3"')),
       ('bad_field', jsonb_set(good, '{0,x}', '"0"')),
+      ('bad_field', jsonb_set(good, '{0,index}', '"a!"')),
+      ('bad_field', jsonb_set(good, '{1,index}', '"a10"')),
+      ('bad_field', jsonb_set(good, '{1,index}', 'null')),
+      ('bad_field', good #- '{0,index}'),
       ('bad_card', jsonb_set(good, '{0,customData,card}', '"problem"')),
       ('bad_card', jsonb_set(good, '{0,customData,source}', '"lesson"')),
       ('bad_card', jsonb_set(good, '{0,customData}', '{}')),
@@ -331,11 +335,35 @@ BEGIN
   ASSERT t ->> 'kind' = 'ship' AND t ->> 'source' = 'handin' AND t -> 'fields' ->> 'url' = 'https://youtu.be/abc123'
      AND NOT (t -> 'fields' ->> 'late')::boolean AND t ->> 'frame_id' = 'frame-b', 'ship target: ' || t::text;
   ASSERT t -> 'zone' = 'null'::jsonb, 'frame-b has no ship zone';
-  r := public.elemental_bot_canvas_write(g, team, pg_temp.note(team, 'frame-b', 'b0', 'b1', 1, 'https://youtu.be/abc123', 'ship', 'handin'));
+  r := public.elemental_bot_canvas_write(g, team, pg_temp.note(team, 'frame-b', 'aG', 'aH', 1, 'https://youtu.be/abc123', 'ship', 'handin'));
   ASSERT (r ->> 'ok')::boolean AND r -> 'status' = 'null'::jsonb, 'ship write: ' || r::text;
-  r := public.elemental_bot_canvas_write(g, team, pg_temp.note(team, 'frame-b', 'b0', 'b1', 2, 'x', 'test', 'tester'));
+  r := public.elemental_bot_canvas_write(g, team, pg_temp.note(team, 'frame-b', 'aG', 'aH', 2, 'x', 'test', 'tester'));
   ASSERT r ->> 'reason' = 'bad_card', 'a ship note must be a ship card';
   ASSERT pg_temp.el(pg_temp.board('f1'), 'el-' || team || '-r') -> 'customData' ->> 'card' = 'ship', 'ship on board';
+END $$;
+
+-- Lesson answer note (E21): the progress row's id is the note's id; kind reference, source lesson.
+DO $$
+DECLARE
+  g text := pg_temp.g_real();
+  lp uuid;
+  t jsonb;
+  r jsonb;
+BEGIN
+  INSERT INTO public.elemental_lesson_progress (edition, team_id, lesson_id, part, answer)
+  VALUES ('elemental-2026', pg_temp.team_id(40), 'intro', 1, 'a short answer') RETURNING id INTO lp;
+  t := public.elemental_bot_canvas_target(g, lp);
+  ASSERT t ->> 'kind' = 'reference' AND t ->> 'source' = 'lesson' AND t -> 'fields' ->> 'answer' = 'a short answer'
+     AND t ->> 'frame_id' = 'frame-b' AND t -> 'canvas_status' = 'null'::jsonb, 'lesson target: ' || t::text;
+  r := public.elemental_bot_canvas_write(g, lp, pg_temp.note(lp, 'frame-b', 'aK', 'aL', 1, 'answer', 'test', 'tester'));
+  ASSERT r ->> 'reason' = 'bad_card' AND r -> 'status' = 'null'::jsonb, 'a lesson note must be a reference card: ' || r::text;
+  r := public.elemental_bot_canvas_write(g, lp, pg_temp.note(lp, 'frame-b', 'aK', 'aL', 1, 'answer', 'reference', 'lesson'));
+  ASSERT (r ->> 'ok')::boolean AND (r ->> 'present')::boolean, 'lesson write: ' || r::text;
+  r := public.elemental_bot_canvas_tombstone(g, lp);
+  ASSERT (r ->> 'ok')::boolean AND (pg_temp.el(pg_temp.board('f1'), 'el-' || lp || '-t') ->> 'isDeleted')::boolean, 'lesson tombstone: ' || r::text;
+  -- A progress row with no team is no note.
+  INSERT INTO public.elemental_lesson_progress (edition, lesson_id, part) VALUES ('elemental-2026', 'intro', 2) RETURNING id INTO lp;
+  PERFORM pg_temp.expect_error(format('SELECT public.elemental_bot_canvas_target(%L, %L)', g, lp), 'entry_not_found');
 END $$;
 
 -- ---------------------------------------------------------------------------
@@ -347,7 +375,7 @@ DECLARE
   r jsonb;
 BEGIN
   k := (public.elemental_bot_tester_add('800000000000000001', '700000000000000002', '900000000000000004', 'a teacher', 'the quiz') ->> 'id')::uuid;
-  r := public.elemental_bot_canvas_write('800000000000000001', k, pg_temp.note(k, 'frame-b', 'c0', 'c1', 1, 'as the bot'));
+  r := public.elemental_bot_canvas_write('800000000000000001', k, pg_temp.note(k, 'frame-b', 'aI', 'aJ', 1, 'as the bot'));
   ASSERT (r ->> 'ok')::boolean, 'bot write: ' || r::text;
   ASSERT public.elemental_bot_canvas_target('800000000000000001', k) ->> 'frame_id' = 'frame-b', 'bot target';
   BEGIN

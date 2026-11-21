@@ -518,7 +518,7 @@ $$;
  * elements, the note's own ids ('el-<id>-r' a rectangle, 'el-<id>-t' its text),
  * both in the linked frame, the rectangle tagged with the note's kind and
  * source, the text bound to the rectangle, not deleted, no image and no link,
- * and small.
+ * a valid fractional index, and small.
  */
 CREATE OR REPLACE FUNCTION public.elemental__note_problem(
   p_elements jsonb, p_ids text[], p_frame_id text, p_kind text, p_source text)
@@ -556,6 +556,10 @@ BEGIN
     IF jsonb_typeof(el -> 'version') IS DISTINCT FROM 'number' OR (el ->> 'version')::numeric < 1
        OR (el ->> 'version')::numeric <> trunc((el ->> 'version')::numeric)
        OR public.elemental__box(el) IS NULL
+       -- A fractional index browsers can sort by (buildNote's keyBetween); a bad one would
+       -- reorder or break the board for everyone on it.
+       OR jsonb_typeof(el -> 'index') IS DISTINCT FROM 'string'
+       OR NOT public.elemental__valid_index(el ->> 'index')
        OR coalesce(jsonb_typeof(el -> 'isDeleted'), 'null') NOT IN ('boolean', 'null')
        OR public.elemental__el_deleted(el)
        OR coalesce(jsonb_typeof(el -> 'customData'), 'null') NOT IN ('object', 'null') THEN
