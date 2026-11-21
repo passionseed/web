@@ -43,6 +43,13 @@ const SUPERUSER = "postgres";
 const DEFAULT_IMAGE = "postgres:15-alpine";
 const PG_MIN_MAJOR = 15;
 const PG_PREFERRED_MAJOR = 15;
+/**
+ * Supabase runs its databases in UTC. initdb would otherwise copy this machine's zone
+ * (Asia/Bangkok here) into the local cluster while the Docker image stays in UTC, so a
+ * `now()::date` that should have said `AT TIME ZONE 'Asia/Bangkok'` would pass on one
+ * backend and fail on the other. Both backends run in UTC, as production does.
+ */
+const SERVER_TIMEZONE = ["timezone=UTC", "log_timezone=UTC"];
 
 export type Backend = "docker" | "local";
 export type StartOptions = { backend?: Backend | "auto"; image?: string };
@@ -211,6 +218,7 @@ async function startDocker(image: string): Promise<Server> {
     "-v", `${ROOT}:/repo:ro`,
     image,
     "-c", "fsync=off", "-c", "full_page_writes=off", "-c", "synchronous_commit=off",
+    ...SERVER_TIMEZONE.flatMap((setting) => ["-c", setting]),
   ]);
   if (started.status !== 0) throw new Error(`docker run ${image} failed: ${started.stderr}`);
   const candidate: Server = { backend: "docker", port: 0, container, image };
@@ -248,6 +256,7 @@ async function startLocal(): Promise<Server> {
     const options = [
       `-p ${port}`, "-c listen_addresses=127.0.0.1", "-c unix_socket_directories=''",
       "-c fsync=off", "-c full_page_writes=off", "-c synchronous_commit=off",
+      ...SERVER_TIMEZONE.map((setting) => `-c ${setting}`),
     ].join(" ");
     const ctl = run(join(bin, "pg_ctl"), ["-D", join(dir, "db"), "-o", options, "-l", join(dir, "postgres.log"), "-w", "start"]);
     if (ctl.status === 0) return { backend: "local", port, dir, bin };

@@ -67,9 +67,11 @@ BEGIN
   ASSERT current_setting('search_path') LIKE '%extensions%', 'search_path lacks extensions: ' || current_setting('search_path');
 END $$;
 
--- Bangkok days: 23:59 and 00:01 +07 fall on different dates.
+-- Bangkok days: 23:59 and 00:01 +07 fall on different dates. The server runs in UTC,
+-- as Supabase does, so Bangkok dates must be asked for with AT TIME ZONE.
 DO $$
 BEGIN
+  ASSERT current_setting('TimeZone') = 'UTC', 'server time zone is ' || current_setting('TimeZone') || ', not UTC as in production';
   ASSERT ('2026-12-04 23:59:00+07'::timestamptz AT TIME ZONE 'Asia/Bangkok')::date = DATE '2026-12-04', '23:59 +07 is not 4 Dec';
   ASSERT ('2026-12-05 00:01:00+07'::timestamptz AT TIME ZONE 'Asia/Bangkok')::date = DATE '2026-12-05', '00:01 +07 is not 5 Dec';
 END $$;
