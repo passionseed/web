@@ -1,0 +1,4 @@
+# Local, private Elemental files: seed.json (Discord ids, board ids) and the
+# claim-code CSVs and messages. Nothing here is ever committed.
+*
+!.gitignore
