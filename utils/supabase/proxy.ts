@@ -26,8 +26,27 @@ function shouldSkipOnboardGate(pathname: string): boolean {
     pathname.startsWith('/radar/') ||
     pathname.startsWith('/r/') ||
     pathname.startsWith('/api/') ||
-    pathname.startsWith('/_next/')
+    pathname.startsWith('/_next/') ||
+    isBoardOrHackathonPath(pathname)
   )
+}
+
+/**
+ * Whiteboards and hackathon pages, including share and join links. Students
+ * arrive here from a Discord or chat link, often with a fresh account and no
+ * profile row; a bounce to /onboard drops the link they came for. Pages under
+ * these prefixes check access themselves (board membership, hackathon
+ * session), so the onboard gate only got in the way. This also stops the
+ * bounce for SHIFT students opening a whiteboard.
+ *
+ * Matches the decoded routing path (see routingPathname) and refuses dot
+ * segments, so an escaped look-alike such as /whiteboard/%2e%2e/dashboard
+ * still meets the gate. /hackathon-old is a different prefix and stays gated.
+ */
+function isBoardOrHackathonPath(pathname: string): boolean {
+  const path = routingPathname(pathname)
+  if (!/^\/(?:whiteboard|hackathon)(?:\/|$)/.test(path)) return false
+  return !path.split('/').some((segment) => segment === '.' || segment === '..')
 }
 
 function copySessionCookies(
