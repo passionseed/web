@@ -68,6 +68,7 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
   // Optimize bundle splitting
   experimental: {
+    agentUpgrade: "security",
     optimizePackageImports: ["lucide-react"],
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
