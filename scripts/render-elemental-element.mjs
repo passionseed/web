@@ -542,21 +542,33 @@ async function fire() {
   // into pieces, and its edges dither, so the flames' base is broken up.
   {
     const cc = 10;
-    for (let x = F.x - 320; x < F.x + 320; x += cc) {
+    for (let x = F.x - 340; x < F.x + 340; x += cc) {
+      // Wherever the flames reach the ground, the char is unbroken and runs
+      // below their flat bottom edge; elsewhere it breaks into pieces.
+      let flameHere = 0;
+      for (let y = F.base - 30; y < F.base + 24; y += 6) flameHere = Math.max(flameHere, field(x + 5, y));
       const n = fbm(x * 0.012, 4.2, 88, 3);
-      const fade = 1 - smooth(200, 320, Math.abs(x - F.x));
-      if (n < 0.38 || fade <= 0) continue; // gaps between pieces
-      const topY = F.base - 4 - 50 * smooth(0.38, 0.8, n) * fade * (0.6 + 0.8 * fbm(x * 0.05, 9.1, 89, 2));
-      const botY = F.base + 8 + 14 * fbm(x * 0.03, 2.2, 90, 2);
+      if (flameHere < 0.05 && n < 0.45) continue;
+      const rough = fbm(x * 0.05, 9.1, 89, 2);
+      // A jagged top: stumps and heaps of different heights, cell by cell.
+      const spike = hash(Math.floor(x / 20), 5, 93);
+      const topY = F.base + 2 - 44 * Math.pow(spike, 2.2) * (0.5 + rough) - 20 * smooth(0.45, 0.8, n);
+      const botY = F.base + 22 + 10 * fbm(x * 0.04, 2.2, 90, 2);
       for (let y = Math.floor(topY / cc) * cc; y < botY; y += cc) {
-        const edge = Math.min(y - topY, botY - y) / 20;
-        if (edge < 1 && bayer(x / cc, y / cc) > edge) continue;
+        // Messy edges: dithered top, and the bottom frays into the grass.
+        const fromTop = (y - topY) / 14;
+        const fromBot = (botY - y) / 10;
+        if (fromTop < 1 && bayer(x / cc, y / cc) > fromTop) continue;
+        if (fromBot < 1 && hash(x, y, 91) > fromBot) continue;
         for (let yy = y; yy < y + cc; yy++)
           for (let xx = x; xx < x + cc; xx++) {
             const l = lum(origAt(xx, yy));
             put(xx, yy, xx % 3 < 2 && yy % 3 < 2 ? [0.25 + l * 0.6, 0.22 + l * 0.5, 0.2 + l * 0.45].map((v) => clamp(v)) : P.ink);
           }
       }
+      // Stray char cells kicked up above and below the line.
+      if (hash(x, 1, 92) < 0.35) rect(x, Math.round((topY - 10 - hash(x, 2, 92) * 30) / cc) * cc, cc, P.ink, 0.9);
+      if (hash(x, 3, 92) < 0.15) rect(x, Math.round((botY + hash(x, 4, 92) * 10) / cc) * cc, cc, P.ink, 0.85);
     }
   }
   // A few embers glowing on the logs.
