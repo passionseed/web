@@ -147,9 +147,9 @@ export const metadata: Metadata = {
     "Career exploration",
     "Proof of work",
   ],
-  alternates: {
-    canonical: "/",
-  },
+  // No site-wide canonical: a "/" here made every page that didn't set its
+  // own (358 of 371) tell Google it was a copy of the home page. Pages set
+  // their own; the home page sets "/".
   manifest: "/manifest.json",
   openGraph: {
     type: "website",
