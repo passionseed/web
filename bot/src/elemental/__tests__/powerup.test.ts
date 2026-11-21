@@ -56,6 +56,7 @@ class FakeDb {
   teamOf = new Map<string, string>();
   teams = new Map<string, FakeTeam>();
   badges = new Set<string>();
+  staff = new Set<string>();
   calls: { fn: string; args: unknown[] }[] = [];
   /** Archive this team right after its member lookup (a race with /el team-archive). */
   archiveAfterLookup: string | null = null;
@@ -92,7 +93,7 @@ class FakeDb {
             }
           : null;
         if (t && this.archiveAfterLookup === t.id) t.status = "archived";
-        return { member_id: randomUUID(), already: true, is_staff: false, element_pick: null, team };
+        return { member_id: randomUUID(), already: true, is_staff: this.staff.has(who), element_pick: null, team };
       }
       case "elemental_bot_award_badge": {
         const [, teamId, kind, ref] = args as [string, string, string, string];
@@ -304,6 +305,17 @@ describe("/el badge-powerup", () => {
     expect(last(sent)).toContain(POWERUP.notOnTeam(2));
   });
 
+  test("linked staff in the room (the Host running it) are not counted as people without a team", async () => {
+    const { db, rt } = setup(inVoice([HOST, user(1), user(2)]));
+    db.claimed.add(HOST);
+    db.staff.add(HOST);
+    const t = db.team(2, [user(1)]);
+    const { sent } = await run(rt);
+    expect(db.calls.filter((c) => c.fn === "elemental_bot_award_badge").map((c) => c.args[1])).toEqual([t.id]);
+    expect(last(sent)).toContain(POWERUP.notOnTeam(1));
+    expect(last(sent)).not.toContain(POWERUP.notOnTeam(2));
+  });
+
   test("a re-run of the same round is idempotent; a new session label is a new round", async () => {
     const { db, rt } = setup(inVoice([user(1), user(2), user(3)]));
     db.team(1, [user(1), user(2)]);
@@ -401,6 +413,14 @@ describe("helpers", () => {
     expect(voiceMemberIds(client, GUILD, VOICE)).toEqual([user(1), user(2)]);
     expect(voiceMemberIds(client, GUILD, OTHER_VOICE)).toEqual([user(3)]);
     expect(voiceMemberIds(client, OTHER_GUILD, VOICE)).toBeNull();
+  });
+
+  test("voiceMemberIds leaves out a bot whose member is not cached, using the user cache", () => {
+    const client = {
+      ...fakeClient([...inVoice([user(1)]), { id: user(9), channelId: VOICE, member: null }]),
+      users: { cache: { get: (id: string) => (id === user(9) ? { bot: true } : { bot: false }) } },
+    };
+    expect(voiceMemberIds(client, GUILD, VOICE)).toEqual([user(1)]);
   });
 
   test("powerupSummary lists plot numbers only, capped", () => {

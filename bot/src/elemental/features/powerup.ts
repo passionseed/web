@@ -70,6 +70,7 @@ interface VoiceStateLike {
 
 interface VoiceCacheLike {
   user?: { id: string } | null;
+  users?: { cache?: { get(id: string): { bot?: boolean } | undefined } };
   guilds?: { cache?: { get(id: string): { voiceStates?: { cache?: { values(): Iterable<VoiceStateLike> } } } | undefined } };
 }
 
@@ -84,7 +85,9 @@ export function voiceMemberIds(client: Client | VoiceCacheLike, guildId: string,
   const self = c.user?.id;
   const ids = new Set<string>();
   for (const vs of states.values()) {
-    if (vs.channelId !== channelId || vs.id === self || vs.member?.user?.bot) continue;
+    if (vs.channelId !== channelId || vs.id === self) continue;
+    // The member may not be cached (no GuildMembers intent): fall back to the user cache.
+    if (vs.member?.user?.bot ?? c.users?.cache?.get(vs.id)?.bot) continue;
     if (isSnowflake(vs.id)) ids.add(vs.id);
   }
   return [...ids];
@@ -97,13 +100,14 @@ interface TeamLite {
 }
 
 interface MemberLite {
+  is_staff?: boolean;
   team?: TeamLite | null;
 }
 
 export interface PowerupResult {
   /** One entry per team the badge call ran for. */
   teams: { teamId: string; slot: number | null; awarded: boolean }[];
-  /** People in voice who are not on a live team (not claimed, or teamless). Counted, never named. */
+  /** Students in voice who are not on a live team (not claimed, or teamless); linked staff are left out. Counted, never named. */
   notOnTeam: number;
   /** Teams that stopped being live between the lookup and the award. */
   skipped: number;
@@ -124,7 +128,8 @@ export async function awardPowerup(api: ElementalApi, guildId: string, actor: st
     const member = await api.call<MemberLite | null>("elemental_bot_member_get", guildId, userId);
     const team = member?.team;
     if (!team?.team_id) {
-      notOnTeam += 1;
+      // The Host running the power-up is usually in the room: staff are not "teamless".
+      if (!member?.is_staff) notOnTeam += 1;
       continue;
     }
     if (!teams.has(team.team_id)) teams.set(team.team_id, team);
