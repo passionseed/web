@@ -32,7 +32,9 @@
  * Saving the same part again replaces the answer (one row per member, lesson
  * and part). The first final save stamps finished_at, which later saves keep,
  * and gives the team one 'lesson' badge per lesson (ref = lesson id), however
- * many times or members finish it.
+ * many times or members finish it. A finished row also keeps the team it was
+ * finished on, so a staff /el move never shifts a past check-in or badge to
+ * the member's new team.
  *
  * Returns {progress_id, lesson_id, part, final, finished_at, first_finish,
  * badge_awarded, team: {team_id, slot, element}, canvas}. canvas is the
@@ -68,6 +70,7 @@ DECLARE
   v_row public.elemental_lesson_progress;
   v_was_finished boolean;
   v_badge uuid;
+  v_first boolean;
   v_link jsonb;
   v_canvas jsonb;
 BEGIN
@@ -102,41 +105,47 @@ BEGIN
   VALUES (v_edition.key, v_member.id, v_team.id, v_lesson, p_part, v_answer, v_final,
           CASE WHEN v_final THEN now() END)
   ON CONFLICT ON CONSTRAINT elemental_lesson_progress_member_part_key DO UPDATE SET
-    team_id = EXCLUDED.team_id,
+    -- Once finished, a lesson stays finished, for the team and on the day it
+    -- was first finished.
+    team_id = CASE WHEN p.finished_at IS NOT NULL THEN p.team_id ELSE EXCLUDED.team_id END,
     answer = EXCLUDED.answer,
-    -- Once finished, a lesson stays finished on the day it was first finished.
     final = p.final OR EXCLUDED.final,
     finished_at = coalesce(p.finished_at, EXCLUDED.finished_at),
     updated_at = now()
   RETURNING * INTO v_row;
 
-  IF v_row.final THEN
+  -- This call finished it: it was not finished before, and the stamp is this
+  -- transaction's (a concurrent save that finished first keeps its own stamp,
+  -- so two racing finishes give one first_finish and one audit row).
+  v_first := v_row.final AND NOT v_was_finished AND v_row.finished_at = now();
+
+  IF v_row.final AND v_row.team_id IS NOT NULL THEN
     INSERT INTO public.elemental_badges (edition, team_id, kind, ref)
-    VALUES (v_edition.key, v_team.id, 'lesson', v_lesson)
+    VALUES (v_edition.key, v_row.team_id, 'lesson', v_lesson)
     ON CONFLICT (team_id, kind, ref) DO NOTHING
     RETURNING id INTO v_badge;
   END IF;
 
-  IF v_row.final AND NOT v_was_finished THEN
+  IF v_first THEN
     PERFORM public.elemental__audit(v_edition.key, v_user, 'lesson_finish', v_lesson,
-      jsonb_build_object('team_id', v_team.id, 'part', p_part, 'badge', v_badge IS NOT NULL));
+      jsonb_build_object('team_id', v_row.team_id, 'part', p_part, 'badge', v_badge IS NOT NULL));
   END IF;
 
-  -- The team's linked project canvas (E11). Dynamic, so a missing table or a
-  -- renamed column means "no canvas", never a failed save.
+  -- The team's linked project canvas (E11). Dynamic, so a missing table, a
+  -- renamed column or an odd board id means "no canvas", never a failed save.
   IF to_regclass('public.elemental_canvas_links') IS NOT NULL THEN
     BEGIN
       EXECUTE 'SELECT to_jsonb(l) FROM public.elemental_canvas_links l WHERE l.team_id = $1 LIMIT 1'
         INTO v_link USING v_team.id;
-    EXCEPTION WHEN undefined_column OR undefined_table THEN
-      v_link := NULL;
+      IF v_link ->> 'board_id' IS NOT NULL AND v_link ->> 'frame_id' IS NOT NULL THEN
+        SELECT jsonb_build_object('board_id', w.id, 'frame_id', v_link ->> 'frame_id', 'owner_id', w.owner_id)
+        INTO v_canvas
+        FROM public.whiteboards w
+        WHERE w.id = (v_link ->> 'board_id')::uuid;
+      END IF;
+    EXCEPTION WHEN undefined_column OR undefined_table OR invalid_text_representation THEN
+      v_canvas := NULL;
     END;
-    IF v_link ->> 'board_id' IS NOT NULL AND v_link ->> 'frame_id' IS NOT NULL THEN
-      SELECT jsonb_build_object('board_id', w.id, 'frame_id', v_link ->> 'frame_id', 'owner_id', w.owner_id)
-      INTO v_canvas
-      FROM public.whiteboards w
-      WHERE w.id = (v_link ->> 'board_id')::uuid;
-    END IF;
   END IF;
 
   RETURN jsonb_build_object(
@@ -145,43 +154,15 @@ BEGIN
     'part', p_part,
     'final', v_row.final,
     'finished_at', v_row.finished_at,
-    'first_finish', v_row.final AND NOT v_was_finished,
+    'first_finish', v_first,
     'badge_awarded', v_badge IS NOT NULL,
     'team', jsonb_build_object('team_id', v_team.id, 'slot', v_team.slot, 'element', v_team.element),
     'canvas', v_canvas);
 END;
 $$;
 
--- Access, as the core file's final loop sets it: nothing for PUBLIC, anon,
--- authenticated or elemental_bot; helpers for no one; every other elemental_*
--- function for service_role; elemental_bot_* also for elemental_bot. Repeated
--- here so this file's function is covered whichever files have run.
-DO $$
-DECLARE
-  fn record;
-BEGIN
-  FOR fn IN
-    SELECT p.oid::regprocedure AS sig, p.proname
-    FROM pg_proc p
-    JOIN pg_namespace n ON n.oid = p.pronamespace
-    WHERE n.nspname = 'public' AND p.proname LIKE 'elemental\_%'
-  LOOP
-    EXECUTE format('REVOKE ALL ON FUNCTION %s FROM PUBLIC, anon, authenticated, elemental_bot', fn.sig);
-    IF fn.proname LIKE 'elemental\_\_%' THEN
-      EXECUTE format('REVOKE ALL ON FUNCTION %s FROM service_role', fn.sig);
-    ELSE
-      EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO service_role', fn.sig);
-    END IF;
-    IF fn.proname LIKE 'elemental\_bot\_%' AND fn.proname NOT LIKE 'elemental\_bot\_\_%' THEN
-      EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO elemental_bot', fn.sig);
-    END IF;
-  END LOOP;
-END;
-$$;
-
--- The pure CHECK-constraint helpers stay executable by the service role (the
--- loop above revoked every helper, as the core file's loop does).
-GRANT EXECUTE ON FUNCTION public.elemental__elements() TO service_role;
-GRANT EXECUTE ON FUNCTION public.elemental__is_snowflake(text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.elemental__valid_schedule(jsonb) TO service_role;
-GRANT EXECUTE ON FUNCTION public.elemental__valid_card_override(jsonb) TO service_role;
+-- Access: service_role only. Only this file's function is touched, so a
+-- grant another elemental file made (E11 runs before this one) is never undone.
+REVOKE ALL ON FUNCTION public.elemental_web_lesson_answer(text, text, text, integer, text, boolean)
+  FROM PUBLIC, anon, authenticated, elemental_bot;
+GRANT EXECUTE ON FUNCTION public.elemental_web_lesson_answer(text, text, text, integer, text, boolean) TO service_role;

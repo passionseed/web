@@ -106,6 +106,25 @@ BEGIN
   ASSERT (SELECT count(*) FROM public.elemental_badges WHERE team_id = fire AND kind = 'lesson') = 2, 'a badge per lesson';
 END $$;
 
+-- A staff move never shifts a finished lesson: the row keeps the team it was
+-- finished on, so the new team gets no badge and no past check-in from it.
+DO $$
+DECLARE
+  fire uuid := (SELECT id FROM t WHERE name = 'fire');
+  water uuid := (SELECT id FROM t WHERE name = 'water');
+  r jsonb;
+BEGIN
+  PERFORM public.elemental_bot_member_move(pg_temp.g_real(), pg_temp.staff(), pg_temp.uid(2), 20);
+  r := pg_temp.answer(2, 'interviews', 2, 'redone after the move', true);
+  ASSERT (r -> 'team' ->> 'team_id')::uuid = water, 'the result names the current team: ' || r::text;
+  ASSERT NOT (r ->> 'first_finish')::boolean AND NOT (r ->> 'badge_awarded')::boolean, 'moved re-finish: ' || r::text;
+  ASSERT (SELECT team_id FROM public.elemental_lesson_progress WHERE id = (r ->> 'progress_id')::uuid) = fire,
+    'a finished row moved to the new team';
+  ASSERT NOT EXISTS (SELECT 1 FROM public.elemental_badges WHERE team_id = water), 'the new team got a badge it did not earn';
+  ASSERT (SELECT count(*) FROM public.elemental_audit WHERE action = 'lesson_finish') = 3, 'a re-finish was audited';
+  PERFORM public.elemental_bot_member_move(pg_temp.g_real(), pg_temp.staff(), pg_temp.uid(2), 10);
+END $$;
+
 -- The badge shows in elemental_island_public (and the bot's island state).
 DO $$
 BEGIN
