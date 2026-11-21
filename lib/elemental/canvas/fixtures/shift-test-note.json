@@ -1,0 +1,87 @@
+{
+  "about": "A SHIFT 'test' note as the whiteboard editor makes and saves it (shiftCardSkeleton through Excalidraw 0.18.1's convertToExcalidrawElements and restoreElements, authors stamped as the save API does). Text replaced by 'x', ids and authors by placeholders. Written by scripts/elemental/excalidraw-roundtrip.ts --write-fixture.",
+  "elements": [
+    {
+      "id": "fixture-note",
+      "type": "rectangle",
+      "x": 400,
+      "y": 1200,
+      "width": 240,
+      "height": 200,
+      "angle": 0,
+      "strokeColor": "#a8d8ff",
+      "backgroundColor": "#a8d8ff",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": "fixture-frame",
+      "index": "ae",
+      "roundness": {
+        "type": 3,
+        "value": 10
+      },
+      "seed": 2115058341,
+      "version": 3,
+      "versionNonce": 1835376491,
+      "isDeleted": false,
+      "boundElements": [
+        {
+          "type": "text",
+          "id": "fixture-note-text"
+        }
+      ],
+      "updated": 1795281339255,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "card": "test",
+        "createdBy": "00000000-0000-4000-8000-000000000001",
+        "updatedBy": "00000000-0000-4000-8000-000000000001"
+      }
+    },
+    {
+      "id": "fixture-note-text",
+      "type": "text",
+      "x": 405,
+      "y": 1205,
+      "width": 10,
+      "height": 24.3,
+      "angle": 0,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": "fixture-frame",
+      "index": "af",
+      "roundness": null,
+      "seed": 1606196741,
+      "version": 4,
+      "versionNonce": 1020698821,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1795281339255,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "createdBy": "00000000-0000-4000-8000-000000000001",
+        "updatedBy": "00000000-0000-4000-8000-000000000001"
+      },
+      "text": "x",
+      "fontSize": 18,
+      "fontFamily": 6,
+      "textAlign": "left",
+      "verticalAlign": "top",
+      "containerId": "fixture-note",
+      "originalText": "x",
+      "autoResize": true,
+      "lineHeight": 1.35
+    }
+  ]
+}
