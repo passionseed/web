@@ -248,6 +248,13 @@ function earth() {
         const d = dx * dx + dy * dy;
         if (d < 1) put(x, y, [0.05, 0.05, 0.04], 0.4 * (1 - d));
       }
+  for (const h of heaps)
+    for (let y = h.cy - h.ry; y < h.cy + h.base; y++)
+      for (let x = h.cx - h.rx; x < h.cx + h.rx; x++) {
+        if (!inHeap(x, y, h)) continue;
+        const l = lum(get(x, y));
+        put(x, y, x % 3 < 2 && y % 3 < 2 ? [l * 0.9, l * 0.9, l * 0.85] : [0.16, 0.16, 0.15], 0.95);
+      }
   const PCB = hex("#33603e");
   const PCB_D = hex("#1d4a29");
   const TRACE = hex("#7aa266");
