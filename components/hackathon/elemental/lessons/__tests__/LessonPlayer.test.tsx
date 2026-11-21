@@ -227,6 +227,9 @@ describe("LessonPlayer, saving", () => {
 
     fireEvent.click(within(finish).getByRole("button", { name: LEARN_COPY.watchAgain }));
     expect(shownPart()).toBe(0);
+    // Watching again says the lesson is already finished, and every part stays open.
+    expect(screen.getByText(LEARN_COPY.finishedBefore)).toBeInTheDocument();
+    for (const n of [1, 2, 3, 4]) expect(partButton(n)).toBeEnabled();
   });
 
   it("finishes a lesson whose last part is a stop, and says when the badge was already earned", async () => {

@@ -92,7 +92,7 @@ export function LessonPlayer({ lesson, viewer, edition, listHref, islandHref }: 
   const [mode, setMode] = useState(viewer.mode);
   const [reason, setReason] = useState<LessonWatchReason | null>(viewer.reason);
   const [answers, setAnswers] = useState(() => savedAnswers(viewer, lesson.id));
-  const [finishedBefore] = useState(() => viewer.progress[lesson.id]?.finished === true);
+  const [finishedBefore, setFinishedBefore] = useState(() => viewer.progress[lesson.id]?.finished === true);
   const [selected, setSelected] = useState(() =>
     viewer.mode === "save" ? currentPart(lesson, savedAnswers(viewer, lesson.id).keys()) : 0,
   );
@@ -149,6 +149,7 @@ export function LessonPlayer({ lesson, viewer, edition, listHref, islandHref }: 
     setAnswers((prev) => new Map(prev).set(at, answer));
     if (result.final && result.finished) {
       moved.current = true;
+      setFinishedBefore(true);
       setFinish({ badgeAwarded: result.badgeAwarded, canvas: result.canvas });
       return;
     }
