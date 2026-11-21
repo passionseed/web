@@ -224,80 +224,119 @@ async function water() {
   drawLayer(await blurLayer(layer, 20), "screen");
 }
 
-// ---------- EARTH: a rubbish pile, in pixels made from the photo ----------
+// ---------- EARTH: an e-waste heap, built like the key visual's ----------
 function earth() {
-  // The pile: a mound with a ragged top, built from 8px cells. Neighbouring
-  // cells share a colour in 16px clusters, so they read as bags and boxes,
-  // and each cell keeps the photo's dot screen so the pile sits in the scene.
-  const HP = { cx: 480, cy: 1060, rx: 330, ry: 290 };
-  const top = (x) => {
-    const u = (x - HP.cx) / HP.rx;
-    if (Math.abs(u) >= 1) return Infinity;
-    return HP.cy - HP.ry * Math.pow(1 - u * u, 0.8) * (0.8 + 0.55 * (fbm(x * 0.02, 0.3, 70, 3) - 0.5));
-  };
-  const bottom = (x) => HP.cy + 34 - 22 * Math.pow((x - HP.cx) / HP.rx, 2);
-  const RUBBISH = [
-    [hex("#e4e1d8"), 0.22], // white bags
-    [hex("#a9a59c"), 0.12], // grey bags
-    [hex("#1e1d1b"), 0.2], // black bags
-    [hex("#8a6a44"), 0.12], // cardboard
-    [hex("#3a6fb0"), 0.09], // blue
-    [hex("#c23a2a"), 0.08], // red
-    [hex("#d8b23a"), 0.07], // yellow
-    [hex("#4f7a3a"), 0.1], // green bottles
+  // The key visual's recipe, bigger and taller: a dot screen of the photo
+  // under the pile, then monitors, boards, phones, keyboards, cables and
+  // batteries on a 4px grid, darker lower down, with a shadow on the grass.
+  const C4 = 4;
+  const px = (x, y, c, a = 1) => rect(Math.round(x / C4) * C4, Math.round(y / C4) * C4, C4, c, a);
+  const heaps = [
+    { cx: 470, cy: 1060, rx: 380, ry: 330, base: 46, seed: 41 },
+    { cx: 860, cy: 1095, rx: 170, ry: 120, base: 36, seed: 42 },
   ];
-  const pick = (r) => {
-    let s = 0;
-    for (const [c, w] of RUBBISH) {
-      s += w;
-      if (r < s) return c;
-    }
-    return RUBBISH[0][0];
+  const inHeap = (x, y, h) => {
+    const dx = (x - h.cx) / h.rx;
+    const dy = y < h.cy ? (y - h.cy) / h.ry : (y - h.cy) / h.base;
+    return dx * dx + dy * dy + 0.35 * (fbm(x * 0.025, y * 0.025, h.seed, 2) - 0.5) < 1;
   };
-  // Shadow on the grass.
-  for (let y = HP.cy - 10; y < HP.cy + 80; y++)
-    for (let x = HP.cx - HP.rx - 20; x < HP.cx + HP.rx + 90; x++) {
-      const dx = (x - HP.cx - 40) / (HP.rx + 50);
-      const dy = (y - HP.cy - 30) / 42;
-      const d = dx * dx + dy * dy;
-      if (d < 1) put(x, y, [0.05, 0.05, 0.03], 0.5 * (1 - d));
-    }
-  const cell = 8;
-  for (let y = HP.cy - HP.ry - 40; y < HP.cy + 40; y += cell)
-    for (let x = HP.cx - HP.rx; x < HP.cx + HP.rx; x += cell) {
-      const t = top(x + 4);
-      const b = bottom(x + 4);
-      if (!(y + 4 > t - 10 && y + 4 < b)) continue;
-      // The edge dissolves into the grass in an ordered dither.
-      const edgeIn = Math.min(y + 4 - t, b - (y + 4));
-      if (edgeIn < 14 && bayer(x / cell, y / cell) > edgeIn / 14) continue;
-      const depth = clamp((y - t) / Math.max(b - t, 1));
-      const lit = clamp(1.12 - 0.55 * depth - 0.2 * ((x - HP.cx) / HP.rx), 0.35, 1.2);
-      const jitter = fbm(x * 0.05, y * 0.05, 73, 2) * 6;
-      const base = pick(hash(Math.floor((x + jitter) / 16), Math.floor((y + jitter) / 16), 74));
-      for (let yy = 0; yy < cell; yy++)
-        for (let xx = 0; xx < cell; xx++) {
-          const l = lum(get(x + xx, y + yy));
-          // Dot screen: three of every four dots carry the rubbish colour, lit by the photo.
-          const dot = (x + xx) % 4 < 3 && (y + yy) % 4 < 3;
-          const c = dot ? base.map((v) => clamp(v * lit * (0.75 + 0.5 * l))) : base.map((v) => v * lit * 0.45);
-          put(x + xx, y + yy, c, 0.96);
+  for (const h of heaps)
+    for (let y = h.cy - 10; y < h.cy + h.base + 34; y++)
+      for (let x = h.cx - h.rx - 30; x < h.cx + h.rx + 60; x++) {
+        const dx = (x - h.cx - 30) / (h.rx + 30);
+        const dy = (y - (h.cy + h.base * 0.6)) / 34;
+        const d = dx * dx + dy * dy;
+        if (d < 1) put(x, y, [0.05, 0.05, 0.04], 0.4 * (1 - d));
+      }
+  for (const h of heaps)
+    for (let y = h.cy - h.ry; y < h.cy + h.base; y++)
+      for (let x = h.cx - h.rx; x < h.cx + h.rx; x++) {
+        if (!inHeap(x, y, h)) continue;
+        const l = lum(get(x, y));
+        put(x, y, x % 3 < 2 && y % 3 < 2 ? [l * 0.9, l * 0.9, l * 0.85] : [0.16, 0.16, 0.15], 0.95);
+      }
+  const PCB = hex("#33603e");
+  const PCB_D = hex("#1d4a29");
+  const TRACE = hex("#7aa266");
+  const GOLD = hex("#d2a63a");
+  const CHIP = hex("#141414");
+  const SCREEN = hex("#0f1418");
+  const GLASS = hex("#9fb6c4");
+  const PLASTIC = [hex("#c9c4b8"), hex("#8f8a80"), hex("#d9d4c6"), hex("#5c5a55")];
+  const WIRES = [hex("#141414"), hex("#c23a2a"), hex("#2f5fa8"), hex("#d8b23a"), hex("#e8e6de")];
+  const BATT = [hex("#2a2a2a"), hex("#c76a2a"), hex("#3a6fb0")];
+  const r = (k, i) => hash(k, i, 111);
+  const items = [];
+  for (let k = 0; k < 4000 && items.length < 900; k++) {
+    const h = heaps[k % 4 === 0 ? 1 : 0];
+    const x = h.cx + (r(k, 1) - 0.5) * 2 * h.rx * 0.92;
+    const y = h.cy - h.ry + r(k, 2) * (h.ry + h.base);
+    if (!inHeap(x, y, h)) continue;
+    items.push({ k, x, y, h, roll: r(k, 3) });
+  }
+  items.sort((a, b) => a.y - b.y);
+  for (const { k, x, y, h, roll } of items) {
+    const shade = (yy) => clamp((yy - (h.cy - h.ry)) / (h.ry + h.base));
+    const dot = (xx, yy, c) => inHeap(xx, yy, h) && px(xx, yy, c.map((v) => v * (1 - 0.45 * shade(yy))));
+    if (roll < 0.18) {
+      const w = 10 + Math.floor(r(k, 4) * 8);
+      const hh = 5 + Math.floor(r(k, 5) * 5);
+      const tilt = (r(k, 6) - 0.5) * 0.5;
+      for (let j = 0; j < hh; j++)
+        for (let i = 0; i < w; i++) {
+          let c = (i + j) % 7 === 0 ? PCB_D : PCB;
+          if (j === Math.floor(hh / 2) || i % 5 === 2) c = TRACE;
+          if ((i * 3 + j * 5) % 11 === 0) c = GOLD;
+          if (i > w / 2 - 2 && i < w / 2 + 2 && j > 0 && j < hh - 1) c = CHIP;
+          dot(x + (i - w / 2) * C4, y + (j - hh / 2) * C4 + (i - w / 2) * tilt * C4, c);
+        }
+    } else if (roll < 0.3) {
+      for (let j = 0; j < 10; j++)
+        for (let i = 0; i < 6; i++) {
+          const edge = i === 0 || j === 0 || i === 5 || j === 9;
+          const crack = Math.abs(i - (j * 0.6 + 1)) < 0.6 || Math.abs(i - (10 - j) * 0.5) < 0.5;
+          dot(x + i * C4, y + j * C4 * 0.7, edge ? PLASTIC[3] : crack ? GLASS : SCREEN);
+        }
+    } else if (roll < 0.48) {
+      const c = WIRES[Math.floor(r(k, 7) * WIRES.length)];
+      const rad = 8 + r(k, 8) * 14;
+      for (let t = 0; t < Math.PI * 1.7; t += 0.12) dot(x + Math.cos(t + k) * rad, y + Math.sin(t + k) * rad * 0.45, c);
+    } else if (roll < 0.6) {
+      const c = PLASTIC[Math.floor(r(k, 9) * 3)];
+      for (let j = 0; j < 3; j++) for (let i = 0; i < 7; i++) dot(x + i * C4 * 1.5, y + j * C4 * 1.5, (i + j) % 2 ? c : PLASTIC[1]);
+    } else if (roll < 0.68) {
+      const c = BATT[Math.floor(r(k, 10) * BATT.length)];
+      for (let i = 0; i < 6; i++) for (let j = 0; j < 3; j++) dot(x + i * C4, y + j * C4, i === 5 ? GOLD : j === 0 ? PLASTIC[2] : c);
+    } else {
+      const w = 9 + Math.floor(r(k, 11) * 6);
+      const hh = 6 + Math.floor(r(k, 12) * 4);
+      const shell = PLASTIC[Math.floor(r(k, 13) * 4)];
+      const screen = r(k, 14) < 0.6;
+      for (let j = 0; j < hh; j++)
+        for (let i = 0; i < w; i++) {
+          const inner = screen && i > 0 && j > 0 && i < w - 1 && j < hh - 1;
+          const glare = inner && i === j + 1;
+          dot(x + i * C4, y + j * C4, glare ? GLASS : inner ? SCREEN : (i + j) % 6 === 0 ? PLASTIC[1] : shell);
         }
     }
-  // Loose pixels blown off the pile into the field.
-  for (let k = 0; k < 90; k++) {
-    const a = hash(k, 1, 75) * Math.PI;
-    const r = 1 + Math.pow(hash(k, 2, 75), 1.5) * 0.9;
-    const x = Math.round((HP.cx + Math.cos(a) * HP.rx * r) / cell) * cell;
-    const y = Math.round((HP.cy + 30 + Math.sin(a) * 120 * r * (hash(k, 3, 75) < 0.5 ? 1 : 0.6)) / cell) * cell;
-    if (y < 860) continue;
-    rect(x, y, cell, pick(hash(k, 4, 75)), 0.92);
+  }
+  // Loose wires trailing off the pile onto the grass.
+  for (let k = 0; k < 10; k++) {
+    const h = heaps[k % 3 === 0 ? 1 : 0];
+    let x = h.cx + (r(k, 20) - 0.5) * h.rx * 1.6;
+    let y = h.cy + h.base * 0.4;
+    const c = WIRES[k % WIRES.length];
+    for (let i = 0; i < 22; i++) {
+      x += (r(k, 30 + i) - 0.3) * 8;
+      y += r(k, 60 + i) * 3;
+      px(x, y, c, 0.95);
+    }
   }
   // Black oil leaking from under the pile, a sick green where it catches the light.
   const SLUDGE = [hex("#0c0d09"), hex("#1b2010"), hex("#4a5a18"), hex("#a6b832")];
   for (const [cx, cy, rx, ry, s] of [
-    [500, 1130, 240, 36, 51],
-    [860, 1120, 100, 22, 52],
+    [470, 1150, 260, 36, 51],
+    [880, 1150, 110, 22, 52],
   ])
     for (const [x, y] of blobCells(cx, cy, rx, ry, 8, s, 0.7)) {
       const n = fbm(x * 0.03, y * 0.06, s, 2);
@@ -474,24 +513,60 @@ async function fire() {
       if (hash(k, id * 999, 68) < 0.6) rect(x + c2, y + c2, c2, P.white);
     }
   }
-  // The trees catch, in front of the flames: around the fire's base the
-  // forest itself turns into fire pixels and hides where the flames start. Each 10px cell takes its tone from the photo (bright leaves
-  // burn yellow, shadows burn red, the darkest char), so the fire grows out
-  // of the trees instead of sitting on them.
+  // The trees burn in their own shapes: only tree pixels (dark green in the
+  // photo) near the fire turn to fire colours, in 6px cells, so the crowns,
+  // trunks and the gaps between them stay and the forest keeps its depth.
+  // Crowns burn bright; lower down, the trunks char.
   const levels = [P.ink, P.deep, P.red, P.orange, P.yellow, P.cream];
-  for (let y = 780; y < 1240; y += cell)
-    for (let x = 120; x < W; x += cell) {
-      const dx = (x + 5 - F.x) / 580;
-      // Wider below the fire: it spreads down through the trees into the grass.
-      const dy = (y + 5 - (F.base + 40)) / (y > F.base ? 230 : 120);
-      const d = Math.sqrt(dx * dx + dy * dy) + 0.8 * (fbm(x * 0.012, y * 0.03, 151, 4) - 0.5);
-      const heat = 1 - smooth(0.35, 1, d);
-      if (heat <= 0 || heat < bayer(x / cell, y / cell) * 0.9) continue;
-      const c = origAt(x + 5, y + 5);
-      if (!(c[1] > c[2] + 0.01)) continue; // trees and grass, not the mountain behind
-      // Contrast-stretched photo tone: shadows char, lit leaves burn.
-      const l = clamp((origCellLum(x, y, cell) - 0.12) / 0.4);
-      rect(x, y, cell, levels[clamp(Math.round(l * 2.8 + heat * 1.3 - 1 + (hash(x, y, 155) - 0.5) * 1.2), 0, 5)]);
+  const isTree = (x, y) => {
+    const c = origAt(x, y);
+    return c[1] > c[2] + 0.01 && lum(c) < 0.4;
+  };
+  const tc = 6;
+  for (let y = 840; y < 1080; y += tc)
+    for (let x = 100; x < W; x += tc) {
+      if (!isTree(x + 3, y + 3)) continue;
+      const heat = clamp(1 - Math.abs(x - F.x) / 520 + 0.5 * (fbm(x * 0.01, y * 0.02, 151, 3) - 0.5));
+      if (heat <= 0.05 || heat < bayer(x / tc, y / tc) * 0.7) continue;
+      const up = clamp((1080 - y) / 200);
+      const l = clamp((origCellLum(x, y, tc) - 0.08) / 0.32);
+      const k = Math.round(l * 2.2 + heat * 1.6 + up * 0.9 - 1.3 + (hash(x, y, 155) - 0.5));
+      rect(x, y, tc, levels[clamp(k, 0, 5)]);
+    }
+  // A fire front along the ground at the forest's foot: a row of small
+  // flames on the ground plane, lower the further they are from the fire,
+  // with a strip of scorched grass behind them.
+  const front = (x) => 1084 + 10 * (fbm(x * 0.01, 3.3, 156, 2) - 0.5);
+  const spread = (x) => clamp(1 - Math.abs(x - F.x) / 600);
+  for (let x = 100; x < W; x += 6) {
+    const s = spread(x);
+    if (s <= 0) continue;
+    for (let y = Math.round((front(x) - 16) / 6) * 6; y < front(x) + 4; y += 6) if (bayer(x / 6, y / 6) < s + 0.25) rect(x, y, 6, hash(x, y, 157) < 0.7 ? P.ink : P.deep, 0.9);
+  }
+  // Ground flames as pixels: a noise field along the front, taller near the
+  // fire and in uneven clumps, quantized to 6px cells in the fire colours.
+  const gc = 6;
+  for (let x = 100; x < W; x += gc) {
+    const s = spread(x);
+    if (s < 0.06) continue;
+    const clump = smooth(0.4, 0.75, fbm(x * 0.012, 7.1, 158, 3));
+    const hgt = (30 + 150 * s) * (0.45 + clump);
+    const base = front(x);
+    for (let y = Math.floor((base - hgt) / gc) * gc; y < base; y += gc) {
+      const t = (base - y) / hgt;
+      const n = fbm(x * 0.05, y * 0.04, 159, 2);
+      const v = (1 - t) * (0.6 + 0.8 * n);
+      if (v < 0.22 + 0.3 * bayer(x / gc, y / gc)) continue;
+      const k = clamp(Math.floor(v * 4.2 - 0.6), 0, 3);
+      rect(x, y, gc, [P.deep, P.red, P.orange, P.yellow][k]);
+      if (v > 1.05 && t < 0.4) rect(x, y, gc, P.cream);
+    }
+  }
+  // Their glow on the grass in front.
+  for (let y = 1080; y < 1180; y++)
+    for (let x = 100; x < W; x++) {
+      const s = spread(x);
+      if (s > 0) screen(x, y, P.orange, 0.35 * s * (1 - (y - 1080) / 100));
     }
   // Embers drifting onto the meadow.
   for (let k = 0; k < 60; k++) {
