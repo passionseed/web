@@ -45,6 +45,9 @@ const customJestConfig = {
     // Run it intentionally against a real database with:
     //   SUPABASE_DB_URL=... npx jest lib/supabase/__tests__/lobby-rls.test.ts
     "<rootDir>/lib/supabase/__tests__/lobby-rls.test.ts",
+    // Elemental integration tests start a throwaway Postgres; they run with
+    // pnpm test:elemental:integration (jest.elemental-int.config.js).
+    "\\.int\\.test\\.ts$",
   ],
   // Do not discover package names or tests from independent nested checkouts.
   modulePathIgnorePatterns: ["<rootDir>/.claude/worktrees/"],

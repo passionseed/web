@@ -122,6 +122,92 @@ jobs:
       - name: Check whiteboard SQL
         run: pnpm test:whiteboard-sql
 
+  # Elemental hackathon SQL: Supabase stubs, the whiteboard and registration
+  # migrations, then every *elemental*.sql migration on a throwaway Postgres 15
+  # in Docker, the registration and elemental files applied twice, then each
+  # supabase/tests/elemental/**/*.test.sql (scripts/elemental-sql-check.ts).
+  # No secrets: it never touches a real database.
+  elemental-sql:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # supabase db push refuses a migration older than the newest one applied,
+      # and production runs what main has. So every elemental migration main
+      # does not have yet must sort after main's newest migration, whatever
+      # branch this pull request targets. Compared with origin/main itself,
+      # not with the merge commit's first parent.
+      - name: New elemental migrations sort after main's newest
+        run: |
+          git fetch --no-tags --depth=1 origin main
+          on_main="$(git ls-tree --name-only FETCH_HEAD supabase/migrations/ | sed 's#.*/##' | grep -E '^[0-9]{14}_.*\.sql$' | sort)"
+          newest="$(echo "$on_main" | tail -n 1)"
+          status=0
+          checked=0
+          for path in supabase/migrations/*elemental*.sql; do
+            [ -e "$path" ] || continue
+            f="$(basename "$path")"
+            if grep -qxF "$f" <<<"$on_main"; then
+              echo "on main already: $f"
+              continue
+            fi
+            checked=$((checked + 1))
+            if [[ ! "${f:0:14}" > "${newest:0:14}" ]]; then
+              echo "::error file=$path::$f sorts before or with main's newest migration $newest. Rename it to a timestamp after that one."
+              status=1
+            fi
+          done
+          [ "$status" = 0 ] && echo "ok: $checked new elemental migration(s), all after $newest"
+          exit "$status"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Elemental SQL tests on Postgres 15
+        run: pnpm test:db:elemental
+        env:
+          ELEMENTAL_PG_BACKEND: docker
+          ELEMENTAL_PG_IMAGE: postgres:15-alpine
+
+  # Elemental integration tests (*.int.test.ts, jest.elemental-int.config.js):
+  # TypeScript against the same throwaway Postgres, through
+  # scripts/elemental/harness.ts. Kept out of the sharded `test` job, which
+  # never needs Docker.
+  elemental-int:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Pull Postgres 15
+        run: docker pull -q postgres:15-alpine
+
+      - name: Elemental integration tests
+        run: pnpm test:elemental:integration
+        env:
+          ELEMENTAL_PG_BACKEND: docker
+          ELEMENTAL_PG_IMAGE: postgres:15-alpine
+
   # SHIFT High quests: every shift_quest migration on throwaway Postgres 15
   # databases (production's major, supabase/config.toml), applied once and
   # twice, then the database rules, island rules, bot flows and the web board
