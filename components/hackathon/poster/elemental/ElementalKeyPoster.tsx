@@ -63,6 +63,75 @@ const TROPHY = [
 ];
 const TROPHY_FILL: Record<string, string> = { "#": EL.ink, h: "#ffffff", b: EL.ink };
 
+/**
+ * The title plays on its own word: four letters of "Elemental" are
+ * corrupted into pixel glyphs of the elements, the e into toxic water, the
+ * m into e-waste (Earth), the a into a gust of smoke (Air) and the last l
+ * into fire. Each still reads as its letter. The GIF glitches them in one by
+ * one as each element arrives (scripts/render-elemental-gif.mjs --story).
+ */
+type GlyphElement = "water" | "earth" | "air" | "fire";
+const GLYPHS: Record<GlyphElement, { rows: string[]; fill: Record<string, string>; up?: number }> = {
+  water: {
+    rows: ["...GGG...", "..GLLLG..", ".GL...LG.", "GL.....DG", "GAAAAAAAG", "GL.......", "GL.......", ".GL....G.", "..GGGGGD.", "...DDD..."],
+    fill: { G: "#4a7d1a", L: "#8dbd3c", A: "#84c424", D: "#244710" },
+  },
+  earth: {
+    rows: [
+      "PP.PPPP...PPPP..",
+      "PTPP.TPP.PT.TPP.",
+      "PP....PgPP....Pg",
+      "Pg.....PP.....PP",
+      "PP.....TP.....TP",
+      "PT.....PP.....PP",
+      "PP.....Pg.....PP",
+      "cP.....PP.....Pc",
+      "PP.....PT.....PP",
+      "KKc...cKKc...cKK",
+    ],
+    fill: { P: "#33603e", T: "#7aa266", g: "#d2a63a", K: "#141414", c: "#c9c4b8" },
+  },
+  air: {
+    rows: ["..sSSSs..", ".S.....S.", ".......S.", "..sSSSSS.", ".S..w..S.", "S..w.w.S.", "S...w.SS.", ".S...S.S.", "..SSS..SS", "........."],
+    fill: { S: "#3a3733", s: "#6b6761", w: "#8f8a80" },
+    up: -1,
+  },
+  fire: {
+    rows: ["..W..", ".WY..", ".YY..", "..YO.", ".OY..", ".OO..", "..OR.", ".RO..", ".RR..", "..RR.", ".RR..", ".RD..", ".RR..", ".DR..", "DDDD."],
+    fill: { W: "#fff4dc", Y: "#ffd57a", O: "#ec6424", R: "#e2461b", D: "#8e2410" },
+  },
+};
+/** Which letters of the edition name turn into which element. */
+const TITLE_GLYPHS: Record<number, GlyphElement> = { 2: "water", 3: "earth", 7: "air", 8: "fire" };
+
+/**
+ * One letter that the pixels have taken over. The real letter stays in the
+ * line, see-through, so spacing and the baseline don't move, and the glyph
+ * sits on it. data-glyph lets the GIF script switch each one on and off.
+ */
+function GlyphLetter({ ch, el, on }: { ch: string; el: GlyphElement; on: boolean }) {
+  const g = GLYPHS[el];
+  const cell = 6;
+  const w = g.rows[0].length;
+  const h = g.rows.length;
+  return (
+    <span data-glyph={el} data-on={on ? "1" : "0"} style={{ position: "relative", display: "inline-block" }}>
+      <span data-glyph-letter style={{ color: on ? "transparent" : undefined }}>{ch}</span>
+      <svg
+        data-glyph-pixels
+        width={w * cell}
+        height={h * cell}
+        viewBox={`0 0 ${w} ${h}`}
+        shapeRendering="crispEdges"
+        aria-hidden="true"
+        style={{ position: "absolute", left: "50%", bottom: `calc(0.215em + ${(g.up ?? 0) * cell}px)`, transform: "translateX(-50%)", visibility: on ? "visible" : "hidden" }}
+      >
+        {g.rows.flatMap((row, y) => Array.from(row).map((c, x) => (g.fill[c] ? <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={g.fill[c]} /> : null)))}
+      </svg>
+    </span>
+  );
+}
+
 function PixelTrophy({ cell }: { cell: number }) {
   const w = TROPHY[0].length;
   const h = TROPHY.length;
@@ -90,7 +159,7 @@ function Fact({ above, big, below, align = "left" }: { above?: ReactNode; big: R
   );
 }
 
-export function ElementalKeyPoster({ id = "elemental-key", sky = "grey" }: { id?: string; sky?: keyof typeof PLATES }) {
+export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs = true }: { id?: string; sky?: keyof typeof PLATES; glyphs?: boolean }) {
   return (
     <div id={id} className={`${trirong.variable} relative overflow-hidden`} style={{ width: W, height: H, backgroundColor: "#2a2b26" }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -139,18 +208,24 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey" }: { id?
             <span style={{ fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 28, color: EL.ink }}>PassionSeed</span>
           </span>
         </div>
-        <h1 className="m-0 mt-[10px]" style={{ fontFamily: EL_FONT.display, lineHeight: 1.02, letterSpacing: "-0.01em" }}>
+        {/* Says it's a competition, for students who don't know the word "hackathon". */}
+        <div className="mt-[18px] flex items-center gap-[14px]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 42, lineHeight: "50px", marginLeft: 4 }}>
+          <span>งานแข่ง</span>
+          <PixelTrophy cell={4} />
+        </div>
+        <h1 className="m-0" style={{ fontFamily: EL_FONT.display, lineHeight: 1.02, letterSpacing: "-0.01em" }}>
           <span className="block" style={{ fontWeight: 200, fontSize: 124 }}>
-            {ELEMENTAL.edition}
+            {Array.from(ELEMENTAL.edition).map((ch, i) =>
+              TITLE_GLYPHS[i] ? <GlyphLetter key={i} ch={ch} el={TITLE_GLYPHS[i]} on={glyphs} /> : ch,
+            )}
           </span>
           <span className="block" style={{ fontWeight: 300, fontStyle: "italic", fontSize: 124 }}>
             Hackathon
           </span>
         </h1>
-        {/* What it is, in one line, with a pixel trophy (Angpao, 2026-11-20). */}
-        <div className="mt-[8px] flex items-center gap-[16px]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 42, lineHeight: "56px", marginLeft: 4 }}>
-          <span>แข่งขันแก้ปัญหาสภาพแวดล้อม</span>
-          <PixelTrophy cell={4} />
+        {/* The line under the title (Bunyasit, 2026-11-20). */}
+        <div className="mt-[8px]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 42, lineHeight: "56px", marginLeft: 4 }}>
+          สิ่งแวดล้อมไม่ควรถูกทิ้งเพราะเงิน
         </div>
       </div>
 

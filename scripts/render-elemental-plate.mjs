@@ -3,7 +3,13 @@
  * Builds the Elemental key visual's image plate: the healthy photo, poisoned
  * by four pixel elements. Type is laid over it in React.
  *
- *   node scripts/render-elemental-plate.mjs
+ *   node scripts/render-elemental-plate.mjs [--corrupt 0..1]
+ *
+ * --corrupt sets how far the place has been poisoned: 0 is the clean photo,
+ * 1 (the default) is the poster. The elements arrive one after another, as
+ * a story (scripts/elemental-stages.mjs): the e-waste is dumped, it leaks
+ * into the river, the fire takes hold, and its smoke spreads over the hills. The GIF script uses it to animate from
+ * normal to corrupted.
  *
  * Writes public/hackathon/poster/elemental/plate-key.png (1080x1350).
  *
@@ -24,6 +30,8 @@ import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
+
+import { stage as stageOf } from "./elemental-stages.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const BG = join(ROOT, "public/hackathon/poster/elemental/bg/river-joana-abreu-unsplash.jpg");
@@ -50,6 +58,8 @@ const flow = (f, vx, vy) => {
   const n = (1 - PHASE) * a + PHASE * b;
   return 0.5 + (n - 0.5) / Math.hypot(1 - PHASE, PHASE);
 };
+const clampArg = (v) => Math.min(1, Math.max(0, v));
+const CORRUPT = arg("--corrupt") === undefined ? 1 : clampArg(Number(arg("--corrupt")));
 const OUT = arg("--out") ?? join(ROOT, `public/hackathon/poster/elemental/plate-key${SKY_BLUE ? "-blue" : ""}.png`);
 const W = 1080;
 const H = 1350;
@@ -116,6 +126,8 @@ function screen(x, y, c, a = 1) {
 function rect(x0, y0, s, c, a = 1) {
   for (let y = y0; y < y0 + s; y++) for (let x = x0; x < x0 + s; x++) put(x, y, c, a);
 }
+/** How far each element has spread, 0..1, from the overall --corrupt level. */
+const E = Object.fromEntries(["earth", "water", "fire", "air"].map((k) => [k, stageOf(k, CORRUPT)]));
 const lum = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
 
 /** Blur an RGBA float layer with sharp and return it. */
@@ -187,6 +199,7 @@ const P = {
   smogB: hex("#7a6a45"),
   mustard: hex("#cdb047"),
   smogPale: hex("#e6e1cb"),
+  smokeHaze: hex("#8a857c"),
 };
 
 // ---------- layout (poster pixels, tied to the photo's crop) ----------
@@ -205,14 +218,15 @@ function flameField(x, y) {
   for (const [i, g] of tongues.entries()) {
     // Each tongue's height flickers on its own, never on a regular beat.
     const flick = FRAMES ? flow((dx, dy) => vnoise(i * 13.7, dy * 0.012, 140), 0, -400) - 0.5 : 0;
-    const gh = g.h * (1 + 0.16 * flick);
+    // The fire grows from a small flame at its base as it takes hold.
+    const gh = g.h * (1 + 0.16 * flick) * (0.08 + 0.92 * E.fire);
     const t = (FIRE.base - y) / gh;
     if (t < -0.08 || t > 1) continue;
     const tt = Math.max(t, 0);
     // The licks rise: the wobble pattern travels up the flame.
     const wob = 46 * (flow((dx, dy) => fbm((x + dx) * 0.012, (y + dy) * 0.02 + 3, 5, 3), 0, -240) - 0.5) * (0.3 + tt);
     const c = g.cx + g.lean * Math.pow(tt, 1.6) + wob;
-    const hw = (g.w / 2) * Math.pow(1 - tt, 0.7) * (t < 0 ? 1 + t * 6 : 1);
+    const hw = (g.w / 2) * (0.45 + 0.55 * E.fire) * Math.pow(1 - tt, 0.7) * (t < 0 ? 1 + t * 6 : 1);
     const d = Math.abs(x - c) / Math.max(hw, 1);
     if (d >= 1) continue;
     best = Math.max(best, (1 - d * d) * Math.pow(1 - tt, 0.45));
@@ -280,33 +294,49 @@ if (SKY_BLUE) {
     }
 }
 
-// AIR: a poisoned cloud over the hill, its own cloud, not the fire's smoke.
-// Built like a real cumulus (puffs as a metaball field), lit on top and
-// shaded underneath, then turned into pixels in a sick yellow-brown, so it
-// reads as a cloud gone wrong next to the clean sky.
-// The hill's skyline in poster pixels (from the photo): the haze hugs it.
+// AIR: the fire's own smoke. It rises out of the flames and the wind blows
+// it left, flattening into a band over the hill, so fire and smoke read as
+// one thing. Dark and thick near the fire, thinner and paler as it spreads.
+// The hill's skyline in poster pixels (from the photo).
 const hillY = (x) => (x < 590 ? 398 + (x / 590) * 368 : 640 + Math.max(0, (x - 760) * -0.1));
-/** Smog density 0..1: thick and low over the hill, thinning upward and to the right. */
+const SMOKE_X0 = 760; // the fire's left flank, where the smoke leaves it
+/** Where the smoke is at x: its centre line, half-width and how far along (0 at the fire). */
+const smokeAt = (x) => {
+  const t = clamp((SMOKE_X0 - x) / SMOKE_X0);
+  // It rises a little as the wind carries it, and spreads.
+  return { t, yc: 650 - 100 * Math.pow(t, 0.8), hw: 30 + 100 * t };
+};
+/** Smoke density 0..1. */
 const smogField = (x, y) => {
-  const above = hillY(x) - y; // distance above the skyline
-  // The smog drifts with the wind, to the right and a little down the slope.
-  const n = flow((dx, dy) => fbm((x + dx) * 0.006, (y + dy) * 0.018, 92, 4), 90, 18);
-  // Densest just above the ridge, thinning upward and down the slope.
-  const thick = smooth(-110, 10, above) * (1 - smooth(20, 210 + 80 * n, above));
-  const reach = 1 - smooth(380, 700, x + (n - 0.5) * 220);
+  if (x > SMOKE_X0 + 80) return 0;
+  const { t, yc, hw } = smokeAt(x);
+  // Drifts left with the wind and lifts a little.
+  const n = flow((dx, dy) => fbm((x + dx) * 0.008, (y + dy) * 0.02, 92, 4), -120, -20);
+  const billow = flow((dx, dy) => fbm((x + dx) * 0.005, (y + dy) * 0.004, 95, 3), -120, -20);
+  // Billows: the width swells and pinches, and the centre wanders.
+  const w = hw * (0.55 + 0.9 * billow);
+  const d = Math.abs(y - yc - (billow - 0.5) * 90 * (0.2 + t)) / w;
+  if (d >= 1) return 0;
+  // Puffs, not a solid beam: thin patches open up along it.
+  const puffs = smooth(0.3, 0.52, flow((dx, dy) => fbm((x + dx) * 0.011, (y + dy) * 0.025, 97, 3), -120, -20));
+  // How far the wind has carried it so far in the story.
+  const reach = 1 - smooth(E.air * 1.15 - 0.15, E.air * 1.15, t);
+  // It starts inside the flames, so it seems to come out of them.
+  const start = smooth(SMOKE_X0 + 80, SMOKE_X0 - 20, x);
   // Kept below the title block.
-  const belowTitle = smooth(425, 500, y + (n - 0.5) * 60);
-  return clamp(thick * reach * belowTitle * (0.45 + 0.7 * n));
+  const belowTitle = smooth(500, 560, y + (n - 0.5) * 60);
+  const f = (1 - d * d) * reach * start * puffs * (1 - 0.4 * t) * (0.45 + 0.8 * n);
+  return clamp(f * belowTitle * smooth(0, 0.35, E.air) * (E.fire > 0 ? 1 : 0));
 };
 // A faint haze behind it, so the pixels sit in the air.
 {
   const haze = new Float32Array(W * H * 4);
-  for (let y = 150; y < 820; y++)
-    for (let x = 0; x < 820; x++) {
+  for (let y = 380; y < 800; y++)
+    for (let x = 0; x < 900; x++) {
       const f = smogField(x, y);
-      if (f > 0.05) paint(haze, x, y, P.smogA, 0.3 * f);
+      if (f > 0.05) paint(haze, x, y, P.smokeHaze, 0.3 * f);
     }
-  drawLayer(await blurLayer(haze, 18), "normal", P.smogA);
+  drawLayer(await blurLayer(haze, 18), "normal", P.smokeHaze);
 }
 
 // WATER: the left bank of the river turns toxic green.
@@ -314,11 +344,13 @@ const isWater = (x, y) => {
   if (x < WATER.x0 || x >= WATER.x1 || y < WATER.y0 || y >= WATER.y1) return 0;
   const l = lum(get(x, y));
   const front = x + 260 * (fbm(x * 0.004, y * 0.022, 21, 4) - 0.5);
-  const edge = 1 - smooth(WATER.x1 - 170, WATER.x1 - 110, front);
+  // The spill spreads from the left bank across the river.
+  const edge = 1 - smooth(WATER.x1 - 170, WATER.x1 - 110, front + (1 - E.water) * 760);
   if (edge > 0 && edge < 1 && edge < bayer(x >> 1, y >> 1)) return 0;
   return smooth(0.34, 0.46, l) * (edge > 0 ? 1 : 0);
 };
 const waterMask = new Float32Array(W * H);
+if (E.water > 0)
 for (let y = WATER.y0; y < WATER.y1; y++)
   for (let x = WATER.x0; x < WATER.x1; x++) waterMask[y * W + x] = isWater(x, y);
 for (let y = WATER.y0; y < WATER.y1; y++)
@@ -333,34 +365,34 @@ for (let y = WATER.y0; y < WATER.y1; y++)
 {
   const layer = new Float32Array(W * H * 4);
   for (let y = WATER.y0 - 40; y < WATER.y0 + 90; y++)
-    for (let x = 0; x < WATER.x1 - 120; x++) paint(layer, x, y, P.g2, 0.15 * (1 - Math.abs(y - WATER.y0 - 10) / 90));
+    for (let x = 0; x < WATER.x1 - 120; x++) paint(layer, x, y, P.g2, 0.15 * E.water * (1 - Math.abs(y - WATER.y0 - 10) / 90));
   drawLayer(await blurLayer(layer, 14), "screen");
 }
 
 // FIRE: glow on the sky and the ground first, then the smooth flame.
-{
+if (E.fire > 0) {
   for (let y = 0; y < H; y++)
     for (let x = 0; x < W; x++) {
       const dx = (x - FIRE.x) / 380;
       const dy = (y - (FIRE.base - 150)) / 360;
       const r = Math.sqrt(dx * dx + dy * dy);
-      if (r < 1) put(x, y, P.orange, 0.4 * Math.pow(1 - r, 1.7));
+      if (r < 1) put(x, y, P.orange, 0.4 * E.fire * Math.pow(1 - r, 1.7));
       // Light thrown on the ground around the base.
       const gx = (x - FIRE.x) / 320;
       const gy = (y - (FIRE.base + 14)) / 56;
       const gr = Math.sqrt(gx * gx + gy * gy);
-      if (gr < 1) screen(x, y, P.yellow, 0.55 * Math.pow(1 - gr, 1.3));
+      if (gr < 1) screen(x, y, P.yellow, 0.55 * E.fire * Math.pow(1 - gr, 1.3));
     }
   const glow = new Float32Array(W * H * 4);
   // The glow plume the pixels ride on, up and to the left.
   for (let s = 0; s < 1; s += 0.004) {
     const px = FIRE.x - 40 + 130 * Math.sin(s * 2.2) - 80 * s;
-    const py = FIRE.base - 380 - s * 520;
+    const py = FIRE.base - (380 + s * 520) * (0.2 + 0.8 * E.fire);
     const w = 50 + 90 * s;
     for (let k = 0; k < 40; k++) {
       const ox = (hash(k, s * 1000, 3) - 0.5) * w * 2;
       const oy = (hash(k, s * 1000, 4) - 0.5) * 20;
-      paint(glow, Math.round(px + ox), Math.round(py + oy), P.orange, 0.12 * (1 - s * 0.7));
+      paint(glow, Math.round(px + ox), Math.round(py + oy), P.orange, 0.12 * smooth(0.35, 1, E.fire) * (1 - s * 0.7));
     }
   }
   drawLayer(await blurLayer(glow, 22), "normal", P.orange);
@@ -370,7 +402,7 @@ for (let y = WATER.y0; y < WATER.y1; y++)
     for (let y = y0; y < y0 + 10; y++)
       for (let x = x0; x < x0 + 10; x++) {
         const l = lum(get(x, y));
-        put(x, y, x % 3 === 0 && y % 3 === 0 ? [l, l * 0.8, l * 0.6] : P.ink, 0.92);
+        put(x, y, x % 3 === 0 && y % 3 === 0 ? [l, l * 0.8, l * 0.6] : P.ink, 0.92 * smooth(0, 0.3, E.fire));
       }
   const halo = new Float32Array(W * H * 4);
   for (let y = FIRE.base - 600; y < FIRE.base + 40; y++)
@@ -423,7 +455,7 @@ for (let y = WATER.y0; y < WATER.y1; y++)
       put(x, y, l * 1.25 > bayer(x, y) ? P.g3 : P.g0);
     }
   // One flat acid shape on the surface, and a few bubbles.
-  for (const [x, y] of blobCells(214, 1150, 74, 30, 12, 33)) rect(x, y, 12, P.acid);
+  if (E.water > 0.8) for (const [x, y] of blobCells(214, 1150, 74, 30, 12, 33)) rect(x, y, 12, P.acid);
   for (let k = 0; k < 26; k++) {
     const x = Math.round((40 + hash(k, 1, 34) * 400) / 6) * 6;
     const y = Math.round((WATER.y0 + 50 + hash(k, 2, 34) * 170) / 6) * 6;
@@ -437,13 +469,15 @@ for (let y = WATER.y0; y < WATER.y1; y++)
 // cracked phone screens, keys and batteries piled into the same two heaps
 // the old dirt had, on a dot-screen of the photo so the pile sits in the
 // scene, with a dithered edge and a shadow on the grass.
-{
+if (E.earth > 0) {
   const C4 = 4; // e-waste detail grid
   const px = (x, y, c, a = 1) => rect(Math.round(x / C4) * C4, Math.round(y / C4) * C4, C4, c, a);
+  // The heaps grow as more is dumped; their base stays on the ground.
+  const grow = 0.3 + 0.7 * E.earth;
   const heaps = [
     { cx: 250, cy: 918, rx: 175, ry: 50, seed: 41 },
     { cx: 480, cy: 935, rx: 125, ry: 58, seed: 42 },
-  ];
+  ].map((h) => ({ ...h, rx: h.rx * grow, ry: h.ry * grow, cy: h.cy + h.ry * (1 - grow) * 0.7 }));
   const inHeap = (x, y, h) => {
     const dx = (x - h.cx) / h.rx;
     const dy = (y - h.cy) / h.ry;
@@ -486,6 +520,8 @@ for (let y = WATER.y0; y < WATER.y1; y++)
     const x = h.cx + (r(k, 1) - 0.5) * 2 * h.rx * 0.9;
     const y = h.cy + (r(k, 2) - 0.6) * 2 * h.ry * 0.9;
     if (!inHeap(x, y, h)) continue;
+    // Items land one by one, in a fixed order.
+    if (r(k, 15) >= E.earth) continue;
     const roll = r(k, 3);
     // Mostly casings, monitors and cables; boards are the accent.
     const type = roll < 0.18 ? 0 : roll < 0.3 ? 2 : roll < 0.48 ? 3 : roll < 0.6 ? 4 : roll < 0.68 ? 5 : 6;
@@ -552,7 +588,7 @@ for (let y = WATER.y0; y < WATER.y1; y++)
     }
   }
   // Loose wires trailing off the pile.
-  for (let k = 0; k < 6; k++) {
+  for (let k = 0; k < Math.round(6 * E.earth); k++) {
     const h = heaps[k % 2];
     let x = h.cx + (r(k, 20) - 0.5) * h.rx * 1.6;
     let y = h.cy + h.ry * 0.4;
@@ -565,31 +601,26 @@ for (let y = WATER.y0; y < WATER.y1; y++)
   }
 }
 
-// AIR pixels: the haze as an ordered dither on an 8px grid, three smog
-// tones by density, so it fades into the blue in a pattern, not a blur;
-// fine dust specks drift above it.
+// AIR pixels: the smoke as an ordered dither on an 8px grid, in smoke
+// greys: dark and dense by the fire, pale where it thins over the hill, so
+// it fades into the sky in a pattern, not a blur.
 {
   const cell = 8;
-  const tones = [hex("#d8cb9c"), hex("#a89155"), hex("#6f5d3c")];
-  for (let y = 150; y < 820; y += cell)
-    for (let x = 0; x < 820; x += cell) {
+  const tones = [hex("#c9c4b8"), hex("#8f8a80"), hex("#5c5852"), hex("#34312d")];
+  for (let y = 376; y < 800; y += cell)
+    for (let x = 0; x < 900; x += cell) {
       const f = smogField(x + 4, y + 4);
-      const d = f * 2.6 + (bayer(x / cell, y / cell) - 0.5) * 1.1;
+      const d = f * 3 + (bayer(x / cell, y / cell) - 0.5) * 1.1;
       if (d < 0.75) continue;
-      rect(x, y, cell, tones[clamp(Math.floor(d - 0.75), 0, 2)], 0.92);
+      // Darker near the fire and where it's thick.
+      const near = 1 - smokeAt(x).t;
+      rect(x, y, cell, tones[clamp(Math.floor(d - 0.75 + near * 1.4), 0, 3)], 0.92);
     }
-  for (let k = 0; k < 60; k++) {
-    const x = Math.round((hash(k, 1, 93) * 600) / 6) * 6;
-    const base = hillY(x) - 120 - hash(k, 2, 93) * 230;
-    const y = Math.round(base / 6) * 6;
-    if (y < 460) continue;
-    rect(x, y, 6, hash(k, 3, 93) < 0.6 ? hex("#8a7748") : hex("#5a4b31"), 0.8);
-  }
 }
 
 // FIRE pixels: the upper flame quantized into a mosaic, a white stepped
 // crown along its edge, two flat shapes, and checker riding the glow.
-{
+if (E.fire > 0) {
   const cell = 10;
   const levels = [P.red, P.orange, P.cream, P.white];
   for (let y = FIRE.base - 600; y < FIRE.base - 50; y += cell)
@@ -608,8 +639,8 @@ for (let y = WATER.y0; y < WATER.y1; y++)
         rect(x, y, cell, levels[clamp(Math.floor(v * 4.2), 0, 3)]);
       }
     }
-  for (const [x, y] of blobCells(FIRE.x - 22, FIRE.base - 230, 34, 62, 14, 62)) rect(x, y, 14, P.flatRed);
-  for (const [x, y] of blobCells(FIRE.x + 46, FIRE.base - 330, 18, 46, 12, 63)) rect(x, y, 12, P.flatBlue);
+  if (E.fire > 0.7) for (const [x, y] of blobCells(FIRE.x - 22, FIRE.base - 230, 34, 62, 14, 62)) rect(x, y, 14, P.flatRed);
+  if (E.fire > 0.85) for (const [x, y] of blobCells(FIRE.x + 46, FIRE.base - 330, 18, 46, 12, 63)) rect(x, y, 12, P.flatBlue);
   // Checker on the glow plume, thinning as it rises.
   const c2 = 14;
   // Sparks rise one full column per loop and wrap, so the GIF is seamless.
@@ -618,9 +649,10 @@ for (let y = WATER.y0; y < WATER.y1; y++)
   for (let id = 0; id < 1; id += 0.03) {
     const s = (id + PHASE * SPAN) % SPAN;
     const px = FIRE.x - 40 + 130 * Math.sin(s * 2.2) - 80 * s;
-    const py = FIRE.base - 380 - s * 520;
+    const py = FIRE.base - (380 + s * 520) * (0.2 + 0.8 * E.fire);
     for (let k = 0; k < 4; k++) {
-      if (hash(k, id * 999, 64) > 0.42 - s * 0.22) continue;
+      // Sparks only fly once the fire is big, and fly higher as it grows.
+      if ((E.fire < 1 && s > E.fire * 1.1 - 0.1) || hash(k, id * 999, 64) > 0.42 - s * 0.22) continue;
       const x = Math.round((px + (hash(k, id * 999, 65) - 0.5) * (80 + 120 * s)) / c2) * c2;
       const y = Math.round((py + (hash(k, id * 999, 66) - 0.5) * 30) / c2) * c2;
       rect(x, y, c2, hash(k, id * 999, 67) < 0.86 ? P.white : P.flatBlue);
@@ -632,7 +664,7 @@ for (let y = WATER.y0; y < WATER.y1; y++)
 
 // A burnt log in front of the fire, and embers on the ground, so the base
 // is broken up instead of sitting on a straight line.
-{
+if (E.fire > 0.15) {
   for (const [x0, y0] of blobCells(FIRE.x + 70, FIRE.base + 8, 96, 26, 10, 81, 0.8))
     for (let y = y0; y < y0 + 10; y++)
       for (let x = x0; x < x0 + 10; x++) {
@@ -642,7 +674,7 @@ for (let y = WATER.y0; y < WATER.y1; y++)
   for (const [x0, y0] of blobCells(FIRE.x - 130, FIRE.base + 4, 60, 18, 10, 82, 0.8))
     for (let y = y0; y < y0 + 10; y++)
       for (let x = x0; x < x0 + 10; x++) put(x, y, x % 3 < 2 && y % 3 < 2 ? P.ash : P.ink);
-  for (let k = 0; k < 40; k++) {
+  for (let k = 0; k < Math.round(40 * E.fire); k++) {
     const x = Math.round((FIRE.x - 260 + hash(k, 1, 83) * 520) / 5) * 5;
     const y = Math.round((FIRE.base - 10 + hash(k, 2, 83) * 50) / 5) * 5;
     if (FRAMES && hash(k, FRAME, 84) < 0.25) continue;
@@ -650,7 +682,8 @@ for (let y = WATER.y0; y < WATER.y1; y++)
   }
 }
 
-// Grain over everything, pixels included.
+// Grain over everything, pixels included (--no-grain leaves it to the caller).
+if (!process.argv.includes("--no-grain"))
 for (let y = 0; y < H; y++)
   for (let x = 0; x < W; x++) {
     const n = (hash(x, y, 99 + FRAME * 3) + hash(x, y, 98 + FRAME * 3) - 1) * 0.065;
