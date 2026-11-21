@@ -107,7 +107,9 @@ export function topElementOf(counts: Partial<Record<SectorElement, number>>): Se
   let best: SectorElement | null = null;
   let most = 0;
   for (const e of SECTOR_ORDER) {
-    const n = shown(counts?.[e]);
+    // Not capped at MAX_SHOWN: counts above it must still compare as SQL does.
+    const v = counts?.[e];
+    const n = typeof v === "number" && Number.isFinite(v) && v > 0 ? Math.floor(v) : 0;
     if (n > most) {
       best = e;
       most = n;

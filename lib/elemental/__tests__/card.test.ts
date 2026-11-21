@@ -212,6 +212,8 @@ describe("topElementOf", () => {
     expect(topElementOf({ aether: 2, earth: 2, fire: 1 })).toBe("earth");
     expect(topElementOf({ aether: 5, air: 5, fire: 5 })).toBe("air");
     expect(topElementOf({ aether: 6, air: 5 })).toBe("aether");
+    // Above the card's MAX_SHOWN the counts still compare as numbers, not as the capped digits.
+    expect(topElementOf({ water: 100_000, fire: 100_001 })).toBe("fire");
   });
 
   it("is null when no element is above 0", () => {
