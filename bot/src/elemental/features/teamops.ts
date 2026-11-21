@@ -196,7 +196,9 @@ export function cleanName(raw: string): string {
 
 function checkName(raw: string): string {
   const name = cleanName(raw);
-  if (name.length < NAME_MIN || name.length > NAME_MAX) throw new Refusal(OPS.nameLength);
+  // Code points, as SQL's char_length counts (an emoji is 2 UTF-16 units).
+  const length = [...name].length;
+  if (length < NAME_MIN || length > NAME_MAX) throw new Refusal(OPS.nameLength);
   // The matched text is never echoed or logged.
   if (!refusePii({ project_name: name }).ok) throw new Refusal(OPS.namePii);
   return name;
@@ -254,9 +256,16 @@ export function unteamedMessages(rows: readonly UnteamedRow[], element: ElementK
 
 const P = PermissionFlagsBits;
 const NONE = BigInt(0);
-/** Staff in a locked channel: read the history, write nothing. */
+/**
+ * Staff in a locked channel: read the history, write nothing. Every bit here
+ * is one of MEMBER_ALLOW, which the bot is required to hold: Discord refuses
+ * (403) an overwrite that allows OR denies a permission the bot lacks, and a
+ * refused lock would leave the students' overwrites in place. Thread creation
+ * is not denied for that reason (the bot is not required to hold it); with
+ * SendMessagesInThreads denied, nobody can post in such a thread anyway.
+ */
 export const LOCKED_STAFF_ALLOW = P.ViewChannel | P.ReadMessageHistory;
-export const LOCKED_STAFF_DENY = P.SendMessages | P.SendMessagesInThreads | P.AddReactions | P.CreatePublicThreads | P.CreatePrivateThreads;
+export const LOCKED_STAFF_DENY = P.SendMessages | P.SendMessagesInThreads | P.AddReactions;
 
 /**
  * Overwrites for a team channel that must hold no students: an archived team,
@@ -555,14 +564,17 @@ async function runArchiveConfirm(i: ComponentOrModal, ctx: ElCtx, args: string[]
     const current = await ctx.api.call<TeamJson | null>("elemental_bot_team_get", ctx.guildId, teamId);
     if (!current || current.slot !== slot) throw new Refusal(OPS.archiveStale);
     let line: string;
+    let archivedId = teamId;
     if (current.status === "archived") {
       line = OPS.alreadyArchived(slot);
     } else {
       const archived = await ctx.api.call<TeamJson>("elemental_bot_team_archive", ctx.guildId, ctx.userId, slot);
-      if (archived.team_id !== teamId) throw new Refusal(OPS.archiveStale);
+      // SQL archives by slot. Should the slot have changed hands in between,
+      // whatever SQL archived is what must be locked and reported.
+      archivedId = archived.team_id;
       line = OPS.archived(slot);
     }
-    const lock = await within(lockTeamChannel(ctx.rt, ctx.guildId, teamId));
+    const lock = await within(lockTeamChannel(ctx.rt, ctx.guildId, archivedId));
     await say(i, { content: [line, lockLine(lock)].join("\n"), components: [] });
   } catch (error) {
     if (error instanceof Refusal || error instanceof ElementalError) {

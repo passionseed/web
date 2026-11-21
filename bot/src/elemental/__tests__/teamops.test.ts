@@ -7,7 +7,7 @@ import { ApplicationCommandOptionType, MessageFlags, PermissionFlagsBits, type C
 
 import { candidateSlots, sectorOf } from "../../../../lib/elemental/island/sectors";
 import { ElementalError, type ElementalApi } from "../api";
-import { BOT_ALLOW, setChannelPortFactory, type ChannelInfo, type GuildChannelPort, type PlannedOverwrite, type TeamJson } from "../channels";
+import { BOT_ALLOW, MEMBER_ALLOW, setChannelPortFactory, type ChannelInfo, type GuildChannelPort, type PlannedOverwrite, type TeamJson } from "../channels";
 import { createEvents, createSettingsCache, type ElementalRuntime } from "../context";
 import { COMMON } from "../copy/common";
 import { OPS } from "../copy/teamops";
@@ -852,6 +852,9 @@ describe("/el team-archive", () => {
     for (const o of staff) {
       expect(o.allow).toBe(LOCKED_STAFF_ALLOW);
       expect(o.deny & PermissionFlagsBits.SendMessages).toBe(PermissionFlagsBits.SendMessages);
+      // Discord 403s an overwrite that allows or denies a permission the bot
+      // lacks; the bot is only required to hold MEMBER_ALLOW.
+      expect((o.allow | o.deny) & ~MEMBER_ALLOW).toBe(BigInt(0));
     }
     expect(ch.overwrites.find((o) => o.id === BOT)?.allow).toBe(BOT_ALLOW);
     expect(ch.overwrites.find((o) => o.id === GUILD)?.deny).toBe(PermissionFlagsBits.ViewChannel);
@@ -887,6 +890,28 @@ describe("/el team-archive", () => {
     expect(last(sent)).toBe(OPS.archiveStale);
     expect(t.status).not.toBe("archived");
     expect(db.writes).toEqual([]);
+  });
+
+  test("if the plot changed hands between the check and the archive, the team SQL archived is the one locked", async () => {
+    const { db, guild, rt } = setup();
+    const t = db.liveTeam("fire", [user(1), user(2)]);
+    const other = db.liveTeam("water", [user(3), user(4)]);
+    guild.channelFor(db, t);
+    const chOther = guild.channelFor(db, other);
+    const slot = t.slot!;
+    const { button } = await ask(rt, slot);
+    // Another Host re-slots t and the plot goes to the other team just before the archive runs.
+    const call = db.call.bind(db);
+    db.call = (fn: string, args: unknown[]) => {
+      if (fn === "elemental_bot_team_archive") {
+        t.slot = 199;
+        other.slot = slot;
+      }
+      return call(fn, args);
+    };
+    await click(rt, button!);
+    expect(other.status).toBe("archived");
+    expect(people(chOther)).toEqual([]);
   });
 
   test("a lock Discord refuses is reported, the archive stands", async () => {
