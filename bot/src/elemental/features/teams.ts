@@ -20,7 +20,8 @@ import { notify, say, type ComponentOrModal, type ElCtx, type ElementalFeature, 
 import { COPY, teamErrorText } from "../copy/teams";
 import { cid, isSnowflake, isUuid } from "../ids";
 import { withRetry } from "../queue";
-import { ELEMENTS, elementOf, isElement, requirePaid, type ElementKey } from "../roles";
+import { ELEMENTS, elementOf, isElement, isStaff, requirePaid, type ElementKey } from "../roles";
+import { staffIdsAmong } from "../staffcheck";
 
 /**
  * /team create (E13): a student makes a PENDING team, each teammate gets an
@@ -31,8 +32,14 @@ import { ELEMENTS, elementOf, isElement, requirePaid, type ElementKey } from "..
  *
  * Flow: /team create → project-name form → a private panel with an element
  * select, a teammate select (1-4) and "send invites" → _team_create.
- * Every check that can be made in the bot (window, sizes, PII, claimed, free)
- * is made before any database write; SQL checks them all again.
+ * Every check that can be made in the bot (window, sizes, PII, claimed, free,
+ * not staff) is made before any database write; SQL checks them all again.
+ *
+ * Staff (any Host, Helper, Mentor, Judge or Safety role) are never on a team:
+ * they cannot create one, be invited, or accept (AGENTS.md safeguarding; a
+ * Judge must never see a team chat). The bot checks the clicker's own roles
+ * and looks up each invitee's (staffcheck.ts), and passes what it found to
+ * SQL, which refuses staff too (el:staff_member).
  */
 
 const CMD = "team";
@@ -242,19 +249,33 @@ export function checkInvitees(creatorId: string, invitees: readonly string[]): s
 
 interface MemberJson {
   member_id: string;
+  is_staff?: boolean;
   team: TeamJson | null;
 }
 
-/** Reads only: creator and every invitee claimed and on no live team. */
-async function checkPeople(ctx: ElCtx, invitees: readonly string[]): Promise<void> {
+/** The clicker holds a staff role: staff never create, join or accept a team. */
+function refuseStaff(ctx: Pick<ElCtx, "memberRoleIds" | "settings">): void {
+  if (isStaff(ctx.memberRoleIds, ctx.settings)) throw new Refusal(COPY.staffNoTeam);
+}
+
+/**
+ * Reads only: creator and every invitee claimed, not staff and on no live
+ * team. Returns the staff ids found (empty when it returns at all), for SQL.
+ */
+async function checkPeople(ctx: ElCtx, invitees: readonly string[]): Promise<string[]> {
   const me = await ctx.api.call<MemberJson | null>("elemental_bot_member_get", ctx.guildId, ctx.userId);
   if (!me) throw new Refusal(teamErrorText("not_claimed")!);
+  if (me.is_staff) throw new Refusal(COPY.staffNoTeam);
   if (me.team) throw new Refusal(teamErrorText("already_teamed")!);
   for (const id of invitees) {
     const m = await ctx.api.call<MemberJson | null>("elemental_bot_member_get", ctx.guildId, id);
     if (!m) throw new Refusal(teamErrorText("invitee_not_claimed", id)!);
+    if (m.is_staff) throw new Refusal(teamErrorText("staff_member", id)!);
     if (m.team) throw new Refusal(teamErrorText("invitee_teamed", id)!);
   }
+  const staff = await staffIdsAmong(ctx.rt, ctx.guildId, ctx.settings, invitees);
+  if (staff.length) throw new Refusal(teamErrorText("staff_member", staff[0])!);
+  return staff;
 }
 
 /** Shows a refusal or a known SQL code; anything else goes to the wrapper. */
@@ -323,6 +344,10 @@ async function postInvites(ctx: ElCtx, team: TeamJson, creatorId: string, invite
 
 async function openForm(i: ChatInputCommandInteraction | MessageComponentInteraction, ctx: ElCtx, retry: boolean): Promise<void> {
   requirePaid(ctx);
+  if (isStaff(ctx.memberRoleIds, ctx.settings)) {
+    await notify(i, COPY.staffNoTeam);
+    return;
+  }
   const refusal = windowRefusal(ctx.settings);
   if (refusal) {
     await notify(i, refusal);
@@ -333,6 +358,7 @@ async function openForm(i: ChatInputCommandInteraction | MessageComponentInterac
 
 async function onName(i: ComponentOrModal, ctx: ElCtx): Promise<void> {
   requirePaid(ctx);
+  if (isStaff(ctx.memberRoleIds, ctx.settings)) return notify(i, COPY.staffNoTeam);
   const refusal = windowRefusal(ctx.settings);
   if (refusal) return notify(i, refusal);
   if (!i.isModalSubmit()) return;
@@ -379,12 +405,13 @@ async function onCreate(i: ComponentOrModal, ctx: ElCtx): Promise<void> {
   if (!draft) return say(i, { content: COPY.draftGone, components: [] });
   try {
     requirePaid(ctx);
+    refuseStaff(ctx);
     const refusal = windowRefusal(ctx.settings);
     if (refusal) throw new Refusal(refusal);
     checkName(draft.name);
     if (!draft.element) throw new Refusal(COPY.needElement);
     const invitees = checkInvitees(ctx.userId, draft.invitees);
-    await checkPeople(ctx, invitees);
+    const staffIds = await checkPeople(ctx, invitees);
 
     const team = await ctx.api.call<TeamJson & { repeated?: boolean }>(
       "elemental_bot_team_create",
@@ -392,7 +419,8 @@ async function onCreate(i: ComponentOrModal, ctx: ElCtx): Promise<void> {
       ctx.userId,
       draft.name,
       draft.element,
-      invitees
+      invitees,
+      staffIds
     );
     drafts.delete(draftKey(ctx));
     const pending = team.invites.filter((inv) => !inv.is_creator && inv.state === "pending").map((inv) => inv.discord_user_id);
@@ -423,6 +451,9 @@ async function onAnswer(i: ComponentOrModal, ctx: ElCtx, args: string[], accept:
       await notify(i, COPY.declined);
       return;
     }
+    // A staff member never joins a team, whoever invited them; SQL refuses too.
+    const staff = isStaff(ctx.memberRoleIds, ctx.settings);
+    if (staff) throw new Refusal(COPY.staffNoTeam);
     let element: ElementKey | null = isElement(elementArg) ? elementArg : null;
     if (!element) {
       const team = await ctx.api.call<TeamJson | null>("elemental_bot_team_get", ctx.guildId, teamId);
@@ -434,7 +465,8 @@ async function onAnswer(i: ComponentOrModal, ctx: ElCtx, args: string[], accept:
       ctx.guildId,
       teamId,
       ctx.userId,
-      slots
+      slots,
+      staff
     );
     await closeInvite(i, COPY.inviteAccepted(ctx.userId, team.project_name));
     if (team.activated) {

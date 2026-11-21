@@ -10,11 +10,12 @@ import { ElementalError, type ElementalApi } from "../api";
 import { BOT_ALLOW, MEMBER_ALLOW, setChannelPortFactory, type ChannelInfo, type GuildChannelPort, type PlannedOverwrite, type TeamJson } from "../channels";
 import { createEvents, createSettingsCache, type ElementalRuntime } from "../context";
 import { COMMON } from "../copy/common";
-import { OPS } from "../copy/teamops";
+import { OPS, opsErrorText } from "../copy/teamops";
 import { handleElementalInteraction } from "../index";
 import { createKeyedQueue } from "../queue";
 import { buildRegistry, registry } from "../registry";
 import type { ElementKey } from "../roles";
+import { setMemberRolesPortFactory } from "../staffcheck";
 import {
   ARCHIVE_ACTION,
   LOCKED_STAFF_ALLOW,
@@ -80,6 +81,8 @@ interface FakeMember {
 class FakeDb {
   settings = rawSettings();
   members = new Map<string, FakeMember>();
+  /** Member rows marked is_staff (/el link with no registration). */
+  staffRows = new Set<string>();
   teamOf = new Map<string, string>();
   teams = new Map<string, FakeTeam>();
   canvasLinks = new Set<string>();
@@ -190,9 +193,11 @@ class FakeDb {
       case "elemental_bot_team_create_staff": {
         this.write(fn, a);
         const [, , name, element, people, slots] = a as [string, string, string, ElementKey, string[], number[]];
+        const staffIds = (a[6] as string[] | null) ?? [];
         const unique = [...new Set(people)];
         if (unique.length < 2 || unique.length > 5) throw new ElementalError("team_size");
         for (const id of unique) {
+          if (staffIds.includes(id) || this.staffRows.has(id)) throw new ElementalError("staff_member", id);
           if (!this.members.has(id)) throw new ElementalError("invitee_not_claimed", id);
           if (this.liveTeamOf(id)) throw new ElementalError("invitee_teamed", id);
         }
@@ -229,7 +234,8 @@ class FakeDb {
       }
       case "elemental_bot_member_move": {
         this.write(fn, a);
-        const [, , who, slot] = a as [string, string, string, number];
+        const [, , who, slot, isStaff] = a as [string, string, string, number, boolean];
+        if (isStaff || this.staffRows.has(who)) throw new ElementalError("staff_member", who);
         if (!this.members.has(who)) throw new ElementalError("not_claimed", who);
         const to = this.bySlot(slot);
         const from = this.liveTeamOf(who);
@@ -363,7 +369,18 @@ function setup() {
     connected: () => true,
   };
   setChannelPortFactory(rt, () => guild);
-  return { db, guild, rt };
+  // Each person's Discord roles, as the staff check reads them; students by default.
+  const roles = new Map<string, string[]>();
+  const roleReads: string[] = [];
+  const rolesFail = { on: false };
+  setMemberRolesPortFactory(rt, () => ({
+    roles: async (id: string) => {
+      roleReads.push(id);
+      if (rolesFail.on) throw Object.assign(new Error("Service Unavailable"), { status: 503 });
+      return roles.get(id) ?? [ROLE.paid];
+    },
+  }));
+  return { db, guild, rt, roles, roleReads, rolesFail };
 }
 
 // ---------------------------------------------------------------------------
@@ -640,9 +657,11 @@ describe("/el team-create", () => {
 
     const [write] = db.writes;
     expect(write.fn).toBe("elemental_bot_team_create_staff");
-    // (guild, actor, name, element, members, candidate slots): the Host is the audited actor.
+    // (guild, actor, name, element, members, candidate slots, staff ids): the Host is the audited actor.
     expect(write.args.slice(0, 5)).toEqual([GUILD, HOST, "Rain Catcher", "water", [user(1), user(2), user(3)]]);
     expect(write.args[5]).toEqual(candidateSlots("water"));
+    // Every member's roles were checked; SQL is told who is staff (nobody).
+    expect(write.args[6]).toEqual([]);
 
     const [team] = [...db.teams.values()];
     expect(sectorOf(team.slot!)).toBe("water");
@@ -657,6 +676,42 @@ describe("/el team-create", () => {
     // Off the unteamed list.
     const list = await el(rt, SUB.unteamed, {});
     expect(last(list.sent)).toBe(OPS.unteamedNone(null));
+  });
+
+  test.each([
+    ["Judge", ROLE.judge],
+    ["Mentor", ROLE.mentor],
+    ["Helper", ROLE.helper],
+    ["Host", ROLE.host],
+    ["Safety", ROLE.safety],
+  ])("a member holding the %s role is refused, named, before SQL: no team, no channel", async (_label, role) => {
+    const { db, guild, rt, roles, roleReads } = setup();
+    for (const k of [1, 2, 3]) db.claim(user(k));
+    roles.set(user(2), [role]);
+    const { sent } = await el(rt, SUB.create, { members: `<@${user(1)}> <@${user(2)}> <@${user(3)}>`, project: "Rain Catcher", element: "water" });
+    expect(last(sent)).toBe(opsErrorText("staff_member", user(2)));
+    expect(roleReads.sort()).toEqual([user(1), user(2), user(3)]);
+    expect(db.writes).toEqual([]);
+    expect(db.teams.size).toBe(0);
+    expect(guild.channels.filter((c) => c.kind === "text")).toHaveLength(0);
+  });
+
+  test("when roles cannot be read, no team is made", async () => {
+    const { db, rt, rolesFail } = setup();
+    for (const k of [1, 2]) db.claim(user(k));
+    rolesFail.on = true;
+    const { sent } = await el(rt, SUB.create, { members: `<@${user(1)}> <@${user(2)}>`, project: "Rain Catcher", element: "water" });
+    expect(last(sent)).toBe(opsErrorText("roles_unavailable"));
+    expect(db.writes).toEqual([]);
+  });
+
+  test("SQL's own staff refusal (a member row marked staff) is shown, naming who", async () => {
+    const { db, rt } = setup();
+    for (const k of [1, 2]) db.claim(user(k));
+    db.staffRows.add(user(1));
+    const { sent } = await el(rt, SUB.create, { members: `<@${user(1)}> <@${user(2)}>`, project: "Rain Catcher", element: "water" });
+    expect(last(sent)).toBe(opsErrorText("staff_member", user(1)));
+    expect(db.teams.size).toBe(0);
   });
 });
 
@@ -750,7 +805,7 @@ describe("/el team-move-member", () => {
 
     const { sent } = await el(rt, SUB.move, { member: { id: user(3) }, slot: b.slot });
 
-    expect(db.writes[0]).toEqual({ fn: "elemental_bot_member_move", args: [GUILD, HOST, user(3), b.slot] });
+    expect(db.writes[0]).toEqual({ fn: "elemental_bot_member_move", args: [GUILD, HOST, user(3), b.slot, false] });
     expect(people(chA)).toEqual([user(1), user(2)]);
     expect(people(chB)).toEqual([user(3), user(4), user(5)]);
     for (const ch of [chA, chB]) {
@@ -793,6 +848,35 @@ describe("/el team-move-member", () => {
     const { sent } = await el(rt, SUB.move, { member: { id: user(9) }, slot: b.slot });
     expect(last(sent)).toBe("ทีมนี้ครบ 5 คนแล้ว");
     expect(JSON.stringify(chB.overwrites, (_k, v) => (typeof v === "bigint" ? String(v) : v))).toBe(before);
+  });
+
+  test.each([
+    ["Judge", ROLE.judge],
+    ["Mentor", ROLE.mentor],
+    ["Helper", ROLE.helper],
+    ["Host", ROLE.host],
+    ["Safety", ROLE.safety],
+  ])("a %s cannot be moved onto a team: refused before SQL, the channel unchanged", async (_label, role) => {
+    const { db, guild, rt, roles } = setup();
+    db.claim(user(9));
+    roles.set(user(9), [role]);
+    const b = db.liveTeam("water", [user(4), user(5)]);
+    const chB = guild.channelFor(db, b);
+    const { sent } = await el(rt, SUB.move, { member: { id: user(9) }, slot: b.slot });
+    expect(last(sent)).toBe(opsErrorText("staff_member", user(9)));
+    expect(db.writes).toEqual([]);
+    expect(people(chB)).toEqual([user(4), user(5)]);
+  });
+
+  test("SQL refuses a staff member row on a move too, naming who", async () => {
+    const { db, guild, rt } = setup();
+    db.claim(user(9));
+    db.staffRows.add(user(9));
+    const b = db.liveTeam("water", [user(4), user(5)]);
+    const chB = guild.channelFor(db, b);
+    const { sent } = await el(rt, SUB.move, { member: { id: user(9) }, slot: b.slot });
+    expect(last(sent)).toBe(opsErrorText("staff_member", user(9)));
+    expect(people(chB)).toEqual([user(4), user(5)]);
   });
 
   test("a bot cannot be moved", async () => {

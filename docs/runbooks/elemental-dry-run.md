@@ -16,7 +16,7 @@ Every F goes on Thursday's fix list with its owner. The thresholds marked
 - [ ] Rehearsal server seeded with `"2026-12-02": {"opening_at": "19:00", "call_at": "19:55", "card_at": "20:30"}` and a `team_create_opens_at` before 19:30 (runbook G).
 - [ ] 40 rehearsal codes: `/el test-codes n:40` in the rehearsal server; one per person, handed out by staff.
 - [ ] Rehearsal element boards exist (one per element at least) and their edit links are ready to post.
-- [ ] Roles given by hand: Host, Helper, Mentor, Judge, Safety to the staff taking part.
+- [ ] Roles given by hand: Host, Helper, Mentor, Judge, Safety to the staff taking part. Anyone playing a student holds **no** staff role: the bot refuses staff in every team (create, invite, Accept, `/el team-create`, `/el team-move-member`).
 - [ ] A stopwatch (phone) and a laptop with Chrome or Safari for the browser checks.
 
 ## The checklist
@@ -40,6 +40,7 @@ Every F goes on Thursday's fix list with its owner. The thresholds marked
 | 15 | **`/report` reaches #reports only** | Two people run `/report` (one in `#start-here`, one in a team channel) | Each report appears once in `#reports`, pinging Safety; nowhere else; the reporter gets a private "received"; a Safety member's Handled button works | | |
 | 16 | **Lesson** | Three people open the lesson (the lesson player if shipped; otherwise the YouTube clip and the Google Form) | It opens on a phone and the answer is recorded (lesson player: the badge shows; form: the row is in the sheet) | | |
 | 17 | Missed-post note | Before 19:00 Big removes the bot's Send Messages in the rehearsal news channel, and puts it back at 19:20 | One note in the staff channel at about 19:15 pinging Host; after 19:20 the opening post goes by itself within a minute | | |
+| 3b | **Staff never on a team** | A Mentor tries `/team create`; a student invites a Judge; the Judge presses Accept on an invite made before they got the role; Host runs `/el team-create` and `/el team-move-member` with a Helper among the people | Every one is refused, naming the staff member; no team, invite acceptance or channel is made for them; no team channel lists a staff member as a member | | |
 | 18 | No DMs, no 1:1 space | Ask everyone: did the bot DM you? Check one team channel's member list | No DMs; every team channel has 2 or more students plus staff roles only | | |
 | 19 | Cleanup | After the rehearsal, as Host: `/el dryrun-cleanup confirm:elemental-dryrun` in the rehearsal server | Teams archived, team channels deleted, the reply counts them; in the real server `/el totals` is unchanged | | |
 
@@ -47,5 +48,5 @@ Every F goes on Thursday's fix list with its owner. The thresholds marked
 
 - [ ] Every F has an owner and a fix-by date (Thu 3 Dec).
 - [ ] Item 8's times and item 10's experience decide the boards per element
-      (runbook F); write the decision down.
+      (runbook F: at most 15 teams per board); write the decision down.
 - [ ] Remove the rehearsal roles from staff who will not be in the real event.

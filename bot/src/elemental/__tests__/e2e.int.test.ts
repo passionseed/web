@@ -56,10 +56,13 @@ import { JOIN } from "../copy/join";
 import { REPORT } from "../copy/report";
 import { SCHEDULE } from "../copy/schedule";
 import { STAFF } from "../copy/staff";
-import { COPY as TEAMS } from "../copy/teams";
+import { opsErrorText } from "../copy/teamops";
+import { COPY as TEAMS, teamErrorText } from "../copy/teams";
 import { TESTER } from "../copy/tester";
 import { parseElementalEnv } from "../env";
+import { ElementalError } from "../api";
 import { ACTIONS as STAFF_ACTIONS, SUB } from "../features/staff";
+import { SUB as OPS_SUB } from "../features/teamops";
 import { createScheduler } from "../features/schedule";
 import { ACTIONS as TEAM_ACTIONS } from "../features/teams";
 import { ACTIONS as TESTER_ACTIONS, MIRROR_ACTIONS } from "../features/tester";
@@ -192,6 +195,9 @@ function fakeDiscord() {
   const rest = {
     get: jest.fn(async (route: string) => {
       log.push({ method: "get", route });
+      // GET guild member (the staff check): the roles this fake server holds for them.
+      const member = /^\/guilds\/(\d+)\/members\/(\d+)$/.exec(route);
+      if (member) return { user: { id: member[2] }, roles: [...held(member[1], member[2])] };
       if (route.endsWith("/threads/active")) return { threads };
       if (route.includes("/pins")) return { items: [] };
       return { threads: [] };
@@ -838,6 +844,43 @@ describe("Elemental end to end", () => {
   // -------------------------------------------------------------------------
   // 6. Rehearsal cleanup
   // -------------------------------------------------------------------------
+
+  it("staff are never put on a team: a Judge is refused by the bot and by SQL (as elemental_bot), nothing is written", async () => {
+    // Person 13 claimed a rehearsal code, then was given the Judge role.
+    discord.held(DRY, uid(13)).add(ROLES[DRY].judge);
+    const teamsBefore = psql(`SELECT count(*) FROM public.elemental_teams`);
+    const invitesBefore = psql(`SELECT count(*) FROM public.elemental_team_invites`);
+    const where = { guild: DRY, channel: CHANNELS[DRY].start_here };
+
+    // The Judge cannot open /team create.
+    const own = await act("command", { ...where, user: uid(13), command: "team", sub: "create" });
+    expect(last(own)).toBe(TEAMS.staffNoTeam);
+
+    // A student cannot invite the Judge.
+    const by = { ...where, user: uid(11) };
+    await act("modal", { ...by, customId: `el|${TEAM_ACTIONS.name}`, fields: { name: "Judge Inside" } });
+    await act("string", { ...by, customId: `el|${TEAM_ACTIONS.element}`, values: ["earth"] });
+    await act("users", { ...by, customId: `el|${TEAM_ACTIONS.members}`, values: [uid(13)] });
+    const invited = await act("button", { ...by, customId: `el|${TEAM_ACTIONS.create}` });
+    expect(last(invited)).toBe(teamErrorText("staff_member", uid(13)));
+
+    // A Host cannot put the Judge on a team, by creating one or by moving them.
+    const made = await host(DRY, OPS_SUB.create, { members: `<@${uid(12)}> <@${uid(13)}>`, project: "Judge Inside", element: "earth" });
+    expect(last(made)).toBe(opsErrorText("staff_member", uid(13)));
+
+    // SQL refuses what the bot flags, through the bot's own least-privilege login.
+    await expect(api.call("elemental_bot_team_create_staff", DRY, HOST_PERSON, "Judge Inside", "earth", [uid(12), uid(13)], null, [uid(13)])).rejects.toEqual(
+      new ElementalError("staff_member", uid(13))
+    );
+    await expect(api.call("elemental_bot_team_create", DRY, uid(13), "Judge Inside", "earth", [uid(12)], [uid(13)])).rejects.toMatchObject({
+      code: "staff_member",
+    });
+
+    expect(psql(`SELECT count(*) FROM public.elemental_teams`)).toBe(teamsBefore);
+    expect(psql(`SELECT count(*) FROM public.elemental_team_invites`)).toBe(invitesBefore);
+    expect(ports.get(DRY)!.channels.filter((c) => c.name.startsWith("earth-"))).toHaveLength(0);
+    discord.held(DRY, uid(13)).delete(ROLES[DRY].judge);
+  });
 
   it("/el dryrun-cleanup clears the rehearsal guild and touches no elemental-2026 row", async () => {
     const dry = await makeTeam(DRY, uid(11), [uid(12)], "Dry Run Kiosk", "earth");

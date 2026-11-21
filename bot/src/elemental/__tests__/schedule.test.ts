@@ -716,6 +716,76 @@ describe("/el post-now and /el card-override", () => {
     expect(cards(s.sent)).toHaveLength(1);
   });
 
+  test("post-now before the card's time marks that day's card sent: at 20:30 the scheduler skips it (one card, no missed note)", async () => {
+    const s = setup();
+    const poller = s.scheduler();
+    s.at(EVENT_DAY, "20:00");
+    const { i, replies } = staffInteraction(POST_NOW, { kind: "card" }, [ROLE.host]);
+    await handleElementalInteraction(s.rt, i as never);
+    expect(text(replies[0])).toBe(SCHEDULE.postNowDone(SCHEDULE.postName.card, CHANNEL.news));
+    expect(cards(s.sent)).toHaveLength(1);
+    // The same key the scheduler claims: edition, sch_card, Bangkok day.
+    expect(s.posts.get(`elemental-2026|${GROUP_KIND.card}|${EVENT_DAY}`)?.status).toBe("sent");
+    for (const time of ["20:30", "20:31", "20:46", "21:00"]) {
+      s.at(EVENT_DAY, time);
+      await poller.tick();
+    }
+    expect(cards(s.sent)).toHaveLength(1);
+    expect(inChannel(s.sent, CHANNEL.mirror)).toHaveLength(0);
+  });
+
+  test("post-now opening and call before their times: each goes once, the scheduler sends only what was not posted", async () => {
+    const s = setup();
+    const poller = s.scheduler();
+    for (const [kind, time] of [["opening", "18:30"], ["call", "18:31"]]) {
+      s.at(EVENT_DAY, time);
+      const { i } = staffInteraction(POST_NOW, { kind }, [ROLE.host]);
+      await handleElementalInteraction(s.rt, i as never);
+    }
+    const news = () => inChannel(s.sent, CHANNEL.news);
+    const openings = () => news().filter((m) => m.body.content === SCHEDULE.opening(CHANNEL.start_here));
+    const callPosts = () => news().filter((m) => m.body.content === SCHEDULE.call(CHANNEL.campfire));
+    expect(openings()).toHaveLength(1);
+    expect(callPosts()).toHaveLength(1);
+    const campfire = inChannel(s.sent, CHANNEL.campfire).length;
+    for (const time of ["19:00", "19:16", "19:55", "20:11", "20:30"]) {
+      s.at(EVENT_DAY, time);
+      await poller.tick();
+    }
+    expect(openings()).toHaveLength(1);
+    expect(callPosts()).toHaveLength(1);
+    expect(inChannel(s.sent, CHANNEL.campfire)).toHaveLength(campfire);
+    // The card was not posted by hand, so it still goes at 20:30.
+    expect(cards(s.sent)).toHaveLength(1);
+    expect(inChannel(s.sent, CHANNEL.mirror)).toHaveLength(0);
+  });
+
+  test("a post-now that fails before the time leaves the scheduled card to go at 20:30", async () => {
+    const s = setup();
+    const poller = s.scheduler();
+    s.at(EVENT_DAY, "20:00");
+    s.failing.add(CHANNEL.news);
+    const { i, replies } = staffInteraction(POST_NOW, { kind: "card" }, [ROLE.host]);
+    await handleElementalInteraction(s.rt, i as never);
+    expect(text(replies[0])).toBe(SCHEDULE.postNowFailed(SCHEDULE.postName.card));
+    expect(s.posts.get(`elemental-2026|${GROUP_KIND.card}|${EVENT_DAY}`)?.status).toBe("failed");
+    s.failing.delete(CHANNEL.news);
+    s.at(EVENT_DAY, "20:30");
+    await poller.tick();
+    expect(cards(s.sent)).toHaveLength(1);
+  });
+
+  test("post-now legend does not stand in for the call: the call still goes at 19:55", async () => {
+    const s = setup();
+    const poller = s.scheduler();
+    s.at(EVENT_DAY, "19:30");
+    const { i } = staffInteraction(POST_NOW, { kind: "legend" }, [ROLE.host]);
+    await handleElementalInteraction(s.rt, i as never);
+    s.at(EVENT_DAY, "19:55");
+    await poller.tick();
+    expect(inChannel(s.sent, CHANNEL.news).filter((m) => m.body.content === SCHEDULE.call(CHANNEL.campfire))).toHaveLength(1);
+  });
+
   test("post-now legend posts the island and legend in the campfire chat", async () => {
     const s = setup();
     s.scheduler();

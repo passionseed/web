@@ -56,6 +56,15 @@ export function staffRolesOf(memberRoleIds: readonly string[], settings: Element
   return STAFF_ROLES.filter((key) => holds(memberRoleIds, settings, key));
 }
 
+/**
+ * Holds any staff role (Host, Helper, Mentor, Judge, Safety). Staff are never
+ * on a team: no private adult-student channel, and Judges see no team chat
+ * (AGENTS.md safeguarding). SQL refuses them too (el:staff_member).
+ */
+export function isStaff(memberRoleIds: readonly string[], settings: ElementalSettings): boolean {
+  return staffRolesOf(memberRoleIds, settings).length > 0;
+}
+
 export function isHost(memberRoleIds: readonly string[], settings: ElementalSettings): boolean {
   return holds(memberRoleIds, settings, "host");
 }

@@ -144,6 +144,11 @@ export const OPS_ERRORS: Record<string, string | ((detail?: string) => string)> 
   invitee_not_claimed: (id) => (id ? `<@${id}> ยังไม่ได้ใช้ /join` : "บางคนยังไม่ได้ใช้ /join"),
   invitee_teamed: (id) => (id ? `<@${id}> อยู่ในทีมอื่นแล้ว ใช้ /el team-move-member แทน` : "บางคนอยู่ในทีมอื่นแล้ว"),
   team_archived: "ทีมนี้ถูกยกเลิกแล้ว",
+  staff_member: (id) =>
+    id
+      ? `<@${id}> เป็นทีมงาน (Host, Helper, Mentor, Judge หรือ Safety) อยู่ในทีมนักเรียนไม่ได้`
+      : "ทีมงาน (Host, Helper, Mentor, Judge หรือ Safety) อยู่ในทีมนักเรียนไม่ได้",
+  roles_unavailable: "ตรวจบทบาทใน Discord ไม่สำเร็จ ยังไม่ได้เปลี่ยนอะไร ลองคำสั่งเดิมอีกครั้ง",
 };
 
 export function opsErrorText(code: string, detail?: string): string | null {

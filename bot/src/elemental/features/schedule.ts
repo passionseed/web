@@ -691,13 +691,20 @@ export interface PostNowResult {
 }
 
 /**
- * /el post-now: builds and sends the post now, without its claims (staff
- * asked). When its scheduled time today has already passed, the group is then
- * claimed and marked sent, so the poller does not send it again; before that
- * time the scheduled post still goes.
+ * /el post-now: builds and sends the post now, without its part claims (staff
+ * asked, so it goes even if the scheduled one already went). Before sending it
+ * claims that day's scheduled slot (the scheduler's own group claim: kind
+ * sch_<post>, key = Bangkok day) and marks it sent afterwards, so the poller
+ * skips it, whether its time has passed or not: students never see the same
+ * post twice. If a message fails, the slot is marked failed and the poller
+ * sends the post again at (or after) its time. The legend alone is only part
+ * of the call, so it claims nothing.
  */
 export async function postNow(env: Env, settings: ElementalSettings, kind: NowKind, day: string): Promise<PostNowResult> {
   const parts = await buildParts(env, settings, kind, day);
+  const group = kind === "legend" ? null : GROUP_KIND[kind];
+  // False when the poller already sent it (or is sending it now): nothing to stop.
+  const claimed = group ? await env.rt.api.call<boolean>("elemental_bot_post_claim", settings.guildId, group, day, null) : false;
   const stamp = env.now().toString(36);
   let sent = 0;
   let failed = 0;
@@ -710,13 +717,7 @@ export async function postNow(env: Env, settings: ElementalSettings, kind: NowKi
       failed += 1;
     }
   }
-  if (kind !== "legend" && failed === 0) {
-    const due = scheduledAt(settings.schedule as unknown as ElementalSchedule, day, TIME_FIELD[kind]);
-    if (due && env.now() >= due.getTime()) {
-      const claimed = await env.rt.api.call<boolean>("elemental_bot_post_claim", settings.guildId, GROUP_KIND[kind], day, null);
-      if (claimed) await mark(env, settings.guildId, GROUP_KIND[kind], day, "sent");
-    }
-  }
+  if (group && claimed) await mark(env, settings.guildId, group, day, failed === 0 ? "sent" : "failed");
   return { sent, failed, channelId: parts[0]?.channelId ?? null };
 }
 

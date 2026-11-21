@@ -10,7 +10,7 @@ import { MAX_SUBCOMMANDS, buildRegistry, registry } from "../registry";
 import { createEvents, createSettingsCache, type ElementalEventMap, type ElementalRuntime } from "../context";
 import { COMMON } from "../copy/common";
 import { CANVAS } from "../copy/canvas";
-import { STAFF } from "../copy/staff";
+import { STAFF, staffErrorText } from "../copy/staff";
 import { TESTER } from "../copy/tester";
 import { handleElementalInteraction } from "../index";
 import { createKeyedQueue } from "../queue";
@@ -287,7 +287,11 @@ class FakeDb {
         };
       case FN.link: {
         const [, , who, reg, pos] = a as [string, string, string, string | null, number | null];
-        if (reg === null) return { member_id: randomUUID(), edition: "elemental-2026", edition_kind: "event", already: false, is_staff: true };
+        if (reg === null) {
+          // A student on a live team cannot become staff (SQL el:staff_teamed).
+          if (who === user(60)) throw new ElementalError("staff_teamed", who);
+          return { member_id: randomUUID(), edition: "elemental-2026", edition_kind: "event", already: false, is_staff: true };
+        }
         if (this.settings.edition_kind !== "event") throw new ElementalError("wrong_edition");
         if (reg !== REG) throw new ElementalError("registration_not_found");
         if (pos === 2) throw new ElementalError("member_linked", user(99));
@@ -954,6 +958,14 @@ describe("/el link", () => {
     expect(db.calls.find((c) => c.fn === FN.link)!.args).toEqual([GUILD, STAFFER, user(2), null, null]);
     expect(discord.log.filter((l) => l.method === "put")).toEqual([]);
     expect(last(sent)).toBe(STAFF.linkedStaff(user(2)));
+  });
+
+  test("a student on a live team is not made staff: SQL refuses, the reply names them and says what to do", async () => {
+    const { rt } = setup();
+    const { sent } = await el(rt, SUB.link, { user: { id: user(60) } });
+    expect(last(sent)).toBe(staffErrorText("staff_teamed", user(60)));
+    expect(last(sent)).toContain(`<@${user(60)}>`);
+    expect(last(sent)).toContain("/el team-archive");
   });
 
   test("refusals: one without the other, a bad id, a seat already taken, a rehearsal guild", async () => {

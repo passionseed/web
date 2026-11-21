@@ -195,6 +195,11 @@ export const STAFF_ERRORS: Record<string, string | ((detail?: string) => string)
   not_paid: "ใบสมัครนี้ยังไม่ได้ชำระเงิน หรือถูกยกเลิก",
   already_claimed: "บัญชีนี้ผูกกับใบสมัครอื่นอยู่แล้ว",
   member_linked: (id) => (id ? `ที่นั่งนี้ผูกกับ <@${id}> อยู่แล้ว` : "ที่นั่งนี้ผูกกับบัญชีอื่นอยู่แล้ว"),
+  // Staff are never on a team: /el link as staff waits until the person is off it.
+  staff_teamed: (id) =>
+    id
+      ? `<@${id}> อยู่ในทีมนักเรียน ตั้งเป็นทีมงานไม่ได้ ใช้ /el team-archive กับทีมนั้นก่อน`
+      : "บัญชีนี้อยู่ในทีมนักเรียน ตั้งเป็นทีมงานไม่ได้ ใช้ /el team-archive กับทีมนั้นก่อน",
 };
 
 export function staffErrorText(code: string, detail?: string): string | null {

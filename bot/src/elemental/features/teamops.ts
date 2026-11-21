@@ -32,6 +32,7 @@ import { notify, say, type ComponentOrModal, type ElCtx, type ElementalFeature, 
 import { OPS, opsErrorText } from "../copy/teamops";
 import { cid, isSnowflake, isUuid } from "../ids";
 import { ELEMENTS, isElement, type ElementKey, type StaffRole } from "../roles";
+import { staffIdsAmong } from "../staffcheck";
 
 /**
  * Staff team tools (E34), all under /el, Host only, every answer ephemeral.
@@ -55,6 +56,11 @@ import { ELEMENTS, isElement, type ElementKey, type StaffRole } from "../roles";
  *
  * Channel work reuses channels.ts (E13) and runs on rt.queues.channels, keyed
  * by guild, so it never interleaves with a channel creation or another sync.
+ *
+ * Staff (Host, Helper, Mentor, Judge, Safety) are never put on a team:
+ * team-create and team-move-member look up each person's roles first
+ * (staffcheck.ts), refuse staff, and pass what they found to SQL, which
+ * refuses staff too (el:staff_member).
  */
 
 export const STAFF_CMD = "el";
@@ -452,6 +458,8 @@ async function runCreate(i: ChatInputCommandInteraction, ctx: ElCtx): Promise<vo
   if (botId && members.includes(botId)) throw new Refusal(OPS.noBots);
   const name = checkName(i.options.getString(OPT.project, true) ?? "");
   const element = elementArg(i, true)!;
+  const staffIds = await staffIdsAmong(ctx.rt, ctx.guildId, ctx.settings, members);
+  if (staffIds.length) throw new Refusal(opsErrorText("staff_member", staffIds[0])!);
 
   const team = await ctx.api.call<TeamJson & { activated?: boolean; repeated?: boolean }>(
     "elemental_bot_team_create_staff",
@@ -460,7 +468,8 @@ async function runCreate(i: ChatInputCommandInteraction, ctx: ElCtx): Promise<vo
     name,
     element,
     members,
-    candidateSlots(element)
+    candidateSlots(element),
+    staffIds
   );
   if (typeof team.slot !== "number") throw new ElementalError("team_not_found");
   const channel = await within(onTeamLive(ctx.rt, ctx.guildId, ctx.settings.edition, team));
@@ -506,12 +515,15 @@ async function runMove(i: ChatInputCommandInteraction, ctx: ElCtx): Promise<void
   if (!target || !isSnowflake(target.id)) throw new Refusal(opsErrorText("bad_user")!);
   if (target.bot) throw new Refusal(OPS.noBots);
   const slot = checkSlot(i.options.getInteger(OPT.slot, true));
+  const staff = (await staffIdsAmong(ctx.rt, ctx.guildId, ctx.settings, [target.id])).length > 0;
+  if (staff) throw new Refusal(opsErrorText("staff_member", target.id)!);
   const moved = await ctx.api.call<{ from: TeamJson | null; to: TeamJson; changed: boolean }>(
     "elemental_bot_member_move",
     ctx.guildId,
     ctx.userId,
     target.id,
-    slot
+    slot,
+    staff
   );
   if (!moved.changed) {
     await say(i, OPS.moveSame(target.id, slot));

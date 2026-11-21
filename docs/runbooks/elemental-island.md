@@ -206,9 +206,10 @@ canvas as the board's owner.
 
 **How many.** E07's load test (`scripts/elemental/whiteboard-load.ts`,
 22 Nov, on a busy laptop) passed 20 teams per board when boards grow about
-80 KB per team and editors save every 10 s, and failed at 25. So: **at most
-20 teams per board**; boards per element = expected teams in that element /
-20, rounded up, at least 1. Re-run on a quiet machine to confirm:
+80 KB per team and editors save every 10 s, and failed at 25. Its review set
+the limit with headroom below that: **at most 15 teams per board**; boards
+per element = expected teams in that element / 15, rounded up, at least 1.
+Re-run on a quiet machine to confirm:
 `pnpm tsx scripts/elemental/whiteboard-load.ts --kb-per-team 80 --save-every 10 --teams 10,15,20,25 --editors 30,45,60,75`.
 
 - [ ] Signed in as the **staff account** that will own them, create the
@@ -426,6 +427,8 @@ then `/el team-create`.
 | Bot silent, or "The application did not respond" | Big | `docker logs --tail 50 passionseed-discord-bot-elemental`; if the last deploy is the cause, `--rollback` (section I). Meanwhile Hosts post by hand and Helpers log testers from the Google Form with `/el tester-add slot:` when it is back |
 | Container unhealthy: the database is unreachable | Big | Supabase status and the pooler; interactions answer "busy" and nothing is lost. The watchdog posts to `alert-webhook` after 10 minutes |
 | Card missing or broken at 20:30 | Host | `/el post-now kind:card`; if the picture fails, post `/el totals` and the island PNG by hand. A hand-drawn image: `/el card-override image: day:` (needs the staff channel set) |
+| A post needed early (before its time) | Host | `/el post-now kind:` sends it now and marks that day's scheduled post as sent, so it does not go again at its time (`kind:legend` alone does not stand in for the call). If the reply says it failed, the scheduled post still goes |
+| Someone on a team is given a staff role, or `/el link` as staff is refused for someone on a team | Host | Staff (Host, Helper, Mentor, Judge, Safety) can never join a team: the bot and the database refuse them at create, invite, Accept, `/el team-create` and `/el team-move-member`. A role given later does not take anyone off a team, so never give a staff role to a student on a team; if it happened, take the role off, or `/el team-archive` the team and remake it without them, then `/el link` them as staff |
 | Legend or campfire picture missing at 19:55 | Host | `/el post-now kind:legend` (picture and legend only) or `kind:call` |
 | Notes not on the canvas ("canvas: failed" in the reply) | Helper | Entries still count. `/el resync`. Remind teams the board shows new notes only after a reload |
 | A team's canvas link refused | Host | Check the board is the team's element board and a teammate owns or is tagged on the canvas; `/el canvas-link slot: url:` links it for them |
@@ -453,7 +456,7 @@ then `/el team-create`.
 
 - `team_create_opens_at` (and whether it closes). Until set, `/team create`
   answers "not open yet".
-- How many boards per element (at most 20 teams each, section F) and where
+- How many boards per element (at most 15 teams each, section F) and where
   each team gets its board link: the bot does not hand out board links.
 - Whether to turn on healing (`healing_enabled` is off; the island stays all
   healthy). It is a settings field, set with `elemental_bot_settings_set`

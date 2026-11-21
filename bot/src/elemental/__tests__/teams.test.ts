@@ -26,11 +26,12 @@ import {
   type TeamJson,
 } from "../channels";
 import { createEvents, createSettingsCache, normalizeSettings, type ElementalRuntime, type ElementalSettings } from "../context";
-import { COPY } from "../copy/teams";
+import { COPY, teamErrorText } from "../copy/teams";
 import { handleElementalInteraction } from "../index";
 import { createKeyedQueue } from "../queue";
 import { buildRegistry } from "../registry";
 import { ELEMENTS, type ElementKey } from "../roles";
+import { setMemberRolesPortFactory } from "../staffcheck";
 import { ACTIONS, clearDrafts, createWindow, feature } from "../features/teams";
 
 // ---------------------------------------------------------------------------
@@ -103,6 +104,10 @@ interface FakeTeam {
 class FakeDb {
   settings: Record<string, unknown> = rawSettings();
   claimed = new Set<string>();
+  /** Member rows marked is_staff (/el link with no registration). */
+  staffRows = new Set<string>();
+  /** Each call's arguments after the guild id, by function. */
+  args = new Map<string, unknown[][]>();
   teamOf = new Map<string, string>();
   teams = new Map<string, FakeTeam>();
   posts = new Map<string, string>();
@@ -164,6 +169,7 @@ class FakeDb {
 
   call(fn: string, args: unknown[]): unknown {
     this.calls.push(fn);
+    this.args.set(fn, [...(this.args.get(fn) ?? []), args.slice(1)]);
     const [, a1, a2, a3, a4] = args as [string, string, string, unknown, unknown];
     switch (fn) {
       case "elemental_bot_settings_get":
@@ -171,7 +177,7 @@ class FakeDb {
       case "elemental_bot_member_get": {
         if (!this.claimed.has(a1)) return null;
         const t = this.liveTeam(a1);
-        return { member_id: `m-${a1}`, team: t ? this.json(t) : null };
+        return { member_id: `m-${a1}`, is_staff: this.staffRows.has(a1), team: t ? this.json(t) : null };
       }
       case "elemental_bot_team_create": {
         this.writes.push(fn);
@@ -327,6 +333,18 @@ class FakeGuild implements GuildChannelPort {
   }
 }
 
+/** Each person's Discord roles, as the staff check reads them (GET guild member). */
+class FakeMembers {
+  roles = new Map<string, string[]>();
+  reads: string[] = [];
+  fail = false;
+  async read(userId: string): Promise<string[] | null> {
+    this.reads.push(userId);
+    if (this.fail) throw Object.assign(new Error("Service Unavailable"), { status: 503 });
+    return this.roles.get(userId) ?? [ROLE.paid];
+  }
+}
+
 const rateLimited = (seconds = 0.5) => Object.assign(new Error("429"), { status: 429, rawError: { retry_after: seconds } });
 
 function setup() {
@@ -347,7 +365,9 @@ function setup() {
     connected: () => true,
   };
   setChannelPortFactory(rt, () => guild);
-  return { db, guild, rt, sleeps };
+  const members = new FakeMembers();
+  setMemberRolesPortFactory(rt, () => ({ roles: (id) => members.read(id) }));
+  return { db, guild, rt, sleeps, members };
 }
 
 // ---------------------------------------------------------------------------
@@ -621,8 +641,68 @@ describe("/team create", () => {
     expect(db.writes).toEqual([]);
   });
 
+  test("staff (any staff role) get no team form: Host, Helper, Mentor, Judge, Safety", async () => {
+    for (const role of [ROLE.host, ROLE.helper, ROLE.mentor, ROLE.judge, ROLE.safety]) {
+      const { db, rt } = setup();
+      const { raw, sent } = await run(rt, "command", { roles: [role, ROLE.paid] });
+      expect(raw.showModal).not.toHaveBeenCalled();
+      expect(text(sent.at(-1)!.payload)).toBe(COPY.staffNoTeam);
+      expect(db.writes).toEqual([]);
+    }
+  });
+
+  test("a staff creator who reaches send invites is refused with no database write", async () => {
+    const { db, rt } = setup();
+    db.claim(CREATOR, A);
+    await run(rt, "modal", { customId: `el|${ACTIONS.name}`, name: "Water Filter Lab" });
+    await run(rt, "string", { customId: `el|${ACTIONS.element}`, values: ["fire"] });
+    await run(rt, "users", { customId: `el|${ACTIONS.members}`, values: [A] });
+    const { sent } = await run(rt, "button", { customId: `el|${ACTIONS.create}`, roles: [ROLE.mentor] });
+    expect(text(sent.at(-1)!.payload)).toBe(COPY.staffNoTeam);
+    expect(db.calls).not.toContain("elemental_bot_team_create");
+    expect(db.writes).toEqual([]);
+  });
+
+  test.each([
+    ["Judge", ROLE.judge],
+    ["Mentor", ROLE.mentor],
+    ["Helper", ROLE.helper],
+    ["Host", ROLE.host],
+    ["Safety", ROLE.safety],
+  ])("an invitee holding the %s role is refused, named, with no database write and no invite posted", async (_label, role) => {
+    const { db, rt, guild, members } = setup();
+    db.claim(CREATOR, A, B);
+    members.roles.set(B, [ROLE.paid, role]);
+    const { sent } = await createTeam(rt, [A, B]);
+    expect(text(sent.at(-1)!.payload)).toContain(`<@${B}>`);
+    expect(text(sent.at(-1)!.payload)).toBe(teamErrorText("staff_member", B));
+    expect(db.calls).not.toContain("elemental_bot_team_create");
+    expect(db.writes).toEqual([]);
+    expect(guild.byId(START_HERE).messages).toHaveLength(0);
+  });
+
+  test("an invitee recorded as a staff account (is_staff) is refused even without a role", async () => {
+    const { db, rt } = setup();
+    db.claim(CREATOR, A, B);
+    db.staffRows.add(B);
+    const { sent } = await createTeam(rt, [A, B]);
+    expect(text(sent.at(-1)!.payload)).toBe(teamErrorText("staff_member", B));
+    expect(db.writes).toEqual([]);
+  });
+
+  test("when roles cannot be read, nothing is created (never an unchecked teammate)", async () => {
+    const { db, rt, members } = setup();
+    db.claim(CREATOR, A);
+    members.fail = true;
+    const quiet = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const { sent } = await createTeam(rt, [A]);
+    quiet.mockRestore();
+    expect(text(sent.at(-1)!.payload)).toBe(teamErrorText("roles_unavailable"));
+    expect(db.writes).toEqual([]);
+  });
+
   test("valid: one pending team, one invite per teammate in #start-here pinging only them", async () => {
-    const { db, rt, guild } = setup();
+    const { db, rt, guild, members } = setup();
     db.claim(CREATOR, A, B);
     const { sent } = await createTeam(rt, [A, B]);
     expect(db.writes).toEqual(["elemental_bot_team_create"]);
@@ -637,6 +717,9 @@ describe("/team create", () => {
       expect(x.content).toContain(`<@${x.inviteeId}>`);
     }
     expect(text(sent.at(-1)!.payload)).toContain(`<@${A}>`);
+    // Every teammate's roles were checked, and SQL is told who is staff (nobody).
+    expect(members.reads.sort()).toEqual([A, B].sort());
+    expect(db.args.get("elemental_bot_team_create")![0]).toEqual([CREATOR, "Water Filter Lab", "fire", [A, B], []]);
   });
 });
 
@@ -707,6 +790,38 @@ describe("invite answers", () => {
     expect(channel.overwrites.filter((o) => o.type === "member" && o.id !== BOT)).toHaveLength(3);
     expect(channel.messages).toHaveLength(1);
     expect(db.writes.filter((w) => w === "elemental_bot_team_set_channel")).toHaveLength(1);
+  });
+
+  test("an invitee who holds a staff role cannot Accept: refused before SQL, the team stays pending", async () => {
+    for (const role of [ROLE.judge, ROLE.mentor, ROLE.helper, ROLE.host, ROLE.safety]) {
+      const { db, rt, guild, team, invites } = await pendingTeam();
+      const { sent } = await run(rt, "button", { user: A, customId: invites[0].accept, roles: [ROLE.paid, role] });
+      await rt.queues.channels.idle();
+      expect(text(sent.at(-1)!.payload)).toBe(COPY.staffNoTeam);
+      expect(db.calls).not.toContain("elemental_bot_team_accept");
+      expect(team.status).toBe("pending");
+      expect(team.invites.find((x) => x.id === A)!.state).toBe("pending");
+      expect(guild.teamChannels()).toHaveLength(0);
+    }
+  });
+
+  test("a student's Accept tells SQL the clicker is not staff; SQL's own staff refusal is shown, naming who", async () => {
+    const { db, rt, invites } = await pendingTeam();
+    await run(rt, "button", { user: A, customId: invites[0].accept });
+    expect(db.args.get("elemental_bot_team_accept")![0]).toEqual([expect.any(String), A, candidateSlots("fire"), false]);
+
+    // A member row marked staff after the invite: SQL refuses (el:staff_member).
+    const api = rt.api;
+    rt.api = {
+      ...api,
+      call: (async (fn: string, ...args: unknown[]) => {
+        if (fn === "elemental_bot_team_accept") throw new ElementalError("staff_member", B);
+        return api.call(fn, ...args);
+      }) as ElementalApi["call"],
+    };
+    const made = interaction("button", { user: B, customId: invites[1].accept });
+    await handleElementalInteraction(rt, made.i, reg);
+    expect(text(made.sent.at(-1)!.payload)).toBe(teamErrorText("staff_member", B));
   });
 
   test("Decline by the invitee closes their invite only", async () => {

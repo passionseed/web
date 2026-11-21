@@ -97,6 +97,9 @@ export const COPY = {
       "โน้ตใหม่บนบอร์ดจะเห็นหลังจากรีโหลดหน้าบอร์ด",
     ].join("\n"),
 
+  // [TH-REVIEW] a Host, Helper, Mentor, Judge or Safety member tried to make or join a team.
+  staffNoTeam: "ทีมงานตั้งทีมหรือเข้าร่วมทีมนักเรียนไม่ได้ ทีมมีแค่นักเรียน",
+
   /** Discord audit-log reason (staff only, English is fine). */
   auditReason: (slot: number) => `Elemental team plot ${plot(slot)}`,
 } as const;
@@ -123,6 +126,8 @@ export const TEAM_ERRORS: Record<string, string | ((detail?: string) => string)>
   invite_expired: "คำชวนนี้หมดเวลาแล้ว (24 ชั่วโมง) ขอให้เพื่อนชวนใหม่",
   team_full: "ทีมนี้ครบ 5 คนแล้ว",
   island_full: "เกาะเต็มแล้ว แจ้งทีมงานด้วย /report",
+  staff_member: (id) => (id ? `<@${id}> เป็นทีมงาน อยู่ในทีมนักเรียนไม่ได้` : COPY.staffNoTeam),
+  roles_unavailable: "ตรวจบทบาทใน Discord ไม่สำเร็จ ลองอีกครั้งในอีกสักครู่",
 };
 
 export function teamErrorText(code: string, detail?: string): string | null {
