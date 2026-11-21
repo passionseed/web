@@ -6,6 +6,7 @@ import { registerCommands } from "./commands";
 import { startProjectSeed } from "./projectseed";
 import { registerShiftVoice } from "./shift/voice";
 import { registerQuestCommands, registerShiftQuests } from "./quests";
+import { registerElementalCommands, startElemental } from "./elemental";
 
 async function main(): Promise<void> {
   const env = loadEnv();
@@ -16,8 +17,10 @@ async function main(): Promise<void> {
   if (process.argv.includes("--register-commands")) {
     if (env.projectseed) await registerCommands(env.projectseed);
     if (env.shiftQuests) await registerQuestCommands(env.core.discordToken, env.shiftQuests.guildId);
-    if (!env.projectseed && !env.shiftQuests) {
-      console.log("No slash commands to register: only projectseed and shift-quests have any");
+    // One POST per command per guild (real and rehearsal); never a PUT.
+    if (env.elemental) await registerElementalCommands(env.core.discordToken, env.elemental.guildIds);
+    if (!env.projectseed && !env.shiftQuests && !env.elemental) {
+      console.log("No slash commands to register: only projectseed, shift-quests and elemental have any");
     }
     return;
   }
@@ -54,6 +57,20 @@ async function main(): Promise<void> {
   if (env.projectseed) {
     const db = createDb(env.projectseed);
     modules.push({ name: "projectseed", ...(await startProjectSeed(client, db, env.projectseed)) });
+  }
+  if (env.elemental) {
+    // Runs alone in its own container (env.ts refuses company). A failure here
+    // logs and leaves the module off; the health file then never moves, so the
+    // deploy sees an unhealthy container and keeps the old one.
+    try {
+      modules.push({ name: "elemental", ...(await startElemental(client, env.elemental)) });
+    } catch (error) {
+      console.error("[elemental] failed to start; the module is off:", (error as Error)?.name ?? error);
+    }
+    // A stray rejection in an elemental task must not take the process down mid-event.
+    process.on("unhandledRejection", (reason) => {
+      console.error("[elemental] unhandled rejection:", (reason as Error)?.name ?? "unknown");
+    });
   }
   console.log(`Bot starting with modules: ${modules.map((m) => m.name).join(", ")}`);
 

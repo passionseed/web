@@ -13,7 +13,8 @@
  * Prints one line, `smoke ok ... health=file|none`, and exits 0; or prints
  * `smoke failed: <step>: <reason>` and exits 1. `health=none` means no chosen
  * module touches the Docker health file (projectseed alone), so deploy waits
- * for a steady container instead of a healthy one.
+ * for a steady container instead of a healthy one. elemental's heartbeat
+ * touches it (health=file).
  */
 import { existsSync, readFileSync } from "node:fs";
 
@@ -35,6 +36,9 @@ async function main(): Promise<string> {
   await step("load projectseed", () => import("./projectseed"));
   await step("load shift-voice", () => import("./shift/voice"));
   await step("load shift-quests", () => import("./quests"));
+  const { registry } = await step("load elemental", () => import("./elemental/registry"));
+  await step("load elemental module", () => import("./elemental"));
+  await step("build elemental commands", () => registry());
   const { renderIsland } = await step("load renderer", () => import("./quests/island/render"));
 
   const island = await step("render island", () =>
@@ -71,10 +75,15 @@ async function main(): Promise<string> {
   let health = "unchecked";
   if (process.argv.includes("--env")) {
     const env = await step("env", () => loadEnv());
-    const names = [env.shiftVoice && "shift-voice", env.shiftQuests && "shift-quests", env.projectseed && "projectseed"];
+    const names = [
+      env.shiftVoice && "shift-voice",
+      env.shiftQuests && "shift-quests",
+      env.projectseed && "projectseed",
+      env.elemental && "elemental",
+    ];
     modules = names.filter(Boolean).join(",");
-    // shift-voice's heartbeat and the quests delivery loop touch the health file.
-    health = env.shiftVoice || env.shiftQuests ? "file" : "none";
+    // shift-voice's heartbeat, the quests delivery loop and elemental's heartbeat touch the health file.
+    health = env.shiftVoice || env.shiftQuests || env.elemental ? "file" : "none";
   }
 
   const revision = existsSync("REVISION") ? readFileSync("REVISION", "utf8").trim() : "local";

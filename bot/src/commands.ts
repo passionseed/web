@@ -6,6 +6,7 @@ import {
   SlashCommandBuilder,
   type ChatInputCommandInteraction,
   type Client,
+  type RESTPostAPIChatInputApplicationCommandsJSONBody,
 } from "discord.js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -42,6 +43,40 @@ export async function registerCommands(env: BotEnv): Promise<void> {
   );
 
   console.log(`Registered ${COMMANDS.length} command(s) to guild ${env.guildId}`);
+}
+
+/** The two REST calls an upsert needs, so tests pass a fake and assert no PUT is ever made. */
+export interface CommandRest {
+  get(route: `/${string}`): Promise<unknown>;
+  post(route: `/${string}`, options: { body: unknown }): Promise<unknown>;
+}
+
+/**
+ * Creates or updates each command by name: one POST per command per guild.
+ * Never a PUT, which replaces the guild's whole list and would delete every
+ * command not in it (see registerCommands above). Commands this call does not
+ * name are left alone. Returns how many POSTs were made.
+ */
+export async function upsertGuildCommands(
+  rest: CommandRest,
+  guildIds: readonly string[],
+  commands: readonly RESTPostAPIChatInputApplicationCommandsJSONBody[],
+  label: string
+): Promise<number> {
+  if (commands.length === 0) {
+    console.log(`[${label}] no slash commands to register`);
+    return 0;
+  }
+  const application = (await rest.get(Routes.oauth2CurrentApplication())) as { id: string };
+  let posts = 0;
+  for (const guildId of guildIds) {
+    for (const command of commands) {
+      await rest.post(Routes.applicationGuildCommands(application.id, guildId), { body: command });
+      posts += 1;
+    }
+    console.log(`[${label}] registered ${commands.length} command(s) to guild ${guildId}; other commands left alone`);
+  }
+  return posts;
 }
 
 function formatHours(seconds: number): string {
