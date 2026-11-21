@@ -56,8 +56,8 @@ describe("radarProfileShortLink", () => {
       url: "https://passionseed.org/r/cyber-card",
       label: "passionseed.org/r/cyber-card",
     });
-    expect(radarProfileShortLink("data-scientist", "https://example.test/").url).toBe(
-      "https://example.test/r/data-scientist-card"
+    expect(radarProfileShortLink("product-designer", "https://example.test/").url).toBe(
+      "https://example.test/r/product-designer-card"
     );
     expect(radarProfileShareTag("cybersecurity")).toBe("cybersecurity-card");
   });

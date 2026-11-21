@@ -2,8 +2,9 @@
  * The guide's title screen at /radar/[slug] (server component): a pixel
  * scene with the career name, the host saying the hook in a dialogue box,
  * "เริ่มเกม ▶", "เล่นต่อ" when this device has progress, the level map
- * (cleared, current, ahead; every level tappable), the "ข้อมูล ณ ..." chip,
- * and the full DB deck one tap away (?view=deck).
+ * (Level 1, then Level 2: more levels or the door to the full deck; every
+ * level tappable), the "ข้อมูล ณ ..." chip, and the full DB deck one tap away
+ * (?view=deck).
  *
  * `data-site-chrome="off"` hides the site header on this screen (shell.css);
  * the deck at the same path keeps it.
@@ -13,6 +14,7 @@ import Link from "next/link";
 import { PixelScene } from "@/components/radar/guide/story";
 import type { GuideIndexEntry } from "@/lib/radar-guide/guide-types";
 import { levelSceneSrc } from "@/lib/radar-guide/story";
+import { levelOnePages } from "@/lib/radar-guide/tiers";
 import { asOfLabel, roundMinutes } from "./guide-format";
 import { CoverHost, CoverLevelMap } from "./CoverMap";
 import { deckHref, firstLevelKey, levelHref } from "./guide-routes";
@@ -40,8 +42,10 @@ export function coverSceneSrc(index: GuideIndexEntry): string | null {
 
 export function GuideCover({ index, hookTh }: GuideCoverProps) {
   const pages = [...index.pages].sort((a, b) => a.order - b.order);
+  // The start line counts Level 1 only: the short run a newcomer plays first.
+  const levelOne = levelOnePages(pages);
   const first = firstLevelKey(index);
-  const minutes = roundMinutes(pages.reduce((s, p) => s + p.minutes, 0));
+  const minutes = roundMinutes(levelOne.reduce((s, p) => s + p.minutes, 0));
   const asOf = asOfLabel(index.asOf);
 
   return (
@@ -66,7 +70,7 @@ export function GuideCover({ index, hookTh }: GuideCoverProps) {
         </div>
 
         <p className="rg-cover__meta">
-          {pages.length} ด่าน · ราว {minutes} นาที{asOf ? ` · ${asOf}` : ""}
+          Level 1 · {levelOne.length} ด่าน · ราว {minutes} นาที{asOf ? ` · ${asOf}` : ""}
         </p>
 
         <CoverLevelMap index={index} />

@@ -51,4 +51,41 @@ export const SHARED_FACTS: readonly Fact[] = [
     asOf: "2026-11-11",
     badge: "confirmed",
   },
+  // ---------------------------------------------------------------- TCAS round 1 (Level 1, every career)
+  {
+    id: "f.tcas70-rounds",
+    claimEn:
+      "mytcas (official, CUPT/ทปอ.), TCAS70: there are 4 rounds (1 Portfolio, 2 Quota, 3 Admission, 4 Direct Admission). Round 1 Portfolio applications are set by each university from Aug 15, 2026 (15 ส.ค. 69) on; results in the system Mar 10, 2027 (10 มี.ค. 70).",
+    values: ["4", "15", "10", "69", "70"],
+    sources: [{ outlet: "mytcas", url: "https://www.mytcas.com/", publishedAt: "2026-11-16" }],
+    asOf: "2026-11-17",
+    badge: "confirmed",
+    note: "mytcas homepage timeline, UPDATE 16/11/2026. Closing dates differ by university and programme.",
+  },
+  {
+    id: "f.tcasfolio",
+    claimEn:
+      "PPTV (Jul 8, 2026): ทปอ. introduced TCASfolio, a portfolio system first used in TCAS70. A student can make up to 40 items. Items include an essay or reason for applying, projects (โครงการ/โครงงาน), activities, certificates or awards, and the university's extra questions.",
+    values: ["40", "70"],
+    sources: [
+      {
+        outlet: "PPTV",
+        url: "https://www.pptvhd36.com/news/%E0%B8%AA%E0%B8%B1%E0%B8%87%E0%B8%84%E0%B8%A1/279213",
+        publishedAt: "2026-07-08",
+      },
+    ],
+    asOf: "2026-11-17",
+    badge: "confirmed",
+    note: "News report, not the mytcas manual. Say \"ทำได้สูงสุด 40 รายการ\", not \"เก็บ\".",
+  },
+  {
+    id: "f.ssru-r1",
+    claimEn:
+      "Eduzones (Nov 12, 2026): Suan Sunandha Rajabhat University's TCAS70 round 1 Portfolio is open Nov 3, 2026 to Feb 9, 2027 (9 ก.พ. 2570), 7,585 seats. Shows round 1 is still open at some universities in November.",
+    values: ["7,585", "9", "2570"],
+    sources: [{ outlet: "Eduzones", url: "https://www.eduzones.com/2026/11/12/ssru1-tcas70/", publishedAt: "2026-11-12" }],
+    asOf: "2026-11-17",
+    badge: "pending",
+    note: "Secondary source; confirm on SSRU's own admissions site before printing the seat count.",
+  },
 ];

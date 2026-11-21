@@ -165,13 +165,100 @@ describe("GuideShellProvider", () => {
 
     fireEvent.click(next);
     expect(screen.getByTestId("step-find")).toHaveAttribute("data-state", "shown");
-    expect(next).toHaveTextContent("ด่านต่อไป");
 
-    fireEvent.click(next);
+    // The game moves on through its own button: "ต่อ" gives way to a hint.
+    expect(screen.queryByTestId("guide-next")).toBeNull();
+    expect(screen.getByTestId("guide-next-hint")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("game-skip"));
+    expect(screen.queryByTestId("guide-next-hint")).toBeNull();
+    expect(screen.getByTestId("guide-next")).toHaveTextContent("ด่านต่อไป");
+
+    fireEvent.click(screen.getByTestId("guide-next"));
     expect(push).toHaveBeenCalledWith("/radar/cybersecurity/doors");
     const saved = JSON.parse(storage()["radar-guide:v1:cybersecurity"]);
     expect(saved.cleared).toContain("mythos");
     expect(saved.visited).toContain("mythos");
+  });
+
+  it("a choice: ต่อ steps aside until a pick, the pick is saved and tracked, then the reply reads on", () => {
+    const page: GuidePage = {
+      ...MYTHOS,
+      blocks: [
+        { kind: "dialogue", id: "intro", lines: [{ speaker: "host", text: { th: "สวัสดี มาเริ่มกัน" } }] },
+        {
+          kind: "choice",
+          id: "q",
+          ask: [{ speaker: "host", text: { th: "เธอว่าไง" } }],
+          options: [
+            { id: "a", labelTh: "แบบเอ", reply: [{ speaker: "host", text: { th: "ตอบเอ" } }] },
+            { id: "b", labelTh: "แบบบี", reply: [{ speaker: "host", text: { th: "ตอบบีนะ" } }] },
+          ],
+        },
+      ],
+    };
+    renderLevel(page);
+    fireEvent.click(screen.getByTestId("guide-next")); // reads the intro line
+    fireEvent.click(screen.getByTestId("guide-next")); // opens the choice
+
+    expect(screen.queryByTestId("guide-next")).toBeNull();
+    expect(screen.getByTestId("guide-next-hint")).toHaveTextContent("เลือกคำตอบ");
+    const box = screen.getByTestId("choice-q").querySelector<HTMLButtonElement>('[data-demo="dialogue"]')!;
+    fireEvent.click(box); // finishes the question
+    fireEvent.click(screen.getByTestId("choice-answer-b"));
+
+    expect(track).toHaveBeenCalledWith({ type: "interactive_tap", pageKey: "mythos", target: "mythos:q:b" });
+    const saved = JSON.parse(storage()["radar-guide:v1:cybersecurity"]);
+    expect(saved.choices["mythos:q"]).toBe("b");
+    expect(screen.getByTestId("choice-answer-b")).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByTestId("choice-answer-a")).toBeDisabled();
+    expect(screen.queryByTestId("guide-next-hint")).toBeNull();
+
+    fireEvent.click(screen.getByTestId("guide-next")); // reads the reply on
+    expect(screen.getAllByText("ตอบบีนะ").length).toBeGreaterThan(0);
+    expect(screen.queryByText("ตอบเอ")).toBeNull();
+    fireEvent.click(screen.getByTestId("guide-next"));
+    expect(push).toHaveBeenCalledWith("/radar/cybersecurity/doors");
+  });
+
+  it("a kinds grid: ต่อ waits for the first tap, each tap has the host say that kind's line", () => {
+    const page: GuidePage = {
+      ...MYTHOS,
+      blocks: [
+        { kind: "dialogue", id: "intro", lines: [{ speaker: "host", text: { th: "สวัสดี มาเริ่มกัน" } }] },
+        {
+          kind: "kinds",
+          id: "kinds",
+          headTh: "สายนี้มีสายไหนบ้าง",
+          tiles: [
+            { id: "one", icon: "shield", titleTh: "กันโกง", lineTh: "บรรทัดของกันโกง", played: true },
+            { id: "two", icon: "bug", titleTh: "เจาะระบบ", lineTh: "บรรทัดของเจาะระบบ" },
+            { id: "three", icon: "monitor", titleTh: "เฝ้าระบบ", lineTh: "บรรทัดของเฝ้าระบบ" },
+          ],
+        },
+      ],
+    };
+    renderLevel(page);
+    fireEvent.click(screen.getByTestId("guide-next")); // reads the intro line
+    fireEvent.click(screen.getByTestId("guide-next")); // opens the grid
+
+    expect(screen.getByText("เพิ่งลอง")).toBeInTheDocument();
+    expect(screen.queryByTestId("guide-next")).toBeNull();
+    expect(screen.getByTestId("guide-next-hint")).toHaveTextContent("แตะดูสักสาย");
+    expect(screen.queryByText("บรรทัดของเจาะระบบ")).toBeNull();
+
+    fireEvent.click(screen.getByTestId("kinds-tile-two"));
+    expect(track).toHaveBeenCalledWith({ type: "interactive_tap", pageKey: "mythos", target: "mythos:kinds:two" });
+    expect(screen.getAllByText("บรรทัดของเจาะระบบ").length).toBeGreaterThan(0);
+    expect(screen.getByTestId("kinds-tile-two")).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText("ดูแล้ว 1/3")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("kinds-tile-three"));
+    expect(screen.getByText("ดูแล้ว 2/3")).toBeInTheDocument();
+    const saved = JSON.parse(storage()["radar-guide:v1:cybersecurity"]);
+    expect(saved.choices["mythos:kinds"]).toBe("three");
+
+    fireEvent.click(screen.getByTestId("guide-next"));
+    expect(push).toHaveBeenCalledWith("/radar/cybersecurity/doors");
   });
 
   it("skipping a game fires <pageKey>:skip, shows the answers and records a skipped result", () => {

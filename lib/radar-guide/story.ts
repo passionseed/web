@@ -30,7 +30,7 @@ export interface GuideHost {
   roleTh: string;
   /**
    * Pixel sprite sheet per mood (public paths, crisp with image-rendering:
-   * pixelated). A generic pixel character, never a likeness of a real person.
+   * pixelated). The PassionSeed flame, never a likeness of a real person.
    * A missing mood falls back to `idle`; a missing file falls back to the CSS
    * sprite in the shell.
    */
@@ -40,19 +40,21 @@ export interface GuideHost {
 }
 
 /**
- * The founder, on camera in the cutscenes and as a pixel NPC everywhere else.
- * TODO(founder): replace the placeholder display name. This is the only place
- * it is set.
+ * The founder on camera in the cutscenes; everywhere else the pixel NPC is
+ * P'Seed: the PassionSeed flame (our logo) holding a mic. The name is a pun
+ * on "PSeed" with the Thai "พี่" (P'). This is the only place it is set.
  */
 export const GUIDE_HOST: GuideHost = {
-  nameTh: "พี่โฮสต์",
-  nameEn: "Host",
+  nameTh: "P'Seed",
+  nameEn: "P'Seed",
   roleTh: "ไกด์ประจำรัน",
   sprites: {
     idle: "/radar/guides/host/host-idle.webp",
     talk: "/radar/guides/host/host-talk.webp",
+    wink: "/radar/guides/host/host-wink.webp",
+    wow: "/radar/guides/host/host-cheer.webp",
   },
-  spriteSize: { w: 48, h: 64 },
+  spriteSize: { w: 64, h: 64 },
 };
 
 /** Default scene art for a level. Override per page with GuideIndexPage.scene. */
@@ -336,11 +338,17 @@ export function prevLevelKey(pages: readonly GuideIndexPage[], key: string): str
   return i > 0 ? sorted[i - 1].key : null;
 }
 
-/** Minutes left in the run from `key` on (inclusive), for "เหลือราว N นาที". */
+/**
+ * Minutes left from `key` on (inclusive), for "เหลือราว N นาที". Counts only
+ * the page's own Level (1 or 2): Level 1 is a run of its own.
+ */
 export function minutesLeft(pages: readonly GuideIndexPage[], key: string): number {
   const page = pages.find((p) => p.key === key);
   if (!page) return pages.reduce((s, p) => s + p.minutes, 0);
-  return pages.filter((p) => p.order >= page.order).reduce((s, p) => s + p.minutes, 0);
+  const tier = page.tier === 2 ? 2 : 1;
+  return pages
+    .filter((p) => p.order >= page.order && (p.tier === 2 ? 2 : 1) === tier)
+    .reduce((s, p) => s + p.minutes, 0);
 }
 
 // ---------------------------------------------------------------- progress (persisted state)

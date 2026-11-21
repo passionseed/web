@@ -7,6 +7,7 @@
  * `games` and `cutscene` are derived by registry.server, never authored here.
  */
 import type { GuideIndexEntry } from "@/lib/radar-guide/guide-types";
+import { ROUND_ONE_MINUTES, ROUND_ONE_NAV_TH, ROUND_ONE_TITLE_TH } from "../_shared/round1-meta";
 
 export const CYBERSECURITY_META = {
   slug: "cybersecurity",
@@ -18,21 +19,22 @@ export const CYBERSECURITY_META = {
   // the host NPC says the same lines, and the pinned safety block on "tonight"
   // shows the legal-lab rule as text either way.
   status: "live",
-  asOf: "2026-11-11",
+  asOf: "2026-11-17",
   intentPathSlug: "interested", // ctaPathSlug(null): the deck's CtaCard value for this career
   shareCardAfter: "money",
   pages: [
-    { key: "mythos", order: 1, titleTh: "AI เพิ่งเจอบั๊กที่อายุมากกว่าเธอ", navLabelTh: "บั๊กอายุมากกว่าเธอ", minutes: 2, legacyHashes: ["hook"] },
-    { key: "doors", order: 2, titleTh: "AI ตัวเดียวกัน สองประตู", navLabelTh: "สองประตู", minutes: 2 },
-    { key: "triage", order: 3, titleTh: "งานจริง คือจับผิด AI", navLabelTh: "จับผิด AI", minutes: 1.5, legacyHashes: ["reality", "day"] },
-    { key: "scam", order: 4, titleTh: "แชตบ้านเธอ คือสนามจริง", navLabelTh: "แชตบ้านเธอ", minutes: 1.5 },
-    { key: "firstjob", order: 5, titleTh: "งานแรกของฉัน จะเหลืออะไร", navLabelTh: "งานแรก", minutes: 1, legacyHashes: ["ai"] },
-    { key: "money", order: 6, titleTh: "เงินเดือนจริงในไทย", navLabelTh: "เงินเดือน", minutes: 1, legacyHashes: ["money"] },
-    { key: "fit", order: 7, titleTh: "ฉันเหมาะไหม เทียบกับคอม วิศวะ หมอ", navLabelTh: "เหมาะไหม", minutes: 1 },
-    { key: "tcas", order: 8, titleTh: "สมัครที่ไหน เมื่อไหร่", navLabelTh: "สมัครที่ไหน", minutes: 1, legacyHashes: ["study"] },
-    { key: "terminal", order: 9, titleTh: "ลองเป็นนักป้องกันในเครื่องจำลอง", navLabelTh: "ลองเป็นนักป้องกัน", minutes: 3 },
-    { key: "tonight", order: 10, titleTh: "คืนนี้ ห้องเดียว ได้ผลงานชิ้นแรก", navLabelTh: "ภารกิจคืนนี้", minutes: 1, legacyHashes: ["start"] },
-    { key: "next", order: 11, titleTh: "แล้วเธอล่ะ", navLabelTh: "แล้วเธอล่ะ", minutes: 1, legacyHashes: ["outro"] },
+    { key: "mythos", order: 1, titleTh: "AI เพิ่งเจอบั๊กที่อายุมากกว่าเธอ", navLabelTh: "บั๊กอายุมากกว่าเธอ", minutes: 2, legacyHashes: ["hook"], tier: 1 },
+    { key: "scam", order: 2, titleTh: "แชตบ้านเธอ คือสนามจริง", navLabelTh: "แชตบ้านเธอ", minutes: 1.5, tier: 1 },
+    { key: "tonight", order: 3, titleTh: "คืนนี้ ห้องเดียว ได้ผลงานชิ้นแรก", navLabelTh: "ภารกิจคืนนี้", minutes: 1, legacyHashes: ["start"], tier: 1 },
+    { key: "next", order: 4, titleTh: "แล้วเธอล่ะ", navLabelTh: "แล้วเธอล่ะ", minutes: 1, legacyHashes: ["outro"], tier: 1 },
+    { key: "doors", order: 5, titleTh: "AI ตัวเดียวกัน สองประตู", navLabelTh: "สองประตู", minutes: 2, tier: 2 },
+    { key: "triage", order: 6, titleTh: "งานจริง คือจับผิด AI", navLabelTh: "จับผิด AI", minutes: 1.5, legacyHashes: ["reality", "day"], tier: 2 },
+    { key: "firstjob", order: 7, titleTh: "งานแรกของฉัน จะเหลืออะไร", navLabelTh: "งานแรก", minutes: 1, legacyHashes: ["ai"], tier: 2 },
+    { key: "money", order: 8, titleTh: "เงินเดือนจริงในไทย", navLabelTh: "เงินเดือน", minutes: 1, legacyHashes: ["money"], tier: 2 },
+    { key: "fit", order: 9, titleTh: "ฉันเหมาะไหม เทียบกับคอม วิศวะ หมอ", navLabelTh: "เหมาะไหม", minutes: 1, tier: 2 },
+    { key: "round1", order: 10, titleTh: ROUND_ONE_TITLE_TH, navLabelTh: ROUND_ONE_NAV_TH, minutes: ROUND_ONE_MINUTES, tier: 2 },
+    { key: "tcas", order: 11, titleTh: "สมัครที่ไหน เมื่อไหร่", navLabelTh: "สมัครที่ไหน", minutes: 1, legacyHashes: ["study"], tier: 2 },
+    { key: "terminal", order: 12, titleTh: "ลองเป็นนักป้องกันในเครื่องจำลอง", navLabelTh: "ลองเป็นนักป้องกัน", minutes: 3, tier: 2 },
   ],
   story: {
     profileTitleTh: "โปรไฟล์สายไซเบอร์ของฉัน",
@@ -47,7 +49,7 @@ export const CYBERSECURITY_META = {
       { id: "tcas", nameTh: "นักวางแผน TCAS", descTh: "รู้แล้วว่าต้องยื่นที่ไหน รอบไหน", icon: "map", trigger: { on: "clear", pageKey: "tcas" } },
       { id: "terminal", nameTh: "นักป้องกันฝึกหัด", descTh: "อ่านขอบเขตก่อนลงมือ แบบมืออาชีพ", icon: "terminal", trigger: { on: "clear", pageKey: "terminal" } },
       { id: "tonight", nameTh: "ภารกิจคืนนี้", descTh: "มีแผนทำผลงานชิ้นแรกแล้ว", icon: "flag", trigger: { on: "clear", pageKey: "tonight" } },
-      { id: "next", nameTh: "จบรันแรก", descTh: "เล่นจนถึงด่านสุดท้าย", icon: "star", trigger: { on: "clear", pageKey: "next" } },
+      { id: "next", nameTh: "จบรันแรก", descTh: "เล่นจนจบ Level 1", icon: "star", trigger: { on: "clear", pageKey: "next" } },
       { id: "sharp-eye", nameTh: "ตาคมไม่พลาด", descTh: "จับผิดได้ครบทุกข้อในด่านเดียว", icon: "eye", trigger: { on: "game", game: "triage:*", perfect: true } },
       { id: "scam-proof", nameTh: "แชตปลอมทำอะไรไม่ได้", descTh: "แยกแชตถูกครบทุกข้อ", icon: "shield", trigger: { on: "game", game: "scam:*", perfect: true } },
       { id: "full-run", nameTh: "เคลียร์ครบทุกด่าน", descTh: "ผ่านครบทุกด่านในรันนี้", icon: "shield", trigger: { on: "allCleared" } },

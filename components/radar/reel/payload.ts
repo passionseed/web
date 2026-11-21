@@ -83,6 +83,11 @@ const LIMITS = { line: 64, item: 44, rows: 3, items: 4, points: 2 } as const;
 const segmenter =
   typeof Intl !== "undefined" && "Segmenter" in Intl ? new Intl.Segmenter("th", { granularity: "word" }) : null;
 
+/** True when the text shows whole, without clipText's ellipsis. */
+export function fitsLine(text: string, max: number = LIMITS.line): boolean {
+  return Array.from(sanitizeDashes(text.replace(/\s+/g, " ").trim())).length <= max;
+}
+
 /** Shortens Thai text at a word boundary (never mid-word) and adds an ellipsis. */
 export function clipText(text: string, max: number): string {
   const clean = sanitizeDashes(text.replace(/\s+/g, " ").trim());
@@ -195,6 +200,13 @@ function guideLines(page: GuidePage, facts: readonly Fact[]): GuideLine[] {
   return pageTexts(page.blocks)
     .map(({ text, simulated }) => factBackedLine(text, page, facts, simulated))
     .filter((l): l is GuideLine => l !== null);
+}
+
+/** The first-step link label; drops the trailing "ใน mytcas" before clipping a long one. */
+function startTitle(label: string): string {
+  if (fitsLine(label)) return label;
+  const short = label.replace(/\s+ใน mytcas$/, "");
+  return fitsLine(short) ? short : clipText(short, LIMITS.line);
 }
 
 function sortedPages(guide: CareerGuide): GuidePage[] {
@@ -316,14 +328,20 @@ function guideHook(page: GuidePage, facts: readonly Fact[], used: Fact[]) {
   const stat = page.og.stat ? factBackedLine(page.og.stat, page, facts) : null;
   if (reelHook) used.push(...reelHook.facts);
   if (stat) used.push(...stat.facts);
+  // A reel never shows a cut line: a hook that doesn't fit falls back to the
+  // headline, and a stat that doesn't fit is left out.
+  const line = [reelHook?.text, page.og.headlineTh].find((t): t is string => Boolean(t) && fitsLine(t!));
   return {
-    line: clipText(reelHook?.text ?? page.og.headlineTh, LIMITS.line),
-    stat: stat ? toReelLine(stat.text) : null,
+    line: line ?? clipText(reelHook?.text ?? page.og.headlineTh, LIMITS.line),
+    stat: stat && fitsLine(stat.text) ? toReelLine(stat.text) : null,
   };
 }
 
 function guideRows(page: GuidePage, facts: readonly Fact[], used: Fact[]) {
-  const rows = guideLines(page, facts).filter((l) => l.numeric).slice(0, LIMITS.rows);
+  // Rows that would be cut (a salary row ending "7…") are left out, not clipped.
+  const rows = guideLines(page, facts)
+    .filter((l) => l.numeric && fitsLine(l.text))
+    .slice(0, LIMITS.rows);
   rows.forEach((r) => used.push(...r.facts));
   return rows.length ? { title: clipText(page.titleTh, LIMITS.line), rows: rows.map((r) => toReelLine(r.text)) } : null;
 }
@@ -462,7 +480,7 @@ export function buildRadarReelPayload(input: BuildPayloadInput): RadarReelPayloa
     base.ai = cardAi(dump);
     base.day = cardDay(dump);
     const step = firstStepLink(guide);
-    base.start = step ? { title: clipText(step, LIMITS.line), makes: null, free: false, minutes: null } : cardStart(dump, notes);
+    base.start = step ? { title: startTitle(step), makes: null, free: false, minutes: null } : cardStart(dump, notes);
   } else {
     base.hook = cardHook(dump, nameTh, notes);
     base.reality = cardReality(dump);

@@ -15,13 +15,19 @@ import {
 } from "./types";
 import { parseVtt } from "./vtt";
 import {
+  CHOICE_LABEL_MAX_CHARS,
   GUIDE_PAGE_KEY_PATTERN,
+  KIND_LINE_MAX_CHARS,
+  KIND_TITLE_MAX_CHARS,
   RESERVED_GUIDE_SLUGS,
   RESERVED_PAGE_KEYS,
   type BannedClaim,
   type CareerGuide,
+  type CareerKindTile,
+  type ChoiceOption,
   type ClipManifest,
   type CopyText,
+  type DialogueLine,
   type Fact,
   type FactId,
   type GuideBlock,
@@ -72,8 +78,14 @@ export function clipScriptHash(lines: readonly string[]): string {
 // ---------------------------------------------------------------- numbers
 const THAI_DIGITS = "๐๑๒๓๔๕๖๗๘๙";
 const NUMBER_TOKEN = /[0-9๐-๙]+(?:[.,][0-9๐-๙]+)*/g;
-/** Never need a fact: grade labels, round names, template placeholders. */
-const EXEMPT_PATTERNS = [/ม\.\s?[0-9๐-๙]/g, /TCAS\s?[67][0-9]/gi, /รอบ(?:ที่)?\s?[0-9๐-๙]/g, /\{[^}]*\}/g];
+/** Never need a fact: grade labels, round names, Level 1 and Level 2 of the run, template placeholders. */
+const EXEMPT_PATTERNS = [
+  /ม\.\s?[0-9๐-๙]/g,
+  /TCAS\s?[67][0-9]/gi,
+  /รอบ(?:ที่)?\s?[0-9๐-๙]/g,
+  /Level\s?[12](?![0-9])/g,
+  /\{[^}]*\}/g,
+];
 
 function toArabic(text: string): string {
   return text.replace(/[๐-๙]/g, (d) => String(THAI_DIGITS.indexOf(d)));
@@ -216,6 +228,8 @@ interface Collected {
   simulated: { path: string; ids: string[] }[];
   deadlines: { path: string; at: unknown }[];
   dialogues: { path: string; lines: number }[];
+  choices: { path: string; ask: readonly DialogueLine[]; options: readonly ChoiceOption[] }[];
+  kinds: { path: string; tiles: readonly CareerKindTile[] }[];
 }
 
 function collectDeadlines(value: unknown, path: string, out: Collected["deadlines"]): void {
@@ -312,6 +326,27 @@ function collectBlocks(page: GuidePage, blocks: readonly GuideBlock[], base: str
         c.dialogues.push({ path, lines: block.lines.length });
         block.lines.forEach((line, j) => addCopy(line.text, `${path}.lines[${j}].text`));
         break;
+      case "choice":
+        c.dialogues.push({ path: `${path}.ask`, lines: block.ask.length });
+        block.ask.forEach((line, j) => addCopy(line.text, `${path}.ask[${j}].text`));
+        block.options.forEach((opt, j) => {
+          addString(opt.labelTh, `${path}.options[${j}].labelTh`, page.factIds);
+          c.dialogues.push({ path: `${path}.options[${j}].reply`, lines: opt.reply.length });
+          opt.reply.forEach((line, k) => addCopy(line.text, `${path}.options[${j}].reply[${k}].text`));
+        });
+        c.choices.push({ path, ask: block.ask, options: block.options });
+        break;
+      case "kinds": {
+        (block.factIds ?? []).forEach((id, j) => c.factRefs.push({ pageKey, path: `${path}.factIds[${j}]`, id, copyLevel: true }));
+        const backing = [...page.factIds, ...(block.factIds ?? [])];
+        addString(block.headTh, `${path}.headTh`, backing);
+        block.tiles.forEach((t, j) => {
+          addString(t.titleTh, `${path}.tiles[${j}].titleTh`, backing);
+          addString(t.lineTh, `${path}.tiles[${j}].lineTh`, backing);
+        });
+        c.kinds.push({ path, tiles: block.tiles });
+        break;
+      }
       case "item": {
         const simulated = Boolean(block.simulated);
         addCopy(block.text, `${path}.text`, simulated);
@@ -340,6 +375,8 @@ function collectPage(page: GuidePage): Collected {
     simulated: [],
     deadlines: [],
     dialogues: [],
+    choices: [],
+    kinds: [],
   };
   const pageKey = page.key;
   const add = (text: string, path: string, scope: Scope, backing: readonly FactId[] | null, spelled: TextRef["spelled"] = "warn") =>
@@ -460,9 +497,13 @@ function checkNumbers(ref: TextRef, facts: Map<string, Fact>, issues: LintIssue[
   }
 }
 
+/** Bangkok is UTC+7 all year: guide dates are Thai calendar dates. */
+const BANGKOK_OFFSET_MS = 7 * 3_600_000;
+
 function daysBetween(from: string, to: Date): number {
   const start = Date.UTC(Number(from.slice(0, 4)), Number(from.slice(5, 7)) - 1, Number(from.slice(8, 10)));
-  const end = Date.UTC(to.getUTCFullYear(), to.getUTCMonth(), to.getUTCDate());
+  const bkk = new Date(to.getTime() + BANGKOK_OFFSET_MS);
+  const end = Date.UTC(bkk.getUTCFullYear(), bkk.getUTCMonth(), bkk.getUTCDate());
   return Math.round((end - start) / 86_400_000);
 }
 
@@ -755,6 +796,8 @@ export function lintGuide(guide: CareerGuide, opts: GuideLintOptions = {}): Lint
     for (const d of c.dialogues) {
       if (d.lines === 0) issues.push({ level: "error", pageKey: page.key, path: d.path, message: "dialogue block has no lines" });
     }
+    for (const ch of c.choices) checkChoice(page.key, ch, issues);
+    for (const k of c.kinds) checkKinds(page.key, k, issues);
   }
   texts.push(...checkStory(guide, issues));
 
@@ -762,7 +805,7 @@ export function lintGuide(guide: CareerGuide, opts: GuideLintOptions = {}): Lint
     checkTone(ref, issues);
     checkBanned(ref, banned, issues);
     checkNumbers(ref, facts, issues);
-    if (/\.lines\[\d+\]\.text\.th$/.test(ref.path) && ref.text.length > DIALOGUE_BOX_MAX_CHARS) {
+    if (/\.(lines|ask|reply)\[\d+\]\.text\.th$/.test(ref.path) && ref.text.length > DIALOGUE_BOX_MAX_CHARS) {
       issues.push({
         level: "warn",
         pageKey: ref.pageKey,
@@ -774,6 +817,56 @@ export function lintGuide(guide: CareerGuide, opts: GuideLintOptions = {}): Lint
 
   checkClips(guide, opts, issues);
   return issues;
+}
+
+/**
+ * A choice reads like a dating game: the host asks, 2 to 3 short answers, a
+ * reply to each. Answers are what the student says (short); the ask is the
+ * host's (the reply follows the student's line, so it can't open on the host
+ * repeating the question).
+ */
+function checkChoice(
+  pageKey: string,
+  ch: { path: string; ask: readonly DialogueLine[]; options: readonly ChoiceOption[] },
+  issues: LintIssue[]
+): void {
+  const err = (path: string, message: string) => issues.push({ level: "error", pageKey, path, message });
+  if (ch.ask.some((l) => l.speaker !== "host")) err(`${ch.path}.ask`, "a choice is asked by the host");
+  if (ch.options.length < 2 || ch.options.length > 3) err(`${ch.path}.options`, "a choice has 2 or 3 answers");
+  // The answers open once the question is read; a second box would hide them
+  // behind a tap while the sticky bar already says "pick an answer above".
+  if (ch.ask.length !== 1 || ch.ask.some((l) => l.text.th.length > DIALOGUE_BOX_MAX_CHARS)) {
+    err(`${ch.path}.ask`, `a choice's question is one dialogue box (one line, at most ${DIALOGUE_BOX_MAX_CHARS} chars)`);
+  }
+  const ids = new Set<string>();
+  ch.options.forEach((opt, j) => {
+    const path = `${ch.path}.options[${j}]`;
+    if (!/^[a-z0-9][a-z0-9-]{0,23}$/.test(opt.id)) err(`${path}.id`, `answer id ${opt.id} must be [a-z0-9-], at most 24 chars`);
+    if (ids.has(opt.id)) err(`${path}.id`, `answer id ${opt.id} is used twice`);
+    ids.add(opt.id);
+    if (opt.labelTh.length > CHOICE_LABEL_MAX_CHARS) {
+      err(`${path}.labelTh`, `answer is ${opt.labelTh.length} chars (max ${CHOICE_LABEL_MAX_CHARS}): the student says it, keep it short`);
+    }
+  });
+}
+
+function checkKinds(pageKey: string, k: { path: string; tiles: readonly CareerKindTile[] }, issues: LintIssue[]): void {
+  const err = (path: string, message: string) => issues.push({ level: "error", pageKey, path, message });
+  if (k.tiles.length < 3 || k.tiles.length > 6) err(`${k.path}.tiles`, "a kinds grid has 3 to 6 tiles");
+  if (k.tiles.filter((t) => t.played).length > 1) err(`${k.path}.tiles`, "at most one tile is the kind the level just played");
+  const ids = new Set<string>();
+  k.tiles.forEach((t, j) => {
+    const path = `${k.path}.tiles[${j}]`;
+    if (!/^[a-z0-9][a-z0-9-]{0,23}$/.test(t.id)) err(`${path}.id`, `tile id ${t.id} must be [a-z0-9-], at most 24 chars`);
+    if (ids.has(t.id)) err(`${path}.id`, `tile id ${t.id} is used twice`);
+    ids.add(t.id);
+    if (t.titleTh.length > KIND_TITLE_MAX_CHARS) {
+      err(`${path}.titleTh`, `tile name is ${t.titleTh.length} chars (max ${KIND_TITLE_MAX_CHARS}): a few words on a small tile`);
+    }
+    if (t.lineTh.length > KIND_LINE_MAX_CHARS) {
+      err(`${path}.lineTh`, `tile line is ${t.lineTh.length} chars (max ${KIND_LINE_MAX_CHARS}): one short line, read in a glance`);
+    }
+  });
 }
 
 export function lintErrors(issues: readonly LintIssue[]): LintIssue[] {

@@ -71,14 +71,19 @@ describe("radar guide registry", () => {
   it("lists every page of visible guides, and drafts only off production", () => {
     const params = registry.guideStaticParams("preview");
     expect(params[0]).toEqual({ slug: "cybersecurity", page: "mythos" });
-    expect(params).toHaveLength(11);
-    expect(registry.guideStaticParams("production")).toEqual([]); // cybersecurity is a draft
-    expect(registry.liveGuideSlugs("development")).toEqual(["cybersecurity"]);
+    expect(params.filter((p) => p.slug === "cybersecurity")).toHaveLength(12);
+    expect(registry.guideStaticParams("production")).toEqual([]); // every guide here is a draft
+    expect(registry.liveGuideSlugs("development")).toEqual([
+      "cybersecurity",
+      "ai-engineer",
+      "data-scientist",
+      "software-engineer",
+    ]);
   });
 
   it("returns null for an unknown slug or page, and for drafts on production", () => {
     expect(registry.loadGuidePage("cybersecurity", "nope", "preview")).toBeNull();
-    expect(registry.loadGuidePage("software-engineer", "mythos", "preview")).toBeNull();
+    expect(registry.loadGuidePage("product-designer", "mythos", "preview")).toBeNull();
     expect(registry.loadGuidePage("cybersecurity", "mythos", "production")).toBeNull();
   });
 
@@ -93,7 +98,7 @@ describe("radar guide registry", () => {
   });
 
   it("lists reel plans per page", () => {
-    expect(registry.listGuideReelPlans()).toEqual([
+    expect(registry.listGuideReelPlans().filter((r) => r.slug === "cybersecurity")).toEqual([
       { slug: "cybersecurity", pageKey: "money", format: "founder", hookTh: "เงินเดือน", variantsTh: ["ก", "ข"] },
     ]);
   });
@@ -104,8 +109,8 @@ describe("radar guide registry", () => {
   });
 
   it("answers light index questions without content", () => {
-    expect(index.guidePageKeys("cybersecurity")?.slice(0, 3)).toEqual(["mythos", "doors", "triage"]);
-    expect(index.guidePageKeys("software-engineer")).toBeNull();
+    expect(index.guidePageKeys("cybersecurity")?.slice(0, 3)).toEqual(["mythos", "scam", "tonight"]);
+    expect(index.guidePageKeys("product-designer")).toBeNull();
     expect(index.isGuidePageKey("cybersecurity", "tcas")).toBe(true);
     expect(index.isGuidePageKey("cybersecurity", "toString")).toBe(false);
     expect(index.liveGuideIndex("constructor")).toBeNull();

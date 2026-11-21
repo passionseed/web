@@ -39,7 +39,7 @@ const OUT_OF_SCOPE = ["หยุด: นอกขอบเขต", "ไม่ม
 
 export const terminal: GuidePage = {
   key: "terminal",
-  order: 9,
+  order: 12,
   titleTh: "ลองเป็นนักป้องกันในเครื่องจำลอง",
   questionTh: "งานนี้รู้สึกยังไงตอนลงมือจริง",
   navLabelTh: "ลองเป็นนักป้องกัน",
@@ -113,7 +113,7 @@ export const terminal: GuidePage = {
               match: ["scan lab.local"],
               output: ["พบพอร์ต 80 เปิดอยู่ (จำลอง)"],
               requiresScope: true,
-              noteTh: "ต่อจากนี้ไปฝึกในห้องจริงได้ ด่านถัดไป",
+              noteTh: "จากนี้ไปฝึกในห้องจริงได้ ที่ด่านภารกิจคืนนี้เลย",
             },
             {
               match: ["scan school-web"],

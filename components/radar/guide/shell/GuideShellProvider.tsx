@@ -31,6 +31,7 @@ import { GuideStickyNav } from "./GuideStickyNav";
 import { PageMapSheet } from "./PageMapSheet";
 import { BadgeToastHost } from "./BadgeToastHost";
 import { LandingChip } from "./ResumeChip";
+import { levelOnePages } from "@/lib/radar-guide/tiers";
 import "./shell.css";
 
 /** Presses of "ต่อ" one dialogue absorbs (finish line, next box) before the level moves on anyway. */
@@ -171,8 +172,26 @@ export function GuideShellProvider({
   const advanceLabelTh = advanceLabel(currentSteps, currentCursor, Boolean(nextKey));
 
   const currentStep = currentSteps[currentCursor];
-  const waits = currentStep && ["dialogue", "copy", "game", "bespoke", "clip"].includes(currentStep.kind);
+  const waits = currentStep && ["dialogue", "copy", "choice", "game", "bespoke", "clip"].includes(currentStep.kind);
   const readyToAdvance = !pageKey || !waits || Boolean(doneSteps[`${pageKey}:${currentStep.id}`]);
+  // A game still being played moves on through its own button ("ล็อกคำตอบ",
+  // or "ข้ามเกม ดูเฉลย"), and a choice through its answers, so "ต่อ" steps
+  // aside: one way forward, not two.
+  const gameKey = pageKey && currentStep ? `${pageKey}:${currentStep.id}` : "";
+  const gameWaiting =
+    Boolean(gameKey) &&
+    !demo &&
+    !doneSteps[gameKey] &&
+    !(cleared ?? []).includes(pageKey ?? "") &&
+    (currentStep?.kind === "game" || currentStep?.kind === "bespoke"
+      ? !progress.games[gameKey]?.done
+      : (currentStep?.kind === "choice" || currentStep?.kind === "kinds") && progress.choices[gameKey] === undefined);
+  const waitingHintTh =
+    currentStep?.kind === "choice"
+      ? "เลือกคำตอบด้านบนก่อน แล้วไปต่อได้เลย"
+      : currentStep?.kind === "kinds"
+        ? "แตะดูสักสายก่อน แล้วไปต่อได้เลย"
+        : "เล่นเกมด้านบนให้จบ แล้วไปต่อได้เลย";
 
   const [advanceSeq, setAdvanceSeq] = useState(0);
   const [dialogueNudge, setDialogueNudge] = useState<{ key: string; seq: number } | null>(null);
@@ -186,9 +205,10 @@ export function GuideShellProvider({
     // A cleared level is already read: its dialogues open complete, so "ต่อ"
     // goes straight to the next level (doneSteps is memory only, so it would
     // otherwise eat presses after a reload).
+    if (gameWaiting) return;
     const step = steps[cur];
     const levelCleared = (cleared ?? []).includes(pageKey);
-    if (step && !demo && !levelCleared && (step.kind === "dialogue" || step.kind === "copy")) {
+    if (step && !demo && !levelCleared && (step.kind === "dialogue" || step.kind === "copy" || step.kind === "choice")) {
       const key = `${pageKey}:${step.id}`;
       const count = nudges.current[key] ?? 0;
       if (!doneSteps[key] && count < MAX_DIALOGUE_NUDGES) {
@@ -208,7 +228,7 @@ export function GuideShellProvider({
     dispatch({ type: "clear", pageKey });
     if (nextKey) router.push(levelHref(slug, nextKey));
     else setMapOpen(true);
-  }, [pageKey, stepsByPage, cursorFor, demo, cleared, doneSteps, dispatch, nextKey, router, slug]);
+  }, [pageKey, stepsByPage, cursorFor, gameWaiting, demo, cleared, doneSteps, dispatch, nextKey, router, slug]);
 
   // ------------------------------------------------------------ sources sheet
   const [sources, setSources] = useState<{ open: boolean; focus: readonly FactId[] }>({ open: false, focus: [] });
@@ -243,6 +263,8 @@ export function GuideShellProvider({
       advanceLabelTh,
       markStepDone,
       readyToAdvance,
+      gameWaiting,
+      waitingHintTh,
       dialogueNudge,
       openMap,
       sources,
@@ -269,6 +291,8 @@ export function GuideShellProvider({
       advanceLabelTh,
       markStepDone,
       readyToAdvance,
+      gameWaiting,
+      waitingHintTh,
       dialogueNudge,
       openMap,
       sources,
@@ -298,7 +322,7 @@ export function GuideShellProvider({
           style={{ "--radar-accent": index.accent } as CSSProperties}
         >
           {chrome ? <GuideTopRail xpPop={xpPop} xpPopId={xpPopId} /> : null}
-          {showLandingChip && firstKey ? <LandingChip slug={slug} firstKey={firstKey} total={pages.length} /> : null}
+          {showLandingChip && firstKey ? <LandingChip slug={slug} firstKey={firstKey} total={levelOnePages(pages).length} /> : null}
           <div className="rg-shell__main">{children}</div>
           {chrome ? <GuideStickyNav /> : null}
           {chrome ? <PageMapSheet open={mapOpen} onOpenChange={setMapOpen} /> : null}

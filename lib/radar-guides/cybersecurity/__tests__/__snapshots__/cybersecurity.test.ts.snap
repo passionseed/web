@@ -63,8 +63,17 @@ mythos.blocks[3].blocks[3].text.th: 9 พ.ย. 2569 รุ่นใหม่ Myt
 mythos.blocks[3].blocks[3].titleTh: อัปเดตล่าสุด
 mythos.blocks[3].blocks[4].text.th: ตัวเลขส่วนใหญ่มาจาก Anthropic เอง มีทีมวิจัยอื่นแย้งว่าโมเดลเล็กกว่าก็เจอบางบั๊กได้ ถ้ามีคนตัดเฉพาะโค้ดส่วนที่มีปัญหามาให้ดู
 mythos.blocks[3].blocks[4].titleTh: อีกฝั่งของเรื่อง
-mythos.blocks[3].blocks[5].lines[0].text.th: ถ้า AI หาช่องโหว่เก่งขนาดนี้
-mythos.blocks[3].blocks[5].lines[1].text.th: คำถามต่อไป: ใครได้ใช้มัน
+mythos.blocks[3].blocks[5].ask[0].text.th: ถ้า AI หาช่องโหว่เก่งขนาดนี้ เธอว่าฝั่งไหนได้เปรียบ
+mythos.blocks[3].blocks[5].options[0].labelTh: ฝั่งป้องกันระบบสิ
+mythos.blocks[3].blocks[5].options[0].reply[0].text.th: ใช่เลย ทีมป้องกันใช้ AI หาช่องโหว่ดักหน้าคนร้ายได้
+mythos.blocks[3].blocks[5].options[0].reply[1].text.th: แต่คนร้ายก็หยิบเครื่องมือเดียวกันมาใช้ได้นะ
+mythos.blocks[3].blocks[5].options[1].labelTh: คนร้ายได้ไปเต็มๆ ดิ
+mythos.blocks[3].blocks[5].options[1].reply[0].text.th: คนร้ายก็ใช้เครื่องมือแบบนี้ได้จริง
+mythos.blocks[3].blocks[5].options[1].reply[1].text.th: แต่ทีมป้องกันก็ใช้ AI หาช่องโหว่ก่อนได้เหมือนกัน
+mythos.blocks[3].blocks[5].options[2].labelTh: ได้เปรียบทั้งคู่เลย
+mythos.blocks[3].blocks[5].options[2].reply[0].text.th: คิดถูกเลย เครื่องมือเดียวกัน ใช้ได้ทั้งสองฝั่ง
+mythos.blocks[3].blocks[5].options[2].reply[1].text.th: แข่งกันว่าใครเจอก่อน นี่แหละสนามจริงของสายนี้
+mythos.blocks[3].blocks[6].lines[0].text.th: แล้วคนร้ายเอาไปเล่นงานใคร ด่านต่อไปดูกันในแชตบ้านเธอ
 mythos.clip.hookTh: AI เจอบั๊กที่แก่กว่าเธอ
 mythos.clip.scriptLinesTh[0]: เมษาที่ผ่านมา Anthropic สร้าง AI ชื่อ Mythos
 mythos.clip.scriptLinesTh[1]: แล้วไม่ยอมปล่อยให้คนทั่วไปใช้ เพราะมันหาช่องโหว่เก่งเกินไป
@@ -81,6 +90,210 @@ mythos.reel.visual[0]: ตัวเลขปีหมุนย้อนจาก
 mythos.reel.visual[1]: บรรทัด 7 เรืองแดง
 mythos.reel.visual[2]: ตัวนับวิ่งถึง 5,000,000
 mythos.reel.visual[3]: แท่ง Firefox พุ่งจากแถบ 20 ถึง 30 ผ่าน 76 ไปถึง 423",
+  "scam.titleTh: แชตบ้านเธอ คือสนามจริง
+scam.questionTh: ภัยไซเบอร์ในไทยตอนนี้หน้าตาเป็นยังไง แล้วใครเป็นคนหยุดมัน
+scam.navLabelTh: แชตบ้านเธอ
+scam.og.headlineTh: ไซเบอร์ไม่ได้อยู่ไกล มันอยู่ในแชตบ้านเธอ
+scam.og.stat.th: ผู้ใหญ่ไทยในผลสำรวจ 79% เคยเจอมิจฉาชีพ
+scam.blocks[0].lines[0].text.th: ไซเบอร์ไม่ได้อยู่ไกล มันอยู่ในแชตบ้านเธอ
+scam.blocks[0].lines[1].text.th: ก่อนเล่น ดูข่าวไซเบอร์ไทยแค่สัปดาห์นี้ก่อน
+scam.blocks[1].text.th: หน่วยงานรัฐ ธนาคาร และสาธารณูปโภค โดนพยายามเจาะระบบทุกวัน และคนร้ายใช้ AI หาจุดอ่อนของระบบก่อนลงมือ
+scam.blocks[1].titleTh: สมช.
+scam.blocks[1].metaTh: 9 พ.ย. 2569
+scam.blocks[2].text.th: เรียก CIO ของทุกสถาบันการเงินมาประชุมกับ TB-CERT และสมาคมธนาคารไทย หลังมีเหตุโจมตีธนาคารต่างประเทศ ตอนนี้ยังไม่พบผลกระทบกับบริการในไทย
+scam.blocks[2].titleTh: ธปท.
+scam.blocks[2].metaTh: 9 พ.ย. 2569
+scam.blocks[3].text.th: ข้อมูลการจองผู้โดยสารราว 60,000 รายการถูกเข้าถึงผ่านระบบของ Amadeus บริษัทระบบจองที่สายการบินใช้ นานกว่า 3 ปี การบินไทยแจ้งว่าข้อมูลบัตรเครดิตไม่ได้รับผลกระทบ
+scam.blocks[3].titleTh: การบินไทย
+scam.blocks[3].metaTh: 10 พ.ย. 2569
+scam.blocks[4].text.th: ข้อมูลองค์กรหลุดผ่านบริษัทคู่ค้าได้ และในไทย คนเขียนระบบก็โดนปรับได้: ปี 2568 สคส. ปรับบริษัทผู้พัฒนาระบบ 3 ล้านบาท มากกว่าบริษัทลูกค้าที่โดน 500,000 บาท
+scam.blocks[4].titleTh: อีกสายหนึ่งของไซเบอร์: ความเสี่ยงจากคู่ค้า
+scam.blocks[5].unlockLabelTh: เข้าแชตบ้านเรา
+scam.blocks[5].blocks[0].lines[0].text.th: ลองแยก 7 ข้อความนี้ อันไหนปลอดภัย อันไหนหลอก
+scam.blocks[5].blocks[0].lines[1].text.th: ทุกข้อความเป็นตัวอย่างจำลอง แต่หลายข้อความอิงบทพูดจากเคสจริง
+scam.blocks[5].blocks[1].game.data.goalTh: แชตบ้านเรา: แยกข้อความปลอดภัยกับข้อความหลอก
+scam.blocks[5].blocks[1].game.data.bins[0].labelTh: ปลอดภัย
+scam.blocks[5].blocks[1].game.data.bins[1].labelTh: หลอก
+scam.blocks[5].blocks[1].game.data.simulated.watermarkTh: ตัวอย่างจำลอง
+scam.blocks[5].blocks[1].game.data.items[0].labelTh: ข้อความเสียง (ถอดความ): ลูก แม่เปลี่ยนเบอร์นะ โอนให้แม่ก่อน 5,000 ด่วน เดี๋ยวคืน
+scam.blocks[5].blocks[1].game.data.items[0].meta.sender: แม่
+scam.blocks[5].blocks[1].game.data.items[0].meta.senderNote: บัญชีใหม่ ไม่มีรูป
+scam.blocks[5].blocks[1].game.data.items[0].flags[0]: เปลี่ยนเบอร์หรือช่องทาง
+scam.blocks[5].blocks[1].game.data.items[0].flags[1]: เร่ง
+scam.blocks[5].blocks[1].game.data.items[0].flags[2]: ขอเงินหรือบัญชี
+scam.blocks[5].blocks[1].game.data.items[0].revealTh: ตอนนี้ AI เลียนเสียงคนใกล้ตัวได้แล้ว กระทรวงดิจิทัลฯ เตือนเรื่องนี้ ทางแก้: วางสาย แล้วโทรกลับเบอร์เดิมของแม่
+scam.blocks[5].blocks[1].game.data.items[1].labelTh: ค่าไฟค้างชำระ จะตัดไฟคืนนี้ จ่ายที่ลิงก์นี้ด่วน
+scam.blocks[5].blocks[1].game.data.items[1].meta.sender: การไฟฟ้า
+scam.blocks[5].blocks[1].game.data.items[1].flags[0]: เร่ง
+scam.blocks[5].blocks[1].game.data.items[1].flags[1]: ลิงก์แปลก
+scam.blocks[5].blocks[1].game.data.items[1].revealTh: ลิงก์จ่ายเงินปลอมที่แอบอ้างการไฟฟ้าหรือการประปา คือเทรนด์แรกที่กระทรวงดิจิทัลฯ เตือนสำหรับปี 2569
+scam.blocks[5].blocks[1].game.data.items[2].labelTh: โอนออก 120 บาท (ตรงกับค่าข้าวที่เธอเพิ่งโอน)
+scam.blocks[5].blocks[1].game.data.items[2].meta.sender: แจ้งเตือนในแอปธนาคาร
+scam.blocks[5].blocks[1].game.data.items[2].revealTh: มาจากแอปเอง ไม่มีลิงก์ ไม่ขออะไร ถ้าสงสัย เปิดแอปเช็กเอง อย่ากดลิงก์
+scam.blocks[5].blocks[1].game.data.items[3].labelTh: บัตรประชาชนของคุณถูกใช้เปิดซิมฟอกเงิน เดี๋ยวโอนสายให้ตำรวจ วิดีโอคอลนะ ห้ามบอกครอบครัว
+scam.blocks[5].blocks[1].game.data.items[3].meta.sender: เจ้าหน้าที่ค่ายมือถือ
+scam.blocks[5].blocks[1].game.data.items[3].flags[0]: ห้ามบอกใคร
+scam.blocks[5].blocks[1].game.data.items[3].flags[1]: เปลี่ยนเบอร์หรือช่องทาง
+scam.blocks[5].blocks[1].game.data.items[3].revealTh: คำสั่งให้ปิดเรื่องจากครอบครัว คือธงแดงใหญ่ที่สุด มุกนี้เหมือนเคสจริงเมื่อ 2 ก.ย. 2569
+scam.blocks[5].blocks[1].game.data.items[4].labelTh: ยินดีด้วย ได้ทุนเรียนต่ออังกฤษ ต้องโอนเงินแสดงในบัญชีก่อนวันศุกร์
+scam.blocks[5].blocks[1].game.data.items[4].meta.sender: อาจารย์มหาวิทยาลัย
+scam.blocks[5].blocks[1].game.data.items[4].flags[0]: ขอเงินหรือบัญชี
+scam.blocks[5].blocks[1].game.data.items[4].flags[1]: เร่ง
+scam.blocks[5].blocks[1].game.data.items[4].revealTh: ทุนจริงไม่ให้โอนเงินไปให้คนแปลกหน้า เคสจริงปีนี้ใช้มุกนี้หลอกคนอายุ 19 ถึง 22
+scam.blocks[5].blocks[1].game.data.items[5].labelTh: เปิดบัญชีธนาคารให้พี่ 3 บัญชี มีค่าขนมให้ ไม่ผิดกฎหมายหรอก
+scam.blocks[5].blocks[1].game.data.items[5].meta.sender: รุ่นพี่
+scam.blocks[5].blocks[1].game.data.items[5].flags[0]: ขอเงินหรือบัญชี
+scam.blocks[5].blocks[1].game.data.items[5].revealTh: หลอก และเธออาจกลายเป็นผู้ต้องหา บัญชีที่เปิดให้คนอื่นใช้ เรียกว่าบัญชีม้า คนเปิดก็เสี่ยงโดนคดีด้วย
+scam.blocks[5].blocks[1].game.data.items[6].labelTh: พรุ่งนี้สอบย่อยคาบ 3 นะ
+scam.blocks[5].blocks[1].game.data.items[6].meta.sender: ครูในกลุ่มห้อง
+scam.blocks[5].blocks[1].game.data.items[6].revealTh: ไม่มีลิงก์ ไม่ขอเงิน ไม่มีความลับ
+scam.blocks[5].blocks[1].game.data.resultTh: แยกข้อความถูก {score}/{total}
+scam.blocks[5].blocks[1].answersTh[0]: หลอก: แม่เปลี่ยนเบอร์ขอเงินด่วน, SMS ค่าไฟพร้อมลิงก์, เจ้าหน้าที่ค่ายมือถือที่สั่งห้ามบอกครอบครัว, ทุนเรียนต่อที่ให้โอนเงิน, รุ่นพี่ขอให้เปิดบัญชีให้
+scam.blocks[5].blocks[1].answersTh[1]: ปลอดภัย: แจ้งเตือนในแอปธนาคารที่ตรงกับที่เธอโอนเอง, ครูบอกเรื่องสอบย่อย
+scam.blocks[5].blocks[1].answersTh[2]: ธงแดง: เร่ง, ห้ามบอกใคร, เปลี่ยนเบอร์หรือช่องทาง, ขอเงินหรือบัญชี, ลิงก์แปลก
+scam.blocks[6].unlockLabelTh: เรื่องจริงเบื้องหลังแชต
+scam.blocks[6].blocks[0].text.th: ผลสำรวจปี 2569 (1,290 คน) ผู้ใหญ่ไทย 79% เคยเจอมิจฉาชีพ ช่องทางที่เจอบ่อยคือ Facebook 54% กับ LINE 48% แต่มีแค่ 4% ที่ไปแจ้งความ
+scam.blocks[6].blocks[0].titleTh: ผลสำรวจ
+scam.blocks[6].blocks[1].text.th: 2 ก.ย. 2569 คนอายุ 19 ถึง 22 สามคนเสียเงินรวม 2,743,984 บาท ให้ตำรวจปลอมทางวิดีโอคอล สองในสามคนเริ่มจากอาจารย์ปลอมที่เสนอทุนเรียนต่อต่างประเทศ
+scam.blocks[6].blocks[1].titleTh: เคสจริง: ตำรวจปลอม
+scam.blocks[6].blocks[2].lines[0].text.th: แต่มีเงิน 500,000 บาทที่รอดมาได้ เพราะธนาคารโทรมาเตือนก่อนโอน
+scam.blocks[6].blocks[2].lines[1].text.th: คนที่โทรคือทีมกันโกงของธนาคาร นั่นแหละงานสายนี้
+scam.blocks[6].blocks[3].text.th: 18 ต.ค. 2569 ตำรวจไซเบอร์จับนายหน้าที่ชวนนักเรียน ม.2 อายุ 15 เปิดบัญชีธนาคาร 3 บัญชีให้ บัญชีพวกนั้นโยงกับ 5 คดี เสียหายรวม 675,000 บาท
+scam.blocks[6].blocks[3].titleTh: เคสจริง: บัญชีม้า
+scam.blocks[6].blocks[4].lines[0].text.th: ห้ามให้ยืม ห้ามขาย ทั้งบัญชีและบัตรประชาชน
+scam.blocks[6].blocks[5].text.th: กระทรวงดิจิทัลฯ เตือนว่าปี 2569 จะเจอคลิปและเสียงปลอมด้วย AI ที่เลียนแบบญาติหรือเจ้าหน้าที่มากขึ้น
+scam.blocks[6].blocks[5].titleTh: เทรนด์ปีนี้
+scam.blocks[7].ask[0].text.th: ถ้าเจอข้อความแบบนี้ในกลุ่มแชตบ้าน เธอจะทำไง
+scam.blocks[7].options[0].labelTh: ทักเตือนในกลุ่มเลย ว่าหลอก
+scam.blocks[7].options[0].reply[0].text.th: ดีเลย ที่บ้านจะได้ไม่เผลอมือลั่นกดลิงก์
+scam.blocks[7].options[0].reply[1].text.th: บอกด้วยว่าถ้าไม่แน่ใจ โทรถาม 1441 ได้
+scam.blocks[7].options[1].labelTh: แอบทักไปบอกคนส่งเบาๆ
+scam.blocks[7].options[1].reply[0].text.th: ละมุนดีนะ คนส่งก็อาจโดนหลอกมาอีกทีก็ได้
+scam.blocks[7].options[1].reply[1].text.th: ถ้าไม่แน่ใจ ชวนกันโทรเช็กที่ 1441
+scam.blocks[7].options[2].labelTh: ปล่อยผ่าน ไม่อยากยุ่งอะ
+scam.blocks[7].options[2].reply[0].text.th: เข้าใจเลยนะ แต่บางคนในกลุ่มอาจเผลอกดไปแล้วก็ได้
+scam.blocks[7].options[2].reply[1].text.th: แค่ทักสั้นๆ ว่าน่าสงสัย ก็ช่วยได้เยอะแล้วนะ
+scam.blocks[8].lines[0].text.th: ใครทำงานนี้: ทีมกันโกงของธนาคาร ค่ายมือถือ ศูนย์ AOC 1441
+scam.blocks[8].lines[1].text.th: บริษัทแอปเตือนเบอร์มิจฉาชีพ และตำรวจไซเบอร์ ทั้งหมดนี้คือสายไซเบอร์
+scam.blocks[9].unlockLabelTh: สายนี้มีกี่แบบ
+scam.blocks[9].blocks[0].lines[0].text.th: จริงๆ สายไซเบอร์ เป็นชื่อเรียกกว้างๆ นะ ข้างในแยกได้อีกหลายสาย
+scam.blocks[9].blocks[1].headTh: สายไซเบอร์ มีสายไหนบ้าง
+scam.blocks[9].blocks[1].tiles[0].titleTh: กันโกง
+scam.blocks[9].blocks[1].tiles[0].lineTh: ดักข้อความหลอกกับบัญชีม้า แบบทีมกันโกงของธนาคาร
+scam.blocks[9].blocks[1].tiles[1].titleTh: เฝ้าระบบ
+scam.blocks[9].blocks[1].tiles[1].lineTh: เฝ้าระบบองค์กรทั้งคืน เจออะไรแปลกก็หยุดทันที
+scam.blocks[9].blocks[1].tiles[2].titleTh: เจาะระบบ
+scam.blocks[9].blocks[1].tiles[2].lineTh: เจาะระบบที่เจ้าของอนุญาต หาช่องโหว่ให้เจอก่อนคนร้าย
+scam.blocks[9].blocks[1].tiles[3].titleTh: สืบหลักฐาน
+scam.blocks[9].blocks[1].tiles[3].lineTh: แกะรอยหลังโดนโจมตี ว่าคนร้ายเข้ามาทางไหน
+scam.blocks[9].blocks[1].tiles[4].titleTh: วางกติกา
+scam.blocks[9].blocks[1].tiles[4].lineTh: วางกฎให้ทั้งองค์กรปลอดภัย รวมถึงบริษัทคู่ค้า
+scam.blocks[9].blocks[2].lines[0].text.th: ยังไม่ต้องรีบเลือกนะ ค่อยๆ ลองไปทีละสายก็ได้
+scam.blocks[10].text.th: เจอเรื่องแบบนี้ โทร 1441
+scam.blocks[10].titleTh: สายด่วน
+scam.clip.hookTh: ข้อความไหนในแชตบ้านเธอคือมิจ
+scam.clip.scriptLinesTh[0]: ข่าวไซเบอร์ไม่ได้อยู่ไกลเลย
+scam.clip.scriptLinesTh[1]: เมื่อกันยาที่ผ่านมา มีคนอายุ 19 ถึง 22 สามคน
+scam.clip.scriptLinesTh[2]: เสียเงินรวมกว่า 2,700,000 บาท ให้ตำรวจปลอมกับทุนเรียนต่อปลอม
+scam.clip.scriptLinesTh[3]: แต่มีเงิน 500,000 บาทที่รอดมาได้ เพราะคนจากธนาคารโทรมาเตือนทัน
+scam.clip.scriptLinesTh[4]: งานนั้นแหละคือสายไซเบอร์
+scam.clip.scriptLinesTh[5]: ลองแยกเจ็ดข้อความนี้ดู ถ้าแยกถูกหมด ส่งให้ที่บ้านเลย
+scam.reel.hook.th: 3 คนอายุ 19 ถึง 22 เสียเงินรวม 2.7 ล้าน ด้วยบทพูดนี้
+scam.reel.variantsTh[0]: ข้อความไหนในแชตบ้านเธอคือมิจฉาชีพ ลองทาย
+scam.reel.variantsTh[1]: ทุนเรียนต่อปลอม หลอกคนอายุ 19 ถึง 22 ไปแล้วหลักล้าน
+scam.reel.sendToFriendTh: ส่งให้แม่
+scam.reel.visual[0]: ฟองแชตเด้งขึ้นทีละอัน ป้ายธงแดงประทับลงบนคำ
+scam.reel.visual[1]: หมุดแผนที่ที่กรุงเทพฯ กับการ์ดข่าวสามใบมีวันที่ตกลงมา",
+  "tonight.titleTh: คืนนี้ ห้องเดียว ได้ผลงานชิ้นแรก
+tonight.questionTh: คืนนี้ทำอะไรได้เลย ที่จบด้วยของจริงในพอร์ต
+tonight.navLabelTh: ภารกิจคืนนี้
+tonight.og.headlineTh: คืนนี้ลองแค่ห้องเดียว แล้วเธอจะมีผลงานไซเบอร์ชิ้นแรก
+tonight.blocks[0].lines[0].text.th: ด่านนี้ไม่ได้เล่นในจอ เป็นภารกิจจริงคืนนี้
+tonight.blocks[0].lines[1].text.th: ลองแค่ห้องเดียว แล้วเธอจะมีผลงานไซเบอร์ชิ้นแรก
+tonight.blocks[2].lineTh: เข้าระบบของคนอื่นโดยไม่ได้รับอนุญาต ผิดกฎหมาย ต่อให้แค่ลองดูก็ตาม ฝึกได้แค่เครื่องของตัวเอง หรือห้องที่เขาเปิดให้ลอง ห้ามลองกับเว็บโรงเรียน เว็บเพื่อน หรือเว็บไหนที่ไม่ได้รับอนุญาตเป็นลายลักษณ์อักษร
+tonight.blocks[3].text.th: ห้องนี้เขาสร้างเว็บธนาคารปลอมไว้ให้ฝึกหาช่องโหว่โดยเฉพาะ เป็นห้องสำหรับมือใหม่
+tonight.blocks[3].titleTh: ห้องฝึก: Offensive Security Intro
+tonight.blocks[4].game.data.room.badgeTh: ฟรีตามคู่มือของ TryHackMe ณ 31 ส.ค. 2569 เช็กอีกครั้งก่อนสมัคร
+tonight.blocks[4].game.data.room.subTh: เช็กเกณฑ์อายุของเว็บก่อน ถ้าต้องมีผู้ปกครอง ให้สมัครด้วยกัน
+tonight.blocks[4].game.data.checklistTh[0]: สมัคร
+tonight.blocks[4].game.data.checklistTh[1]: ทำห้องให้จบ
+tonight.blocks[4].game.data.checklistTh[2]: แคปหน้าจอผลลัพธ์ (ไม่ให้ติดอีเมลหรือชื่อจริง)
+tonight.blocks[4].game.data.checklistTh[3]: เขียน write-up
+tonight.blocks[4].game.data.fields[0].placeholderTh: ห้องอะไร / เป้าหมาย
+tonight.blocks[4].game.data.fields[1].placeholderTh: ฉันลองอะไร
+tonight.blocks[4].game.data.fields[2].placeholderTh: อะไรไม่เวิร์ก
+tonight.blocks[4].game.data.fields[3].placeholderTh: ถ้าเป็นเจ้าของระบบ จะแก้ยังไง
+tonight.blocks[4].game.data.fields[4].placeholderTh: ยังไม่เข้าใจอะไร
+tonight.blocks[4].game.data.fixedLinesTh[0]: ทำในแล็บฝึกที่ได้รับอนุญาตเท่านั้น
+tonight.blocks[4].game.data.privacyTh: เก็บไว้ในเครื่องนี้เท่านั้น ไม่ส่งไปที่ไหน
+tonight.blocks[4].answersTh[0]: เปิดห้อง Offensive Security Intro บน TryHackMe (เช็กเกณฑ์อายุของเว็บก่อน ถ้าต้องมีผู้ปกครอง ให้สมัครด้วยกัน)
+tonight.blocks[4].answersTh[1]: ทำให้จบ แคปหน้าจอโดยไม่ให้ติดอีเมลหรือชื่อจริง
+tonight.blocks[4].answersTh[2]: เขียน write-up: ห้องอะไร ลองอะไร อะไรไม่เวิร์ก ถ้าเป็นเจ้าของระบบจะแก้ยังไง ยังไม่เข้าใจอะไร
+tonight.blocks[4].demoScript[1].text: Offensive Security Intro: ลองหาจุดอ่อนของเว็บธนาคารปลอมในห้องฝึก
+tonight.blocks[4].demoScript[2].text: ถ้าเป็นเจ้าของ จะปิดทางที่เจอ แล้วเพิ่มการเช็กสิทธิ์
+tonight.blocks[5].lines[0].text.th: ที่สำคัญกว่าทำจบ คือเขียนสรุปสั้นๆ ว่าลองอะไรไปบ้าง อะไรไม่เวิร์ก
+tonight.blocks[5].lines[1].text.th: และถ้าเป็นเจ้าของระบบ จะแก้ยังไง
+tonight.blocks[5].lines[2].text.th: ทีมเราคิดว่าข้อสุดท้ายมีค่าที่สุด อย่าข้ามนะ
+tonight.blocks[6].lines[0].text.th: write-up ชิ้นนี้แหละ คือผลงานแรกในแฟ้มเธอ
+tonight.blocks[7].text.th: TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอลงมือทำ งานแบบคืนนี้ เริ่มเป็นชิ้นแรกในแฟ้มได้เลย
+tonight.blocks[7].titleTh: รู้ไหม รอบ 1 ใช้ผลงานยื่นได้นะ
+tonight.blocks[8].ask[0].text.th: ว่าแต่เธอจะลองเมื่อไหร่ดี
+tonight.blocks[8].options[0].labelTh: คืนนี้เลยดิ
+tonight.blocks[8].options[0].reply[0].text.th: ชอบความไวนี้แฮะ
+tonight.blocks[8].options[0].reply[1].text.th: ทำเสร็จแล้ว พรุ่งนี้ลองห้องถัดไปดู
+tonight.blocks[8].options[1].labelTh: ขอเป็นวันหยุดแล้วกัน
+tonight.blocks[8].options[1].reply[0].text.th: ดีลเลย ปักลงปฏิทินไว้เลย จะได้ไม่ลืม
+tonight.blocks[8].options[2].labelTh: ยังไม่ชัวร์เลยว่าจะชอบไหม
+tonight.blocks[8].options[2].reply[0].text.th: ไม่ชัวร์ก็ลองดูก่อนได้นะ
+tonight.blocks[8].options[2].reply[1].text.th: ลองแล้วไม่สนุก ก็รู้ก่อนเลือกคณะ ไม่เสียอะไรเลย
+tonight.blocks[9].lines[0].text.th: เช็กกติกาของห้องก่อนโพสต์ write-up สาธารณะ
+tonight.clip.hookTh: คืนนี้ ห้องเดียว ได้ผลงานชิ้นแรก
+tonight.clip.scriptLinesTh[0]: คืนนี้ลองแค่ห้องเดียว ฟรี
+tonight.clip.scriptLinesTh[1]: เปิด TryHackMe ห้อง Offensive Security Intro
+tonight.clip.scriptLinesTh[2]: เขาสร้างเว็บธนาคารปลอมไว้ให้ฝึกโดยเฉพาะ
+tonight.clip.scriptLinesTh[3]: ย้ำอีกที ฝึกเฉพาะในห้องที่เขาเปิดให้ลองแบบนี้เท่านั้น
+tonight.clip.scriptLinesTh[4]: ระบบจริงของคนอื่น ห้ามลอง ผิดกฎหมาย ต่อให้แค่ลองดูก็ตาม
+tonight.clip.scriptLinesTh[5]: ทำเสร็จแล้วกลับมาหน้านี้ เขียนสั้นๆ ว่าลองอะไร อะไรไม่เวิร์ก
+tonight.clip.scriptLinesTh[6]: ถ้าเป็นเจ้าของระบบจะแก้ยังไง
+tonight.clip.scriptLinesTh[7]: นั่นคือผลงานไซเบอร์ชิ้นแรกของเธอ
+tonight.reel.hook.th: คืนนี้ ห้องเดียว ได้ผลงานไซเบอร์ชิ้นแรกในพอร์ต
+tonight.reel.variantsTh[0]: ลองเจาะเว็บธนาคารปลอม ในห้องที่สร้างไว้ให้ฝึก
+tonight.reel.variantsTh[1]: ทำห้องฝึกไซเบอร์จบแล้ว อย่าข้ามขั้นนี้
+tonight.reel.sendToFriendTh: ส่งให้เพื่อนที่อยากลองแต่ไม่รู้จะเริ่มตรงไหน
+tonight.reel.visual[0]: ผู้ก่อตั้งพูดกับกล้อง หน้าอยู่ในเฟรมตอนพูดประโยคความปลอดภัย
+tonight.reel.visual[1]: ตัดไปภาพหน้าจอเริ่มห้องฝึก บันทึกจากบัญชีฟรี และยืนยันว่ามีเว็บธนาคารปลอมจริง
+tonight.reel.visual[2]: บล็อก write-up ประกอบขึ้นทีละบรรทัด",
+  "next.titleTh: แล้วเธอล่ะ
+next.questionTh: สายนี้ใช่เธอไหม แล้วจะดูอะไรต่อ
+next.navLabelTh: แล้วเธอล่ะ
+next.og.headlineTh: สายไซเบอร์ใช่เธอไหม เล่นจนจบแล้วค่อยตัดสินใจ
+next.blocks[0].lines[0].text.th: เธอมาถึงด่านสุดท้ายของ Level 1 แล้ว
+next.blocks[0].lines[1].text.th: เล่นมาทั้งหมด เธอชอบส่วนไหนที่สุด
+next.blocks[1].game.data.lines.mythos: หาบรรทัดอันตรายเจอใน {attempts} ครั้ง
+next.blocks[1].game.data.lines.doors: แจกกุญแจถูก {score}/{total}
+next.blocks[1].game.data.lines.triage: จับข้อที่ AI พลาดได้ {x} ข้อ || ตัดสินสัญญาณเตือนถูก {score}/{total}
+next.blocks[1].game.data.lines.scam: แยกข้อความถูก {score}/{total}
+next.blocks[1].game.data.lines.firstjob: ขั้นแรกที่เธอเลือก: {proof}
+next.blocks[1].game.data.lines.fit: ทางที่เธอเอนไป: {title}
+next.blocks[1].game.data.lines.tcas: ติดดาวไว้ {shortlist} หลักสูตร
+next.blocks[1].game.data.lines.terminal: ภารกิจ log {score}/{total} · ลองสแกนนอกขอบเขต {scopeTries} ครั้ง || ภารกิจ log {score}/{total} · ไม่หลุดขอบเขต ✓
+next.blocks[1].game.data.lines.tonight: เตรียม write-up ชิ้นแรกแล้ว
+next.blocks[1].game.data.favourites.mythos: สายที่เธอเลือกเอง: นักล่าช่องโหว่ งานจริงคือหาจุดพังในโค้ดก่อนคนร้าย
+next.blocks[1].game.data.favourites.doors: สายที่เธอเลือกเอง: ทีมทดสอบเจาะระบบ งานจริงคือเจาะแบบมีสัญญา แล้วเขียนรายงานให้เจ้าของแก้
+next.blocks[1].game.data.favourites.triage: สายที่เธอเลือกเอง: นักวิเคราะห์ SOC งานจริงคือคัดว่าสัญญาณไหนโดนจริง และตรวจงาน AI
+next.blocks[1].game.data.favourites.scam: สายที่เธอเลือกเอง: ทีมกันโกง งานจริงคือจับรูปแบบมิจฉาชีพก่อนเงินหลุด
+next.blocks[1].game.data.favourites.terminal: สายที่เธอเลือกเอง: ทีมรับมือเหตุ งานจริงคือสืบจาก log แล้วปิดทางให้ทัน
+next.blocks[1].game.data.cardLineTh: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
+next.blocks[1].answersTh[0]: เลือกเกมที่สนุกที่สุด แล้วดูว่ามันตรงกับงานจริงสายไหน
+next.blocks[1].answersTh[1]: นักล่าช่องโหว่ ทีมทดสอบเจาะระบบ นักวิเคราะห์ SOC ทีมกันโกง หรือทีมรับมือเหตุ
+next.blocks[1].answersTh[2]: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
+next.blocks[2].lines[0].text.th: กดบอกเราหน่อยว่าสายนี้ใช่ไหม เราจะได้รู้ว่าควรทำสายนี้ให้ลึกขึ้นไหม
+next.blocks[2].lines[1].text.th: ไม่ว่าจะกดอันไหน ถือว่าได้ข้อมูล
+next.blocks[2].lines[2].text.th: ลองแล้วรู้ว่าไม่ใช่ ก็ได้คำตอบเร็วกว่าคนที่ไม่เคยลอง
+next.blocks[4].lines[0].text.th: ถ้าสนใจ สิ่งเดียวที่ต้องทำต่อ
+next.blocks[4].lines[1].text.th: คือห้องที่สองพรุ่งนี้ กับ write-up อีกหนึ่งชิ้น
+next.blocks[5].text.th: ไม่ชอบเรียนของใหม่ตลอด รับแรงกดดันตอนเหตุด่วนไม่ไหว หรือไม่ชอบงานเอกสาร เพราะงานส่วนหนึ่งคือเขียนรายงานและหลักฐานตามมาตรฐาน
+next.blocks[5].titleTh: สายนี้อาจไม่เหมาะ ถ้า...",
   "doors.titleTh: AI ตัวเดียวกัน สองประตู
 doors.questionTh: ใครได้ใช้ AI สายไซเบอร์ที่ถูกล็อกไว้ แล้วทำไมความน่าเชื่อถือถึงกลายเป็นทักษะ
 doors.navLabelTh: สองประตู
@@ -278,96 +491,6 @@ triage.reel.variantsTh[1]: AI ตอบถูก 8 จาก 10 แต่ข้�
 triage.reel.sendToFriendTh: ส่งให้เพื่อนที่ยังลังเลระหว่างหมอกับคอม
 triage.reel.visual[0]: รายการสัญญาณเตือนเลื่อน AI ประทับป้ายทีละแถว แถวที่ 2 กลายเป็นสีแดงทีหลัง
 triage.reel.visual[1]: ถังที่เติมเร็วกว่าท่อที่ไหลออก",
-  "scam.titleTh: แชตบ้านเธอ คือสนามจริง
-scam.questionTh: ภัยไซเบอร์ในไทยตอนนี้หน้าตาเป็นยังไง แล้วใครเป็นคนหยุดมัน
-scam.navLabelTh: แชตบ้านเธอ
-scam.og.headlineTh: ไซเบอร์ไม่ได้อยู่ไกล มันอยู่ในแชตบ้านเธอ
-scam.og.stat.th: ผู้ใหญ่ไทยในผลสำรวจ 79% เคยเจอมิจฉาชีพ
-scam.blocks[0].lines[0].text.th: ไซเบอร์ไม่ได้อยู่ไกล มันอยู่ในแชตบ้านเธอ
-scam.blocks[0].lines[1].text.th: ก่อนเล่น ดูข่าวไซเบอร์ไทยแค่สัปดาห์นี้ก่อน
-scam.blocks[1].text.th: หน่วยงานรัฐ ธนาคาร และสาธารณูปโภค โดนพยายามเจาะระบบทุกวัน และคนร้ายใช้ AI หาจุดอ่อนของระบบก่อนลงมือ
-scam.blocks[1].titleTh: สมช.
-scam.blocks[1].metaTh: 9 พ.ย. 2569
-scam.blocks[2].text.th: เรียก CIO ของทุกสถาบันการเงินมาประชุมกับ TB-CERT และสมาคมธนาคารไทย หลังมีเหตุโจมตีธนาคารต่างประเทศ ตอนนี้ยังไม่พบผลกระทบกับบริการในไทย
-scam.blocks[2].titleTh: ธปท.
-scam.blocks[2].metaTh: 9 พ.ย. 2569
-scam.blocks[3].text.th: ข้อมูลการจองผู้โดยสารราว 60,000 รายการถูกเข้าถึงผ่านระบบของ Amadeus บริษัทระบบจองที่สายการบินใช้ นานกว่า 3 ปี การบินไทยแจ้งว่าข้อมูลบัตรเครดิตไม่ได้รับผลกระทบ
-scam.blocks[3].titleTh: การบินไทย
-scam.blocks[3].metaTh: 10 พ.ย. 2569
-scam.blocks[4].text.th: ข้อมูลองค์กรหลุดผ่านบริษัทคู่ค้าได้ และในไทย คนเขียนระบบก็โดนปรับได้: ปี 2568 สคส. ปรับบริษัทผู้พัฒนาระบบ 3 ล้านบาท มากกว่าบริษัทลูกค้าที่โดน 500,000 บาท
-scam.blocks[4].titleTh: อีกสายหนึ่งของไซเบอร์: ความเสี่ยงจากคู่ค้า
-scam.blocks[5].unlockLabelTh: เข้าแชตบ้านเรา
-scam.blocks[5].blocks[0].lines[0].text.th: ลองแยก 7 ข้อความนี้ อันไหนปลอดภัย อันไหนหลอก
-scam.blocks[5].blocks[0].lines[1].text.th: ทุกข้อความเป็นตัวอย่างจำลอง แต่หลายข้อความอิงบทพูดจากเคสจริง
-scam.blocks[5].blocks[1].game.data.goalTh: แชตบ้านเรา: แยกข้อความปลอดภัยกับข้อความหลอก
-scam.blocks[5].blocks[1].game.data.bins[0].labelTh: ปลอดภัย
-scam.blocks[5].blocks[1].game.data.bins[1].labelTh: หลอก
-scam.blocks[5].blocks[1].game.data.simulated.watermarkTh: ตัวอย่างจำลอง
-scam.blocks[5].blocks[1].game.data.items[0].labelTh: ข้อความเสียง (ถอดความ): ลูก แม่เปลี่ยนเบอร์นะ โอนให้แม่ก่อน 5,000 ด่วน เดี๋ยวคืน
-scam.blocks[5].blocks[1].game.data.items[0].meta.sender: แม่
-scam.blocks[5].blocks[1].game.data.items[0].meta.senderNote: บัญชีใหม่ ไม่มีรูป
-scam.blocks[5].blocks[1].game.data.items[0].flags[0]: เปลี่ยนเบอร์หรือช่องทาง
-scam.blocks[5].blocks[1].game.data.items[0].flags[1]: เร่ง
-scam.blocks[5].blocks[1].game.data.items[0].flags[2]: ขอเงินหรือบัญชี
-scam.blocks[5].blocks[1].game.data.items[0].revealTh: ตอนนี้ AI เลียนเสียงคนใกล้ตัวได้แล้ว กระทรวงดิจิทัลฯ เตือนเรื่องนี้ ทางแก้: วางสาย แล้วโทรกลับเบอร์เดิมของแม่
-scam.blocks[5].blocks[1].game.data.items[1].labelTh: ค่าไฟค้างชำระ จะตัดไฟคืนนี้ จ่ายที่ลิงก์นี้ด่วน
-scam.blocks[5].blocks[1].game.data.items[1].meta.sender: การไฟฟ้า
-scam.blocks[5].blocks[1].game.data.items[1].flags[0]: เร่ง
-scam.blocks[5].blocks[1].game.data.items[1].flags[1]: ลิงก์แปลก
-scam.blocks[5].blocks[1].game.data.items[1].revealTh: ลิงก์จ่ายเงินปลอมที่แอบอ้างการไฟฟ้าหรือการประปา คือเทรนด์แรกที่กระทรวงดิจิทัลฯ เตือนสำหรับปี 2569
-scam.blocks[5].blocks[1].game.data.items[2].labelTh: โอนออก 120 บาท (ตรงกับค่าข้าวที่เธอเพิ่งโอน)
-scam.blocks[5].blocks[1].game.data.items[2].meta.sender: แจ้งเตือนในแอปธนาคาร
-scam.blocks[5].blocks[1].game.data.items[2].revealTh: มาจากแอปเอง ไม่มีลิงก์ ไม่ขออะไร ถ้าสงสัย เปิดแอปเช็กเอง อย่ากดลิงก์
-scam.blocks[5].blocks[1].game.data.items[3].labelTh: บัตรประชาชนของคุณถูกใช้เปิดซิมฟอกเงิน เดี๋ยวโอนสายให้ตำรวจ วิดีโอคอลนะ ห้ามบอกครอบครัว
-scam.blocks[5].blocks[1].game.data.items[3].meta.sender: เจ้าหน้าที่ค่ายมือถือ
-scam.blocks[5].blocks[1].game.data.items[3].flags[0]: ห้ามบอกใคร
-scam.blocks[5].blocks[1].game.data.items[3].flags[1]: เปลี่ยนเบอร์หรือช่องทาง
-scam.blocks[5].blocks[1].game.data.items[3].revealTh: คำสั่งให้ปิดเรื่องจากครอบครัว คือธงแดงใหญ่ที่สุด มุกนี้เหมือนเคสจริงเมื่อ 2 ก.ย. 2569
-scam.blocks[5].blocks[1].game.data.items[4].labelTh: ยินดีด้วย ได้ทุนเรียนต่ออังกฤษ ต้องโอนเงินแสดงในบัญชีก่อนวันศุกร์
-scam.blocks[5].blocks[1].game.data.items[4].meta.sender: อาจารย์มหาวิทยาลัย
-scam.blocks[5].blocks[1].game.data.items[4].flags[0]: ขอเงินหรือบัญชี
-scam.blocks[5].blocks[1].game.data.items[4].flags[1]: เร่ง
-scam.blocks[5].blocks[1].game.data.items[4].revealTh: ทุนจริงไม่ให้โอนเงินไปให้คนแปลกหน้า เคสจริงปีนี้ใช้มุกนี้หลอกคนอายุ 19 ถึง 22
-scam.blocks[5].blocks[1].game.data.items[5].labelTh: เปิดบัญชีธนาคารให้พี่ 3 บัญชี มีค่าขนมให้ ไม่ผิดกฎหมายหรอก
-scam.blocks[5].blocks[1].game.data.items[5].meta.sender: รุ่นพี่
-scam.blocks[5].blocks[1].game.data.items[5].flags[0]: ขอเงินหรือบัญชี
-scam.blocks[5].blocks[1].game.data.items[5].revealTh: หลอก และเธออาจกลายเป็นผู้ต้องหา บัญชีที่เปิดให้คนอื่นใช้ เรียกว่าบัญชีม้า คนเปิดก็เสี่ยงโดนคดีด้วย
-scam.blocks[5].blocks[1].game.data.items[6].labelTh: พรุ่งนี้สอบย่อยคาบ 3 นะ
-scam.blocks[5].blocks[1].game.data.items[6].meta.sender: ครูในกลุ่มห้อง
-scam.blocks[5].blocks[1].game.data.items[6].revealTh: ไม่มีลิงก์ ไม่ขอเงิน ไม่มีความลับ
-scam.blocks[5].blocks[1].game.data.resultTh: แยกข้อความถูก {score}/{total}
-scam.blocks[5].blocks[1].answersTh[0]: หลอก: แม่เปลี่ยนเบอร์ขอเงินด่วน, SMS ค่าไฟพร้อมลิงก์, เจ้าหน้าที่ค่ายมือถือที่สั่งห้ามบอกครอบครัว, ทุนเรียนต่อที่ให้โอนเงิน, รุ่นพี่ขอให้เปิดบัญชีให้
-scam.blocks[5].blocks[1].answersTh[1]: ปลอดภัย: แจ้งเตือนในแอปธนาคารที่ตรงกับที่เธอโอนเอง, ครูบอกเรื่องสอบย่อย
-scam.blocks[5].blocks[1].answersTh[2]: ธงแดง: เร่ง, ห้ามบอกใคร, เปลี่ยนเบอร์หรือช่องทาง, ขอเงินหรือบัญชี, ลิงก์แปลก
-scam.blocks[6].unlockLabelTh: เรื่องจริงเบื้องหลังแชต
-scam.blocks[6].blocks[0].text.th: ผลสำรวจปี 2569 (1,290 คน) ผู้ใหญ่ไทย 79% เคยเจอมิจฉาชีพ ช่องทางที่เจอบ่อยคือ Facebook 54% กับ LINE 48% แต่มีแค่ 4% ที่ไปแจ้งความ
-scam.blocks[6].blocks[0].titleTh: ผลสำรวจ
-scam.blocks[6].blocks[1].text.th: 2 ก.ย. 2569 คนอายุ 19 ถึง 22 สามคนเสียเงินรวม 2,743,984 บาท ให้ตำรวจปลอมทางวิดีโอคอล สองในสามคนเริ่มจากอาจารย์ปลอมที่เสนอทุนเรียนต่อต่างประเทศ
-scam.blocks[6].blocks[1].titleTh: เคสจริง: ตำรวจปลอม
-scam.blocks[6].blocks[2].lines[0].text.th: แต่มีเงิน 500,000 บาทที่รอดมาได้ เพราะธนาคารโทรมาเตือนก่อนโอน
-scam.blocks[6].blocks[2].lines[1].text.th: คนที่โทรคือทีมกันโกงของธนาคาร นั่นแหละงานสายนี้
-scam.blocks[6].blocks[3].text.th: 18 ต.ค. 2569 ตำรวจไซเบอร์จับนายหน้าที่ชวนนักเรียน ม.2 อายุ 15 เปิดบัญชีธนาคาร 3 บัญชีให้ บัญชีพวกนั้นโยงกับ 5 คดี เสียหายรวม 675,000 บาท
-scam.blocks[6].blocks[3].titleTh: เคสจริง: บัญชีม้า
-scam.blocks[6].blocks[4].lines[0].text.th: ห้ามให้ยืม ห้ามขาย ทั้งบัญชีและบัตรประชาชน
-scam.blocks[6].blocks[5].text.th: กระทรวงดิจิทัลฯ เตือนว่าปี 2569 จะเจอคลิปและเสียงปลอมด้วย AI ที่เลียนแบบญาติหรือเจ้าหน้าที่มากขึ้น
-scam.blocks[6].blocks[5].titleTh: เทรนด์ปีนี้
-scam.blocks[7].lines[0].text.th: ใครทำงานนี้: ทีมกันโกงของธนาคาร ค่ายมือถือ ศูนย์ AOC 1441
-scam.blocks[7].lines[1].text.th: บริษัทแอปเตือนเบอร์มิจฉาชีพ และตำรวจไซเบอร์ ทั้งหมดนี้คือสายไซเบอร์
-scam.blocks[8].text.th: เจอเรื่องแบบนี้ โทร 1441
-scam.blocks[8].titleTh: สายด่วน
-scam.clip.hookTh: ข้อความไหนในแชตบ้านเธอคือมิจ
-scam.clip.scriptLinesTh[0]: ข่าวไซเบอร์ไม่ได้อยู่ไกลเลย
-scam.clip.scriptLinesTh[1]: เมื่อกันยาที่ผ่านมา มีคนอายุ 19 ถึง 22 สามคน
-scam.clip.scriptLinesTh[2]: เสียเงินรวมกว่า 2,700,000 บาท ให้ตำรวจปลอมกับทุนเรียนต่อปลอม
-scam.clip.scriptLinesTh[3]: แต่มีเงิน 500,000 บาทที่รอดมาได้ เพราะคนจากธนาคารโทรมาเตือนทัน
-scam.clip.scriptLinesTh[4]: งานนั้นแหละคือสายไซเบอร์
-scam.clip.scriptLinesTh[5]: ลองแยกเจ็ดข้อความนี้ดู ถ้าแยกถูกหมด ส่งให้ที่บ้านเลย
-scam.reel.hook.th: 3 คนอายุ 19 ถึง 22 เสียเงินรวม 2.7 ล้าน ด้วยบทพูดนี้
-scam.reel.variantsTh[0]: ข้อความไหนในแชตบ้านเธอคือมิจฉาชีพ ลองทาย
-scam.reel.variantsTh[1]: ทุนเรียนต่อปลอม หลอกคนอายุ 19 ถึง 22 ไปแล้วหลักล้าน
-scam.reel.sendToFriendTh: ส่งให้แม่
-scam.reel.visual[0]: ฟองแชตเด้งขึ้นทีละอัน ป้ายธงแดงประทับลงบนคำ
-scam.reel.visual[1]: หมุดแผนที่ที่กรุงเทพฯ กับการ์ดข่าวสามใบมีวันที่ตกลงมา",
   "firstjob.titleTh: งานแรกของฉัน จะเหลืออะไร
 firstjob.questionTh: ถ้า AI ทำงานพื้นฐานได้ ตำแหน่งเริ่มต้นจะหายไหม
 firstjob.navLabelTh: งานแรก
@@ -518,6 +641,46 @@ fit.reel.variantsTh[1]: เลือกคณะจากคะแนนอย�
 fit.reel.sendToFriendTh: ส่งให้เพื่อนที่ยังเลือกคณะไม่ได้
 fit.reel.visual[0]: การ์ดคู่พลิกซ้ายขวา
 fit.reel.visual[1]: ป้ายบอกทางสามป้าย ไซเบอร์ตรง คอมกว้าง หมอ แล้วป้ายหนึ่งสว่างขึ้น",
+  "round1.titleTh: รอบ 1 มีที่ให้ผลงานของเธอ
+round1.questionTh: เข้ามหาลัยด้วยสิ่งที่ทำเอง ไม่ใช่แค่คะแนนสอบ จริงเหรอ
+round1.navLabelTh: รอบ 1
+round1.og.headlineTh: TCAS รอบ 1 ใช้ผลงานของเธอยื่นได้ เริ่มเก็บตั้งแต่ตอนนี้เลย
+round1.og.stat.th: TCAS70 มี 4 รอบ รอบแรกคือ Portfolio
+round1.blocks[0].lines[0].text.th: ก่อนไปต่อ มีเรื่องหนึ่งที่แทบไม่มีใครเคยบอก
+round1.blocks[0].lines[1].text.th: เข้ามหาลัยไม่ได้มีแค่ทางสอบอย่างเดียวนะ
+round1.blocks[1].text.th: TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอทำมา
+round1.blocks[2].lines[0].text.th: ถ้าเธอเคยลองทำอะไรในสายไซเบอร์ ด้วยตัวเอง นั่นแหละ เอาไปใส่ได้เลย
+round1.blocks[2].lines[1].text.th: ปีนี้ ทปอ. มีระบบ TCASfolio ให้ทำแฟ้มผลงานได้สูงสุด 40 รายการ
+round1.blocks[3].unlockLabelTh: ลองจัดแฟ้มดู
+round1.blocks[3].blocks[0].lines[0].text.th: ลองดูสิ ของพวกนี้ควรไปอยู่ช่องไหนในแฟ้ม
+round1.blocks[3].blocks[1].game.data.tagTh: จัดแฟ้มผลงาน
+round1.blocks[3].blocks[1].game.data.goalTh: จัดของใส่แฟ้ม TCASfolio
+round1.blocks[3].blocks[1].game.data.bins[0].labelTh: โครงงาน
+round1.blocks[3].blocks[1].game.data.bins[1].labelTh: กิจกรรม
+round1.blocks[3].blocks[1].game.data.bins[2].labelTh: เกียรติบัตร รางวัล
+round1.blocks[3].blocks[1].game.data.items[0].labelTh: write-up จากห้องฝึก TryHackMe ที่ทำจบเอง
+round1.blocks[3].blocks[1].game.data.items[0].revealTh: ลงมือเองแล้วเล่าได้ว่าทำอะไรไป นี่แหละโครงงาน
+round1.blocks[3].blocks[1].game.data.items[1].labelTh: เช็กรหัสเราเตอร์ที่บ้าน (ขอผู้ปกครองก่อนนะ) แล้วเขียนวิธีแก้ให้ที่บ้าน
+round1.blocks[3].blocks[1].game.data.items[1].revealTh: เจอปัญหาจริง แก้ให้คนจริง บนเครื่องบ้านตัวเอง นับเป็นโครงงานได้เต็มปาก
+round1.blocks[3].blocks[1].game.data.items[2].labelTh: ลงแข่ง Thailand Cyber Top Talent รุ่น Junior กับเพื่อน
+round1.blocks[3].blocks[1].game.data.items[2].revealTh: แค่ลงแข่งนับเป็นกิจกรรม ถ้าคว้ารางวัลค่อยย้ายไปช่องรางวัล
+round1.blocks[3].blocks[1].game.data.items[3].labelTh: เกียรติบัตรจากงานแข่งตอบปัญหาไซเบอร์
+round1.blocks[3].blocks[1].game.data.items[3].revealTh: เกียรติบัตรใส่ได้นะ แต่ถ้าเล่าได้ว่าเรียนรู้อะไรจากมัน จะยิ่งมีน้ำหนัก
+round1.blocks[3].blocks[1].game.data.resultTh: จัดถูก {score}/{total}
+round1.blocks[3].blocks[1].answersTh[0]: โครงงาน: write-up จากห้องฝึก TryHackMe ที่ทำจบเอง, เช็กรหัสเราเตอร์ที่บ้าน (ขอผู้ปกครองก่อนนะ) แล้วเขียนวิธีแก้ให้ที่บ้าน
+round1.blocks[3].blocks[1].answersTh[1]: กิจกรรม: ลงแข่ง Thailand Cyber Top Talent รุ่น Junior กับเพื่อน
+round1.blocks[3].blocks[1].answersTh[2]: เกียรติบัตร รางวัล: เกียรติบัตรจากงานแข่งตอบปัญหาไซเบอร์
+round1.blocks[3].blocks[2].lines[0].text.th: เห็นไหม ของที่เธอลงมือทำเองนับได้จริง
+round1.blocks[3].blocks[2].lines[1].text.th: ไม่ต้องรอใครมาจัดค่าย หรือออกใบเกียรติบัตรให้ก่อนเลย
+round1.blocks[4].unlockLabelTh: แล้วตอนนี้ฉันอยู่ ม.ไหนล่ะ
+round1.blocks[4].blocks[0].lines[0].text.th: ถ้าอยู่ ม.6 รอบ 1 ปีนี้บางคณะยังเปิดรับอยู่ แต่ละคณะปิดไม่พร้อมกันนะ
+round1.blocks[4].blocks[0].lines[1].text.th: ถ้าอยู่ ม.5 เธอยังมีเวลาอีกเกือบปี ลองทำชิ้นแรกให้เสร็จก่อนเลย
+round1.blocks[4].blocks[0].lines[2].text.th: ถ้าอยู่ ม.4 เวลาเยอะสุด ลองได้หลายอย่างเลย ไม่ต้องรีบเลือก
+round1.blocks[4].blocks[1].text.th: รอบ 1 ไม่ได้ง่ายกว่ารอบอื่น แต่ละคณะมีเกณฑ์ เช่น เกรดขั้นต่ำ เช็กประกาศของคณะที่สนใจทุกครั้งนะ
+round1.blocks[4].blocks[1].titleTh: พูดตรงๆ
+round1.blocks[4].blocks[2].labelTh: ดูหลักสูตร ไซเบอร์ วิศวะคอม วิทย์คอม ใน mytcas
+round1.blocks[5].lines[0].text.th: ผลงานชิ้นแรกไม่ต้องใหญ่โตเลย
+round1.blocks[5].lines[1].text.th: ด่านต่อไป มาดูกันว่าที่ไหนเปิดรับสายไซเบอร์บ้าง",
   "tcas.titleTh: สมัครที่ไหน เมื่อไหร่
 tcas.questionTh: ถ้าจะไปทางนี้ ต้องยื่นที่ไหน รอบไหน ภายในวันไหน
 tcas.navLabelTh: สมัครที่ไหน
@@ -615,7 +778,7 @@ terminal.blocks[2].game.data.commands[0].output[6]: whoami, clear, scan <เค�
 terminal.blocks[2].game.data.commands[2].noteTh: ไฟล์ที่ขึ้นต้นด้วยจุดถูกซ่อนไว้
 terminal.blocks[2].game.data.commands[9].output[0]: student (ได้รับอนุญาตในแล็บนี้เท่านั้น)
 terminal.blocks[2].game.data.commands[10].output[0]: พบพอร์ต 80 เปิดอยู่ (จำลอง)
-terminal.blocks[2].game.data.commands[10].noteTh: ต่อจากนี้ไปฝึกในห้องจริงได้ ด่านถัดไป
+terminal.blocks[2].game.data.commands[10].noteTh: จากนี้ไปฝึกในห้องจริงได้ ที่ด่านภารกิจคืนนี้เลย
 terminal.blocks[2].game.data.commands[11].output[0]: หยุด: นอกขอบเขต
 terminal.blocks[2].game.data.commands[11].output[1]: ไม่มีใครอนุญาต แปลว่าผิดกฎหมาย ต่อให้เจตนาดี
 terminal.blocks[2].game.data.commands[11].noteTh: สแกนเว็บโรงเรียน ที่ดูหละหลวมมาก
@@ -660,86 +823,5 @@ terminal.reel.visual[0]: บันทึกหน้าจอ ?demo=1: ชิป
 terminal.reel.visual[1]: บรรทัด Accepted ถูกไฮไลต์
 terminal.reel.visual[2]: การ์ดแดง หยุด: นอกขอบเขต ที่ชิปเว็บโรงเรียน
 terminal.reel.visual[3]: ธง FLAG",
-  "tonight.titleTh: คืนนี้ ห้องเดียว ได้ผลงานชิ้นแรก
-tonight.questionTh: คืนนี้ทำอะไรได้เลย ที่จบด้วยของจริงในพอร์ต
-tonight.navLabelTh: ภารกิจคืนนี้
-tonight.og.headlineTh: คืนนี้ลองแค่ห้องเดียว แล้วเธอจะมีผลงานไซเบอร์ชิ้นแรก
-tonight.blocks[0].lines[0].text.th: ด่านนี้ไม่ได้เล่นในจอ เป็นภารกิจจริงคืนนี้
-tonight.blocks[0].lines[1].text.th: ลองแค่ห้องเดียว แล้วเธอจะมีผลงานไซเบอร์ชิ้นแรก
-tonight.blocks[2].lineTh: เข้าระบบของคนอื่นโดยไม่ได้รับอนุญาต ผิดกฎหมาย ต่อให้แค่ลองดูก็ตาม ฝึกได้แค่เครื่องของตัวเอง หรือห้องที่เขาเปิดให้ลอง ห้ามลองกับเว็บโรงเรียน เว็บเพื่อน หรือเว็บไหนที่ไม่ได้รับอนุญาตเป็นลายลักษณ์อักษร
-tonight.blocks[3].text.th: ห้องนี้เขาสร้างเว็บธนาคารปลอมไว้ให้ฝึกหาช่องโหว่โดยเฉพาะ เป็นห้องสำหรับมือใหม่
-tonight.blocks[3].titleTh: ห้องฝึก: Offensive Security Intro
-tonight.blocks[4].game.data.room.badgeTh: ฟรีตามคู่มือของ TryHackMe ณ 31 ส.ค. 2569 เช็กอีกครั้งก่อนสมัคร
-tonight.blocks[4].game.data.room.subTh: เช็กเกณฑ์อายุของเว็บก่อน ถ้าต้องมีผู้ปกครอง ให้สมัครด้วยกัน
-tonight.blocks[4].game.data.checklistTh[0]: สมัคร
-tonight.blocks[4].game.data.checklistTh[1]: ทำห้องให้จบ
-tonight.blocks[4].game.data.checklistTh[2]: แคปหน้าจอผลลัพธ์ (ไม่ให้ติดอีเมลหรือชื่อจริง)
-tonight.blocks[4].game.data.checklistTh[3]: เขียน write-up
-tonight.blocks[4].game.data.fields[0].placeholderTh: ห้องอะไร / เป้าหมาย
-tonight.blocks[4].game.data.fields[1].placeholderTh: ฉันลองอะไร
-tonight.blocks[4].game.data.fields[2].placeholderTh: อะไรไม่เวิร์ก
-tonight.blocks[4].game.data.fields[3].placeholderTh: ถ้าเป็นเจ้าของระบบ จะแก้ยังไง
-tonight.blocks[4].game.data.fields[4].placeholderTh: ยังไม่เข้าใจอะไร
-tonight.blocks[4].game.data.fixedLinesTh[0]: ทำในแล็บฝึกที่ได้รับอนุญาตเท่านั้น
-tonight.blocks[4].game.data.privacyTh: เก็บไว้ในเครื่องนี้เท่านั้น ไม่ส่งไปที่ไหน
-tonight.blocks[4].answersTh[0]: เปิดห้อง Offensive Security Intro บน TryHackMe (เช็กเกณฑ์อายุของเว็บก่อน ถ้าต้องมีผู้ปกครอง ให้สมัครด้วยกัน)
-tonight.blocks[4].answersTh[1]: ทำให้จบ แคปหน้าจอโดยไม่ให้ติดอีเมลหรือชื่อจริง
-tonight.blocks[4].answersTh[2]: เขียน write-up: ห้องอะไร ลองอะไร อะไรไม่เวิร์ก ถ้าเป็นเจ้าของระบบจะแก้ยังไง ยังไม่เข้าใจอะไร
-tonight.blocks[4].demoScript[1].text: Offensive Security Intro: ลองหาจุดอ่อนของเว็บธนาคารปลอมในห้องฝึก
-tonight.blocks[4].demoScript[2].text: ถ้าเป็นเจ้าของ จะปิดทางที่เจอ แล้วเพิ่มการเช็กสิทธิ์
-tonight.blocks[5].lines[0].text.th: ที่สำคัญกว่าทำจบ คือเขียนสรุปสั้นๆ ว่าลองอะไรไปบ้าง อะไรไม่เวิร์ก
-tonight.blocks[5].lines[1].text.th: และถ้าเป็นเจ้าของระบบ จะแก้ยังไง
-tonight.blocks[5].lines[2].text.th: ทีมเราคิดว่าข้อสุดท้ายมีค่าที่สุด อย่าข้ามนะ
-tonight.blocks[6].lines[0].text.th: จำประตูที่สองได้ไหม มันเปิดให้คนที่มีผลงานตรวจสอบได้
-tonight.blocks[6].lines[1].text.th: write-up นี้คือบรรทัดแรกของประวัตินั้น
-tonight.blocks[6].lines[2].text.th: ถ้าสนุก ทำห้องถัดไปพรุ่งนี้ ถ้าไม่สนุก ก็รู้ก่อนเลือกคณะ ไม่เสียอะไร
-tonight.blocks[6].lines[3].text.th: เช็กกติกาของห้องก่อนโพสต์ write-up สาธารณะ
-tonight.clip.hookTh: คืนนี้ ห้องเดียว ได้ผลงานชิ้นแรก
-tonight.clip.scriptLinesTh[0]: คืนนี้ลองแค่ห้องเดียว ฟรี
-tonight.clip.scriptLinesTh[1]: เปิด TryHackMe ห้อง Offensive Security Intro
-tonight.clip.scriptLinesTh[2]: เขาสร้างเว็บธนาคารปลอมไว้ให้ฝึกโดยเฉพาะ
-tonight.clip.scriptLinesTh[3]: ย้ำอีกที ฝึกเฉพาะในห้องที่เขาเปิดให้ลองแบบนี้เท่านั้น
-tonight.clip.scriptLinesTh[4]: ระบบจริงของคนอื่น ห้ามลอง ผิดกฎหมาย ต่อให้แค่ลองดูก็ตาม
-tonight.clip.scriptLinesTh[5]: ทำเสร็จแล้วกลับมาหน้านี้ เขียนสั้นๆ ว่าลองอะไร อะไรไม่เวิร์ก
-tonight.clip.scriptLinesTh[6]: ถ้าเป็นเจ้าของระบบจะแก้ยังไง
-tonight.clip.scriptLinesTh[7]: นั่นคือผลงานไซเบอร์ชิ้นแรกของเธอ
-tonight.reel.hook.th: คืนนี้ ห้องเดียว ได้ผลงานไซเบอร์ชิ้นแรกในพอร์ต
-tonight.reel.variantsTh[0]: ลองเจาะเว็บธนาคารปลอม ในห้องที่สร้างไว้ให้ฝึก
-tonight.reel.variantsTh[1]: ทำห้องฝึกไซเบอร์จบแล้ว อย่าข้ามขั้นนี้
-tonight.reel.sendToFriendTh: ส่งให้เพื่อนที่อยากลองแต่ไม่รู้จะเริ่มตรงไหน
-tonight.reel.visual[0]: ผู้ก่อตั้งพูดกับกล้อง หน้าอยู่ในเฟรมตอนพูดประโยคความปลอดภัย
-tonight.reel.visual[1]: ตัดไปภาพหน้าจอเริ่มห้องฝึก บันทึกจากบัญชีฟรี และยืนยันว่ามีเว็บธนาคารปลอมจริง
-tonight.reel.visual[2]: บล็อก write-up ประกอบขึ้นทีละบรรทัด",
-  "next.titleTh: แล้วเธอล่ะ
-next.questionTh: สายนี้ใช่เธอไหม แล้วจะดูอะไรต่อ
-next.navLabelTh: แล้วเธอล่ะ
-next.og.headlineTh: สายไซเบอร์ใช่เธอไหม เล่นจนจบแล้วค่อยตัดสินใจ
-next.blocks[0].lines[0].text.th: มาถึงด่านสุดท้ายแล้ว
-next.blocks[0].lines[1].text.th: เล่นมาทั้งหมด เธอชอบส่วนไหนที่สุด
-next.blocks[1].game.data.lines.mythos: หาบรรทัดอันตรายเจอใน {attempts} ครั้ง
-next.blocks[1].game.data.lines.doors: แจกกุญแจถูก {score}/{total}
-next.blocks[1].game.data.lines.triage: จับข้อที่ AI พลาดได้ {x} ข้อ || ตัดสินสัญญาณเตือนถูก {score}/{total}
-next.blocks[1].game.data.lines.scam: แยกข้อความถูก {score}/{total}
-next.blocks[1].game.data.lines.firstjob: ขั้นแรกที่เธอเลือก: {proof}
-next.blocks[1].game.data.lines.fit: ทางที่เธอเอนไป: {title}
-next.blocks[1].game.data.lines.tcas: ติดดาวไว้ {shortlist} หลักสูตร
-next.blocks[1].game.data.lines.terminal: ภารกิจ log {score}/{total} · ลองสแกนนอกขอบเขต {scopeTries} ครั้ง || ภารกิจ log {score}/{total} · ไม่หลุดขอบเขต ✓
-next.blocks[1].game.data.lines.tonight: เตรียม write-up ชิ้นแรกแล้ว
-next.blocks[1].game.data.favourites.mythos: สายที่เธอเลือกเอง: นักล่าช่องโหว่ งานจริงคือหาจุดพังในโค้ดก่อนคนร้าย
-next.blocks[1].game.data.favourites.doors: สายที่เธอเลือกเอง: ทีมทดสอบเจาะระบบ งานจริงคือเจาะแบบมีสัญญา แล้วเขียนรายงานให้เจ้าของแก้
-next.blocks[1].game.data.favourites.triage: สายที่เธอเลือกเอง: นักวิเคราะห์ SOC งานจริงคือคัดว่าสัญญาณไหนโดนจริง และตรวจงาน AI
-next.blocks[1].game.data.favourites.scam: สายที่เธอเลือกเอง: ทีมกันโกง งานจริงคือจับรูปแบบมิจฉาชีพก่อนเงินหลุด
-next.blocks[1].game.data.favourites.terminal: สายที่เธอเลือกเอง: ทีมรับมือเหตุ งานจริงคือสืบจาก log แล้วปิดทางให้ทัน
-next.blocks[1].game.data.cardLineTh: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
-next.blocks[1].answersTh[0]: เลือกเกมที่สนุกที่สุด แล้วดูว่ามันตรงกับงานจริงสายไหน
-next.blocks[1].answersTh[1]: นักล่าช่องโหว่ ทีมทดสอบเจาะระบบ นักวิเคราะห์ SOC ทีมกันโกง หรือทีมรับมือเหตุ
-next.blocks[1].answersTh[2]: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
-next.blocks[2].lines[0].text.th: กดบอกเราหน่อยว่าสายนี้ใช่ไหม เราจะได้รู้ว่าควรทำสายนี้ให้ลึกขึ้นไหม
-next.blocks[2].lines[1].text.th: ไม่ว่าจะกดอันไหน ถือว่าได้ข้อมูล
-next.blocks[2].lines[2].text.th: ลองแล้วรู้ว่าไม่ใช่ ก็ได้คำตอบเร็วกว่าคนที่ไม่เคยลอง
-next.blocks[4].lines[0].text.th: ถ้าสนใจ สิ่งเดียวที่ต้องทำต่อ
-next.blocks[4].lines[1].text.th: คือห้องที่สองพรุ่งนี้ กับ write-up อีกหนึ่งชิ้น
-next.blocks[5].text.th: ไม่ชอบเรียนของใหม่ตลอด รับแรงกดดันตอนเหตุด่วนไม่ไหว หรือไม่ชอบงานเอกสาร เพราะงานส่วนหนึ่งคือเขียนรายงานและหลักฐานตามมาตรฐาน
-next.blocks[5].titleTh: สายนี้อาจไม่เหมาะ ถ้า...",
 ]
 `;

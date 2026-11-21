@@ -48,6 +48,13 @@ export interface GuideIndexPage {
   games?: number;
   /** DERIVED, never authored: the page has a clip slot (a cutscene). */
   cutscene?: boolean;
+  /**
+   * Which part of the run the level belongs to. Level 1 (default) is the short
+   * run for a student who hasn't chosen anything yet: dream, real work, TCAS
+   * round 1, one step tonight. Level 2 goes deep. A guide with no tier-2
+   * pages uses the career's DB deck (?view=deck) as its Level 2.
+   */
+  tier?: 1 | 2;
 }
 export interface GuideIndexEntry {
   slug: string; // = radar_fields.slug (must exist and be published, see 5.3)
@@ -120,6 +127,52 @@ export type CopyRole =
   | "caption";
 
 // ---------------------------------------------------------------- story (game layer)
+/** One answer in a choice block: what the student says, and the host's reply to it. */
+export interface ChoiceOption {
+  id: string;
+  /** The student's answer, as they'd say it: short, one line on a phone (CHOICE_LABEL_MAX_CHARS). */
+  labelTh: string;
+  reply: readonly DialogueLine[];
+}
+/** Answer buttons stay one or two short lines on a 360px phone. */
+export const CHOICE_LABEL_MAX_CHARS = 48;
+
+/** A 12x12 pixel icon for a kind-of-job tile (components/radar/guide/story/kind-glyphs.ts). */
+export type KindIcon =
+  | "phone"
+  | "speech"
+  | "eye"
+  | "server"
+  | "flask"
+  | "chart"
+  | "trend"
+  | "funnel"
+  | "robot"
+  | "browser"
+  | "database"
+  | "gamepad"
+  | "chip"
+  | "cloud"
+  | "shield"
+  | "monitor"
+  | "bug"
+  | "magnifier"
+  | "clipboard";
+
+/** One tile in a career's job-select grid (the `kinds` block). */
+export interface CareerKindTile {
+  id: string;
+  icon: KindIcon;
+  /** The tile's name: a few words (KIND_TITLE_MAX_CHARS). */
+  titleTh: string;
+  /** What the host says when the tile is tapped: one short line (KIND_LINE_MAX_CHARS). */
+  lineTh: string;
+  /** The kind the level's game just showed: tagged "เพิ่งลอง". At most one. */
+  played?: boolean;
+}
+export const KIND_TITLE_MAX_CHARS = 14;
+export const KIND_LINE_MAX_CHARS = 56;
+
 /** Who speaks in a dialogue box. `host` is GUIDE_HOST (story.ts). */
 export type DialogueSpeaker = "host" | "player" | "system";
 /** One dialogue box: at most about two lines on a 360px phone (DIALOGUE_BOX_MAX_CHARS). */
@@ -208,6 +261,8 @@ export interface SortItem {
 }
 export interface SortGameData {
   layout: "cards" | "queue" | "chat";
+  /** The label above the game; default per layout ("แตะการ์ด แล้วแตะประตู", "ตรวจงาน AI", "แยกข้อความ"). */
+  tagTh?: string;
   goalTh?: string;
   bins: readonly { id: string; labelTh: string }[];
   items: readonly SortItem[];
@@ -378,6 +433,21 @@ export type GuideBlock =
   | { kind: "outro"; id: string } // intent + request + share + follow + program + other careers
   /** Story beat: typewriter dialogue boxes, tap to advance. Each line is one box. */
   | { kind: "dialogue"; id: string; lines: readonly DialogueLine[] }
+  /**
+   * A dating-game choice: the host asks (`ask`, host lines), the student picks
+   * one of 2 to 3 answers, the host replies to that answer, and the level goes
+   * on. Replies react, they never grade: there is no score. The pick is saved
+   * as the choice `<pageKey>:<id>` (traits, recap) and tracked as
+   * `interactive_tap` `<pageKey>:<id>:<optionId>`.
+   */
+  | { kind: "choice"; id: string; ask: readonly DialogueLine[]; options: readonly ChoiceOption[] }
+  /**
+   * "This career is a broad name": a job-select grid of pixel tiles. Tapping
+   * a tile has the host say one line about that kind. "ต่อ" waits for the
+   * first tap. The last tile tapped is saved as the choice `<pageKey>:<id>`
+   * and each tap is tracked as `interactive_tap` `<pageKey>:<id>:<tileId>`.
+   */
+  | { kind: "kinds"; id: string; headTh: string; tiles: readonly CareerKindTile[]; factIds?: readonly FactId[] }
   /**
    * An in-world fact item (intel card, notification, terminal line, chat
    * bubble, stat). The sources chip lists `text.factIds`. `simulated` items

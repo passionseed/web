@@ -12,7 +12,7 @@ const GAP = "f.patch-gap" as const;
 
 export const triage: GuidePage = {
   key: "triage",
-  order: 3,
+  order: 6,
   titleTh: "งานจริง คือจับผิด AI",
   questionTh: "วันธรรมดาของคนสายนี้ เขาทำอะไรกันแน่",
   navLabelTh: "จับผิด AI",

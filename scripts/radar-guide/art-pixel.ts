@@ -12,7 +12,7 @@
  * accent for screens. Banned per skills/key-art-poster/SKILL.md: sunburst
  * rays, perspective floor grids, random glowing particles, scanlines, grain.
  */
-import { HOST_GRIDS, HOST_PALETTE, STORY_PALETTE as C, type PixelGrid, type PixelPalette } from "../../components/radar/guide/story/pixel-art";
+import { HOST_GRID, HOST_GRIDS, HOST_PALETTE, STORY_PALETTE as C, type PixelGrid, type PixelPalette } from "../../components/radar/guide/story/pixel-art";
 
 export const SCENE_SIZE = { w: 160, h: 100 } as const;
 export const MAP_SIZE = { w: 108, h: 192 } as const;
@@ -470,7 +470,93 @@ const next: SceneFn = (c, accent) => {
   blit(c, FLAG, { K: C.ink, O: accent }, 120, 66, 2);
 };
 
+// ---------------------------------------------------------------- Level 1 (every career)
+const STAR: PixelGrid = ["...Y...", "...Y...", "..YYY..", "YYYYYYY", "..YYY..", ".Y...Y.", "Y.....Y"];
+const FOLDER: PixelGrid = [
+  "KKKKK.........",
+  "KOOOOK........",
+  "KKKKKKKKKKKKKK",
+  "KOOOOOOOOOOOOK",
+  "KOOOOOOOOOOOOK",
+  "KOOOOOOOOOOOOK",
+  "KOOOOOOOOOOOOK",
+  "KOOOOOOOOOOOOK",
+  "KKKKKKKKKKKKKK",
+];
+
+/** L1 dream: a rooftop under a wide night sky, one big star rising over the lit city. */
+const dream: SceneFn = (c, accent) => {
+  nightSky(c, 70, 131, 34);
+  dither(c, 0, 62, c.w, 8, C.plum, C.plumMid, 0.25);
+  skyline(c, 70, 132, { color: C.plum, lit: 0.4, maxH: 28 });
+  ground(c, 70);
+  rect(c, 0, 78, c.w, 2, C.plumMid);
+  // the star and its trail across the sky
+  for (let i = 0; i < 9; i++) px(c, 40 + i * 6, 46 - i * 3, i % 2 ? C.litGold : accent);
+  blit(c, STAR, { Y: C.litGold }, 96, 10, 2);
+  disc(c, 103, 17, 1, C.cream);
+  // a small telescope on the roof, pointing up
+  line(c, 30, 76, 42, 62, C.hair);
+  rect(c, 41, 60, 4, 3, C.cream);
+  line(c, 30, 76, 26, 79, C.hair);
+  line(c, 30, 76, 34, 79, C.hair);
+};
+
+/** L1 work: a desk with three trays; cards fly from a pile into them, one tray glows. */
+const work: SceneFn = (c, accent) => {
+  interior(c, 141, { x: 108, y: 10, w: 40, h: 30 });
+  desk(c, 8, 66, 144);
+  // the pile of unsorted cards
+  for (let i = 0; i < 4; i++) rect(c, 16 + i, 54 - i * 2, 16, 11, i % 2 ? C.cream : C.litGold);
+  rect(c, 19, 47, 10, 1, C.hair);
+  // three trays
+  const trays = [accent, C.orange, C.violet];
+  trays.forEach((col, i) => {
+    const x = 50 + i * 30;
+    rect(c, x, 58, 24, 8, C.ink);
+    rect(c, x + 1, 59, 22, 6, C.plumMid);
+    rect(c, x + 1, 59, 22, 1, col);
+    rect(c, x + 6, 55, 12, 4, C.cream);
+  });
+  dither(c, 50, 48, 24, 8, C.plum, accent, 0.25);
+  // a card in flight
+  rect(c, 70, 36, 12, 8, C.cream);
+  rect(c, 72, 39, 8, 1, C.hair);
+  [0, 1, 2].forEach((i) => px(c, 64 - i * 4, 44 + i * 2, accent));
+};
+
+/** L1 round1: an open portfolio folder on a desk, items floating into it, a gate on the far hill. */
+const round1: SceneFn = (c, accent) => {
+  nightSky(c, 56, 151, 22);
+  moon(c, 136, 14, 5);
+  for (let x = 0; x < c.w; x++) {
+    const h = Math.round(10 * Math.sin((x / c.w) * Math.PI));
+    rect(c, x, 56 - h, 1, 44 + h, C.plum);
+  }
+  // a small university gate on the hill
+  rect(c, 112, 34, 3, 14, C.cream);
+  rect(c, 128, 34, 3, 14, C.cream);
+  rect(c, 109, 31, 25, 3, C.orange);
+  desk(c, 6, 74, 120);
+  blit(c, FOLDER, { K: C.ink, O: C.orange }, 38, 50, 3);
+  // items rising into the folder: a screen, a star, a card
+  rect(c, 22, 30, 12, 9, C.ink);
+  rect(c, 23, 31, 10, 7, "#0b1a10");
+  rect(c, 25, 33, 6, 1, accent);
+  rect(c, 25, 35, 4, 1, accent);
+  blit(c, STAR, { Y: C.litGold }, 54, 24, 1);
+  rect(c, 76, 32, 12, 9, C.cream);
+  rect(c, 78, 35, 8, 1, C.hair);
+  [0, 1, 2].forEach((i) => {
+    px(c, 30 + i * 3, 42 + i * 2, accent);
+    px(c, 82 - i * 3, 43 + i * 2, accent);
+  });
+};
+
 export const SCENES: Readonly<Record<string, SceneFn>> = {
+  dream,
+  work,
+  round1,
   mythos,
   doors,
   triage,
@@ -540,9 +626,9 @@ export function renderFrame(accent: string): Canvas {
   return c;
 }
 
-/** The host sprite frame at 2x (48x64, GUIDE_HOST.spriteSize), transparent background. */
+/** The host sprite frame at 2x (64x64, GUIDE_HOST.spriteSize), transparent background. */
 export function renderHost(frame: keyof typeof HOST_GRIDS): Canvas {
-  const c = createCanvas(48, 64);
+  const c = createCanvas(HOST_GRID.w * 2, HOST_GRID.h * 2);
   blit(c, HOST_GRIDS[frame], HOST_PALETTE, 0, 0, 2);
   return c;
 }

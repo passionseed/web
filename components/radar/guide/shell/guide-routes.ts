@@ -7,6 +7,7 @@
 import type { Metadata, MetadataRoute } from "next";
 import type { CareerGuide, GuideIndexEntry, GuidePage } from "@/lib/radar-guide/guide-types";
 import { guideVisible } from "@/lib/radar-guides";
+import { levelOnePages } from "@/lib/radar-guide/tiers";
 
 export function coverHref(slug: string): string {
   return `/radar/${slug}`;
@@ -50,7 +51,7 @@ export function guidePageTitle(meta: Pick<GuideIndexEntry, "nameTh">, page: Pick
 }
 
 export function guideCoverTitle(meta: Pick<GuideIndexEntry, "nameTh" | "pages">): string {
-  return `${meta.nameTh} ลองเล่น ${meta.pages.length} ด่าน | ${SITE}`;
+  return `${meta.nameTh} ลองเล่น ${levelOnePages(meta.pages).length} ด่าน | ${SITE}`;
 }
 
 export function guidePageMetadata(

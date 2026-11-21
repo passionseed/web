@@ -10,7 +10,7 @@ const PULSE = "f.isc2-pulse" as const;
 
 export const firstjob: GuidePage = {
   key: "firstjob",
-  order: 5,
+  order: 7,
   titleTh: "งานแรกของฉัน จะเหลืออะไร",
   questionTh: "ถ้า AI ทำงานพื้นฐานได้ ตำแหน่งเริ่มต้นจะหายไหม",
   navLabelTh: "งานแรก",
