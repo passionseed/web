@@ -131,7 +131,9 @@ function SponsorPackage({ baht, index, last }: { baht: number; index: number; la
 /**
  * Become a sponsor: the three packages and a link to the sponsor deck.
  * It sits after the poster, so it doesn't get in the way of students
- * signing up. What sponsors fund: the prize pool (Big, 2026-11-19).
+ * signing up. What sponsors fund: the prize pool and Request for Winners
+ * (Big, 2026-11-19). "The best projects continue in Request for Winners"
+ * is the sponsor deck's own line (SponsorDeck.tsx).
  * Packages: facts.ts. What each package gets is in the deck, not here.
  *
  * Each package has a patch of pixel damage that clears on hover (or when
@@ -175,7 +177,8 @@ export function SponsorSection() {
             style={{ fontFamily: BODY_FONT, color: EL.creamSoft }}
           >
             เงินสนับสนุนช่วยสร้างเงินรางวัลให้น้อง ๆ ที่ลงมือแก้ปัญหาสิ่งแวดล้อมของจริง ตลอด {ELEMENTAL.days} วันของ {ELEMENTAL.edition}{" "}
-            Hackathon
+            Hackathon และช่วยโครงการ <span className="whitespace-nowrap">Request for Winners</span>{" "}
+            ที่ผลงานที่ดีที่สุดได้ไปต่อยอด
           </p>
         </motion.div>
 
