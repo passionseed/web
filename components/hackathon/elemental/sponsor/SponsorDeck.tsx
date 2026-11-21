@@ -149,15 +149,13 @@ function Stat({ big, label, light = false }: { big: ReactNode; label: ReactNode;
  * Each element is a kind of harm, with examples to start from, not a fixed
  * list: teams pick any problem of that kind (Angpao, 2026-11-20: e.g. fire
  * covers fire hazards in a factory or a bar). Kinds of harm and most examples:
- * private/hackathon-elemental-theme-and-rules.md.
+ * private/hackathon-elemental-theme-and-rules.md. The text lives in the shared
+ * facts file, so the deck and the element posters say the same thing.
  */
-const ELEMENTS: { key: "water" | "earth" | "air" | "fire" | "aether"; kind: string; examples: string }[] = [
-  { key: "earth", kind: "ภัยจากขยะ ดิน และสารพิษ", examples: "เช่น ขยะอิเล็กทรอนิกส์ การลักลอบทิ้งหรือฝังกลบขยะ สารเคมีตกค้างในพื้นที่เกษตร ขยะที่ไม่ได้คัดแยก" },
-  { key: "water", kind: "ภัยในแหล่งน้ำ", examples: "เช่น น้ำเสียจากโรงงาน สารปนเปื้อนในแม่น้ำ ไมโครพลาสติก น้ำที่คนใช้ดื่มและทำเกษตร" },
-  { key: "air", kind: "ภัยในอากาศที่เราหายใจ", examples: "เช่น ฝุ่น PM2.5 ควันจากการเผาในที่โล่ง ไอเสียจากโรงงานใกล้บ้าน การปล่อยคาร์บอน" },
-  { key: "fire", kind: "ภัยจากไฟและความร้อน", examples: "เช่น อัคคีภัยในโรงงาน ผับบาร์ หรืออาคาร โกดังเก็บสารเคมี การเผาไร่และป่า" },
-  { key: "aether", kind: "ภัยที่มองไม่เห็น", examples: "เช่น ข่าวปลอม การอ้างว่ารักษ์โลกเกินจริง ขยะที่ไม่มีใครบันทึกว่าไปที่ไหน พลังงานที่แอปและ AI ใช้" },
-];
+const ELEMENTS = (["earth", "water", "air", "fire", "aether"] as const).map((key) => {
+  const e = ELEMENTAL.elements.find((x) => x.key === key)!;
+  return { key, kind: e.problem, examples: e.examples };
+});
 
 /** The Next Decade's last edition, as the live /hackathon page lists them. */
 const LAST_SPONSORS = [
