@@ -1108,4 +1108,19 @@ describe("/el dryrun-cleanup", () => {
     expect(deleted.sort()).toEqual([Routes.channel(a.channelId!), Routes.channel(b.channelId!)].sort());
     expect(last(sent)).toBe(STAFF.cleanupDone({ teams: 4, deleted: 2, failed: 0 }));
   });
+
+  test("a channel that cannot be deleted is named, since a second run no longer lists it", async () => {
+    const { db, rt, discord } = setup("rehearsal");
+    const a = db.team("fire", 12);
+    const b = db.team("water", 3);
+    discord.rest.delete.mockImplementation(async (route: string) => {
+      discord.log.push({ method: "delete", route });
+      if (route === Routes.channel(b.channelId!)) throw Object.assign(new Error("Missing Permissions"), { status: 403 });
+    });
+
+    const { sent } = await el(rt, SUB.cleanup, { confirm: "elemental-dryrun" });
+    expect(last(sent)).toBe(STAFF.cleanupDone({ teams: 2, deleted: 1, failed: 1, failedIds: [b.channelId!] }));
+    expect(last(sent)).toContain(`<#${b.channelId}>`);
+    expect(last(sent)).not.toContain(`<#${a.channelId}>`);
+  });
 });

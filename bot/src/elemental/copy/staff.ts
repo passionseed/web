@@ -160,11 +160,15 @@ export const STAFF = {
   // --- /el dryrun-cleanup ---
   // [TH-REVIEW] the typed confirm did not match.
   cleanupBadConfirm: (edition: string) => `พิมพ์ confirm เป็น ${edition} ให้ตรงทุกตัวเพื่อยืนยัน ยังไม่มีอะไรถูกลบ`,
-  cleanupDone: (o: { teams: number; deleted: number; failed: number }) =>
+  // [TH-REVIEW] done; a channel that could not be deleted is named (a mention), since a second run no longer lists it.
+  cleanupDone: (o: { teams: number; deleted: number; failed: number; failedIds?: readonly string[] }) =>
     [
       `ยกเลิก ${o.teams} ทีมแล้ว (ออกจากเกาะและยอดรวม สมาชิกตั้งทีมใหม่ได้)`,
       `ลบห้องทีม ${o.deleted} ห้อง${o.failed ? `, ลบไม่สำเร็จ ${o.failed} ห้อง (ลบเองใน Discord)` : ""}`,
-    ].join("\n"),
+      o.failedIds?.length ? `ห้องที่ต้องลบเอง: ${o.failedIds.slice(0, 40).map((id) => `<#${id}>`).join(" ")}${o.failedIds.length > 40 ? " ..." : ""}` : null,
+    ]
+      .filter(Boolean)
+      .join("\n"),
   /** Discord audit-log reasons (staff only, English is fine). */
   cleanupReason: "Elemental dry-run cleanup",
   linkReason: "Elemental /el link",

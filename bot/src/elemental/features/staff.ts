@@ -379,7 +379,8 @@ async function runReview(i: ComponentOrModal, ctx: ElCtx, args: string[]): Promi
   if (!isUuid(entryId)) return notify(i, STAFF.staleButton);
   const entry = await ctx.api.call<ReviewedEntry>(FN.review, ctx.guildId, entryId, ctx.userId);
   if (!entry || !isUuid(entry.id)) throw new ElementalError("failed", undefined, FN.review);
-  await say(i, {
+  // Saved in SQL: a post that cannot be edited (deleted, expired) must not read as a failure.
+  await sayQuietly(i, {
     content: mirrorContent(entry, { reviewed: true }),
     components: [mirrorRow(entry.id, { reviewed: true, removed: Boolean(entry.removed) })],
   });
@@ -828,9 +829,11 @@ async function runCleanup(i: ChatInputCommandInteraction, ctx: ElCtx): Promise<v
   const keep = new Set<string>([...Object.values(ctx.settings.channels), ...Object.values(ctx.settings.elementCategories).flat()].filter(Boolean) as string[]);
   const channelIds = [...new Set(teams.map((t) => t.channel_id).filter((id): id is string => isSnowflake(id) && !keep.has(id)))];
   const outcomes = await Promise.all(channelIds.map((id) => deleteChannel(ctx.rt, ctx.guildId, id)));
+  // The teams are archived now, so a second run will not list these again: name them.
+  const failedIds = channelIds.filter((_, k) => outcomes[k] === "failed");
   await sayQuietly(
     i,
-    STAFF.cleanupDone({ teams: teams.length, deleted: outcomes.filter((o) => o === "deleted").length, failed: outcomes.filter((o) => o === "failed").length })
+    STAFF.cleanupDone({ teams: teams.length, deleted: outcomes.filter((o) => o === "deleted").length, failed: failedIds.length, failedIds })
   );
 }
 
