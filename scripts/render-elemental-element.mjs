@@ -229,11 +229,11 @@ function earth() {
   // The pile: a mound with a ragged top, built from 8px cells. Neighbouring
   // cells share a colour in 16px clusters, so they read as bags and boxes,
   // and each cell keeps the photo's dot screen so the pile sits in the scene.
-  const HP = { cx: 480, cy: 1050, rx: 330, ry: 165 };
+  const HP = { cx: 480, cy: 1060, rx: 330, ry: 290 };
   const top = (x) => {
     const u = (x - HP.cx) / HP.rx;
     if (Math.abs(u) >= 1) return Infinity;
-    return HP.cy - HP.ry * Math.pow(1 - u * u, 0.6) * (0.82 + 0.6 * (fbm(x * 0.02, 0.3, 70, 3) - 0.5));
+    return HP.cy - HP.ry * Math.pow(1 - u * u, 0.8) * (0.8 + 0.55 * (fbm(x * 0.02, 0.3, 70, 3) - 0.5));
   };
   const bottom = (x) => HP.cy + 34 - 22 * Math.pow((x - HP.cx) / HP.rx, 2);
   const RUBBISH = [
@@ -479,10 +479,11 @@ async function fire() {
   // burn yellow, shadows burn red, the darkest char), so the fire grows out
   // of the trees instead of sitting on them.
   const levels = [P.ink, P.deep, P.red, P.orange, P.yellow, P.cream];
-  for (let y = 780; y < 1080; y += cell)
-    for (let x = 160; x < W; x += cell) {
-      const dx = (x + 5 - F.x) / 560;
-      const dy = (y + 5 - (F.base - 10)) / 110;
+  for (let y = 780; y < 1240; y += cell)
+    for (let x = 120; x < W; x += cell) {
+      const dx = (x + 5 - F.x) / 580;
+      // Wider below the fire: it spreads down through the trees into the grass.
+      const dy = (y + 5 - (F.base + 40)) / (y > F.base ? 230 : 120);
       const d = Math.sqrt(dx * dx + dy * dy) + 0.8 * (fbm(x * 0.012, y * 0.03, 151, 4) - 0.5);
       const heat = 1 - smooth(0.35, 1, d);
       if (heat <= 0 || heat < bayer(x / cell, y / cell) * 0.9) continue;
