@@ -65,12 +65,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.6,
     },
-    {
-      url: `${baseUrl}/hackathon/sponsor`,
-      lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.5,
-    },
     // Career Radar code guides: cover + every level (live guides only on production).
     ...guideSitemapEntries(allGuides(), baseUrl),
   ];
