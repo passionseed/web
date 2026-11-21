@@ -1,6 +1,6 @@
 # PassionSeed Discord bot
 
-One long-running process with three modules, chosen by `BOT_MODULES`:
+One long-running process with four modules, chosen by `BOT_MODULES`:
 
 - **`shift-voice`** (default): records SHIFT students' voice participation in
   the SHIFT server (time in voice, mic open, screen share, camera, joins) and
@@ -11,6 +11,9 @@ One long-running process with three modules, chosen by `BOT_MODULES`:
   [`docs/features/shift-high-quests.md`](../docs/features/shift-high-quests.md).
 - **`projectseed`**: records who was in voice, reminds people about the hours
   they declared, and answers `/stats`. Linear: PS-213.
+- **`hackathon-ops`**: the staff operations board for a hackathon: `/ops` for
+  one staff role in one server, and a morning post in one staff channel. See
+  [Hackathon operations board](#hackathon-operations-board).
 
 It is a gateway client, not a webhook or a serverless function. Discord sends
 voice state only over the gateway, a WebSocket the bot keeps open, so it needs
@@ -25,7 +28,7 @@ so the host never holds the service role key. projectseed still uses
 ```bash
 pnpm bot:dev        # local, reads .env.local
 pnpm bot:start      # production
-pnpm bot:register   # projectseed and shift-quests: once, and after changing any slash command
+pnpm bot:register   # projectseed, shift-quests and hackathon-ops: once, and after changing any slash command
 pnpm bot:smoke      # loads every module and draws a tiny island: no Discord, no database
 ```
 
@@ -41,13 +44,16 @@ environment:
 ssh <ssh-host> docker exec passionseed-discord-bot node --import tsx bot/src/index.ts --register-commands
 ```
 
-**projectseed must never register in the SHIFT server.** Its registration
-(`registerCommands` in `bot/src/commands.ts`) replaces every command the bot's
-Discord application has in `DISCORD_GUILD_ID` with its own list (`/stats`).
-With one token for both, as one process requires, a `DISCORD_GUILD_ID` equal
-to `DISCORD_SHIFT_GUILD_ID` would delete every SHIFT High command. Keep the two
-IDs different, and check them before registering with `projectseed` in
-`BOT_MODULES`. The shift-quests registration only touches its own commands.
+**Registering never removes another module's commands.** Every module
+upserts only its own commands (one POST per command, which creates or updates
+it by name): projectseed `/stats`, the SHIFT High commands, and `/ops`. None
+uses a PUT, which replaces a server's whole list. projectseed's registration
+(`registerCommands` in `bot/src/commands.ts`) used to be a PUT, so with one
+token it deleted every other command in `DISCORD_GUILD_ID`; an image built
+before the change to an upsert still does, so deploy before registering on a
+server that has `/ops` or the SHIFT High commands. Still keep `DISCORD_GUILD_ID`
+different from `DISCORD_SHIFT_GUILD_ID`: `/stats` does not belong in the SHIFT
+server.
 
 ## Deploying
 
@@ -141,7 +147,7 @@ env, Discord setup, smoke test, rollback) is
 
 | Variable | Module | Notes |
 |---|---|---|
-| `BOT_MODULES` | all | Comma-separated: `shift-voice`, `shift-quests`, `projectseed`. Default `shift-voice` |
+| `BOT_MODULES` | all | Comma-separated: `shift-voice`, `shift-quests`, `projectseed`, `hackathon-ops`. Default `shift-voice` |
 | `DISCORD_SHIFT_BOT_TOKEN` | shift-voice | Falls back to `DISCORD_BOT_TOKEN`, like the web app, so the bot that hands out SHIFT roles is the one watching voice |
 | `DISCORD_SHIFT_GUILD_ID` | shift-voice | The SHIFT server |
 | `SHIFT_VOICE_DATABASE_URL` | shift-voice | The `shift_voice_bot` login through the pooler (see Deploying) |
@@ -160,9 +166,18 @@ env, Discord setup, smoke test, rollback) is
 | `PSEED_COHORT_SLUG` | projectseed | Defaults to `alumni-mvp` |
 | `PSEED_VOICE_CHANNEL_IDS` | projectseed | Comma-separated. Empty means every voice channel |
 | `PSEED_REMINDER_INTERVAL_MS` | projectseed | Defaults to 60000 |
+| `HACKATHON_OPS_GUILD_ID` | hackathon-ops | The staff server `/ops` is registered to and answers in; every other server is ignored |
+| `HACKATHON_OPS_CHANNEL_ID` | hackathon-ops | The staff channel for the morning post, and the only channel where `/ops` replies are visible to others. Must be hidden from @everyone, or the bot posts nothing there and answers privately |
+| `HACKATHON_OPS_STAFF_ROLE_ID` | hackathon-ops | Only members holding this role can use `/ops` or see its autocomplete lists |
+| `HACKATHON_OPS_DATABASE_URL` | hackathon-ops | The `hackathon_ops_bot` login through the session pooler: `postgresql://hackathon_ops_bot.<project ref>:<password>@<pooler host>:5432/postgres` (migration `20261120100000`) |
+| `HACKATHON_OPS_BOARD` | hackathon-ops | Optional. Which board to read, the seed script's `--board`. Default `hackathon` |
 
 Both modules in one process need the same token; with two different bots,
-run two processes.
+run two processes. hackathon-ops has no token of its own: it uses the one the
+process runs as (alone, `DISCORD_BOT_TOKEN`, else `DISCORD_SHIFT_BOT_TOKEN`),
+so that bot must be a member of the ops server. All of its variables are
+required once it is in `BOT_MODULES`; startup fails, before anything posts,
+when one is missing.
 
 ## Discord setup
 
@@ -625,3 +640,76 @@ The short version for whoever runs the bot:
   built from other ones, an unfinished build or another admin;
   `bot/quests-sandbox.sh --reset` wipes it and builds it again.
 
+## Hackathon operations board
+
+`BOT_MODULES=hackathon-ops` (`bot/src/ops/`). For staff only: the founders
+see and update the hackathon's operations (owner, deadline, status, a
+checklist of steps) from Discord. No student data, no DMs, no pings.
+
+- `/ops board`: every operation with owner, deadline, status and steps done
+  out of total. 🔴 overdue (the deadline day is past and a step is open),
+  🟡 due within 48 hours, ✅ every step done.
+- `/ops show operation:`: one operation, its goal and its steps with done marks.
+- `/ops claim operation:`: the owner becomes your display name in the server.
+- `/ops done operation: step:`: ticks a step (`undo:True` unticks it). Both
+  options autocomplete; typing a title or the start of a step works too.
+- `/ops status operation: text:`: sets the status line (up to 300 characters).
+- Every morning at 08:30 Bangkok, one post in `HACKATHON_OPS_CHANNEL_ID`:
+  what is due in the next 48 hours, what is overdue, and the board. Claimed
+  in the database first, so a restart or a deploy never posts twice; a bot
+  that was down at 08:30 still posts until noon. Nothing is posted when the
+  board is empty or every step is done.
+
+Who sees what: only members with `HACKATHON_OPS_STAFF_ROLE_ID`, in
+`HACKATHON_OPS_GUILD_ID`, can use `/ops` (others get a private "staff only"
+and empty autocomplete). Replies are visible to others only in the ops
+channel, and only while @everyone cannot see that channel; anywhere else, and
+every error, is private. The bot checks the same before each morning post and
+posts nothing (logging once a day) if the channel is public, missing, in
+another server or not writable. Server admins can also hide `/ops` from
+everyone but staff in Server Settings, Integrations.
+
+It never stops the process: if the database is missing the migration or
+cannot be reached, it logs that and `/ops` says the board could not be
+reached, while the other modules keep running.
+
+**Storage.** `hackathon_ops`, `hackathon_ops_steps` and
+`hackathon_ops_morning` (migration `20261120100000_hackathon_ops_board.sql`):
+RLS on, a deny-all policy for `anon` and `authenticated`, no table grants.
+The bot connects as `hackathon_ops_bot`, which can only execute the
+`hackathon_ops_*` functions (not the `hackathon_ops__*` helpers) and reads no
+table, like `shift_voice_bot`. The operations themselves are never in this
+repo: they are loaded at run time from the private pages.
+
+**Trying it, step by step** (each step needs a person's go; nothing here
+runs on its own):
+
+1. Apply the migration: `supabase db push` (production).
+2. Give the login a password, as for `shift_voice_bot` (see Deploying):
+   `ALTER ROLE hackathon_ops_bot WITH LOGIN PASSWORD '<SCRAM-SHA-256 verifier>'`
+   with `supabase db query --linked`, and keep the URL out of git.
+3. Seed from a local folder of operation pages (each page: a two-column
+   table with Goal, Done when, Owner, Deadline and Status, and a `## Steps`
+   list of `- [ ]` items; a README there only sets the order):
+
+   ```bash
+   read -rs HACKATHON_OPS_DATABASE_URL && export HACKATHON_OPS_DATABASE_URL
+   pnpm exec tsx bot/scripts/hackathon-ops-seed.ts <folder> --dry-run   # parse only, prints counts per page
+   pnpm exec tsx bot/scripts/hackathon-ops-seed.ts <folder>             # upsert
+   ```
+
+   Re-running is safe: titles, goals, deadlines, order and step text follow
+   the pages; an owner or status set in Discord is kept, and a step ticked in
+   Discord stays ticked while its text is unchanged (`--overwrite` takes
+   owner, status and ticks from the pages instead). A deadline's first date
+   (`Tue 17 Nov`, `2026-12-19`) is what overdue and due soon use; its year is
+   the page's `updated` year unless `--year` says otherwise.
+4. Set the five variables above in `bot.env` and add `hackathon-ops` to
+   `BOT_MODULES`. Give the bot View Channel and Send Messages in the ops
+   channel, and keep that channel hidden from @everyone.
+5. Deploy (`bot/deploy.sh`), then register: `--register-commands` (see
+   Running) adds or updates `/ops` in `HACKATHON_OPS_GUILD_ID` and leaves
+   every other command there alone.
+6. In the ops channel: `/ops board`.
+
+Tests: `pnpm test bot/src/ops` (made-up operations only).

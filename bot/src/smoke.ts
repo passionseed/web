@@ -35,6 +35,7 @@ async function main(): Promise<string> {
   await step("load projectseed", () => import("./projectseed"));
   await step("load shift-voice", () => import("./shift/voice"));
   await step("load shift-quests", () => import("./quests"));
+  await step("load hackathon-ops", () => import("./ops"));
   const { renderIsland } = await step("load renderer", () => import("./quests/island/render"));
 
   const island = await step("render island", () =>
@@ -71,7 +72,7 @@ async function main(): Promise<string> {
   let health = "unchecked";
   if (process.argv.includes("--env")) {
     const env = await step("env", () => loadEnv());
-    const names = [env.shiftVoice && "shift-voice", env.shiftQuests && "shift-quests", env.projectseed && "projectseed"];
+    const names = [env.shiftVoice && "shift-voice", env.shiftQuests && "shift-quests", env.projectseed && "projectseed", env.hackathonOps && "hackathon-ops"];
     modules = names.filter(Boolean).join(",");
     // shift-voice's heartbeat and the quests delivery loop touch the health file.
     health = env.shiftVoice || env.shiftQuests ? "file" : "none";

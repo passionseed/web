@@ -6,6 +6,7 @@ import { registerCommands } from "./commands";
 import { startProjectSeed } from "./projectseed";
 import { registerShiftVoice } from "./shift/voice";
 import { registerQuestCommands, registerShiftQuests } from "./quests";
+import { registerHackathonOps, registerOpsCommands } from "./ops";
 
 async function main(): Promise<void> {
   const env = loadEnv();
@@ -14,10 +15,13 @@ async function main(): Promise<void> {
   // not log in, because a second shift-voice instance would close and reopen
   // every open voice row of the running one.
   if (process.argv.includes("--register-commands")) {
+    // Every module upserts only its own commands, so the order does not
+    // matter and no module removes another's (see bot/README.md).
     if (env.projectseed) await registerCommands(env.projectseed);
     if (env.shiftQuests) await registerQuestCommands(env.core.discordToken, env.shiftQuests.guildId);
-    if (!env.projectseed && !env.shiftQuests) {
-      console.log("No slash commands to register: only projectseed and shift-quests have any");
+    if (env.hackathonOps) await registerOpsCommands(env.core.discordToken, env.hackathonOps.guildId);
+    if (!env.projectseed && !env.shiftQuests && !env.hackathonOps) {
+      console.log("No slash commands to register: only projectseed, shift-quests and hackathon-ops have any");
     }
     return;
   }
@@ -50,6 +54,9 @@ async function main(): Promise<void> {
   }
   if (quests) {
     modules.push({ name: "shift-quests", ...quests });
+  }
+  if (env.hackathonOps) {
+    modules.push({ name: "hackathon-ops", ...(await registerHackathonOps(client, env.hackathonOps)) });
   }
   if (env.projectseed) {
     const db = createDb(env.projectseed);
