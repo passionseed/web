@@ -1,0 +1,529 @@
+/*
+ * /hackathon/island/learn: the Elemental lessons. Mobile-first with a 16px
+ * gutter; flat colour only (no gradients, glows or eyebrow labels). The same
+ * Elemental brand tokens as the island page
+ * (components/hackathon/elemental/island/island.module.css).
+ */
+
+.page {
+  --ground: #1e1c1a; /* EL.char */
+  --surface: #2a2826; /* EL.smokeDark */
+  --line: #6b6761; /* EL.smoke */
+  --text: #f3efe6; /* EL.cream */
+  --text-dim: #c9c4bb; /* EL.ash */
+  --warn: #f0b49a;
+
+  min-height: 100dvh;
+  background: var(--ground);
+  color: var(--text);
+  font-family: var(--font-trirong), "Noto Serif Thai", serif;
+  padding: 16px 16px 48px;
+  box-sizing: border-box;
+  overflow-x: clip;
+}
+
+.page *,
+.page *::before,
+.page *::after {
+  box-sizing: border-box;
+}
+
+.inner {
+  max-width: 720px;
+  margin: 0 auto;
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+.inner > * {
+  min-width: 0;
+}
+
+.topNav {
+  display: flex;
+  gap: 16px;
+}
+
+.textLink {
+  color: var(--text);
+  font-size: 15px;
+  text-underline-offset: 3px;
+  text-decoration: underline;
+  padding: 10px 0;
+  display: inline-block;
+}
+
+.header h1 {
+  margin: 0;
+  font-weight: 300;
+  font-size: 28px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.header p {
+  margin: 8px 0 0;
+  color: var(--text-dim);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.dim {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* Viewer mode */
+
+.modeSave {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+.banner {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 16px;
+  display: grid;
+  gap: 8px;
+}
+
+.bannerLabel {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.bannerText {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 15px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.signIn {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  margin-top: 4px;
+}
+
+/* Buttons: flat, 44px touch targets. */
+
+.button,
+.quietButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 18px;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.3;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  max-width: 100%;
+}
+
+.button {
+  background: var(--text);
+  color: var(--ground);
+  border: 1px solid var(--text);
+}
+
+.quietButton {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+.button:disabled,
+.quietButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.button:focus-visible,
+.quietButton:focus-visible,
+.textLink:focus-visible,
+.lessonCard:focus-visible,
+.partButton:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+.spin {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .spin {
+    animation: spin 0.9s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.icon {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+/* Lesson list */
+
+.lessonList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.lessonCard {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.lessonCard[data-status="finished"] {
+  border-color: var(--text-dim);
+}
+
+.lessonNo {
+  font-family: var(--font-space-mono), ui-monospace, monospace;
+  font-size: 15px;
+  font-weight: 700;
+  padding-top: 2px;
+}
+
+.lessonBody {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.lessonTitle {
+  font-size: 18px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.lessonMeta {
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+/* Player */
+
+.player {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.partOf {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+.partTitle {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.partTitle:focus {
+  outline: none;
+}
+
+.clip {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border: 1px solid var(--line);
+}
+
+.clip iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.clipTodo {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 15px;
+  background: var(--surface);
+}
+
+.notice {
+  margin: 0;
+  padding: 12px;
+  border-left: 3px solid var(--text-dim);
+  background: var(--surface);
+  font-size: 15px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.stop {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  min-width: 0;
+}
+
+.stopLabel {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+.prompt {
+  margin: 0;
+  padding: 0;
+  font-size: 17px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.hint {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 112px;
+  padding: 12px;
+  font: inherit;
+  font-size: 16px; /* 16px stops iOS Safari zooming on focus. */
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--ground);
+  border: 1px solid var(--line);
+  resize: vertical;
+}
+
+.textarea:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+}
+
+.textarea[aria-invalid="true"] {
+  border-color: var(--warn);
+}
+
+.count {
+  margin: -4px 0 0;
+  justify-self: end;
+  color: var(--text-dim);
+  font-family: var(--font-space-mono), ui-monospace, monospace;
+  font-size: 12px;
+}
+
+.choices {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.choices .prompt {
+  margin-bottom: 4px;
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  cursor: pointer;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+
+.choice input {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  accent-color: var(--text);
+}
+
+.choice:has(input:checked) {
+  border-color: var(--text);
+  background: var(--surface);
+}
+
+.previewOptions {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 4px;
+  font-size: 16px;
+}
+
+.error {
+  margin: 0;
+  color: var(--warn);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.stepper {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sectionTitle {
+  margin: 0 0 12px;
+  font-size: 18px;
+  font-weight: 400;
+}
+
+.parts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+
+.partButton {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 48px;
+  padding: 10px 4px;
+  font: inherit;
+  text-align: left;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.partButton[aria-current="step"] {
+  background: var(--surface);
+}
+
+.partButton:disabled {
+  cursor: not-allowed;
+  color: var(--text-dim);
+}
+
+.partNo {
+  font-family: var(--font-space-mono), ui-monospace, monospace;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.partName {
+  font-size: 16px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.partState {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-dim);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* Finish screen */
+
+.finish {
+  display: grid;
+  gap: 12px;
+  padding: 24px 16px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.finish h1 {
+  margin: 0;
+  font-weight: 300;
+  font-size: 28px;
+  line-height: 1.25;
+}
+
+.finish h1:focus {
+  outline: none;
+}
+
+.finish p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.finishLesson {
+  color: var(--text-dim);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+@media (min-width: 768px) {
+  .page {
+    padding: 32px 24px 64px;
+  }
+
+  .header h1,
+  .finish h1 {
+    font-size: 36px;
+  }
+}
