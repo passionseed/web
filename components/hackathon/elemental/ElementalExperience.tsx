@@ -13,6 +13,7 @@ import { ElementalHero } from "./ElementalHero";
 import { ElementalPlacesShowcase } from "./ElementalPlacesShowcase";
 import { ELEMENT_CHAPTERS, KEY_VISUAL_MEDIA } from "./media";
 import { ScrollHookStatement } from "./ScrollHookStatement";
+import { SponsorSection } from "./SponsorSection";
 import { ElementalSoundProvider, useElementalSound } from "./sound-context";
 import { TeaserScreening } from "./TeaserTheater";
 
@@ -180,13 +181,30 @@ function ElementalExperienceInner({
         }}
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-10">
-          <a
-            href="#top"
-            className="text-[15px] italic"
-            style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}
-          >
-            {ELEMENTAL.edition}
-          </a>
+          {/* Who runs it: The Next Decade × PassionSeed, as on the poster */}
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <a href="#top" aria-label={`${ELEMENTAL.series}: กลับขึ้นด้านบน`}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/hackathon/HackLogo.png"
+                alt={ELEMENTAL.series}
+                width={125}
+                height={50}
+                className="block h-6 w-auto sm:h-7"
+                style={{ filter: pastHero ? "brightness(0) invert(1)" : "brightness(0)", opacity: 0.85 }}
+              />
+            </a>
+            <span className="text-[11px] opacity-60" style={{ fontFamily: EL_FONT.mono }} aria-hidden="true">
+              ×
+            </span>
+            <Link href="/" className="flex items-center gap-1.5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/passion-seed-logo.png" alt="" width={50} height={50} className="block h-6 w-6 sm:h-7 sm:w-7" />
+              <span className="text-[15px] sm:text-[17px]" style={{ fontFamily: EL_FONT.display, fontWeight: 400 }}>
+                PassionSeed
+              </span>
+            </Link>
+          </div>
 
           {open ? (
             <Link
@@ -328,6 +346,9 @@ function ElementalExperienceInner({
 
       {/* ACT 7: THE POSTER */}
       <ClosingPoster joinHref={joinHref} open={open} />
+
+      {/* For grown-ups, after the students' story: become a sponsor */}
+      <SponsorSection />
 
       {/* Footer with attribution */}
       <footer className="border-t border-[#f3efe6]/16 bg-[#0c0d0c] py-12 text-sm text-[#e0dad0]">
