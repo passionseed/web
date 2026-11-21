@@ -553,11 +553,12 @@ async function fire() {
       // A jagged top: stumps and heaps of different heights, cell by cell.
       const spike = hash(Math.floor(x / 20), 5, 93);
       const topY = F.base + 2 - 44 * Math.pow(spike, 2.2) * (0.5 + rough) - 20 * smooth(0.45, 0.8, n);
-      const botY = F.base + 22 + 10 * fbm(x * 0.04, 2.2, 90, 2);
+      // A ragged bottom: steps up and down in 20px runs, plus noise, so it isn't a ruler line.
+      const botY = F.base + 14 + 30 * hash(Math.floor(x / 20), 6, 93) + 14 * (fbm(x * 0.03, 2.2, 90, 2) - 0.5);
       for (let y = Math.floor(topY / cc) * cc; y < botY; y += cc) {
         // Messy edges: dithered top, and the bottom frays into the grass.
         const fromTop = (y - topY) / 14;
-        const fromBot = (botY - y) / 10;
+        const fromBot = (botY - y) / 18;
         if (fromTop < 1 && bayer(x / cc, y / cc) > fromTop) continue;
         if (fromBot < 1 && hash(x, y, 91) > fromBot) continue;
         for (let yy = y; yy < y + cc; yy++)
@@ -565,6 +566,20 @@ async function fire() {
             const l = lum(origAt(xx, yy));
             put(xx, yy, xx % 3 < 2 && yy % 3 < 2 ? [0.25 + l * 0.6, 0.22 + l * 0.5, 0.2 + l * 0.45].map((v) => clamp(v)) : P.ink);
           }
+      }
+      // Up the slope: char thins out into the burning trees, densest just
+      // above the line, so the black climbs the hill like the key visual's.
+      for (let y = Math.floor((topY - 160) / cc) * cc; y < topY; y += cc) {
+        const t = (topY - y) / 160;
+        const c = origAt(x + 5, y + 5);
+        if (!(c[1] > c[2] + 0.01)) continue;
+        if (bayer(x / cc, y / cc) * 1.15 + fbm(x * 0.03, y * 0.03, 94, 2) * 0.5 < 1 - t) {
+          for (let yy = y; yy < y + cc; yy++)
+            for (let xx = x; xx < x + cc; xx++) {
+              const l = lum(origAt(xx, yy));
+              put(xx, yy, xx % 3 < 2 && yy % 3 < 2 ? [0.25 + l * 0.6, 0.22 + l * 0.5, 0.2 + l * 0.45].map((v) => clamp(v)) : P.ink, 0.92);
+            }
+        }
       }
       // Stray char cells kicked up above and below the line.
       if (hash(x, 1, 92) < 0.35) rect(x, Math.round((topY - 10 - hash(x, 2, 92) * 30) / cc) * cc, cc, P.ink, 0.9);
