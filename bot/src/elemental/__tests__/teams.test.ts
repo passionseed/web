@@ -215,7 +215,9 @@ class FakeDb {
         return this.json(this.teams.get(a1)!);
       }
       case "elemental_bot_team_get": {
-        const t = this.teams.get(a1);
+        // (guild, team_id, slot, channel_id): the first one given wins, as in SQL.
+        const channelId = (args as unknown[])[3] as string | undefined;
+        const t = a1 ? this.teams.get(a1) : channelId ? [...this.teams.values()].find((x) => x.channelId === channelId) : undefined;
         return t ? this.json(t) : null;
       }
       case "elemental_bot_team_set_channel": {
@@ -236,7 +238,7 @@ class FakeDb {
         return false;
       }
       case "elemental_bot_post_mark":
-        this.posts.set(`${a1}:${a2}`, a3);
+        this.posts.set(`${a1}:${a2}`, a3 as string);
         return true;
       default:
         throw new Error(`unexpected ${fn}`);
@@ -268,7 +270,7 @@ interface FakeChannel extends ChannelInfo {
   messages: { id: string; content: string; pinned: boolean; payload: MessageCreateOptions }[];
 }
 
-let nextId = 700000000000000000n;
+let nextId = BigInt("700000000000000000");
 const snow = () => String(++nextId);
 
 class FakeGuild implements GuildChannelPort {
@@ -423,7 +425,7 @@ async function createTeam(rt: ElementalRuntime, invitees: string[], element: Ele
 
 function inviteButtons(guild: FakeGuild): { inviteeId: string; accept: string; decline: string; content: string; mentions: unknown }[] {
   return guild.byId(START_HERE).messages.map((m) => {
-    const row = (m.payload.components as { components: { custom_id: string }[] }[])[0];
+    const row = (m.payload.components as unknown as { components: { custom_id: string }[] }[])[0];
     return {
       inviteeId: row.components[0].custom_id.split("|")[3],
       accept: row.components[0].custom_id,
@@ -445,7 +447,7 @@ describe("team channel overwrites", () => {
 
   test("deny @everyone; allow members, Host, Helper, Mentor and the bot; never Judge", () => {
     const ow = teamOverwrites({ guildId: GUILD, settings, memberIds: [A, B], botUserId: BOT });
-    expect(ow[0]).toEqual({ id: GUILD, type: "role", allow: 0n, deny: EVERYONE_DENY });
+    expect(ow[0]).toEqual({ id: GUILD, type: "role", allow: BigInt(0), deny: EVERYONE_DENY });
     const roles = ow.filter((o) => o.type === "role" && o.id !== GUILD).map((o) => o.id);
     expect(roles).toEqual([ROLE.host, ROLE.helper, ROLE.mentor]);
     expect(ow.map((o) => o.id)).not.toContain(ROLE.judge);
@@ -803,6 +805,30 @@ describe("channel queue", () => {
     expect(orphan.overwrites.filter((o) => o.type === "member" && o.id !== BOT)).toHaveLength(3);
     // Nothing left: a second sweep queues nothing.
     expect(await sweepPendingTeams(rt)).toBe(0);
+  });
+
+  test("a same-named channel that another team owns is never taken over", async () => {
+    const { db, rt, guild } = setup();
+    // Another team still holds a channel named fire-NN (say its rename after a re-slot has not run).
+    const other = db.liveTeamFixture("water", [user(20), user(21)]);
+    const t = db.liveTeamFixture("fire", [A, B]);
+    const theirs: FakeChannel = {
+      id: snow(),
+      name: teamChannelName("fire", t.slot!),
+      parentId: CATS.fire[0],
+      kind: "text",
+      overwrites: [{ id: user(20), type: "member", allow: MEMBER_ALLOW, deny: BigInt(0) }],
+      messages: [],
+    };
+    guild.channels.push(theirs);
+    other.channelId = theirs.id;
+    other.status = "active";
+
+    expect(await enqueueTeamChannel(rt, GUILD, t.id)).toBe("created");
+    expect(t.channelId).not.toBe(theirs.id);
+    expect(theirs.overwrites.map((o) => o.id)).toEqual([user(20)]);
+    const mine = guild.byId(t.channelId!);
+    expect(mine.overwrites.filter((o) => o.type === "member" && o.id !== BOT).map((o) => o.id).sort()).toEqual([A, B].sort());
   });
 
   test("started before login, the first sweep waits for the gateway's ready", async () => {

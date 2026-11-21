@@ -30,6 +30,12 @@ import { TEAM_CHANNEL_STAFF, isElement, roleId, type ElementKey } from "./roles"
  * 429-aware), and each run re-reads the team from SQL, so a retry, a restart
  * or a second request converges on the same channel. E34 (staff team ops)
  * reuses syncTeamChannel after a rename, element change, move or archive.
+ *
+ * Server permissions the bot's role needs: Manage Channels (create, rename,
+ * move), Manage Roles (Discord requires it to change a channel's overwrites,
+ * so every sync after creation, e.g. a teammate joining, fails without it),
+ * every permission in MEMBER_ALLOW (an overwrite may only grant what the bot
+ * holds) and Pin Messages or Manage Messages for the welcome pin.
  */
 
 /** Discord's cap on channels in one category. */
@@ -61,6 +67,8 @@ export const MEMBER_ALLOW =
  */
 export const BOT_ALLOW = P.ViewChannel | P.SendMessages | P.ReadMessageHistory | P.EmbedLinks | P.AttachFiles;
 export const EVERYONE_DENY = P.ViewChannel;
+/** BigInt(0), not 0n: the root tsconfig targets ES6, where bigint literals do not compile. */
+const NONE = BigInt(0);
 
 export interface PlannedOverwrite {
   id: string;
@@ -115,10 +123,10 @@ export function teamOverwrites(input: OverwriteInput): PlannedOverwrite[] {
   const members = [...new Set(input.memberIds)].filter((id) => isSnowflake(id) && id !== input.botUserId && !roleIds.has(id));
   if (members.length < MIN_CHANNEL_MEMBERS) throw new ChannelPlanError("too_few_members");
   return [
-    { id: input.guildId, type: "role", allow: 0n, deny: EVERYONE_DENY },
-    ...staff.map((id): PlannedOverwrite => ({ id, type: "role", allow: MEMBER_ALLOW, deny: 0n })),
-    ...members.map((id): PlannedOverwrite => ({ id, type: "member", allow: MEMBER_ALLOW, deny: 0n })),
-    { id: input.botUserId, type: "member", allow: BOT_ALLOW, deny: 0n },
+    { id: input.guildId, type: "role", allow: NONE, deny: EVERYONE_DENY },
+    ...staff.map((id): PlannedOverwrite => ({ id, type: "role", allow: MEMBER_ALLOW, deny: NONE })),
+    ...members.map((id): PlannedOverwrite => ({ id, type: "member", allow: MEMBER_ALLOW, deny: NONE })),
+    { id: input.botUserId, type: "member", allow: BOT_ALLOW, deny: NONE },
   ];
 }
 
@@ -341,6 +349,14 @@ export async function syncTeamChannel(rt: ElementalRuntime, guildId: string, tea
 
   let outcome: SyncOutcome = "linked";
   let channel = channels.find((c) => c.kind === "text" && c.name === name && c.parentId !== null && categories.includes(c.parentId));
+  if (channel) {
+    // Reuse only a channel no other team owns (one made before a crash). A
+    // same-named channel can still belong to another team, e.g. one re-slotted
+    // whose rename has not run yet: taking it over would replace that team's
+    // overwrites and show its history to this team.
+    const owner = await rt.api.call<TeamJson | null>("elemental_bot_team_get", guildId, null, null, channel.id);
+    if (owner && owner.team_id !== live.team_id) channel = undefined;
+  }
   if (channel) {
     await port.edit(channel.id, { overwrites, reason });
   } else {
