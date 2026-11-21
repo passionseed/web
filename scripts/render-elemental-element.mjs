@@ -513,23 +513,60 @@ async function fire() {
       if (hash(k, id * 999, 68) < 0.6) rect(x + c2, y + c2, c2, P.white);
     }
   }
-  // The trees catch, in front of the flames: around the fire's base the
-  // forest itself turns into fire pixels and hides where the flames start. Each 10px cell takes its tone from the photo (bright leaves
-  // burn yellow, shadows burn red, the darkest char), so the fire grows out
-  // of the trees instead of sitting on them.
+  // The trees burn in their own shapes: only tree pixels (dark green in the
+  // photo) near the fire turn to fire colours, in 6px cells, so the crowns,
+  // trunks and the gaps between them stay and the forest keeps its depth.
+  // Crowns burn bright; lower down, the trunks char.
   const levels = [P.ink, P.deep, P.red, P.orange, P.yellow, P.cream];
-  for (let y = 840; y < 1140; y += cell)
-    for (let x = 160; x < W; x += cell) {
-      const dx = (x + 5 - F.x) / 560;
-      const dy = (y + 5 - (F.base - 10)) / 110;
-      const d = Math.sqrt(dx * dx + dy * dy) + 0.8 * (fbm(x * 0.012, y * 0.03, 151, 4) - 0.5);
-      const heat = 1 - smooth(0.35, 1, d);
-      if (heat <= 0 || heat < bayer(x / cell, y / cell) * 0.9) continue;
-      const c = origAt(x + 5, y + 5);
-      if (!(c[1] > c[2] + 0.01)) continue; // trees and grass, not the mountain behind
-      // Contrast-stretched photo tone: shadows char, lit leaves burn.
-      const l = clamp((origCellLum(x, y, cell) - 0.12) / 0.4);
-      rect(x, y, cell, levels[clamp(Math.round(l * 2.8 + heat * 1.3 - 1 + (hash(x, y, 155) - 0.5) * 1.2), 0, 5)]);
+  const isTree = (x, y) => {
+    const c = origAt(x, y);
+    return c[1] > c[2] + 0.01 && lum(c) < 0.4;
+  };
+  const tc = 6;
+  for (let y = 840; y < 1080; y += tc)
+    for (let x = 100; x < W; x += tc) {
+      if (!isTree(x + 3, y + 3)) continue;
+      const heat = clamp(1 - Math.abs(x - F.x) / 520 + 0.5 * (fbm(x * 0.01, y * 0.02, 151, 3) - 0.5));
+      if (heat <= 0.05 || heat < bayer(x / tc, y / tc) * 0.7) continue;
+      const up = clamp((1080 - y) / 200);
+      const l = clamp((origCellLum(x, y, tc) - 0.08) / 0.32);
+      const k = Math.round(l * 2.2 + heat * 1.6 + up * 0.9 - 1.3 + (hash(x, y, 155) - 0.5));
+      rect(x, y, tc, levels[clamp(k, 0, 5)]);
+    }
+  // A fire front along the ground at the forest's foot: a row of small
+  // flames on the ground plane, lower the further they are from the fire,
+  // with a strip of scorched grass behind them.
+  const front = (x) => 1084 + 10 * (fbm(x * 0.01, 3.3, 156, 2) - 0.5);
+  const spread = (x) => clamp(1 - Math.abs(x - F.x) / 600);
+  for (let x = 100; x < W; x += 6) {
+    const s = spread(x);
+    if (s <= 0) continue;
+    for (let y = Math.round((front(x) - 16) / 6) * 6; y < front(x) + 4; y += 6) if (bayer(x / 6, y / 6) < s + 0.25) rect(x, y, 6, hash(x, y, 157) < 0.7 ? P.ink : P.deep, 0.9);
+  }
+  // Ground flames as pixels: a noise field along the front, taller near the
+  // fire and in uneven clumps, quantized to 6px cells in the fire colours.
+  const gc = 6;
+  for (let x = 100; x < W; x += gc) {
+    const s = spread(x);
+    if (s < 0.06) continue;
+    const clump = smooth(0.4, 0.75, fbm(x * 0.012, 7.1, 158, 3));
+    const hgt = (30 + 150 * s) * (0.45 + clump);
+    const base = front(x);
+    for (let y = Math.floor((base - hgt) / gc) * gc; y < base; y += gc) {
+      const t = (base - y) / hgt;
+      const n = fbm(x * 0.05, y * 0.04, 159, 2);
+      const v = (1 - t) * (0.6 + 0.8 * n);
+      if (v < 0.22 + 0.3 * bayer(x / gc, y / gc)) continue;
+      const k = clamp(Math.floor(v * 4.2 - 0.6), 0, 3);
+      rect(x, y, gc, [P.deep, P.red, P.orange, P.yellow][k]);
+      if (v > 1.05 && t < 0.4) rect(x, y, gc, P.cream);
+    }
+  }
+  // Their glow on the grass in front.
+  for (let y = 1080; y < 1180; y++)
+    for (let x = 100; x < W; x++) {
+      const s = spread(x);
+      if (s > 0) screen(x, y, P.orange, 0.35 * s * (1 - (y - 1080) / 100));
     }
   // Embers drifting onto the meadow.
   for (let k = 0; k < 60; k++) {
