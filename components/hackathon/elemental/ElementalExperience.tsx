@@ -186,10 +186,11 @@ function ElementalExperienceInner({
           <div className="flex items-center gap-2.5 sm:gap-3">
             <a href="#top" aria-label={`${ELEMENTAL.series}: กลับขึ้นด้านบน`}>
               <Image
-                src="/hackathon/HackLogo.png"
+                src="/hackathon/HackLogo-header.png"
                 alt={ELEMENTAL.series}
                 width={70}
                 height={28}
+                priority
                 className="block h-6 w-auto sm:h-7"
                 style={{
                   filter: pastHero ? "brightness(0) invert(1)" : "brightness(0)",
@@ -202,7 +203,7 @@ function ElementalExperienceInner({
               ×
             </span>
             <Link href="/" className="flex items-center gap-1.5">
-              <Image src="/passion-seed-logo.png" alt="" width={28} height={28} className="block h-6 w-6 sm:h-7 sm:w-7" />
+              <Image src="/passion-seed-logo-84.png" alt="" width={28} height={28} priority className="block h-6 w-6 sm:h-7 sm:w-7" />
               <span className="text-[15px] sm:text-[17px]" style={{ fontFamily: EL_FONT.display, fontWeight: 400 }}>
                 PassionSeed
               </span>
