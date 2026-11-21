@@ -24,19 +24,20 @@ export default async function ElementalPosterPage({ searchParams }: { searchPara
       dir="/hackathon/poster/elemental/sheets"
       render={await isRenderMode(searchParams)}
       sheets={[
-        {
-          id: "elemental-key",
-          width: W,
-          height: H,
-          alt: `${ELEMENTAL.edition} Hackathon poster: a calm river valley under a grey sky, poisoned by pixels. A fire bursts out of the far bank, smog pours over the ridge, the river turns toxic green and an e-waste dump sits on the bank`,
-          live: <ElementalKeyPoster />,
-        },
+        // The blue sky is the main poster (Angpao, 2026-11-20); the grey sky is the alternative.
         {
           id: "elemental-key-blue",
           width: W,
           height: H,
-          alt: `${ELEMENTAL.edition} Hackathon poster, the same scene under a blue sky`,
+          alt: `${ELEMENTAL.edition} Hackathon poster: a calm river valley under a blue sky, poisoned by pixels. A fire bursts out of the far bank, smog pours over the ridge, the river turns toxic green and an e-waste dump sits on the bank`,
           live: <ElementalKeyPoster id="elemental-key-blue" sky="blue" />,
+        },
+        {
+          id: "elemental-key",
+          width: W,
+          height: H,
+          alt: `${ELEMENTAL.edition} Hackathon poster, the same scene under a grey sky`,
+          live: <ElementalKeyPoster />,
         },
       ]}
     />

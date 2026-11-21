@@ -51,6 +51,9 @@ export const EL = {
   // Aether.
   aetherGrey: "#7f8b94",
   aetherOrange: "#d98a55",
+  /** Aether as a faint glow (Angpao, 2026-11-20: "purple, ethereal"). */
+  aetherViolet: "#9d7bff",
+  aetherLilac: "#e4d8ff",
   // Type.
   ink: "#1d211f",
   inkSoft: "rgba(29,33,31,0.72)",

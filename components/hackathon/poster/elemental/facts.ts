@@ -36,6 +36,20 @@ export const ELEMENTAL = {
   venueTh: "ออนไลน์ทาง Discord",
   /** Largest group on one sign-up. */
   maxGroupSize: 5,
+  /** Team size: 2 to 5 (Angpao, 2026-11-20; company-brain numbers.md). */
+  teamMin: 2,
+  teamMax: 5,
+  /**
+   * The programme (Angpao, 2026-11-20; company-brain decisions/log.md).
+   * kind: open = opening, workshop = live workshop, due = hand-in deadline.
+   */
+  schedule: [
+    { date: "2026-12-04", time: "19:00", th: "เปิดงานและปฐมนิเทศ", kind: "open" },
+    { date: "2026-12-05", time: "10:00–11:00", th: "เวิร์กช็อป: สัมภาษณ์และหากลุ่มลูกค้า", kind: "workshop" },
+    { date: "2026-12-05", time: "19:00–20:00", th: "เวิร์กช็อป: สร้างผลงาน", kind: "workshop" },
+    { date: "2026-12-06", time: "19:00–20:00", th: "เวิร์กช็อป: การนำเสนอ", kind: "workshop" },
+    { date: "2026-12-07", time: "23:00", th: "ส่งคลิปผลงาน", kind: "due" },
+  ],
   elements: [
     { key: "water", en: "Water", th: "น้ำ" },
     { key: "earth", en: "Earth", th: "ดิน" },
