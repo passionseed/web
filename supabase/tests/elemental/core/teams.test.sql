@@ -174,7 +174,15 @@ BEGIN
 END $$;
 
 -- Staff ops: rename, move, set element (re-slot, canvas link cleared), unteamed.
-CREATE TABLE public.elemental_canvas_links (team_id uuid PRIMARY KEY, board_id uuid, frame_id text);
+-- The real table comes from 20261123100100_elemental_testers_canvas.sql; a stand-in only without it.
+DO $$
+BEGIN
+  IF to_regclass('public.elemental_canvas_links') IS NULL THEN
+    CREATE TABLE public.elemental_canvas_links (team_id uuid PRIMARY KEY, board_id uuid, frame_id text);
+  END IF;
+END $$;
+INSERT INTO auth.users (id) VALUES ('00000000-0000-4000-8000-0000000000b1');
+INSERT INTO public.whiteboards (id, owner_id) VALUES ('00000000-0000-4000-8000-0000000000b2', '00000000-0000-4000-8000-0000000000b1');
 DO $$
 DECLARE
   a uuid := (SELECT id FROM t WHERE name = 'a');
@@ -194,7 +202,7 @@ BEGIN
   ASSERT NOT (r -> 'from' -> 'member_ids') ? pg_temp.uid(3) AND (r -> 'to' -> 'member_ids') ? pg_temp.uid(3), 'move members';
 
   -- Set element: a new slot from the new candidates, canvas link gone, entries marked for a rewrite.
-  INSERT INTO public.elemental_canvas_links VALUES (a, gen_random_uuid(), 'frame-1');
+  INSERT INTO public.elemental_canvas_links (team_id, board_id, frame_id) VALUES (a, '00000000-0000-4000-8000-0000000000b2', 'frame-1');
   INSERT INTO public.elemental_tester_entries (edition, team_id, who, counted, canvas_status) VALUES ('elemental-2026', a, 'a neighbour', true, 'written');
   r := public.elemental_bot_team_set_element(pg_temp.g_real(), pg_temp.staff(), 12, 'water', '{4,11,12}');
   ASSERT (r ->> 'slot')::integer = 4 AND (r ->> 'old_slot')::integer = 12 AND r ->> 'element' = 'water' AND r ->> 'old_element' = 'fire',
