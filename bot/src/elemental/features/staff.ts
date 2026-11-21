@@ -543,15 +543,20 @@ async function submitTesterAdd(i: ComponentOrModal, ctx: ElCtx, args: string[]):
 
 /**
  * Which rows /el resync retries (elemental_bot_canvas_pending lists more):
- * - a note to write whose canvas_status is 'failed' or 'none';
- * - a removed entry's note to take off when it is 'failed' or still 'written'.
- * 'pending' is left alone: its writer is running (a /tester reply, the
- * 'canvas.linked' listener below) or the 5-minute sweep in tester.ts picks it
- * up; 'written' notes of live entries are never listed.
+ * - a note to write whose canvas_status is 'failed', 'none' or 'pending';
+ * - a removed entry's note to take off when it is 'failed', 'pending' or
+ *   still 'written'.
+ * 'pending' is retried too: a write that threw before SQL saw it (database
+ * busy, frame gone) leaves the row 'pending', and the 5-minute sweep in
+ * tester.ts gives up on it after AUTO_ATTEMPTS, so without this only a bot
+ * restart would write it. A note whose writer is running right now is
+ * skipped by resyncNow (isWriting), and note ids are fixed per entry, so a
+ * retry never writes a second note. 'written' notes of live entries are
+ * never listed.
  */
 export function shouldRetry(row: Pick<PendingRow, "action" | "canvas_status">): boolean {
-  if (row.action === "tombstone") return row.canvas_status === "failed" || row.canvas_status === "written";
-  return row.canvas_status === "failed" || row.canvas_status === "none";
+  if (row.action === "tombstone") return row.canvas_status === "failed" || row.canvas_status === "pending" || row.canvas_status === "written";
+  return row.canvas_status === "failed" || row.canvas_status === "none" || row.canvas_status === "pending";
 }
 
 /** Retries what shouldRetry picks, oldest first; a note being written right now is skipped. Never rejects for one note. */

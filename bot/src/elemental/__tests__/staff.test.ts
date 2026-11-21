@@ -868,17 +868,17 @@ describe("/el tester-add", () => {
 // ---------------------------------------------------------------------------
 
 describe("/el resync", () => {
-  test("shouldRetry: writes that failed or never ran; removed notes still showing", () => {
+  test("shouldRetry: writes that failed, never ran or were left pending; removed notes still showing", () => {
     expect(shouldRetry({ action: "write", canvas_status: "failed" })).toBe(true);
     expect(shouldRetry({ action: "write", canvas_status: "none" })).toBe(true);
-    expect(shouldRetry({ action: "write", canvas_status: "pending" })).toBe(false);
+    expect(shouldRetry({ action: "write", canvas_status: "pending" })).toBe(true);
     expect(shouldRetry({ action: "write", canvas_status: "written" })).toBe(false);
     expect(shouldRetry({ action: "tombstone", canvas_status: "failed" })).toBe(true);
     expect(shouldRetry({ action: "tombstone", canvas_status: "written" })).toBe(true);
-    expect(shouldRetry({ action: "tombstone", canvas_status: "pending" })).toBe(false);
+    expect(shouldRetry({ action: "tombstone", canvas_status: "pending" })).toBe(true);
   });
 
-  test("retries only failed or none; written and pending notes are left alone", async () => {
+  test("retries failed, none and stuck pending notes; written notes are left alone", async () => {
     const { db, rt } = setup();
     const t = db.team("fire", 12, { linked: true });
     const failed = db.entry(t, { canvas: "failed" });
@@ -891,11 +891,11 @@ describe("/el resync", () => {
 
     const { sent } = await el(rt, SUB.resync);
     const touched = db.calls.filter((c) => c.fn === "elemental_bot_canvas_write").map((c) => c.args[1]);
-    expect(touched.sort()).toEqual([failed.id, none.id, stuck.id].sort());
+    expect(touched.sort()).toEqual([failed.id, none.id, pending.id, stuck.id].sort());
     expect(db.calls.filter((c) => c.fn === "elemental_bot_canvas_tombstone").map((c) => c.args[1])).toEqual([removed.id]);
-    expect(db.calls.some((c) => c.args[1] === written.id || c.args[1] === pending.id)).toBe(false);
-    expect([failed.canvas, none.canvas, written.canvas, pending.canvas, removed.canvas]).toEqual(["written", "written", "written", "pending", "tombstoned"]);
-    expect(last(sent)).toBe(STAFF.resyncDone({ written: 2, tombstoned: 1, failed: 1, skipped: 1 }));
+    expect(db.calls.some((c) => c.args[1] === written.id)).toBe(false);
+    expect([failed.canvas, none.canvas, written.canvas, pending.canvas, removed.canvas]).toEqual(["written", "written", "written", "written", "tombstoned"]);
+    expect(last(sent)).toBe(STAFF.resyncDone({ written: 3, tombstoned: 1, failed: 1, skipped: 0 }));
   });
 
   test("after a canvas link, the listener writes that team's pending notes only", async () => {
