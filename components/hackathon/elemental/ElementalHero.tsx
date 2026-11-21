@@ -2,52 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL, prizeTotal, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
 import { formatThaiDate } from "@/lib/content/shift-cohort";
 
-import styles from "./elemental-cinema.module.css";
+import { EditorialLink } from "./EditorialLink";
 import { KEY_VISUAL_MEDIA } from "./media";
-
-function EditorialLink({
-  href,
-  children,
-  className,
-  style,
-}: {
-  href: string;
-  children: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
-}) {
-  const ref = useRef<HTMLAnchorElement>(null);
-  const [inView, setInView] = useState(false);
-
-  useEffect(() => {
-    const node = ref.current;
-    if (!node) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => setInView(entry.isIntersecting),
-      { threshold: 0.6 }
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <Link
-      ref={ref}
-      href={href}
-      className={`${styles.textLink} ${inView ? styles.textLinkInView : ""} ${className ?? ""}`}
-      style={style}
-    >
-      {children}
-    </Link>
-  );
-}
 
 export function ElementalHero({ joinHref, open }: { joinHref: string; open: boolean }) {
   const runwayRef = useRef<HTMLElement>(null);
