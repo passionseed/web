@@ -8,7 +8,7 @@
  * its layout is internal and cannot turn portrait.
  *
  * Draw order: tiles (plaza included), the well, every tree, healing's paint
- * (healing.ts; a no-op until E25), then each plot's element flag and lantern,
+ * (healing.ts: the sick look of sectors below full health), then each plot's element flag and lantern,
  * every number tag (2 x digit pixels) and the badge pips on top.
  *
  * No fonts and no names: the scene carries numbers, booleans and element keys

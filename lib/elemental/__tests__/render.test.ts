@@ -282,10 +282,11 @@ describe("renderIsland", () => {
   });
 });
 
-describe("healthFor (stub)", () => {
-  it("returns 1 for every element whatever the totals and settings", () => {
+// E25 filled healthFor; its rule is tested in healing.test.ts. Here: healing off keeps E10's healthy island.
+describe("healthFor with healing off", () => {
+  it("returns 1 for every element whatever the totals", () => {
     const totals: HealthTotals = { fire: { counted: 0, teams: 60 }, water: { counted: 3, teams: 1 } };
-    const settings: HealthSettings = { healing_enabled: true, heal_per_team: 3, heal_steps: 5 };
+    const settings: HealthSettings = { healing_enabled: false, heal_per_team: 3, heal_steps: 5 };
     expect(healthFor(totals, settings)).toEqual({ water: 1, earth: 1, air: 1, fire: 1, aether: 1 });
     expect(healthFor({}, { healing_enabled: false })).toEqual(fullHealth());
     expect(Object.keys(healthFor({}, {}))).toEqual([...SECTOR_ORDER]);
