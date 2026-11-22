@@ -15,7 +15,8 @@ import { CliError, fail, REPO_ROOT, requireBinary, run } from "./cli";
 export const FPS = 30;
 export const AUDIO_SCRIPT = join(REPO_ROOT, "scripts/shift-reel-audio.py");
 export const FRAME_TIMEOUT_MS = 15_000;
-export const ENCODE_ARGS = ["-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-preset", "slow"];
+/** CRF 18, capped at 10 Mbps so film grain cannot blow a reel up to hundreds of MB (Instagram re-encodes above that anyway). */
+export const ENCODE_ARGS = ["-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-maxrate", "10M", "-bufsize", "20M", "-preset", "slow"];
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- Playwright is not a project dependency, so its types are not available. */
 export type Browser = any;

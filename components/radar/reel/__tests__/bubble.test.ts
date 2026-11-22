@@ -3,7 +3,7 @@
  */
 import { BUBBLE_SIDE, BUBBLE_TOP, bubbleRoom, CELL, placeBubble, splitStress, steppedClip, TAIL_CELLS } from "../story/bubble";
 import { headTop, SAFE } from "../story/cast";
-import { grainOffset } from "../story/StoryScene";
+import { GRAIN_HOLD, grainOffset } from "../story/StoryScene";
 import { landScale, lastPhrase } from "../story/StoryText";
 
 describe("speech bubble", () => {
@@ -70,5 +70,9 @@ describe("film grain", () => {
       expect(s.y).toBeLessThan(102.4);
     }
     expect(grainOffset(77)).toEqual(grainOffset(77));
+  });
+
+  it("holds each spot for a couple of frames so the encoder is not fed fresh noise every frame", () => {
+    expect(GRAIN_HOLD).toBeGreaterThanOrEqual(2);
   });
 });

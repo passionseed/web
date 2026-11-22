@@ -65,9 +65,16 @@ export function grainOffset(f: number): { x: number; y: number } {
   return { x: (h % 256) * 0.4, y: ((h >>> 8) % 256) * 0.4 };
 }
 
+/**
+ * Frames each grain spot is held for: 15 grain changes a second still reads
+ * as live film, and halves the noise the encoder has to keep (a new spot
+ * every frame pushed the reels to 57 Mbps).
+ */
+export const GRAIN_HOLD = 2;
+
 /** Film grain over the whole frame (public/radar/stories/grain.png), alive from frame to frame. */
 export function FilmGrain({ frame }: { frame: number }) {
-  const o = grainOffset(frame);
+  const o = grainOffset(Math.floor(frame / GRAIN_HOLD));
   return <div className="sr-grain" aria-hidden="true" style={{ backgroundPosition: `${o.x}px ${o.y}px` }} />;
 }
 

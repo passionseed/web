@@ -132,7 +132,16 @@ async function filmStory(
         SHOT_TIMEOUT_MS,
         `${hint} (screenshot of frame ${f})`
       );
+    // The dev server can reload the page mid-film (a recompile); wait for the reel to come back and carry on.
+    const ensureReel = async () => {
+      if (await tab.evaluate((id: string) => window.__radarStory?.ready === true && window.__radarStory.id === id, script.id)) return;
+      console.log("\nThe studio page reloaded; waiting for the reel.");
+      await tab.waitForFunction((id: string) => window.__radarStory?.ready === true && window.__radarStory.id === id, script.id, { timeout: 120_000 });
+      await tab.waitForTimeout(1500);
+      await tab.evaluate(() => window.__radarStory!.start());
+    };
     const shoot = async (f: number, platform: StoryPlatform): Promise<Buffer> => {
+      await ensureReel();
       await tab.evaluate(([frame, p]: [number, StoryPlatform]) => window.__radarStory!.seek(frame, p), [f, platform]);
       // A busy machine can drop one screenshot; the frame is a pure function of f, so asking again is safe.
       const shot = await capture(f).catch(() => capture(f));
