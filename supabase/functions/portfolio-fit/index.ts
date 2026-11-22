@@ -427,9 +427,8 @@ async function handleDiscover(req: Request): Promise<Response> {
 
   // Get student's interest embedding
   const { data: profile } = await supabase
-    .from("profiles")
+    .rpc("get_my_profile")
     .select("gpax, interest_embedding")
-    .eq("id", user.id)
     .single();
 
   if (!profile?.interest_embedding) {
