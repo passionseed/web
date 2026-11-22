@@ -318,6 +318,18 @@ function ElementalExperienceInner({
             </div>
           </div>
 
+          {/* Where the fee goes (Big, 2026-11-22): it helps host Request for Winners. */}
+          <p
+            className="mt-6 max-w-2xl text-base leading-relaxed"
+            style={{ fontFamily: "var(--font-bai-jamjuree), sans-serif", color: EL.inkSoft }}
+          >
+            ค่าสมัครไม่ได้เข้ากระเป๋าเราอย่างเดียว ส่วนหนึ่งนำไปจัด{" "}
+            <Link href="/request-for-winners" className="underline underline-offset-4" style={{ color: EL.ink }}>
+              Request for Winners
+            </Link>{" "}
+            ให้ผลงานที่ดีที่สุดได้ไปต่อจนเป็นธุรกิจจริง
+          </p>
+
           {/* 3-step editorial list */}
           <ol className="mt-14 grid gap-8 sm:grid-cols-3">
             {[

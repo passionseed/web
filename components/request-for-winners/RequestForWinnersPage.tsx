@@ -304,6 +304,29 @@ function GiveAndGet() {
   );
 }
 
+/** Where the money goes (Big, 2026-11-22): fees and sponsor money host this, not just us. */
+function WhereTheMoneyGoes() {
+  return (
+    <Section>
+      <SectionTitle>เงินจาก Elemental ไปไหน</SectionTitle>
+      <p
+        className="mt-6 max-w-2xl text-base leading-relaxed text-[#e8e3d9] sm:text-lg"
+        style={{ fontFamily: BODY_FONT }}
+      >
+        ค่าสมัคร Elemental Hackathon และเงินจากผู้สนับสนุน ไม่ได้เข้ากระเป๋าเราอย่างเดียว
+        ส่วนหนึ่งนำมาจัด {RFW.name} เพื่อให้ผลงานของผู้ชนะได้ไปต่อจนเป็นธุรกิจจริง
+      </p>
+      <Link
+        href="/hackathon/elemental/sponsor"
+        className="mt-6 inline-block text-base text-[#e8e3d9] underline underline-offset-4 hover:text-[#faf8f4]"
+        style={{ fontFamily: BODY_FONT }}
+      >
+        อยากร่วมสนับสนุน? ดูข้อเสนอสำหรับผู้สนับสนุน
+      </Link>
+    </Section>
+  );
+}
+
 function SafeSpace() {
   return (
     <Section>
@@ -352,6 +375,7 @@ export function RequestForWinnersPage() {
       <WhoCanApply />
       <FourWeeks />
       <GiveAndGet />
+      <WhereTheMoneyGoes />
       <SafeSpace />
       <Closing />
     </main>
