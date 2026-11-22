@@ -14,9 +14,10 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
  *   check-ins (CSII proposal).
  * - What we ask back: testimonials and help promoting PassionSeed
  *   (Angpao, 2026-11-18).
- * - Who pays for it: sponsor money (Big, 2026-11-19) and part of the Elemental
- *   entry fees (Big, 2026-11-22: "we're not just getting money for us, we
- *   want money to host this"). Hosting, not profit: say it on the page.
+ * - Who pays for it: sponsor money (Big, 2026-11-19; sponsors also fund the
+ *   prize pool) and all of the Elemental entry fees left after the
+ *   hackathon's own costs (Big, 2026-11-22: "we want money to host this",
+ *   then "all of it"). PassionSeed keeps no profit from Elemental.
  * - Made public by Big, 2026-11-22.
  *
  * Every `null` is still "(fill in)" in the brain. The page shows it as

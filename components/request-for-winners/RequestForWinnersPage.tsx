@@ -304,7 +304,7 @@ function GiveAndGet() {
   );
 }
 
-/** Where the money goes (Big, 2026-11-22): fees and sponsor money host this, not just us. */
+/** Where the money goes (Big, 2026-11-22): every baht of Elemental fees left after its costs hosts this. */
 function WhereTheMoneyGoes() {
   return (
     <Section>
@@ -313,8 +313,9 @@ function WhereTheMoneyGoes() {
         className="mt-6 max-w-2xl text-base leading-relaxed text-[#e8e3d9] sm:text-lg"
         style={{ fontFamily: BODY_FONT }}
       >
-        ค่าสมัคร Elemental Hackathon และเงินจากผู้สนับสนุน ไม่ได้เข้ากระเป๋าเราอย่างเดียว
-        ส่วนหนึ่งนำมาจัด {RFW.name} เพื่อให้ผลงานของผู้ชนะได้ไปต่อจนเป็นธุรกิจจริง
+        เราไม่เก็บกำไรจาก Elemental Hackathon ค่าสมัครที่เหลือหลังหักค่าจัดงาน นำมาจัด{" "}
+        {RFW.name} ทั้งหมด และเงินจากผู้สนับสนุนใช้เป็นเงินรางวัลและจัดโครงการนี้
+        เพื่อให้ผลงานของผู้ชนะได้ไปต่อจนเป็นธุรกิจจริง
       </p>
       <Link
         href="/hackathon/elemental/sponsor"
