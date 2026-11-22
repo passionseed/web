@@ -113,21 +113,8 @@ export function ElementalHero({ joinHref, open }: { joinHref: string; open: bool
           </h1>
         </motion.div>
 
-        {/* The poster's line sits on the dark ground, over the row of facts (as on
-            the poster), not on the sky, where the pixel smoke passes through. */}
+        {/* No tagline here: the page's line (หาทางออกให้ธรรมชาติ) lands once, in TeaserTheater. */}
         <div className="relative z-10 w-full">
-          <p
-            className="mx-auto w-full max-w-7xl px-5 pb-5 sm:px-10 sm:pb-6"
-            style={{
-              fontFamily: EL_FONT.display,
-              fontSize: "clamp(1.35rem, 2.6vw, 2.25rem)",
-              fontWeight: 300,
-              color: EL.cream,
-            }}
-          >
-            สิ่งแวดล้อมไม่ควรถูกทิ้งเพราะเงิน
-          </p>
-
           {/* Quiet bottom detail strip: Space Mono [tags], hairlines only, no card */}
           <div className="relative z-10 w-full border-t border-[#f3efe6]/20 bg-[#0c0d0c]/80">
             <div className="mx-auto grid max-w-7xl grid-cols-2 md:grid-cols-4">
