@@ -56,7 +56,8 @@ is missing, and checks before it starts encoding. Commands that upload have a
 | `pnpm radar:clip <slug> <page> <take.mov>` | ffmpeg, ffprobe, `B2_APPLICATION_KEY_ID`, `B2_APPLICATION_KEY`, `B2_BUCKET_NAME`; whisper-cli optional | Fails if the page has no `clip` slot or its script fails guide-lint. Tone-maps iPhone HLG to SDR, writes the clean 1080x1920 master, the 540x960 web clip (about 1.2 Mbps, faststart), a webp poster under 60KB, captions (whisper times, our script text) and the cut list. Uploads clip and poster to `radar/guide/<slug>/<page>.<sha8>.{mp4,webp}`, then writes `clips/<page>.vtt` and `clips.json` (sorted, 2-space JSON). No database. `--dry-run` skips B2 and writes the would-be `clips.json` and VTT to `<out>/dry-run/`, with copies of the web clip and poster. `--no-whisper`, `--out dir`, `--allow-lint-errors`. |
 | `pnpm radar:reel <slug>` | the studio server, ffmpeg, python3 + numpy (unless `--no-audio`), Playwright | Films reels into `~/Movies/radar-guide/<slug>/`. Motion (default): the Dusk City scene reel, "อาชีพนี้ใน 30 วินาที", built from the guide's fact-backed lines (dump cards are a fallback). `--page key` makes a one-level reel, `--compare other-slug` "เทียบ 2 อาชีพ", `--cover` saves the cover frame. `--format demo --page key` films the level itself being played (below). `--platform tt` swaps the end card. `--dry-run` writes the payload or plan and prints the timeline: no browser, no ffmpeg. Nothing is uploaded. |
 | `pnpm radar:art <slug>` | nothing (`--source agy`: the `agy` CLI) | Scene art for every level, the level map, the profile card frame and the host sprite, as webp of at most 120KB. Hand-made pixel art by default; `--source agy` asks Antigravity's image tool (normal permission prompts). No people, no text, no logos. `--dry-run`. |
-| `pnpm radar:story <id>` (or `--all`) | the studio server, ffmpeg, python3 + numpy (unless `--no-audio`), Playwright | Lints and films story reels (below) into `~/Movies/radar-guide/stories/`: `<id>.ig.mp4`, `<id>.tt.mp4`, `<id>.cover.webp`, `<id>.caption.txt`. `--platform ig\|tt` films one master, `--variant 1\|2` a Trial Reels hook, `--dry-run` prints the lint and the timeline only, `--allow-lint-errors` films a draft. |
+| `pnpm radar:story <id>` (or `--all`) | the studio server, ffmpeg, python3 + numpy (unless `--no-audio`), Playwright | Lints and films story reels (below) into `~/Movies/radar-guide/stories/`: `<id>.ig.mp4`, `<id>.tt.mp4`, `<id>.cover.webp`, `<id>.caption.txt`. Picks up processed voice files from `~/Movies/radar-guide/voice/<id>/` automatically (pass `--no-voice` to film silent). `--platform ig\|tt` films one master, `--variant 1\|2` a Trial Reels hook, `--dry-run` prints the lint and the timeline only, `--allow-lint-errors` films a draft. |
+| `pnpm radar:voice [<id>]` | ffmpeg, `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Downloads the starred voice take for each voiced line from the private `radar-voice` bucket, processes each with ffmpeg (80 Hz high-pass, gentle denoise, de-ess, light compression, -16 LUFS loudnorm, 44.1 kHz mono) into `~/Movies/radar-guide/voice/<id>/<beat>.wav`, and reports missing, unpicked or stale lines. `--force`, `--out dir`, `--dry-run`. |
 | `pnpm radar:story-art` | nothing | The generic story scenes as hand-made pixel art, `public/radar/stories/<scene>.webp` (108x192 cells, lossless). Deterministic. `--only scene,scene`, `--dry-run`. |
 | `pnpm radar:tcas <slug>` | network (local only) | Refreshes `tcas.json` from mytcas. Review the diff in a PR; the build never fetches it. |
 | `pnpm radar:dump <slug>` | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | DB deck careers: reads the published field, cards, sources, skills and start options with the anon key into `.cache/radar-guide/<slug>.json`. Fails on dashes in visible card copy. `--fixture` reads `lib/radar-guide/__fixtures__/<slug>.json` instead (offline). |
@@ -219,6 +220,20 @@ pnpm radar:story lost-00-midnight       # one script: .ig.mp4, .tt.mp4, .cover.w
 pnpm radar:story --all                  # every script
 pnpm radar:story lost-00-midnight --variant 1   # Trial Reels hook: lost-00-midnight.v1.*
 ```
+
+**Recording P'Seed voice-overs (phone studio).** By default every P'Seed line (`who === "host"` in `lib/radar-stories/voice.ts`) can be voiced by the founder and mixed under the soundtrack:
+
+1. Open `/studio/radar-voice` on a phone over HTTPS (the Vercel preview or `https://www.passionseed.org/studio/radar-voice`, since browsers require HTTPS for microphone capture) signed in as an admin.
+2. Pick a reel, run the 3-second room noise check before the first take, and record each line. Takes are captured as raw 48 kHz 16-bit mono WAV via AudioWorklet, auto-trimmed with 150 ms padding, saved to IndexedDB first, and uploaded in the background to the private `radar-voice` bucket. Put on headphones to compare takes, then star one take per line. If a script's `lineTh` changes later, old takes are flagged as stale.
+3. On the filming Linux machine, pull and process all picked takes, then film the reels:
+
+```bash
+pnpm radar:voice                        # downloads & processes picked takes into ~/Movies/radar-guide/voice/
+pnpm radar:story --all                  # auto-extends voiced beats, ducks music, keeps P'Seed talking
+pnpm radar:story --all --no-voice       # film without voice tracks (same as before)
+```
+
+`pnpm radar:voice` needs `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` and reports any missing, unpicked, or stale lines.
 
 On a Linux machine whose own Chromium cannot start (missing libasound), run
 a Playwright browser server in Docker and point the command at it:

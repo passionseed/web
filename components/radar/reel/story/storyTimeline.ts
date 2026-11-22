@@ -10,8 +10,9 @@
  * never adds time. Lengths come from lib/radar-stories/timing.ts.
  */
 import type { Mood, ReelCues } from "../../../shift/poster/testimonial/reelEngine";
-import { charCount, FRAME_MS, STORY_FPS, storyFrames } from "../../../../lib/radar-stories/timing";
-import type { Scene, StoryBeat, StoryScript, Who } from "../../../../lib/radar-stories/types";
+import { beatMs, charCount, FRAME_MS, STORY_FPS, storyFrames, toFrames } from "../../../../lib/radar-stories/timing";
+import type { Mood as HostMood, Scene, StoryBeat, StoryScript, Who } from "../../../../lib/radar-stories/types";
+import { beatDurationWithVoiceMs } from "../../../../lib/radar-stories/voice";
 import { RADAR_REEL_BEAT } from "../radarReel";
 
 export type CastWho = Exclude<Who, "text">;
@@ -60,6 +61,13 @@ export interface StoryBeatCue {
   typeF: number;
   /** Frames the speaker's mouth moves. */
   talkF: number;
+  /** Frames a recorded voice take plays (omitted when silent). */
+  voiceF?: number;
+}
+
+export interface StoryTimelineOptions {
+  /** Optional map of beat index -> processed voice duration in milliseconds. */
+  voiceDurationsMs?: Readonly<Record<number, number>>;
 }
 
 export interface StoryTimeline {
@@ -132,16 +140,28 @@ function castSegments(segments: StorySegment[], beats: StoryBeatCue[]): void {
   }
 }
 
-export function buildStoryTimeline(script: Pick<StoryScript, "hookTh" | "beats">, hookTh: string = script.hookTh): StoryTimeline {
+export function buildStoryTimeline(
+  script: Pick<StoryScript, "hookTh" | "beats">,
+  hookTh: string = script.hookTh,
+  options?: StoryTimelineOptions,
+): StoryTimeline {
   const lengths = storyFrames(script, hookTh);
+  const voiceMap = options?.voiceDurationsMs;
   let cursor = lengths.hook;
   const beats: StoryBeatCue[] = script.beats.map((beat, index) => {
     const startF = cursor;
-    cursor += lengths.beats[index];
-    const len = lengths.beats[index];
+    const voiceMs = voiceMap?.[index];
+    const hasVoice = typeof voiceMs === "number" && Number.isFinite(voiceMs) && voiceMs > 0;
+    const len = hasVoice ? toFrames(beatDurationWithVoiceMs(beatMs(beat), voiceMs)) : lengths.beats[index];
+    cursor += len;
     const typeF = beat.big ? 0 : typeFrames(beat.lineTh, len);
-    const talkF = beat.big ? Math.min(len, frames(STORY_REEL_TIMING.bigTalkMs)) : typeF;
-    return { index, beat, segment: 0, startF, endF: cursor, typeF, talkF };
+    const baseTalkF = beat.big ? Math.min(len, frames(STORY_REEL_TIMING.bigTalkMs)) : typeF;
+    if (hasVoice) {
+      const voiceF = Math.min(len, toFrames(voiceMs));
+      const talkF = Math.max(baseTalkF, voiceF);
+      return { index, beat, segment: 0, startF, endF: cursor, typeF, talkF, voiceF };
+    }
+    return { index, beat, segment: 0, startF, endF: cursor, typeF, talkF: baseTalkF };
   });
   const end = { startF: cursor, endF: cursor + lengths.end };
   const totalF = end.endF;
@@ -231,4 +251,20 @@ export function typedAt(cue: StoryBeatCue, f: number, total: number): number {
   if (cue.typeF <= 0) return total;
   const k = f - cue.startF + 1;
   return Math.max(0, Math.min(total, Math.ceil((k / cue.typeF) * total)));
+}
+
+/**
+ * P'Seed's mood at frame `f`: stays in `"talk"` while a recorded voice take
+ * plays (so held moods like `"wink"` or `"wow"` do not freeze the mouth), then
+ * settles into the beat's scripted mood during the tail. Without voice files,
+ * matches the silent behaviour identically.
+ */
+export function hostMoodAt(phase: StoryPhase, f: number): HostMood {
+  if (phase.kind === "end") return "wink";
+  if (phase.kind !== "beat" || phase.cue.beat.who !== "host") return "idle";
+  const { cue } = phase;
+  if (cue.voiceF && f >= cue.startF && f < cue.startF + cue.voiceF) {
+    return "talk";
+  }
+  return cue.beat.mood ?? "talk";
 }

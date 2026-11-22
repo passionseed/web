@@ -52,7 +52,12 @@ const PUBLIC_SEARCH_ROUTES = new Set([
  * (maps progress, assignments): the CDN would serve one user's data to the next.
  */
 function apiCacheControl(pathname: string): string | null {
-  if (pathname === '/api/admin' || pathname.startsWith('/api/admin/')) return 'private, no-store'
+  if (
+    pathname === '/api/admin' ||
+    pathname.startsWith('/api/admin/') ||
+    pathname === '/api/studio/radar-voice' ||
+    pathname.startsWith('/api/studio/radar-voice/')
+  ) return 'private, no-store'
   if (pathname.startsWith('/api/hero-galaxy')) return 'public, s-maxage=300, stale-while-revalidate=600'
   if (pathname.startsWith('/api/tcas')) return 'public, s-maxage=300, stale-while-revalidate=600'
   if (PUBLIC_SEARCH_ROUTES.has(pathname)) return 'public, s-maxage=300, stale-while-revalidate=600'
@@ -60,8 +65,16 @@ function apiCacheControl(pathname: string): string | null {
 }
 
 export default async function proxy(request: NextRequest) {
+  // Route checks below use the decoded path, the one Next's router matches.
+  const routePath = routingPathname(request.nextUrl.pathname);
+
   // Cookie-authenticated admin mutations must reject cross-origin requests.
-  if (request.nextUrl.pathname.startsWith("/api/admin/") && !isTrustedAdminRequest(request)) {
+  if (
+    (routePath.startsWith("/api/admin/") ||
+      routePath === "/api/studio/radar-voice" ||
+      routePath.startsWith("/api/studio/radar-voice/")) &&
+    !isTrustedAdminRequest(request)
+  ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -77,9 +90,6 @@ export default async function proxy(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith('/go/') || request.nextUrl.pathname.startsWith('/r/')) {
     return NextResponse.next({ request });
   }
-
-  // Route checks below use the decoded path, the one Next's router matches.
-  const routePath = routingPathname(request.nextUrl.pathname)
 
   // Add caching headers for GET API requests
   if (request.method === 'GET' && routePath.startsWith('/api/')) {

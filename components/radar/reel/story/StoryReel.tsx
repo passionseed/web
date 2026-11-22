@@ -20,7 +20,7 @@ import { AvatarActor, HostActor, mouthOpen } from "./StoryCast";
 import { EndCardView } from "./StoryEndCard";
 import { Dim, FilmGrain, PixelWipe, SceneArt, SceneForeground } from "./StoryScene";
 import { BigLine, hookScale, NarrationLine, SpeechBubble } from "./StoryText";
-import { phaseAt, segmentAt, wipeAt, type CastWho, type StoryTimeline } from "./storyTimeline";
+import { hostMoodAt, phaseAt, segmentAt, wipeAt, type CastWho, type StoryTimeline } from "./storyTimeline";
 import "./storyReel.css";
 
 /** The element radar:story films; it fills the 432x768 viewport. */
@@ -114,7 +114,7 @@ export function StoryReel({ timeline, frame, card }: { timeline: StoryTimeline; 
           visible={hostOn}
           speaking={end || speaker === null || speaker === "host"}
           talking={speaker === "host" && talkingNow}
-          mood={end ? "wink" : speaker === "host" ? cue?.beat.mood ?? "talk" : "idle"}
+          mood={hostMoodAt(phase, f)}
           clock={hostClock}
         />
       </div>

@@ -157,6 +157,21 @@ const nextConfig = {
           },
         ],
       },
+      {
+        // Phone voice-over studio requires microphone capture on its own origin.
+        source: "/studio/radar-voice/:path*",
+        headers: [
+          {
+            key: "Permissions-Policy",
+            value:
+              "camera=(), microphone=(self), geolocation=(), payment=(), usb=(), interest-cohort=()",
+          },
+          {
+            key: "Cache-Control",
+            value: "private, no-store",
+          },
+        ],
+      },
     ];
   },
 };

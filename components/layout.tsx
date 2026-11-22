@@ -69,6 +69,9 @@ export function Layout({ children }: LayoutProps) {
     isPublicHackathonRoute ||
     pathname?.includes("/app/beta") ||
     pathname?.startsWith("/expert-interview") ||
+    // Phone voice recording studio uses its own full-height mobile chrome
+    pathname === "/studio/radar-voice" ||
+    pathname?.startsWith("/studio/radar-voice/") ||
     // Map editor is a fixed full-page workspace
     (pathname?.startsWith("/map/") && pathname?.endsWith("/edit")) ||
     isRadarGuideLevel;

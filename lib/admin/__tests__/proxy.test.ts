@@ -67,6 +67,8 @@ describe("S3: API cache headers", () => {
     "/api/admin/hackathon/team-directions/search",
     "/api/admin/overview/counts",
     "/api/admin/maps/list",
+    "/api/studio/radar-voice",
+    "/api/studio/radar-voice/11111111-1111-4111-8111-111111111111/url",
     // Next decodes these before routing, so they reach the admin handlers.
     "/api/%61dmin/hackathon/team-directions/search",
     "/api/admin%2Fsearch",
@@ -108,9 +110,12 @@ describe("S3: API cache headers", () => {
 });
 
 describe("S1: admin page gate", () => {
-  test("matches /admin and below, not look-alikes", () => {
+  test("matches /admin and /studio/radar-voice, not look-alikes", () => {
     expect(isAdminPagePath("/admin")).toBe(true);
     expect(isAdminPagePath("/admin/dm-leads")).toBe(true);
+    expect(isAdminPagePath("/studio/radar-voice")).toBe(true);
+    expect(isAdminPagePath("/studio/radar-voice/lost-01-dinner")).toBe(true);
+    expect(isAdminPagePath("/studio/radar-story/lost-01-dinner")).toBe(false);
     expect(isAdminPagePath("/administrator")).toBe(false);
     expect(isAdminPagePath("/me")).toBe(false);
   });

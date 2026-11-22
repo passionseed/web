@@ -108,7 +108,8 @@ export function routingPathname(pathname: string): string {
  * /admin. Matches the decoded routing path (see routingPathname).
  */
 export function isAdminPagePath(pathname: string): boolean {
-  return /^\/admin(?:$|[/.])/.test(routingPathname(pathname))
+  const path = routingPathname(pathname)
+  return /^\/admin(?:$|[/.])/.test(path) || /^\/studio\/radar-voice(?:$|[/.])/.test(path)
 }
 
 /**
@@ -228,8 +229,8 @@ export async function updateSession(request: NextRequest) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone()
     url.pathname = '/login'
-    // Whiteboards and the calendar: come back to the page after signing in.
-    if (/^\/(whiteboard|calendar)(\/|$)/.test(pathname)) {
+    // Whiteboards, the calendar, and the voice studio: come back after signing in.
+    if (/^\/(whiteboard|calendar|studio\/radar-voice)(\/|$)/.test(pathname)) {
       url.search = `?next=${encodeURIComponent(pathname + request.nextUrl.search)}`
     }
     return copySessionCookies(supabaseResponse, NextResponse.redirect(url))

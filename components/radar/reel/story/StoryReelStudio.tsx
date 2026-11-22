@@ -108,14 +108,19 @@ export function StoryReelStudio({
   platform: initialPlatform,
   render,
   stillSeconds,
+  voiceDurationsMs,
 }: {
   script: StoryScript;
   hookTh: string;
   platform: StoryPlatform;
   render: boolean;
   stillSeconds: number | null;
+  voiceDurationsMs?: Readonly<Record<number, number>>;
 }) {
-  const timeline = useMemo(() => buildStoryTimeline(script, hookTh), [script, hookTh]);
+  const timeline = useMemo(
+    () => buildStoryTimeline(script, hookTh, voiceDurationsMs ? { voiceDurationsMs } : undefined),
+    [script, hookTh, voiceDurationsMs],
+  );
   const [platform, setPlatform] = useState<StoryPlatform>(initialPlatform);
   const [frame, setFrame] = useState(stillSeconds !== null ? Math.round(stillSeconds * 30) : 0);
   const [started, setStarted] = useState(!render);

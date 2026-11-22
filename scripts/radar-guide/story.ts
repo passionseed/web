@@ -1,6 +1,7 @@
 /**
  * pnpm radar:story <id> | --all [--platform ig|tt|both] [--variant 1|2]
- *                  [--base url] [--out dir] [--no-audio] [--allow-lint-errors] [--dry-run]
+ *                  [--base url] [--out dir] [--voice-dir dir] [--no-voice]
+ *                  [--no-audio] [--allow-lint-errors] [--dry-run]
  *
  * Films story reels (lib/radar-stories; docs/radar-guide/README.md, "Story
  * reels"). For each script: lint (errors stop it), then Playwright opens
@@ -37,6 +38,7 @@ import { buildStoryTimeline, type StoryTimeline } from "../../components/radar/r
 import { STORY_SCRIPTS, storyById } from "../../lib/radar-stories";
 import { formatProblem, lintStories } from "../../lib/radar-stories/lint";
 import type { StoryScript } from "../../lib/radar-stories/types";
+import { encodeVoiceDurationsParam } from "../../lib/radar-stories/voice";
 import { fail, flagString, parseArgs, runMain } from "./lib/cli";
 import {
   FRAME_TIMEOUT_MS,
@@ -53,6 +55,13 @@ import {
   type Page,
 } from "./lib/film";
 import { formatStoryTimeline, publicFileExists, STORY_MOVIES_DIR, storyCaptionText, storyOutputs } from "./lib/story";
+import {
+  buildStoryVoiceWav,
+  loadStoryVoiceClips,
+  VOICE_MOVIES_DIR,
+  voiceDurationsFromClips,
+  type StoryVoiceClip,
+} from "./lib/voice";
 
 /** Generous: a shared machine under load can take a while per 1080x1920 screenshot. */
 const SHOT_TIMEOUT_MS = 4 * FRAME_TIMEOUT_MS;
@@ -61,13 +70,15 @@ const SHOT_TIMEOUT_MS = 4 * FRAME_TIMEOUT_MS;
 const CLIP = { x: 0, y: 0, width: STORY_FRAME.width, height: STORY_FRAME.height, scale: STORY_FRAME.scale };
 
 const USAGE =
-  "pnpm radar:story <id> | --all [--platform ig|tt|both] [--variant 1|2] [--base url] [--out dir] [--no-audio] [--allow-lint-errors] [--dry-run]";
+  "pnpm radar:story <id> | --all [--platform ig|tt|both] [--variant 1|2] [--base url] [--out dir] [--voice-dir dir] [--no-voice] [--no-audio] [--allow-lint-errors] [--dry-run]";
 
 interface Options {
   platforms: StoryPlatform[];
   variant: 1 | 2 | null;
   base: string;
   outDir: string;
+  voiceDir: string;
+  noVoice: boolean;
   noAudio: boolean;
   dryRun: boolean;
 }
@@ -76,9 +87,20 @@ function hookFor(script: StoryScript, variant: 1 | 2 | null): string {
   return variant ? script.hookVariantsTh[variant - 1] : script.hookTh;
 }
 
-async function filmStory(browser: Browser, script: StoryScript, timeline: StoryTimeline, opts: Options): Promise<void> {
+async function filmStory(
+  browser: Browser,
+  script: StoryScript,
+  timeline: StoryTimeline,
+  voiceClips: readonly StoryVoiceClip[],
+  opts: Options,
+): Promise<void> {
   const out = storyOutputs(opts.outDir, script.id, opts.variant);
-  const url = `${opts.base}/studio/radar-story/${script.id}?render=1${opts.variant ? `&hook=${opts.variant}` : ""}`;
+  const query = new URLSearchParams({ render: "1" });
+  if (opts.variant) query.set("hook", String(opts.variant));
+  if (voiceClips.length > 0) {
+    query.set("voice", encodeVoiceDurationsParam(voiceDurationsFromClips(voiceClips)));
+  }
+  const url = `${opts.base}/studio/radar-story/${script.id}?${query.toString()}`;
   const work = mkdtempSync(join(tmpdir(), "radar-story-"));
   let encoders = new Map<StoryPlatform, FrameEncoder>();
   const context = await browser.newContext({
@@ -133,7 +155,13 @@ async function filmStory(browser: Browser, script: StoryScript, timeline: StoryT
     process.stdout.write(`\r${script.id}: ${timeline.seconds.toFixed(1)}s filmed in ${((Date.now() - started) / 1000).toFixed(0)}s\n`);
     console.log(`Wrote ${out.cover}`);
 
-    const audio = opts.noAudio ? null : await scoreSoundtrack(timeline.cues, work);
+    let voiceWav: string | null = null;
+    if (!opts.noAudio && voiceClips.length > 0) {
+      voiceWav = join(work, "voice.wav");
+      writeFileSync(voiceWav, buildStoryVoiceWav(timeline, voiceClips));
+    }
+
+    const audio = opts.noAudio ? null : await scoreSoundtrack(timeline.cues, work, voiceWav);
     for (const p of opts.platforms) {
       await muxVideo(join(work, `${p}.mp4`), audio, out.video(p));
       console.log(`Wrote ${out.video(p)}`);
@@ -147,8 +175,8 @@ async function filmStory(browser: Browser, script: StoryScript, timeline: StoryT
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2), {
-    bool: ["all", "no-audio", "dry-run", "allow-lint-errors"],
-    value: ["platform", "variant", "base", "out"],
+    bool: ["all", "no-audio", "no-voice", "dry-run", "allow-lint-errors"],
+    value: ["platform", "variant", "base", "out", "voice-dir"],
   });
   const all = Boolean(args.flags.all);
   const id = args.positional[0];
@@ -164,6 +192,8 @@ async function main(): Promise<void> {
     variant: variantFlag ? (Number(variantFlag) as 1 | 2) : null,
     base: (flagString(args, "base") ?? "http://localhost:3010").replace(/\/+$/, ""),
     outDir: resolve(flagString(args, "out") ?? STORY_MOVIES_DIR),
+    voiceDir: resolve(flagString(args, "voice-dir") ?? VOICE_MOVIES_DIR),
+    noVoice: Boolean(args.flags["no-voice"]),
     noAudio: Boolean(args.flags["no-audio"]),
     dryRun: Boolean(args.flags["dry-run"]),
   };
@@ -174,9 +204,18 @@ async function main(): Promise<void> {
   const errors = problems.filter((p) => p.level === "error");
   if (errors.length && !args.flags["allow-lint-errors"]) fail(`${errors.length} lint error(s). Fix the script, or pass --allow-lint-errors for a draft.`);
 
-  const plans = scripts.map((script) => ({ script, timeline: buildStoryTimeline(script, hookFor(script, opts.variant)) }));
-  for (const { script, timeline } of plans) {
-    console.log(`\nStory ${script.id} (${script.series}${opts.variant ? `, hook v${opts.variant}` : ""}): ${timeline.seconds.toFixed(1)}s\n${formatStoryTimeline(timeline)}`);
+  const plans = scripts.map((script) => {
+    const voiceClips = opts.noVoice ? [] : loadStoryVoiceClips(opts.voiceDir, script);
+    const timeline = buildStoryTimeline(
+      script,
+      hookFor(script, opts.variant),
+      voiceClips.length > 0 ? { voiceDurationsMs: voiceDurationsFromClips(voiceClips) } : undefined,
+    );
+    return { script, timeline, voiceClips };
+  });
+  for (const { script, timeline, voiceClips } of plans) {
+    const voiceTag = voiceClips.length > 0 ? `, voice: ${voiceClips.map((c) => `beat ${c.beatIndex}`).join(", ")}` : "";
+    console.log(`\nStory ${script.id} (${script.series}${opts.variant ? `, hook v${opts.variant}` : ""}${voiceTag}): ${timeline.seconds.toFixed(1)}s\n${formatStoryTimeline(timeline)}`);
   }
   if (opts.dryRun) {
     for (const { script } of plans) console.log(`\n--- ${storyOutputs(opts.outDir, script.id, null).caption}\n${storyCaptionText(script)}`);
@@ -190,9 +229,9 @@ async function main(): Promise<void> {
   const chromium = await loadChromium();
   const browser: Browser = await chromium.launch();
   try {
-    for (const { script, timeline } of plans) {
+    for (const { script, timeline, voiceClips } of plans) {
       writeFileSync(storyOutputs(opts.outDir, script.id, opts.variant).caption, storyCaptionText(script));
-      await filmStory(browser, script, timeline, opts);
+      await filmStory(browser, script, timeline, voiceClips, opts);
     }
   } finally {
     await browser.close().catch(() => undefined);

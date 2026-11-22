@@ -67,12 +67,14 @@ export function requireEncoders(noAudio: boolean): void {
   }
 }
 
-/** Scores the soundtrack from a cue sheet into `work`/audio.wav. */
-export async function scoreSoundtrack(cues: unknown, work: string): Promise<string> {
+/** Scores the soundtrack from a cue sheet into `work`/audio.wav (with optional 44.1 kHz voice ducking). */
+export async function scoreSoundtrack(cues: unknown, work: string, voiceWav?: string | null): Promise<string> {
   const cuesPath = join(work, "cues.json");
   writeFileSync(cuesPath, JSON.stringify(cues));
   const audio = join(work, "audio.wav");
-  await run("python3", [AUDIO_SCRIPT, cuesPath, audio]);
+  const args = [AUDIO_SCRIPT, cuesPath, audio];
+  if (voiceWav) args.push(voiceWav);
+  await run("python3", args);
   return audio;
 }
 
