@@ -261,7 +261,7 @@ function ElementalExperienceInner({
       <TeaserScreening joinHref={joinHref} open={open} />
 
       {/* ACT 4: FIVE PLACES (APPLE-STYLE SCROLL-SCRUBBED 60FPS CANVAS CHAPTERS) */}
-      <ElementalPlacesShowcase />
+      <ElementalPlacesShowcase joinHref={joinHref} open={open} />
 
       {/* ACT 5: BEGINNER PITCH, WORKSHOPS, MENTOR SUPPORT & 3-DAY SCHEDULE */}
       <BeginnerJourneySection />
