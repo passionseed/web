@@ -9,6 +9,9 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
  *   ฿149 a person with others (company-brain numbers.md).
  * - Elements and theme: private/hackathon-december-2026.md (PR #87) and
  *   Angpao, 2026-11-19 (Aether is the fifth element).
+ * - Aether's Thai name and scope: ธาตุที่มองไม่เห็น, covering AI, social
+ *   media and the harms of tech we don't notice (Big, 2026-11-21). It
+ *   replaces ธาตุที่ 5 and อีเธอร์.
  * - Prize total: told by Angpao, 2026-11-19 (not yet in company-brain).
  * - Online, on Discord; groups of up to 5 (Bunyasit, 2026-11-20).
  * - Sign-up closes Thu 3 Dec 2026 (hackathon-ops registration.md); a group
@@ -61,7 +64,7 @@ export const ELEMENTAL = {
     { key: "earth", en: "Earth", th: "ดิน" },
     { key: "air", en: "Air", th: "ลม" },
     { key: "fire", en: "Fire", th: "ไฟ" },
-    { key: "aether", en: "Aether", th: "ธาตุที่ 5" },
+    { key: "aether", en: "Aether", th: "ธาตุที่มองไม่เห็น" },
   ],
 } as const;
 

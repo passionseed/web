@@ -17,6 +17,28 @@ import { blockThresholds, DISSOLVE_BLOCK_PX, keyframeBlend, seedFromKey } from "
 const CANVAS_W = 600;
 const CANVAS_H = 750;
 
+/** "ดิน" reads as "ธาตุดิน"; a name that already says ธาตุ stays as it is. */
+function elementLabel(th: string) {
+  return th.startsWith("ธาตุ") ? th : `ธาตุ${th}`;
+}
+
+/**
+ * Thai has no spaces between words, so the browser can break inside one
+ * ("ไม่รู้/ตัว", "ดี/ปเฟก"). Keep each phrase between separators on one line.
+ */
+function Phrases({ text, separator }: { text: string; separator: string }) {
+  return (
+    <>
+      {text.split(separator).map((part, i) => (
+        <span key={i}>
+          {i > 0 && separator}
+          <span className="whitespace-nowrap">{part}</span>
+        </span>
+      ))}
+    </>
+  );
+}
+
 function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement) {
   const iw = img.naturalWidth || CANVAS_W;
   const ih = img.naturalHeight || CANVAS_H;
@@ -194,7 +216,7 @@ function ScrubbedElementChapter({
                 fontFamily: EL_FONT.display,
                 fontSize:
                   chapter.key === "aether"
-                    ? "clamp(3.6rem, 10vw, 9.5rem)"
+                    ? "clamp(2.6rem, 6.5vw, 6.5rem)"
                     : "clamp(5.5rem, 18vw, 16rem)",
                 fontWeight: 200,
                 color: chapter.color,
@@ -203,22 +225,14 @@ function ScrubbedElementChapter({
             >
               {chapter.th}
             </h2>
-            {chapter.key === "aether" && (
-              <p
-                className="mt-2 italic text-[#e4d8ff]"
-                style={{ fontFamily: EL_FONT.display, fontSize: "clamp(1.25rem, 2.4vw, 2.2rem)", fontWeight: 300 }}
-              >
-                ธาตุที่ 5
-              </p>
-            )}
             <p className="mt-6 text-2xl text-[#faf8f4] sm:text-3xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
-              {chapter.subtitleTh}
+              <Phrases text={chapter.subtitleTh} separator=" " />
             </p>
             <p className="mt-4 max-w-[34ch] text-base leading-relaxed text-[#e6e1d7]" style={{ fontFamily: "var(--font-bai-jamjuree), sans-serif" }}>
               {chapter.whatHappensTh}
             </p>
             <p className="mt-6 max-w-[46ch] text-xs text-[#cfc9bd]" style={{ fontFamily: EL_FONT.mono }}>
-              {chapter.examplesTh}
+              <Phrases text={chapter.examplesTh} separator=" · " />
             </p>
           </div>
         </div>
@@ -244,7 +258,7 @@ function ScrubbedElementChapter({
               width={CANVAS_W}
               height={CANVAS_H}
               role="img"
-              aria-label={`ธาตุ${chapter.th}: ${chapter.subtitleTh} เลื่อนหน้าจอเพื่อดูการเปลี่ยนแปลงจากสภาพปกติจนถูกทำลาย`}
+              aria-label={`${elementLabel(chapter.th)}: ${chapter.subtitleTh} เลื่อนหน้าจอเพื่อดูการเปลี่ยนแปลงจากสภาพปกติจนถูกทำลาย`}
               className="block h-full w-full object-cover"
             />
             {/* Hair-thin 1px bottom progress trace in element accent */}
@@ -269,7 +283,7 @@ function ScrubbedElementChapter({
                 fontFamily: EL_FONT.display,
                 fontSize:
                   chapter.key === "aether"
-                    ? "clamp(3.2rem, 9.5vw, 9.5rem)"
+                    ? "clamp(2.6rem, 6.5vw, 6.5rem)"
                     : "clamp(4.6rem, 17vw, 16rem)",
                 fontWeight: 200,
                 color: chapter.color,
@@ -280,14 +294,6 @@ function ScrubbedElementChapter({
               {chapter.th}
             </motion.h2>
 
-            {chapter.key === "aether" && (
-              <p
-                className="mt-1 italic text-[#e4d8ff]"
-                style={{ fontFamily: EL_FONT.display, fontSize: "clamp(1.2rem, 2.4vw, 2.2rem)", fontWeight: 300, lineHeight: 1.2 }}
-              >
-                ธาตุที่ 5
-              </p>
-            )}
 
             <motion.p
               style={{
@@ -300,7 +306,7 @@ function ScrubbedElementChapter({
               }}
               className="mt-4 text-[#faf8f4] will-change-transform lg:mt-6"
             >
-              {chapter.subtitleTh}
+              <Phrases text={chapter.subtitleTh} separator=" " />
             </motion.p>
 
             <motion.p
@@ -318,7 +324,7 @@ function ScrubbedElementChapter({
               style={{ opacity: examplesOpacity, fontFamily: EL_FONT.mono }}
               className="mt-4 max-w-[46ch] text-xs leading-relaxed text-[#cfc9bd] lg:mt-6"
             >
-              {chapter.examplesTh}
+              <Phrases text={chapter.examplesTh} separator=" · " />
             </motion.p>
           </div>
         </div>

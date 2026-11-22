@@ -156,7 +156,7 @@ const ELEMENTS: { key: "water" | "earth" | "air" | "fire" | "aether"; kind: stri
   { key: "water", kind: "ภัยในแหล่งน้ำ", examples: "เช่น น้ำเสียจากโรงงาน สารปนเปื้อนในแม่น้ำ ไมโครพลาสติก น้ำที่คนใช้ดื่มและทำเกษตร" },
   { key: "air", kind: "ภัยในอากาศที่เราหายใจ", examples: "เช่น ฝุ่น PM2.5 ควันจากการเผาในที่โล่ง ไอเสียจากโรงงานใกล้บ้าน การปล่อยคาร์บอน" },
   { key: "fire", kind: "ภัยจากไฟและความร้อน", examples: "เช่น อัคคีภัยในโรงงาน ผับบาร์ หรืออาคาร โกดังเก็บสารเคมี การเผาไร่และป่า" },
-  { key: "aether", kind: "ภัยที่มองไม่เห็น", examples: "เช่น ข่าวปลอม การอ้างว่ารักษ์โลกเกินจริง ขยะที่ไม่มีใครบันทึกว่าไปที่ไหน พลังงานที่แอปและ AI ใช้" },
+  { key: "aether", kind: "ภัยจาก AI โซเชียล และเทคโนโลยี", examples: "เช่น แอปที่ออกแบบให้เลื่อนไม่หยุด ข่าวปลอมและคลิป AI ดีปเฟก พลังงานที่ AI ใช้" },
 ];
 
 /** The Next Decade's last edition, as the live /hackathon page lists them. */
@@ -330,7 +330,7 @@ export function SponsorDeck() {
               </span>
             </h1>
             <p className="m-0 mt-2 text-[24px] sm:text-[32px]" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
-              ดิน · น้ำ · ลม · ไฟ · ธาตุที่ 5
+              ดิน · น้ำ · ลม · ไฟ · ธาตุที่มองไม่เห็น
             </p>
           </div>
 
