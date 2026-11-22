@@ -707,7 +707,7 @@ export function VoiceStudioClient({
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-3.5 px-4 pb-60 pt-4">
         {migrationMissing ? (
           <div className="rounded-2xl border border-amber-400/40 bg-amber-500/10 p-3 text-xs text-amber-100">
-            ยังไม่ได้รัน migration <code className="font-mono">20261122120000_radar_voice_studio.sql</code> เทคที่อัดจะถูกเก็บไว้ในเครื่องก่อน
+            ยังไม่ได้รัน migration <code className="font-mono">20261122150000_radar_voice_studio.sql</code> เทคที่อัดจะถูกเก็บไว้ในเครื่องก่อน
           </div>
         ) : null}
 
