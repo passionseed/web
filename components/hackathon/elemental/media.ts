@@ -4,6 +4,9 @@ export type ElementKey = "earth" | "water" | "air" | "fire" | "aether";
 
 export const ELEMENT_SCRUB_FRAME_COUNT = 36;
 
+/** The frames the scroll chapters load (6 of the 36); the page dissolves between them. */
+export const ELEMENT_KEYFRAMES = [1, 8, 15, 22, 29, 36] as const;
+
 export function elementFrameUrl(key: ElementKey, frameIndex: number): string {
   const clamped = Math.min(ELEMENT_SCRUB_FRAME_COUNT, Math.max(1, frameIndex));
   return `/hackathon/elemental/media/frames/${key}/${String(clamped).padStart(2, "0")}.webp`;

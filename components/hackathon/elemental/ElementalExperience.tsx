@@ -42,6 +42,8 @@ function ClosingPoster({ joinHref, open }: { joinHref: string; open: boolean }) 
   const reduceMotion = useReducedMotion();
   const [isPortraitScreen, setIsPortraitScreen] = useState(false);
   const [linkInView, setLinkInView] = useState(false);
+  // The poster sits at the bottom of the page: load nothing until it's near.
+  const [nearViewport, setNearViewport] = useState(false);
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -55,6 +57,22 @@ function ClosingPoster({ joinHref, open }: { joinHref: string; open: boolean }) 
     const onChange = (e: MediaQueryListEvent) => setIsPortraitScreen(e.matches);
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+    const preloader = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setNearViewport(true);
+          preloader.disconnect();
+        }
+      },
+      { rootMargin: "400px 0px" }
+    );
+    preloader.observe(section);
+    return () => preloader.disconnect();
   }, []);
 
   useEffect(() => {
@@ -87,6 +105,8 @@ function ClosingPoster({ joinHref, open }: { joinHref: string; open: boolean }) 
     return () => observer.disconnect();
   }, []);
 
+  const posterSrc = isPortraitScreen ? KEY_VISUAL_MEDIA.posterVertical : KEY_VISUAL_MEDIA.poster;
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLVideoElement>) => {
     if (e.key === " " || e.key.toLowerCase() === "k") {
       e.preventDefault();
@@ -109,12 +129,11 @@ function ClosingPoster({ joinHref, open }: { joinHref: string; open: boolean }) 
         <video
           ref={videoRef}
           src={KEY_VISUAL_MEDIA.loop}
-          poster={isPortraitScreen ? KEY_VISUAL_MEDIA.posterVertical : KEY_VISUAL_MEDIA.poster}
-          autoPlay={!reduceMotion}
+          poster={nearViewport ? posterSrc : undefined}
           muted
           loop
           playsInline
-          preload="metadata"
+          preload={nearViewport ? "metadata" : "none"}
           tabIndex={0}
           aria-label="โปสเตอร์เคลื่อนไหว Elemental Hackathon กด Space หรือ K เพื่อหยุดหรือเล่น"
           onKeyDown={handleKeyDown}
