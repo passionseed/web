@@ -1,18 +1,39 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 
 import { EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 
+import { ELEMENT_DETAILS } from "./challenges";
+import { ElementDetailSheet } from "./ElementDetailSheet";
 import {
   ELEMENT_CHAPTERS,
   ELEMENT_KEYFRAMES,
   elementFrameUrl,
   type ElementChapter,
+  type ElementKey,
 } from "./media";
 import { blockThresholds, DISSOLVE_BLOCK_PX, keyframeBlend, seedFromKey } from "./scrub-dissolve";
+
+const HASH_PREFIX = "#element-";
+
+/** Opens the element's full brief. Lives in each chapter, under its examples. */
+function MoreButton({ chapter, onOpen }: { chapter: ElementChapter; onOpen: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="pointer-events-auto mt-5 inline-flex items-center gap-2 border-b pb-1 text-sm text-[#faf8f4] transition-opacity hover:opacity-80 sm:text-base lg:mt-7"
+      style={{ borderColor: chapter.color, fontFamily: "var(--font-bai-jamjuree), sans-serif" }}
+      aria-haspopup="dialog"
+    >
+      ดูโจทย์และเคสที่เกิดขึ้นจริง
+      <span aria-hidden="true">→</span>
+    </button>
+  );
+}
 
 const CANVAS_W = 600;
 const CANVAS_H = 750;
@@ -60,9 +81,11 @@ function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement) {
 function ScrubbedElementChapter({
   chapter,
   mediaOnRight,
+  onOpenDetail,
 }: {
   chapter: ElementChapter;
   mediaOnRight: boolean;
+  onOpenDetail: () => void;
 }) {
   const runwayRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -234,6 +257,7 @@ function ScrubbedElementChapter({
             <p className="mt-6 max-w-[46ch] text-xs text-[#cfc9bd]" style={{ fontFamily: EL_FONT.mono }}>
               <Phrases text={chapter.examplesTh} separator=" · " />
             </p>
+            <MoreButton chapter={chapter} onOpen={onOpenDetail} />
           </div>
         </div>
       </article>
@@ -326,6 +350,8 @@ function ScrubbedElementChapter({
             >
               <Phrases text={chapter.examplesTh} separator=" · " />
             </motion.p>
+
+            <MoreButton chapter={chapter} onOpen={onOpenDetail} />
           </div>
         </div>
       </div>
@@ -333,7 +359,41 @@ function ScrubbedElementChapter({
   );
 }
 
-export function ElementalPlacesShowcase() {
+function isElementKey(value: string): value is ElementKey {
+  return ELEMENT_CHAPTERS.some((c) => c.key === value);
+}
+
+/**
+ * The five chapters. Each one opens its full brief in a side panel, and the
+ * panel is linkable (#element-water), so a post can send people straight to it.
+ */
+export function ElementalPlacesShowcase({ joinHref, open }: { joinHref: string; open: boolean }) {
+  const [activeKey, setActiveKey] = useState<ElementKey | null>(null);
+
+  useEffect(() => {
+    const fromHash = () => {
+      const hash = window.location.hash;
+      if (!hash.startsWith(HASH_PREFIX)) return;
+      const key = hash.slice(HASH_PREFIX.length);
+      if (isElementKey(key)) setActiveKey(key);
+    };
+    fromHash();
+    window.addEventListener("hashchange", fromHash);
+    return () => window.removeEventListener("hashchange", fromHash);
+  }, []);
+
+  const openDetail = useCallback((key: ElementKey) => {
+    setActiveKey(key);
+    window.history.replaceState(null, "", `${HASH_PREFIX}${key}`);
+  }, []);
+
+  const closeDetail = useCallback(() => {
+    setActiveKey(null);
+    if (window.location.hash.startsWith(HASH_PREFIX)) {
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+  }, []);
+
   return (
     <section id="elements" aria-label="ห้าธาตุ Elemental Hackathon">
       {ELEMENT_CHAPTERS.map((chapter, i) => (
@@ -341,6 +401,18 @@ export function ElementalPlacesShowcase() {
           key={chapter.key}
           chapter={chapter}
           mediaOnRight={i % 2 === 1}
+          onOpenDetail={() => openDetail(chapter.key)}
+        />
+      ))}
+      {ELEMENT_CHAPTERS.map((chapter) => (
+        <ElementDetailSheet
+          key={chapter.key}
+          chapter={chapter}
+          detail={ELEMENT_DETAILS[chapter.key]}
+          open={activeKey === chapter.key}
+          onOpenChange={(next) => (next ? openDetail(chapter.key) : closeDetail())}
+          joinHref={joinHref}
+          registrationOpen={open}
         />
       ))}
     </section>
