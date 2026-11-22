@@ -51,9 +51,8 @@ export default async function OnboardPage({
     .maybeSingle();
 
   const { data: profile } = await supabase
-    .from("profiles")
+    .rpc("get_my_profile")
     .select(`is_onboarded, ${PROFILE_COMPLETION_SELECT}, education_level`)
-    .eq("id", user.id)
     .maybeSingle();
 
   const { data: guardianConsent } = await supabase

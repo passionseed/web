@@ -1,55 +1,56 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { createClient } from "@/utils/supabase/server";
 
+/**
+ * Claim an expert profile from the link in the submission email.
+ *
+ * The email is a Supabase magic link whose redirect lands here, so by the time
+ * a real expert arrives they are already signed in as the address the email
+ * went to. This route only marks the profile claimed when the signed-in email
+ * matches. It never mints a login link itself: doing that let anyone who could
+ * get a token row in front of it sign in as any email address.
+ */
 export async function GET(request: NextRequest) {
+  const appUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    "https://passionseed.org";
   const token = request.nextUrl.searchParams.get("token");
 
   if (!token) {
     return NextResponse.json({ error: "Missing token" }, { status: 400 });
   }
 
-  const supabase = createAdminClient();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  // Look up expert profile by claim token (not expired)
-  const { data: profile, error } = await supabase
+  if (!user?.email || user.is_anonymous) {
+    const next = `/api/expert-interview/claim?token=${encodeURIComponent(token)}`;
+    return NextResponse.redirect(
+      `${appUrl}/login?next=${encodeURIComponent(next)}`
+    );
+  }
+
+  const admin = createAdminClient();
+  const { data: profile, error } = await admin
     .from("expert_profiles")
-    .select("id, email, status, claim_token_expires_at")
+    .select("id, email")
     .eq("claim_token", token)
     .gt("claim_token_expires_at", new Date().toISOString())
     .single();
 
-  if (error || !profile) {
-    const appUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "https://passionseed.org";
-    return NextResponse.redirect(`${appUrl}/expert-interview/claimed?error=invalid_token`);
+  const signedInEmail = user.email.trim().toLowerCase();
+  if (error || !profile || profile.email.trim().toLowerCase() !== signedInEmail) {
+    return NextResponse.redirect(
+      `${appUrl}/expert-interview/claimed?error=invalid_token`
+    );
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "https://passionseed.org";
-  const redirectTo = `${appUrl}/expert-interview/claimed?profileId=${profile.id}`;
-
-  // Generate a magic link for the expert to log in
-  const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
-    type: "magiclink",
-    email: profile.email,
-    options: { redirectTo },
-  });
-
-  if (linkError || !linkData?.properties?.action_link) {
-    console.error("[expert-interview/claim] failed to generate magic link", linkError);
-    // Fallback: mark as claimed and redirect directly
-    await supabase
-      .from("expert_profiles")
-      .update({
-        status: "claimed",
-        claim_token: null,
-        claim_token_expires_at: null,
-      })
-      .eq("id", profile.id);
-
-    return NextResponse.redirect(redirectTo);
-  }
-
-  // Clear the claim token now (single-use)
-  await supabase
+  // Single use: clear the token as the profile is claimed.
+  await admin
     .from("expert_profiles")
     .update({
       status: "claimed",
@@ -58,6 +59,7 @@ export async function GET(request: NextRequest) {
     })
     .eq("id", profile.id);
 
-  // Redirect expert to Supabase magic link — on auth, Supabase will redirect to redirectTo
-  return NextResponse.redirect(linkData.properties.action_link);
+  return NextResponse.redirect(
+    `${appUrl}/expert-interview/claimed?profileId=${profile.id}`
+  );
 }

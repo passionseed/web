@@ -63,9 +63,8 @@ export default async function LoginPage({
     if (isShiftPath(next)) redirect(next);
     // Check if profile is complete before redirecting
     const { data: profileData, error: profileError } = await supabase
-      .from("profiles")
+      .rpc("get_my_profile")
       .select(`${PROFILE_COMPLETION_SELECT}, is_onboarded`)
-      .eq("id", data.user.id)
       .single();
     const { data: guardianConsent } = await supabase
       .from("profile_guardian_consents")
