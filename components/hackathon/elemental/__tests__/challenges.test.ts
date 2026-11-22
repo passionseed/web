@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 
 import { ELEMENT_DETAILS } from "../challenges";
@@ -32,10 +35,24 @@ describe("Elemental element details", () => {
     for (const detail of Object.values(ELEMENT_DETAILS)) {
       for (const item of detail.cases) {
         expect(item.impact.length).toBeGreaterThanOrEqual(2);
+        // The panel shows three numbers; a fourth would be silently hidden.
+        expect(item.impact.length).toBeLessThanOrEqual(3);
         expect(item.sources.length).toBeGreaterThanOrEqual(1);
         for (const source of item.sources) {
           expect(source.url).toMatch(/^https:\/\//);
         }
+      }
+    }
+  });
+
+  it("credits every photo and ships its file", () => {
+    for (const detail of Object.values(ELEMENT_DETAILS)) {
+      for (const item of detail.cases) {
+        if (!item.image) continue;
+        expect(item.image.credit).toMatch(/CC|Public domain/);
+        expect(item.image.creditUrl).toMatch(/^https:\/\/commons\.wikimedia\.org\/wiki\/File:/);
+        const file = path.join(process.cwd(), "public", item.image.src.replace(/^\//, ""));
+        expect(fs.existsSync(file)).toBe(true);
       }
     }
   });

@@ -28,6 +28,16 @@ export interface CaseImpact {
   labelTh: string;
 }
 
+/** A photo we may publish (CC, public domain, Unsplash); never a news outlet's photo. */
+export interface CaseImage {
+  src: string;
+  altTh: string;
+  /** Printed on the photo, as its license asks: author, license, where it's from. */
+  credit: string;
+  /** The file's Commons page, which carries the full license. */
+  creditUrl: string;
+}
+
 export interface ElementCase {
   titleTh: string;
   placeTh: string;
@@ -36,6 +46,7 @@ export interface ElementCase {
   impact: readonly CaseImpact[];
   whoIsHurtTh: string;
   sources: readonly CaseSource[];
+  image?: CaseImage;
 }
 
 export interface ElementDetail {
@@ -44,6 +55,7 @@ export interface ElementDetail {
   starterTh: string;
   stretchTh: string;
   cases: readonly ElementCase[];
+  cover?: CaseImage;
 }
 
 /** Under each challenge: the cases are examples, not the only problems (Angpao, 2026-11-20). */
@@ -65,11 +77,10 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
         placeTh: "แม่สาย เชียงราย และหนองคาย",
         yearTh: "พ.ย. 2569",
         whatHappenedTh:
-          "สารหนูจากเหมืองต้นน้ำไหลลงแม่น้ำสายและแม่น้ำโขง น้ำประปาในหลายหมู่บ้านต้องหยุดจ่าย และรัฐต้องสั่งหาน้ำสะอาดมาแจกให้คนในพื้นที่",
+          "สารหนูจากเหมืองต้นน้ำไหลลงแม่น้ำสายและแม่น้ำโขง น้ำประปาใน 14 หมู่บ้านของอำเภอแม่สายต้องหยุดจ่าย และรัฐต้องสั่งหาน้ำสะอาดมาแจกให้คนในพื้นที่",
         impact: [
           { value: "30 เท่า", labelTh: "สารหนูในโรงผลิตน้ำประปาแม่สาย เทียบกับค่าที่ปลอดภัย" },
           { value: "20,000+ ครัวเรือน", labelTh: "ได้รับผลกระทบทางภาคเหนือ" },
-          { value: "14 หมู่บ้าน", labelTh: "ในอำเภอแม่สายที่ถูกหยุดจ่ายน้ำประปา" },
           { value: "17 จาก 177 คน", labelTh: "ที่หนองคาย ตรวจพบสารหนูในปัสสาวะ" },
         ],
         whoIsHurtTh: "ทุกบ้านที่ใช้น้ำประปา และชาวบ้านริมแม่น้ำโขงที่อยู่ปลายน้ำ",
@@ -85,6 +96,12 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
             dateTh: "18 พ.ย. 2569",
           },
         ],
+        image: {
+          src: "/hackathon/elemental/cases/water-1.webp",
+          altTh: "น้ำท่วมเอ่อล้นทุ่งในจังหวัดเชียงราย ปี 2567",
+          credit: "ภาพ: ร้อยตรี โชคดี, CC BY-SA 4.0, Wikimedia Commons",
+          creditUrl: "https://commons.wikimedia.org/wiki/File:2024_Flooding_in_Chiang_Rai_Province_2.jpg",
+        },
       },
       {
         titleTh: "แม่น้ำกกที่ไม่เคยใสอีกเลย",
@@ -107,6 +124,12 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
             dateTh: "4 เม.ย. 2569",
           },
         ],
+        image: {
+          src: "/hackathon/elemental/cases/water-2.webp",
+          altTh: "น้ำโคลนท่วมบ้านเรือนในเชียงราย ปี 2567",
+          credit: "ภาพ: ร้อยตรี โชคดี, CC BY-SA 4.0, Wikimedia Commons",
+          creditUrl: "https://commons.wikimedia.org/wiki/File:2024_Flooding_in_Chiang_Rai_Province_1.jpg",
+        },
       },
     ],
   },
@@ -142,6 +165,12 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
           },
           { name: "Thai PBS", url: "https://www.thaipbs.or.th/news/content/339530", dateTh: "30 เม.ย. 2567" },
         ],
+        image: {
+          src: "/hackathon/elemental/cases/earth-1.webp",
+          altTh: "ถังเก็บกากอันตรายวางซ้อนกันบนพาเลท",
+          credit: "ภาพ: Mampato, Public domain, Wikimedia Commons",
+          creditUrl: "https://commons.wikimedia.org/wiki/File:Drums_with_toxic_waste_2776.jpg",
+        },
       },
       {
         titleTh: "ขยะอิเล็กทรอนิกส์ทะลักเข้าโรงงานที่ไม่มีใบอนุญาต",
@@ -150,8 +179,7 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
         whatHappenedTh:
           "ไทยนำเข้าขยะอิเล็กทรอนิกส์มากขึ้นหลายเท่าในไม่กี่ปี เจ้าหน้าที่บุกค้นแล้วเจอกองขยะมหาศาลในอาคารที่ไม่มีใบอนุญาตโรงงาน ชาวบ้านรอบๆ บ่นว่าหายใจไม่สะดวก เวียนหัว และปวดหัว",
         impact: [
-          { value: "2,824 ตัน", labelTh: "ขยะอิเล็กทรอนิกส์ที่ไทยนำเข้าทั้งปี 2560" },
-          { value: "56,154 ตัน", labelTh: "ที่นำเข้าแค่ 10 เดือนแรกของปี 2566" },
+          { value: "56,154 ตัน", labelTh: "ขยะอิเล็กทรอนิกส์ที่ไทยนำเข้าแค่ 10 เดือนแรกของปี 2566 (ทั้งปี 2560 มีแค่ 2,824 ตัน)" },
           { value: "2,500+ ตัน", labelTh: "ขยะอิเล็กทรอนิกส์และเศษโลหะ ที่เจอในการบุกค้นที่ระยอง" },
           { value: "9 จาก 15 อาคาร", labelTh: "ในจุดเดียวกัน ไม่มีใบอนุญาตโรงงาน" },
         ],
@@ -168,6 +196,12 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
             dateTh: "17 ต.ค. 2569",
           },
         ],
+        image: {
+          src: "/hackathon/elemental/cases/earth-2.webp",
+          altTh: "กองคอมพิวเตอร์และจอเก่าที่ถูกทิ้ง",
+          credit: "ภาพ: AvWijk, Public domain, Wikimedia Commons",
+          creditUrl: "https://commons.wikimedia.org/wiki/File:Ewaste-pile.jpg",
+        },
       },
       {
         titleTh: "ขยะที่ถูกฝังในไร่ แล้วน้ำท่วมพาออกมา",
@@ -231,6 +265,12 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
             dateTh: "24 ม.ค. 2568",
           },
         ],
+        image: {
+          src: "/hackathon/elemental/cases/air-1.webp",
+          altTh: "สะพานพระราม 9 และแม่น้ำเจ้าพระยา ในหมอกฝุ่น",
+          credit: "ภาพ: eric molina, CC BY 2.0, Wikimedia Commons",
+          creditUrl: "https://commons.wikimedia.org/wiki/File:King_Rama_IX_Bridge_(4272903581).jpg",
+        },
       },
       {
         titleTh: "ฤดูเผาที่เชียงใหม่",
@@ -261,6 +301,12 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
             dateTh: "6 พ.ย. 2568",
           },
         ],
+        image: {
+          src: "/hackathon/elemental/cases/air-2.webp",
+          altTh: "ตัวเมืองเชียงใหม่ใต้ฟ้าสีหม่นจากควันการเผา",
+          credit: "ภาพ: FredTC, CC BY-SA 4.0, Wikimedia Commons",
+          creditUrl: "https://commons.wikimedia.org/wiki/File:Chiang_Mai_Air_Pollution_P_20180306_144750_1_p.jpg",
+        },
       },
       {
         titleTh: "กลิ่นจากโรงงานข้างบ้าน",
@@ -285,6 +331,12 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
             dateTh: "8 ธ.ค. 2568",
           },
         ],
+        image: {
+          src: "/hackathon/elemental/cases/air-3.webp",
+          altTh: "ควันพวยพุ่งจากปล่องโรงงาน",
+          credit: "ภาพ: Pöllö, CC BY 3.0, Wikimedia Commons",
+          creditUrl: "https://commons.wikimedia.org/wiki/File:Smoke_plume_from_chimney_of_power_plant.jpg",
+        },
       },
     ],
   },
@@ -304,12 +356,11 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
         placeTh: "บ้านค่าย ระยอง",
         yearTh: "เม.ย. 2567",
         whatHappenedTh:
-          "ที่เก็บกากเคมีแห่งนี้หยุดดำเนินการไปตั้งแต่ไฟไหม้ครั้งก่อนในปี 2565 แต่กากยังอยู่ที่เดิม พอไฟลุกอีกครั้ง เมทานอล น้ำมันเตา และกากตะกอนน้ำมัน ก็ไหม้ต่อเนื่องหลายวัน",
+          "ที่เก็บกากเคมีแห่งนี้หยุดดำเนินการไปตั้งแต่ไฟไหม้ครั้งก่อนในปี 2565 แต่กากยังอยู่ที่เดิม พอไฟลุกอีกครั้ง เมทานอล น้ำมันเตา และกากตะกอนน้ำมัน ในโกดัง 5 หลังที่มีถังนับหมื่นใบ ก็ไหม้ต่อเนื่องหลายวัน",
         impact: [
           { value: "67 คน", labelTh: "ชาวบ้านที่ต้องเข้ารักษาเพราะสูดควัน" },
           { value: "2 ตำบล", labelTh: "ที่ชาวบ้านต้องอพยพออกจากบ้าน" },
           { value: "3 วัน+", labelTh: "ผ่านไปแล้วไฟก็ยังไม่ดับ" },
-          { value: "5 หลัง", labelTh: "โกดังเก็บสารเคมี ที่มีถังนับหมื่นใบ" },
         ],
         whoIsHurtTh: "ชาวบ้านรอบๆ ที่ต้องสูดควันและอพยพออกจากบ้าน",
         sources: [
@@ -331,7 +382,6 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
         impact: [
           { value: "1,992 คน", labelTh: "ถูกสั่งให้อพยพ" },
           { value: "5 กม.", labelTh: "รัศมีที่ให้คนออกห่าง" },
-          { value: "26 ชม.+", labelTh: "กว่าไฟจะดับสนิท" },
           { value: "700 ล้านบาท", labelTh: "ความเสียหายเบื้องต้น" },
         ],
         whoIsHurtTh: "อาสากู้ภัยอายุ 18 ปีที่เสียชีวิตระหว่างหนีไฟ ชาวบ้านรอบโรงงาน และนักดับเพลิง",
@@ -368,6 +418,12 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
           },
           { name: "Thai PBS", url: "https://www.thaipbs.or.th/news/content/337401", dateTh: "24 ก.พ. 2567" },
         ],
+        image: {
+          src: "/hackathon/elemental/cases/fire-3.webp",
+          altTh: "ไฟไหม้ใบไม้แห้งในป่า จังหวัดแม่ฮ่องสอน",
+          credit: "ภาพ: Takeaway, CC BY-SA 3.0, Wikimedia Commons",
+          creditUrl: "https://commons.wikimedia.org/wiki/File:Forest_fire_mae_hong_son_province_01.jpg",
+        },
       },
     ],
   },
@@ -387,18 +443,23 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
         placeTh: "โฆษณาบน Facebook ในไทย",
         yearTh: "2568",
         whatHappenedTh:
-          "โฆษณาใช้ AI ปลอมคลิปผู้ประกาศข่าวตัวจริง ให้ดูเหมือนแนะนำการลงทุน ภาพบางส่วนตัดมาจากข่าวจริงเมื่อหลายปีก่อน ทีมตรวจสอบข่าวต้องไล่หาต้นฉบับ",
+          "โฆษณาใช้ AI ปลอมคลิปผู้ประกาศข่าวตัวจริง ให้ดูเหมือนแนะนำการลงทุน ภาพบางส่วนตัดมาจากข่าวจริงเมื่อหลายปีก่อน ทีมตรวจสอบข่าวเจอแบบนี้แล้วอย่างน้อย 3 ถึง 4 ครั้ง",
         impact: [
           { value: "8,000 บาท", labelTh: "ที่ชวนให้ลงก่อน โดยสัญญาว่าจะได้คืนถึง 800,000 บาท" },
           { value: "12,000 ครั้ง", labelTh: "ยอดดูของคลิปปลอมคลิปเดียว" },
           { value: "72.3%", labelTh: "โอกาสที่คลิปหนึ่งในชุดนี้ถูกสร้างด้วย AI ตามเครื่องมือตรวจ" },
-          { value: "3 ถึง 4 ครั้ง", labelTh: "อย่างน้อย ที่ทีมตรวจสอบเจอคลิปปลอมแบบเดียวกันนี้" },
         ],
         whoIsHurtTh: "ทุกคนที่เชื่อใจหน้าผู้ประกาศข่าวที่คุ้นเคย โดยเฉพาะพ่อแม่และผู้สูงอายุ",
         sources: [
           { name: "Thai PBS Verify", url: "https://www.thaipbs.or.th/verify/content/4431", dateTh: "22 ก.ค. 2568" },
           { name: "Thai PBS Verify", url: "https://www.thaipbs.or.th/verify/content/5074", dateTh: "28 ส.ค. 2568" },
         ],
+        image: {
+          src: "/hackathon/elemental/cases/aether-1.webp",
+          altTh: "เครื่องพิมพ์ดีดที่พิมพ์คำว่า fake news",
+          credit: "ภาพ: Jorge Franganillo, CC BY 2.0, Wikimedia Commons",
+          creditUrl: "https://commons.wikimedia.org/wiki/File:Fake_news_-_51120419628.jpg",
+        },
       },
       {
         titleTh: "ค่าเสียหายจากมิจฉาชีพออนไลน์",
@@ -439,6 +500,12 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
             dateTh: "2568",
           },
         ],
+        image: {
+          src: "/hackathon/elemental/cases/aether-3.webp",
+          altTh: "แถวตู้เซิร์ฟเวอร์ในดาต้าเซ็นเตอร์",
+          credit: "ภาพ: Carl Lender, CC BY 2.0, Wikimedia Commons",
+          creditUrl: "https://commons.wikimedia.org/wiki/File:Datacenter_Server_Racks_(22370909788).jpg",
+        },
       },
     ],
   },
