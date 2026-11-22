@@ -22,7 +22,7 @@ const EXTENSION: Record<string, string> = {
  * see it), then SlipOK checks it:
  * - paid: the seat is confirmed on the spot
  * - rejected / retry: the person sees why and can upload again
- * - unverified (SlipOK down, quota, not configured): status "review", a person checks it
+ * - unverified (SlipOK down, every account out of quota, not configured): status "review", a person checks it
  */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   try {
@@ -48,6 +48,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const check = {
       kind: verdict.kind,
       code: "code" in verdict ? verdict.code : undefined,
+      account: verdict.account,
       checkedAt: new Date().toISOString(),
       raw: verdict.raw,
     };
