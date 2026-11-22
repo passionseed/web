@@ -1,6 +1,7 @@
 import { randomBytes } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 
+import { MAX_SLIP_BYTES } from "@/lib/hackathon/elemental/slip-image";
 import { safeServerError } from "@/lib/security/route-guards";
 import { verifySlip } from "@/lib/slipok/client";
 import {
@@ -8,8 +9,6 @@ import {
   recordSlip,
   uploadSlip,
 } from "@/lib/supabase/hackathon-event-registrations";
-
-const MAX_SLIP_BYTES = 5 * 1024 * 1024;
 
 // SlipOK reads JPG, JPEG, PNG, JFIF and WEBP.
 const EXTENSION: Record<string, string> = {

@@ -7,6 +7,7 @@ import { CheckCircle2, Download, Loader2, Upload } from "lucide-react";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { SHIFT_PAYMENT } from "@/lib/content/shift-cohort";
+import { prepareSlip } from "@/lib/hackathon/elemental/slip-image";
 
 /**
  * Pay for a sign-up: transfer the exact amount by PromptPay, then upload
@@ -46,19 +47,16 @@ export function PayWithSlip({ token, amountBaht }: { token: string; amountBaht: 
   const [error, setError] = useState<string | null>(null);
   const amount = `฿${amountBaht.toLocaleString("en-US")}`;
 
-  const upload = async (file: File | undefined) => {
-    if (!file) return;
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      setError("ใช้รูปสลิปแบบ JPG หรือ PNG");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setError("รูปใหญ่เกิน 5MB");
-      return;
-    }
+  const upload = async (picked: File | undefined) => {
+    if (!picked) return;
     setBusy(true);
     setError(null);
     try {
+      const file = await prepareSlip(picked);
+      if (!file) {
+        setError("เปิดรูปนี้ไม่ได้ ใช้รูปสลิปแบบ JPG หรือ PNG จากแอปธนาคาร");
+        return;
+      }
       const form = new FormData();
       form.append("slip", file);
       const res = await fetch(`/api/hackathon/elemental/${token}/slip`, { method: "POST", body: form });
