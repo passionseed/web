@@ -8,15 +8,14 @@ import { EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 
 import {
   ELEMENT_CHAPTERS,
-  ELEMENT_SCRUB_FRAME_COUNT,
+  ELEMENT_KEYFRAMES,
   elementFrameUrl,
   type ElementChapter,
 } from "./media";
+import { blockThresholds, DISSOLVE_BLOCK_PX, keyframeBlend, seedFromKey } from "./scrub-dissolve";
 
 const CANVAS_W = 600;
 const CANVAS_H = 750;
-/** Milestone frames fetched first so fast scrollers immediately see calm -> wrecked progression. */
-const MILESTONE_INDICES = [1, 8, 15, 22, 29, 36];
 
 function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement) {
   const iw = img.naturalWidth || CANVAS_W;
@@ -30,11 +29,11 @@ function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement) {
 }
 
 /**
- * Apple-style scroll-scrubbed chapter:
- * A 220svh sticky runway where vertical scroll directly determines which of the
- * 36 pre-extracted WebP corruption frames is drawn onto a sharp 4:5 canvas.
- * Zero video-seek stutter, silky 60fps forward and backward on iOS/Desktop,
- * lazy-loaded one chapter ahead via IntersectionObserver.
+ * Scroll-scrubbed chapter: a 220svh sticky runway where scroll position picks
+ * the picture on a sharp 4:5 canvas. Only the 6 keyframes are downloaded
+ * (about 250 KB a chapter instead of 1.5 MB for all 36 frames); between two
+ * keyframes the next one dissolves in block by block, which keeps the glitch
+ * look. Frames load once the chapter is about a screen away.
  */
 function ScrubbedElementChapter({
   chapter,
@@ -67,101 +66,94 @@ function ScrubbedElementChapter({
     const canvas = canvasRef.current;
     if (!runway || !canvas) return;
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    const layer = document.createElement("canvas");
+    layer.width = CANVAS_W;
+    layer.height = CANVAS_H;
+    const layerCtx = layer.getContext("2d");
+    if (!ctx || !layerCtx) return;
 
-    const frames: (HTMLImageElement | null)[] = new Array(ELEMENT_SCRUB_FRAME_COUNT).fill(null);
-    let loadedStarted = false;
+    const cols = Math.ceil(CANVAS_W / DISSOLVE_BLOCK_PX);
+    const rows = Math.ceil(CANVAS_H / DISSOLVE_BLOCK_PX);
+    const thresholds = blockThresholds(cols * rows, seedFromKey(chapter.key));
+    const frames: (HTMLImageElement | null)[] = ELEMENT_KEYFRAMES.map(() => null);
     let disposed = false;
-    let targetFloat = 0;
-    let currentFloat = 0;
-    let lastDrawnIndex = -1;
+    let targetProgress = 0;
+    let currentProgress = 0;
+    let lastDrawnKey = "";
     let rafId = 0;
 
-    const drawNearestLoaded = (desiredIndex: number) => {
-      const clamped = Math.min(ELEMENT_SCRUB_FRAME_COUNT - 1, Math.max(0, desiredIndex));
-      let pick = frames[clamped];
-      if (!pick) {
-        // Fall back to nearest already-loaded frame so canvas is never blank while streaming.
-        for (let d = 1; d < ELEMENT_SCRUB_FRAME_COUNT; d++) {
-          if (clamped - d >= 0 && frames[clamped - d]) {
-            pick = frames[clamped - d];
-            break;
-          }
-          if (clamped + d < ELEMENT_SCRUB_FRAME_COUNT && frames[clamped + d]) {
-            pick = frames[clamped + d];
-            break;
-          }
+    const nearestLoaded = (index: number): HTMLImageElement | null => {
+      for (let d = 0; d < frames.length; d++) {
+        const before = frames[index - d];
+        if (before) return before;
+        const after = frames[index + d];
+        if (after) return after;
+      }
+      return null;
+    };
+
+    // Draw keyframe `from`, then the blocks of `to` whose threshold the mix has passed.
+    const draw = (progress: number): boolean => {
+      const { from, to, mix } = keyframeBlend(progress, frames.length);
+      const base = frames[from] ?? nearestLoaded(from);
+      if (!base) return false;
+      drawCover(ctx, base);
+      const next = frames[to];
+      if (!frames[from] || !next || mix <= 0) return true;
+
+      layerCtx.globalCompositeOperation = "source-over";
+      layerCtx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+      drawCover(layerCtx, next);
+      const mask = new Path2D();
+      for (let i = 0; i < thresholds.length; i++) {
+        if (thresholds[i] < mix) {
+          mask.rect((i % cols) * DISSOLVE_BLOCK_PX, Math.floor(i / cols) * DISSOLVE_BLOCK_PX, DISSOLVE_BLOCK_PX, DISSOLVE_BLOCK_PX);
         }
       }
-      if (pick && pick.complete && pick.naturalWidth > 0) {
-        drawCover(ctx, pick);
-      }
+      layerCtx.globalCompositeOperation = "destination-in";
+      layerCtx.fill(mask);
+      ctx.drawImage(layer, 0, 0);
+      return true;
     };
 
-    // Draw pristine before still immediately
-    const posterImg = new window.Image();
-    posterImg.decoding = "async";
-    posterImg.src = chapter.before;
-    posterImg.onload = () => {
-      if (disposed) return;
-      if (!frames[0]) frames[0] = posterImg;
-      if (lastDrawnIndex <= 0) drawCover(ctx, posterImg);
-    };
-
-    const loadFrame = (oneBasedIndex: number) => {
-      const img = new window.Image();
-      img.decoding = "async";
-      img.src = elementFrameUrl(chapter.key, oneBasedIndex);
-      img.onload = () => {
-        if (disposed) return;
-        frames[oneBasedIndex - 1] = img;
-        if (Math.round(currentFloat) === oneBasedIndex - 1) {
-          drawCover(ctx, img);
-        }
-      };
-    };
-
-    const startLoadingSequence = () => {
-      if (loadedStarted) return;
-      loadedStarted = true;
-      // Milestones first, then fill in the intermediate frames
-      for (const idx of MILESTONE_INDICES) {
-        loadFrame(idx);
-      }
-      const milestoneSet = new Set(MILESTONE_INDICES);
-      for (let i = 1; i <= ELEMENT_SCRUB_FRAME_COUNT; i++) {
-        if (!milestoneSet.has(i)) loadFrame(i);
-      }
+    const loadKeyframes = () => {
+      ELEMENT_KEYFRAMES.forEach((frameNumber, i) => {
+        const img = new window.Image();
+        img.decoding = "async";
+        img.onload = () => {
+          if (disposed) return;
+          frames[i] = img;
+          lastDrawnKey = "";
+        };
+        img.src = elementFrameUrl(chapter.key, frameNumber);
+      });
     };
 
     const loaderObserver = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          startLoadingSequence();
+          loadKeyframes();
           loaderObserver.disconnect();
         }
       },
-      { rootMargin: "1400px 0px" }
+      { rootMargin: "800px 0px" }
     );
     loaderObserver.observe(runway);
 
     // Smooth damped RAF loop synced to Framer Motion scroll progress
     const unsubscribe = scrollYProgress.on("change", (p) => {
-      const clampedP = Math.min(1, Math.max(0, p));
-      targetFloat = clampedP * (ELEMENT_SCRUB_FRAME_COUNT - 1);
+      targetProgress = Math.min(1, Math.max(0, p));
       if (progressBarRef.current) {
-        progressBarRef.current.style.transform = `scaleX(${clampedP})`;
+        progressBarRef.current.style.transform = `scaleX(${targetProgress})`;
       }
     });
 
     const tick = () => {
       if (disposed) return;
-      currentFloat += (targetFloat - currentFloat) * 0.22;
-      const idx = Math.round(currentFloat);
-      if (idx !== lastDrawnIndex) {
-        lastDrawnIndex = idx;
-        drawNearestLoaded(idx);
-      }
+      currentProgress += (targetProgress - currentProgress) * 0.22;
+      const { from, mix } = keyframeBlend(currentProgress, frames.length);
+      const key = `${from}:${Math.round(mix * 48)}`;
+      if (key !== lastDrawnKey && draw(currentProgress)) lastDrawnKey = key;
       rafId = window.requestAnimationFrame(tick);
     };
     rafId = window.requestAnimationFrame(tick);
@@ -172,7 +164,7 @@ function ScrubbedElementChapter({
       loaderObserver.disconnect();
       window.cancelAnimationFrame(rafId);
     };
-  }, [chapter.before, chapter.key, reduceMotion, scrollYProgress]);
+  }, [chapter.key, reduceMotion, scrollYProgress]);
 
   if (reduceMotion) {
     return (

@@ -70,7 +70,6 @@ export function ElementalHero({ joinHref, open }: { joinHref: string; open: bool
             <video
               ref={videoRef}
               src={KEY_VISUAL_MEDIA.sceneLoop}
-              poster={KEY_VISUAL_MEDIA.scenePoster}
               muted
               loop
               playsInline
