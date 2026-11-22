@@ -82,12 +82,12 @@ export function EndCardView({ card, frameInCard }: { card: StoryEndCard; frameIn
         <RadarMark />
         <div className="sr-box w-full pb-[20px] pt-[16px] text-center" style={{ ["--sr-border" as string]: "var(--sr-orange)", paddingLeft: CTA_PAD_X, paddingRight: CTA_PAD_X, ...pop(frameInCard, T.endCtaMs) }}>
           {card.kind === "comment" ? (
-            <p ref={cta} className="sr-big m-0">
+            <p ref={cta} className="sr-big m-0" style={{ fontWeight: 400 }}>
               <Phrased line={card.lineTh} decorate={lightKeyword(card.keyword)} />
             </p>
           ) : (
             <>
-              <p ref={cta} className="sr-big m-0">
+              <p ref={cta} className="sr-big m-0" style={{ fontWeight: 400 }}>
                 <Phrased line={card.headlineTh} />
               </p>
               <p className="m-0 mt-[12px] inline-block py-[4px]" style={{ fontFamily: "var(--sr-mono)", fontWeight: 700, fontSize: endUrlSize(card.url), color: "var(--sr-ink)", backgroundColor: "var(--sr-orange)", paddingLeft: URL_PAD_X, paddingRight: URL_PAD_X }}>
