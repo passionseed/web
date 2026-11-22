@@ -9,6 +9,7 @@ const PUBLIC_ROUTE_PREFIXES = [
   "/download",
   "/hackathon",
   "/hackathon-old",
+  "/request-for-winners",
   "/api/hackathon",
   "/app/beta",
   "/expert-interview",
