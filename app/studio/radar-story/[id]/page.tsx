@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { StoryReelStudio } from "@/components/radar/reel/story/StoryReelStudio";
 import { storyById } from "@/lib/radar-stories";
+import { parseVoiceDurationsParam } from "@/lib/radar-stories/voice";
 
 /**
  * Filming frame for story reels (docs/radar-guide/README.md, "Story reels"):
@@ -38,6 +39,7 @@ export default async function RadarStoryStudioPage({ params, searchParams }: { p
   const hook = query.hook === "1" ? script.hookVariantsTh[0] : query.hook === "2" ? script.hookVariantsTh[1] : script.hookTh;
   const t = typeof query.t === "string" ? Number(query.t) : NaN;
   const render = query.render === "1";
+  const voiceDurationsMs = parseVoiceDurationsParam(query.voice);
 
   return (
     <div className={render ? "" : "min-h-screen bg-neutral-950 p-10"}>
@@ -47,6 +49,7 @@ export default async function RadarStoryStudioPage({ params, searchParams }: { p
         platform={query.platform === "tt" ? "tt" : "ig"}
         render={render}
         stillSeconds={Number.isFinite(t) && t >= 0 ? t : null}
+        voiceDurationsMs={voiceDurationsMs}
       />
     </div>
   );
