@@ -13,6 +13,7 @@
 import { mkdirSync, statSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
 
+import { STORY_PHOTOS } from "../../lib/radar-stories/scenes";
 import { GENERIC_SCENES, type GenericScene } from "../../lib/radar-stories/types";
 import { canvasToWebp, MAX_ART_BYTES } from "./art";
 import { fail, flagString, parseArgs, REPO_ROOT, runMain } from "./lib/cli";
@@ -25,7 +26,10 @@ async function main(): Promise<void> {
   const only = flagString(args, "only")?.split(",").map((s) => s.trim()).filter(Boolean);
   const unknown = only?.filter((s) => !(GENERIC_SCENES as readonly string[]).includes(s)) ?? [];
   if (unknown.length) fail(`unknown scene ${unknown.join(", ")}. Scenes: ${GENERIC_SCENES.join(", ")}`);
-  const scenes = (only ?? [...GENERIC_SCENES]) as GenericScene[];
+  // Photo scenes come from story-photo.ts; drawing them here would overwrite the photo.
+  const photos = (only ?? []).filter((s) => STORY_PHOTOS[s]);
+  if (photos.length) fail(`${photos.join(", ")} ${photos.length > 1 ? "are" : "is a"} photo scene${photos.length > 1 ? "s" : ""}: use pnpm radar:story-photo`);
+  const scenes = (only ?? GENERIC_SCENES.filter((s) => !STORY_PHOTOS[s])) as GenericScene[];
   mkdirSync(STORY_ART_DIR, { recursive: true });
   for (const scene of scenes) {
     const out = join(STORY_ART_DIR, `${scene}.webp`);

@@ -37,6 +37,7 @@ export type StoryRule =
   | "beats-count"
   | "line-length"
   | "who"
+  | "stress"
   | "mood"
   | "scene"
   | "scene-art"
@@ -158,6 +159,11 @@ export function lintStory(s: StoryScript, opts: StoryLintOptions = {}): StoryPro
       return;
     }
     if (!STORY_WHO.includes(b.who)) error("who", `${at}.who`, `who must be one of ${STORY_WHO.join(", ")}`);
+    if (b.stressTh !== undefined && !blank(b.lineTh)) {
+      // The stressed words are coloured inside one no-wrap phrase (StoryText), so they must sit in one.
+      if (blank(b.stressTh)) error("stress", `${at}.stressTh`, "stressTh is empty; leave it out instead");
+      else if (!phrases(b.lineTh).some((p) => p.includes(b.stressTh!))) error("stress", `${at}.stressTh`, `"${b.stressTh}" is not inside one phrase of the line`);
+    }
     if (blank(b.lineTh)) error("line-length", `${at}.lineTh`, "the line is empty");
     else if (charCount(b.lineTh) > STORY_LIMITS.lineChars) {
       error("line-length", `${at}.lineTh`, `${charCount(b.lineTh)} characters; at most ${STORY_LIMITS.lineChars}`);

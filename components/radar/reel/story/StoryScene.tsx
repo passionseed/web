@@ -1,9 +1,10 @@
 /**
- * The story's backdrop: the scene art full-bleed (crisp at 4x), the phone
- * feed scrolling, and the pixel wipe between scenes. All drawn from the frame
- * number.
+ * The story's backdrop: the scene full-bleed (a film photo, or pixel art crisp
+ * at 4x), the phone feed scrolling, the photo's foreground drawn over the cast
+ * (the dinner table), film grain over everything, and the pixel wipe between
+ * scenes. All drawn from the frame number.
  */
-import { storySceneSrc } from "@/lib/radar-stories/scenes";
+import { scenePhoto, storySceneSrc } from "@/lib/radar-stories/scenes";
 import type { Scene } from "@/lib/radar-stories/types";
 
 import { STORY_FRAME } from "./cast";
@@ -14,6 +15,7 @@ const WIPE_BLOCK = 48;
 
 export function SceneArt({ scene, frame }: { scene: Scene; frame: number }) {
   const src = storySceneSrc(scene);
+  if (src && scenePhoto(scene)) return <PhotoLayer src={src} scene={scene} />;
   const career = scene.startsWith("career:");
   const feed = scene === "phone-feed";
   const scroll = feed ? -((frame * FEED_SCROLL_PX) % STORY_FRAME.height) : 0;
@@ -30,6 +32,43 @@ export function SceneArt({ scene, frame }: { scene: Scene; frame: number }) {
       }}
     />
   );
+}
+
+function PhotoLayer({ src, scene, fromY = 0 }: { src: string; scene: Scene; fromY?: number }) {
+  return (
+    <div
+      className="absolute inset-0"
+      data-scene={scene}
+      data-photo={fromY ? "front" : "back"}
+      style={{
+        backgroundImage: `url(${src})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        clipPath: fromY ? `inset(${fromY}px 0 0 0)` : undefined,
+      }}
+    />
+  );
+}
+
+/** The part of a photo scene that stands in front of the cast (scenes.ts occludeY), or nothing. */
+export function SceneForeground({ scene }: { scene: Scene }) {
+  const photo = scenePhoto(scene);
+  const src = storySceneSrc(scene);
+  if (!photo?.occludeY || !src) return null;
+  return <PhotoLayer src={src} scene={scene} fromY={photo.occludeY} />;
+}
+
+/** The grain tile's offset at frame `f`: a different whole-device-pixel spot every frame. Pure. */
+export function grainOffset(f: number): { x: number; y: number } {
+  let h = (f + 1) * 2654435761;
+  h = (h ^ (h >>> 13)) >>> 0;
+  return { x: (h % 256) * 0.4, y: ((h >>> 8) % 256) * 0.4 };
+}
+
+/** Film grain over the whole frame (public/radar/stories/grain.png), alive from frame to frame. */
+export function FilmGrain({ frame }: { frame: number }) {
+  const o = grainOffset(frame);
+  return <div className="sr-grain" aria-hidden="true" style={{ backgroundPosition: `${o.x}px ${o.y}px` }} />;
 }
 
 /** Darkens the scene under huge text so it always reads. */

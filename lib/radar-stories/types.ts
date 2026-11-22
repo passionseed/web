@@ -35,6 +35,11 @@ export interface StoryBeat {
   ms?: number;
   /** Show the line as huge centred text (hooks, twists). */
   big?: boolean;
+  /**
+   * The words that sting, drawn in the speaker's colour so the eye lands on
+   * them first. Must sit inside one phrase of lineTh (lint checks).
+   */
+  stressTh?: string;
 }
 
 export interface StoryScript {

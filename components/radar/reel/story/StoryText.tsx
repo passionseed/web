@@ -1,23 +1,27 @@
 "use client";
 
 /**
- * The words on a story reel: the guide's dialogue box (typewriter, name tag,
- * a tail pointing at the speaker), narration boxes for `text` lines, and huge
- * centred text for the hook and `big` lines. Everything sits inside the
- * platforms' safe zone (cast.ts SAFE) and is drawn from the frame number.
+ * The words on a story reel, in the Elemental hackathon's type: speech
+ * bubbles that point at whoever speaks (bubble.ts: no name tags), quiet
+ * narration set straight on the photo, and huge Trirong for the hook and
+ * `big` lines, with the line's stressed words (StoryBeat.stressTh) in the
+ * speaker's colour. A line lands whole (no typewriter) so reading starts on
+ * its first frame. Everything sits inside the platforms' safe zone (cast.ts
+ * SAFE) and is drawn from the frame number.
  *
  * Lines break only between phrases (lib/radar-stories/timing.ts phrases), so
  * a Thai word is never cut; a phrase too wide for its box makes the whole
  * text smaller instead (fit.ts).
  */
-import { useRef, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 import { charCount, graphemes, phrases } from "@/lib/radar-stories/timing";
 import type { Who } from "@/lib/radar-stories/types";
 
-import { CAST_LOOK, SAFE, STORY_FRAME } from "./cast";
+import { bubbleRoom, BUBBLE_SIDE, CELL, placeBubble, splitStress, steppedClip, type Rect } from "./bubble";
+import { SAFE, STORY_FRAME } from "./cast";
 import { useFitText } from "./fit";
-import { typedAt, type StoryBeatCue } from "./storyTimeline";
+import type { CastWho, StoryBeatCue } from "./storyTimeline";
 
 export { phrases };
 
@@ -25,8 +29,6 @@ export const BOX_TOP = SAFE.top + 22;
 /** Text boxes run from here to SAFE.right. */
 const BOX_SIDE = 22;
 const BOX_RIGHT = STORY_FRAME.width - SAFE.right;
-/** The dialogue tail hangs this far below its box. */
-const TAIL_DROP = 22;
 /** Room kept between words and the top of anyone's head. */
 const HEAD_ROOM = 10;
 
@@ -100,71 +102,116 @@ export function hookScale(f: number, hookF: number): number {
   return Math.round(((HOOK_PUNCH[f] ?? 1) + push) * 10000) / 10000;
 }
 
-function Tail({ x, color }: { x: number; color: string }) {
-  const left = Math.min(SAFE.right - 40, Math.max(BOX_SIDE + 16, x - 12));
+/** Paper and ink: the bubble for people, and the guide's dark one. */
+const PAPER = "#f3efe6";
+const INK = "#1d211f";
+const GUIDE = "#1a1618";
+/** A stressed word on the bubble (dark enough on paper; P'Seed's is fire on ink). */
+const STRESS_ON_BUBBLE: Record<CastWho, string> = { student: "#6c3ed6", friend: "#187a70", parent: "#c44820", host: "#f99a3a" };
+/** A stressed word in huge type on the dimmed photo. */
+const STRESS_ON_PHOTO: Record<Who, string> = { student: "#bc97f5", friend: "#7fe0c0", parent: "#f59a6a", host: "#ffd57a", text: "#f97834" };
+const SHADOW = "rgb(20 16 14 / 38%)";
+/** Widest a bubble's text column may get (two short lines read faster than one long one). */
+const BUBBLE_TEXT_MAX = 300;
+
+/** The `decorate` for Phrased that colours the stressed words. */
+export function stressed(stress: string | undefined, color: string, weight?: number) {
+  return function Stress(text: string) {
+    return splitStress(text, stress).map((part, i) =>
+      part.stress ? (
+        <span key={i} style={{ color, fontWeight: weight }}>
+          {part.text}
+        </span>
+      ) : (
+        <span key={i}>{part.text}</span>
+      )
+    );
+  };
+}
+
+/** The last phrase of a line: what the hook stresses unless told otherwise. */
+export function lastPhrase(line: string): string {
+  const all = phrases(line);
+  return all.length > 1 ? all[all.length - 1] : "";
+}
+
+/** Scale while a line lands: two stepped frames in, then still. */
+export function landScale(frameInLine: number): number {
+  return frameInLine <= 0 ? 0.9 : frameInLine === 1 ? 0.96 : 1;
+}
+
+function Cells({ cells, color, dx = 0, dy = 0 }: { cells: Rect[]; color: string; dx?: number; dy?: number }) {
   return (
-    <span
-      className="absolute block"
-      aria-hidden="true"
-      style={{
-        left: left - BOX_SIDE,
-        bottom: -TAIL_DROP,
-        width: 24,
-        height: 18,
-        backgroundColor: color,
-        clipPath: "polygon(0 0, 100% 0, 100% 22%, 83% 22%, 83% 44%, 67% 44%, 67% 67%, 50% 67%, 50% 100%, 33% 100%, 33% 44%, 17% 44%, 17% 22%, 0 22%)",
-      }}
-    />
+    <>
+      {cells.map((c, i) => (
+        <span key={i} className="absolute block" style={{ left: c.x + dx, top: c.y + dy, width: c.w, height: c.h, backgroundColor: color }} />
+      ))}
+    </>
   );
 }
 
-/** The most a box starting at BOX_TOP may grow before it (or its tail) reaches a head. */
-function roomAbove(headY: number | null, tail: boolean): number | undefined {
-  return headY === null ? undefined : headY - HEAD_ROOM - (tail ? TAIL_DROP : 0) - BOX_TOP;
-}
-
-/** A spoken line in the guide's dialogue box style. `speakerX` points the tail; null for none. */
-export function DialogueLine({ cue, frame, speakerX, headY = null }: { cue: StoryBeatCue; frame: number; speakerX: number | null; headY?: number | null }) {
-  const who = cue.beat.who as Exclude<Who, "text">;
-  const look = CAST_LOOK[who];
-  const total = lineLength(cue.beat.lineTh);
-  const typed = typedAt(cue, frame, total);
-  const done = typed >= total;
-  const tagOnRight = speakerX !== null && speakerX > STORY_FRAME.width / 2 + 20;
+/**
+ * A spoken line: a paper bubble (P'Seed's is ink) over the speaker, with a
+ * pixel tail down to just above their head. `speakerX` null (the speaker is
+ * not on stage) centres it with no tail.
+ */
+export function SpeechBubble({ cue, frame, speakerX, headY }: { cue: StoryBeatCue; frame: number; speakerX: number | null; headY: number }) {
+  const who = cue.beat.who as CastWho;
+  const guide = who === "host";
+  const content = useRef<HTMLDivElement>(null);
   const text = useRef<HTMLParagraphElement>(null);
-  const plate = useRef<HTMLDivElement>(null);
-  useFitText(text, { base: 22, min: 15, plate, maxHeight: roomAbove(headY, speakerX !== null) });
+  const [size, setSize] = useState<{ w: number; h: number } | null>(null);
+  useFitText(text, { base: 26, min: 18, plate: content, maxHeight: bubbleRoom(headY) });
+  useLayoutEffect(() => {
+    const el = content.current;
+    if (!el) return;
+    const next = { w: el.offsetWidth, h: el.offsetHeight };
+    if (!size || size.w !== next.w || size.h !== next.h) setSize(next);
+  });
+  const x = speakerX ?? STORY_FRAME.width / 2;
+  const place = placeBubble(size ?? { w: 120, h: 60 }, x, headY);
+  const { box } = place;
+  const tail = speakerX === null ? [] : place.tail;
+  const bg = guide ? GUIDE : PAPER;
+  const k = landScale(frame - cue.startF);
+  const clip = steppedClip(box.w, box.h);
+  const wrap: CSSProperties = {
+    visibility: size ? "visible" : "hidden",
+    transform: k !== 1 ? `scale(${k})` : undefined,
+    transformOrigin: `${x}px ${headY}px`,
+  };
   return (
-    <div className="absolute" style={{ left: BOX_SIDE, right: BOX_RIGHT, top: BOX_TOP }} data-line={cue.index}>
-      <div ref={plate} className="sr-box relative px-[18px] pb-[18px] pt-[16px]" style={{ ["--sr-border" as string]: look.color, minHeight: 116 }}>
-        <span className="sr-tag" style={{ backgroundColor: look.color, color: look.ink, ...(tagOnRight ? { right: 14 } : { left: 14 }) }}>
-          {look.nameTh}
-        </span>
-        <p ref={text} className="sr-line m-0">
-          <Phrased line={cue.beat.lineTh} typed={typed} />
-        </p>
-        {done && Math.floor(frame / 12) % 2 === 0 ? (
-          <span className="absolute bottom-[6px] right-[12px] text-[12px] leading-none" style={{ color: look.color }} aria-hidden="true">
-            ▼
-          </span>
-        ) : null}
-        {speakerX !== null ? <Tail x={speakerX} color={look.color} /> : null}
+    <div className="absolute inset-0" style={wrap} data-line={cue.index} data-bubble={who}>
+      {/* A hard pixel shadow lifts the bubble off any photo. */}
+      <span className="absolute block" style={{ left: box.x + CELL, top: box.y + CELL, width: box.w, height: box.h, backgroundColor: SHADOW, clipPath: clip }} />
+      <Cells cells={tail} color={SHADOW} dx={CELL} />
+      <Cells cells={tail} color={bg} />
+      <div className="absolute" style={{ left: box.x, top: box.y, width: box.w, height: box.h, backgroundColor: bg, clipPath: clip }}>
+        <div
+          ref={content}
+          className="absolute left-0 top-0"
+          style={{ width: "max-content", maxWidth: BUBBLE_TEXT_MAX + 2 * 20, padding: "13px 20px 15px", color: guide ? "var(--sr-cream)" : INK }}
+        >
+          <p ref={text} className="sr-say m-0">
+            <Phrased line={cue.beat.lineTh} decorate={stressed(cue.beat.stressTh, STRESS_ON_BUBBLE[who], 600)} />
+          </p>
+        </div>
       </div>
     </div>
   );
 }
 
-/** A `text` line that is not big: a quiet narration plate, no speaker. */
+/** A `text` line that is not big: quiet narration set straight on the photo, like the poster's facts. */
 export function NarrationLine({ cue, frame, headY = null }: { cue: StoryBeatCue; frame: number; headY?: number | null }) {
-  const typed = typedAt(cue, frame, lineLength(cue.beat.lineTh));
   const text = useRef<HTMLParagraphElement>(null);
-  const plate = useRef<HTMLDivElement>(null);
-  useFitText(text, { base: 22, min: 15, plate, maxHeight: roomAbove(headY, false) });
+  const room = headY === null ? undefined : headY - 24 - BOX_TOP;
+  useFitText(text, { base: 26, min: 18, plate: text, maxHeight: room });
+  const k = landScale(frame - cue.startF);
   return (
     <div className="absolute flex justify-center" style={{ left: BOX_SIDE, right: BOX_RIGHT, top: BOX_TOP }} data-line={cue.index}>
-      <div ref={plate} className="sr-box min-w-0 px-[20px] py-[14px] text-center" style={{ ["--sr-border" as string]: "#3d1f45", backgroundColor: "#0f0a12" }}>
-        <p ref={text} className="sr-line m-0" style={{ color: "var(--sr-gold)" }}>
-          <Phrased line={cue.beat.lineTh} typed={typed} />
+      <div className="sr-scrim relative min-w-0" style={{ transform: k !== 1 ? `scale(${k})` : undefined }}>
+        <p ref={text} className="sr-narrate m-0">
+          <Phrased line={cue.beat.lineTh} decorate={stressed(cue.beat.stressTh, STRESS_ON_PHOTO.text)} />
         </p>
       </div>
     </div>
@@ -172,43 +219,46 @@ export function NarrationLine({ cue, frame, headY = null }: { cue: StoryBeatCue;
 }
 
 /**
- * Huge centred text: the hook (cream plate, ink text: the cover frame) or a
- * big line (ink plate, gold text). A speaker's name tag sits on top. The
- * plate stays between the top band and the highest head on stage (`headY`),
- * shrinking its text to fit; the hook punches in from `scale`.
+ * Huge Trirong on the dimmed photo: the hook (left aligned like the poster's
+ * title, its last phrase in fire orange) or a big line (its stressed words in
+ * the speaker's colour). It stays between the top band and the highest head
+ * on stage (`headY`), shrinking to fit; the hook punches in from `scale`.
  */
-export function BigLine({ text, who, hook = false, headY = null, scale = 1 }: { text: string; who: Who | null; hook?: boolean; headY?: number | null; scale?: number }) {
-  const look = who && who !== "text" ? CAST_LOOK[who] : null;
+export function BigLine({
+  text,
+  who,
+  stress,
+  hook = false,
+  headY = null,
+  scale = 1,
+}: {
+  text: string;
+  who: Who | null;
+  stress?: string;
+  hook?: boolean;
+  headY?: number | null;
+  scale?: number;
+}) {
   const band = bigBand(headY, hook);
   const ref = useRef<HTMLParagraphElement>(null);
-  const plate = useRef<HTMLDivElement>(null);
-  // The hook's punch grows the plate by up to 6%: keep that inside the band and clear of the rail.
   const side = hook ? 10 : 0;
-  useFitText(ref, { base: bigFontSize(text, hook), min: 20, plate, maxHeight: (band.bottom - band.top) / (hook ? 1.06 : 1) });
+  useFitText(ref, { base: bigFontSize(text, hook) + 6, min: 22, plate: ref, maxHeight: (band.bottom - band.top) / (hook ? 1.06 : 1) });
+  const color = hook ? STRESS_ON_PHOTO.text : STRESS_ON_PHOTO[who ?? "text"];
   return (
     <div
-      className="absolute flex items-center justify-center"
+      className={`absolute flex items-center ${hook ? "justify-start" : "justify-center"}`}
       style={{ left: BOX_SIDE + side, right: BOX_RIGHT + side, top: band.top, height: band.bottom - band.top }}
       data-big={hook ? "hook" : "line"}
     >
-      <div
-        ref={plate}
-        className="sr-box relative min-w-0 max-w-full px-[22px] py-[18px]"
-        style={{
-          ["--sr-border" as string]: hook ? "var(--sr-orange)" : look?.color ?? "var(--sr-orange)",
-          backgroundColor: hook ? "var(--sr-cream)" : "var(--sr-ink)",
-          transform: scale !== 1 ? `scale(${scale})` : undefined,
-        }}
+      <p
+        ref={ref}
+        className={`sr-big m-0 ${hook ? "text-left" : "text-center"}`}
+        style={{ transform: scale !== 1 ? `scale(${scale})` : undefined, transformOrigin: hook ? "left center" : "center" }}
       >
-        {look ? (
-          <span className="sr-tag" style={{ left: 14, backgroundColor: look.color, color: look.ink }}>
-            {look.nameTh}
-          </span>
-        ) : null}
-        <p ref={ref} className="sr-big m-0" style={{ color: hook ? "var(--sr-ink)" : "var(--sr-gold)" }}>
-          <Phrased line={text} />
-        </p>
-      </div>
+        <Phrased line={text} decorate={stressed(hook ? stress ?? lastPhrase(text) : stress, color, 300)} />
+      </p>
     </div>
   );
 }
+
+export { BUBBLE_SIDE };

@@ -63,7 +63,8 @@
     "radar:tcas": "tsx scripts/radar-guide/tcas.ts",
     "radar:art": "tsx scripts/radar-guide/art.ts",
     "radar:story": "tsx scripts/radar-guide/story.ts",
-    "radar:story-art": "tsx scripts/radar-guide/story-art.ts"
+    "radar:story-art": "tsx scripts/radar-guide/story-art.ts",
+    "radar:story-photo": "tsx scripts/radar-guide/story-photo.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.38",

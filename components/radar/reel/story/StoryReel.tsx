@@ -18,8 +18,8 @@ import { CAST_LOOK, END_HOST, endHostSpot, headTop, STAGE_FLOOR, stageXs, STORY_
 import type { StoryEndCard } from "./endCard";
 import { AvatarActor, HostActor, mouthOpen } from "./StoryCast";
 import { EndCardView } from "./StoryEndCard";
-import { Dim, PixelWipe, SceneArt } from "./StoryScene";
-import { BigLine, DialogueLine, hookScale, NarrationLine } from "./StoryText";
+import { Dim, FilmGrain, PixelWipe, SceneArt, SceneForeground } from "./StoryScene";
+import { BigLine, hookScale, NarrationLine, SpeechBubble } from "./StoryText";
 import { phaseAt, segmentAt, wipeAt, type CastWho, type StoryTimeline } from "./storyTimeline";
 import "./storyReel.css";
 
@@ -100,6 +100,7 @@ export function StoryReel({ timeline, frame, card }: { timeline: StoryTimeline; 
                   talking={speaker === p.who && cue !== null && mouthOpen(f, cue.startF, cue.talkF)}
                 />
               ))}
+            <SceneForeground scene={segment.scene} />
           </>
         )}
       </div>
@@ -119,15 +120,22 @@ export function StoryReel({ timeline, frame, card }: { timeline: StoryTimeline; 
       </div>
       <div key="words" className="absolute inset-0">
         {phase.kind === "hook" ? <BigLine text={timeline.hookTh} who={null} hook headY={headY} scale={hookScale(f, timeline.hook.endF)} /> : null}
-        {cue && cue.beat.big ? <BigLine text={cue.beat.lineTh} who={cue.beat.who} headY={headY} /> : null}
+        {cue && cue.beat.big ? <BigLine text={cue.beat.lineTh} who={cue.beat.who} stress={cue.beat.stressTh} headY={headY} /> : null}
         {cue && !cue.beat.big && cue.beat.who === "text" ? <NarrationLine cue={cue} frame={f} headY={headY} /> : null}
         {cue && !cue.beat.big && speaker ? (
-          <DialogueLine cue={cue} frame={f} speakerX={onStage.find((p) => p.who === speaker)?.x ?? null} headY={headY} />
+          <SpeechBubble
+            key={cue.index}
+            cue={cue}
+            frame={f}
+            speakerX={onStage.find((p) => p.who === speaker)?.x ?? null}
+            headY={onStage.some((p) => p.who === speaker) ? headTop(speaker) : STAGE_FLOOR - 160}
+          />
         ) : null}
       </div>
       <div key="wipe" className="absolute inset-0">
         {wipe ? <PixelWipe progress={wipe.progress} closing={wipe.closing} /> : null}
       </div>
+      <FilmGrain key="grain" frame={f} />
     </div>
   );
 }

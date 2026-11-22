@@ -23,18 +23,21 @@ const launch: readonly StoryScript[] = [
       {
         "who": "parent",
         "lineTh": "ขึ้น ม.ปลายแล้ว สรุปลูก จะเข้าคณะอะไร?",
+        "stressTh": "จะเข้าคณะอะไร?",
         "scene": "dinner-table",
         "ms": 2900
       },
       {
         "who": "student",
         "lineTh": "เอ่อ... ก็กำลังดูๆ อยู่อะแม่",
+        "stressTh": "ดูๆ",
         "scene": "dinner-table",
         "ms": 2100
       },
       {
         "who": "text",
         "lineTh": "ในใจ: ยังไม่รู้เลย ว่าชอบอะไร",
+        "stressTh": "ยังไม่รู้เลย",
         "scene": "dinner-table",
         "ms": 2400,
         "big": true
@@ -42,12 +45,14 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "ทำไมทุกคน รู้ทางกันหมด เหลือแค่เรา ที่ยังงงอยู่",
+        "stressTh": "เหลือแค่เรา",
         "scene": "bedroom-night",
         "ms": 3100
       },
       {
         "who": "host",
         "lineTh": "ไม่ใช่เธอไม่ตั้งใจนะ แค่ยังไม่เคยเห็น งานจริง ของแต่ละอาชีพ",
+        "stressTh": "งานจริง",
         "mood": "serious",
         "scene": "bedroom-night",
         "ms": 4000
@@ -55,6 +60,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "host",
         "lineTh": "Radar มีอาชีพให้ส่อง ว่าวันๆ เขาทำงานอะไรกัน",
+        "stressTh": "งานอะไร",
         "mood": "wink",
         "scene": "radar",
         "ms": 3200
@@ -62,6 +68,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "เออ แบบนี้ค่อยมีเรื่อง ไปคุยกับที่บ้านหน่อย",
+        "stressTh": "มีเรื่อง",
         "scene": "radar",
         "ms": 2900
       }
@@ -91,12 +98,14 @@ const launch: readonly StoryScript[] = [
       {
         "who": "friend",
         "lineTh": "ฉันเล็งวิศวะไว้แล้ว แกอะ จะเข้าคณะไหน?",
+        "stressTh": "จะเข้าคณะไหน?",
         "scene": "classroom",
         "ms": 2900
       },
       {
         "who": "text",
         "lineTh": "เดินออกจาก โรงเรียน แบบใจโหวงสุดๆ",
+        "stressTh": "ใจโหวง",
         "scene": "school-gate",
         "ms": 2800,
         "big": true
@@ -104,12 +113,14 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "หรือเราช้ากว่าเพื่อน ไปแล้วจริงๆอะ",
+        "stressTh": "ช้ากว่าเพื่อน",
         "scene": "school-gate",
         "ms": 2600
       },
       {
         "who": "host",
         "lineTh": "คนที่ตอบเร็ว ไม่ได้แปลว่า เคยเห็นงานจริงนะ",
+        "stressTh": "เคยเห็นงานจริง",
         "mood": "wink",
         "scene": "school-gate",
         "ms": 3100
@@ -117,6 +128,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "host",
         "lineTh": "นักวิจัยไทยชี้ว่า คนทำงาน ราว 2.2 ล้านคน อยู่ในอาชีพที่ AI ทำแทนได้บางส่วน",
+        "stressTh": "2.2 ล้านคน",
         "mood": "serious",
         "scene": "radar",
         "ms": 4800
@@ -124,12 +136,14 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "งั้นต้องรู้ก่อน ว่างานจริงเป็นไง",
+        "stressTh": "งานจริง",
         "scene": "radar",
         "ms": 2300
       },
       {
         "who": "host",
         "lineTh": "Radar ให้ส่องงานจริงก่อน ไม่ต้องแข่งกับใคร",
+        "stressTh": "ไม่ต้องแข่งกับใคร",
         "mood": "wow",
         "scene": "radar",
         "ms": 3100
@@ -137,6 +151,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "โอเค ขอไปส่องก่อน เดี๋ยวค่อยตอบเพื่อน",
+        "stressTh": "ขอไปส่องก่อน",
         "scene": "radar",
         "ms": 2800
       }
@@ -171,12 +186,14 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "ผลบอกว่าเหมาะ กับสายวิเคราะห์ แต่คืองานอะไรอะ",
+        "stressTh": "งานอะไร",
         "scene": "bedroom-night",
         "ms": 3400
       },
       {
         "who": "text",
         "lineTh": "รู้ชื่ออาชีพแล้ว แต่ไม่รู้ว่า วันๆ เขาทำอะไร",
+        "stressTh": "เขาทำอะไร",
         "scene": "bedroom-night",
         "ms": 2900,
         "big": true
@@ -184,6 +201,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "host",
         "lineTh": "นึกภาพไม่ออก ไม่แปลกหรอก แค่คิดในหัว มันยากจริง",
+        "stressTh": "ไม่แปลก",
         "mood": "serious",
         "scene": "bedroom-night",
         "ms": 3400
@@ -191,12 +209,14 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "แล้วจะรู้ได้ไง ว่าชอบงานไหน",
+        "stressTh": "ชอบงานไหน",
         "scene": "bedroom-night",
         "ms": 2200
       },
       {
         "who": "host",
         "lineTh": "ลองทำโจทย์งานจริง ด้วยมือตัวเองสิ Radar มีให้ลองทีละด่าน",
+        "stressTh": "งานจริง",
         "mood": "wow",
         "scene": "radar",
         "ms": 3900
@@ -204,6 +224,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "host",
         "lineTh": "แต่ดึกแล้ว นอนก่อนนะ พรุ่งนี้หัวโล่งๆ ค่อยลองด่านแรก",
+        "stressTh": "นอนก่อนนะ",
         "mood": "wink",
         "scene": "radar",
         "ms": 3500
@@ -211,6 +232,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "โอเค ปิดแบบทดสอบ นอนก่อน พรุ่งนี้ค่อยลอง",
+        "stressTh": "พรุ่งนี้ค่อยลอง",
         "scene": "radar",
         "ms": 3000
       }
@@ -240,18 +262,21 @@ const launch: readonly StoryScript[] = [
       {
         "who": "friend",
         "lineTh": "รอบ 1 มีแต่ เด็กกวาดรางวัล เรารอสอบเถอะ",
+        "stressTh": "เด็กกวาดรางวัล",
         "scene": "classroom",
         "ms": 3100
       },
       {
         "who": "student",
         "lineTh": "เออ ไม่มีถ้วยสักใบ คงยื่นพอร์ตไม่ได้หรอก",
+        "stressTh": "ไม่มีถ้วย",
         "scene": "classroom",
         "ms": 2900
       },
       {
         "who": "host",
         "lineTh": "เดี๋ยวก่อน ใครบอกว่า รอบ 1 ดูแค่ถ้วยล่ะ",
+        "stressTh": "แค่ถ้วย",
         "mood": "wow",
         "scene": "classroom",
         "ms": 2900
@@ -259,6 +284,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "text",
         "lineTh": "รางวัล เป็นแค่หนึ่งหมวด ในแฟ้ม TCASfolio",
+        "stressTh": "แค่หนึ่งหมวด",
         "scene": "classroom",
         "ms": 3100,
         "big": true
@@ -266,6 +292,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "host",
         "lineTh": "ยังมีหมวดโครงงาน กับกิจกรรม ที่เธอลงมือทำเองได้",
+        "stressTh": "ลงมือทำเอง",
         "mood": "talk",
         "scene": "classroom",
         "ms": 3400
@@ -273,12 +300,14 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "งานที่ทำเองเล่นๆ ไม่ได้ชนะอะไร ก็ใส่ได้เหรอ",
+        "stressTh": "ไม่ได้ชนะอะไร",
         "scene": "classroom",
         "ms": 3100
       },
       {
         "who": "host",
         "lineTh": "ใส่ได้ แต่แต่ละสาขา มีเกณฑ์ของตัวเอง เช็กประกาศก่อนนะ",
+        "stressTh": "เกณฑ์ของตัวเอง",
         "mood": "serious",
         "scene": "radar",
         "ms": 3800
@@ -286,6 +315,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "เพิ่งรู้เลย งั้นเราก็เริ่ม สร้างผลงานเอง ได้เหมือนกัน",
+        "stressTh": "สร้างผลงานเอง",
         "scene": "radar",
         "ms": 3500
       }
@@ -320,18 +350,21 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "เพื่อนไปค่าย กันเต็มฟีด แต่แฟ้มเรา ยังว่างเปล่า",
+        "stressTh": "ยังว่างเปล่า",
         "scene": "phone-feed",
         "ms": 3200
       },
       {
         "who": "student",
         "lineTh": "ไม่มีเกียรติบัตรสักใบ จะเอาอะไร ไปยื่น รอบ 1",
+        "stressTh": "ไม่มีเกียรติบัตร",
         "scene": "bedroom-night",
         "ms": 3200
       },
       {
         "who": "text",
         "lineTh": "ผลงานที่เธอทำเอง ใส่พอร์ตได้นะ ถ้าตรงเกณฑ์คณะ",
+        "stressTh": "ผลงานที่เธอทำเอง",
         "scene": "bedroom-night",
         "ms": 3300,
         "big": true
@@ -339,6 +372,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "host",
         "lineTh": "แฟ้ม TCASfolio มีช่องเรียงความ บอกเหตุผลที่สมัครด้วย",
+        "stressTh": "เหตุผลที่สมัคร",
         "mood": "talk",
         "scene": "bedroom-night",
         "ms": 3700
@@ -346,12 +380,14 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "แต่ยังไม่รู้เลย ว่าอยากเรียนอะไร",
+        "stressTh": "อยากเรียนอะไร",
         "scene": "bedroom-night",
         "ms": 2400
       },
       {
         "who": "host",
         "lineTh": "งั้นลองงานจริง สักชิ้นก่อน เหตุผลจะชัดขึ้นเอง",
+        "stressTh": "งานจริง",
         "mood": "wow",
         "scene": "radar",
         "ms": 3100
@@ -359,6 +395,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "host",
         "lineTh": "แต่ละมหาลัย เปิดปิดรับ รอบ 1 ไม่พร้อมกัน เช็กวันได้ที่ mytcas",
+        "stressTh": "ไม่พร้อมกัน",
         "mood": "serious",
         "scene": "radar",
         "ms": 4100
@@ -366,6 +403,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "โอเค ไม่รอค่ายแล้ว เริ่มชิ้นแรก คืนนี้เลย",
+        "stressTh": "คืนนี้เลย",
         "scene": "radar",
         "ms": 2900
       }
@@ -401,18 +439,21 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "โอ๊ย ปุ่มยกเลิก ซ่อนไว้ไหนเนี่ย กดพลาดอีกแล้ว",
+        "stressTh": "กดพลาด",
         "scene": "phone-feed",
         "ms": 3100
       },
       {
         "who": "friend",
         "lineTh": "ไปสาย UX/UI สิ นั่งวาดหน้าจอสวยๆ ในคาเฟ่ชิลๆ",
+        "stressTh": "วาดหน้าจอสวยๆ",
         "scene": "career:ux-design/dream",
         "ms": 3400
       },
       {
         "who": "text",
         "lineTh": "หน้าแอปพื้นฐาน AI ช่วยทำได้แล้ว",
+        "stressTh": "AI",
         "scene": "career:ux-design/work",
         "ms": 2400,
         "big": true
@@ -420,6 +461,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "host",
         "lineTh": "งานจริงคือ แกะนิสัยผู้ใช้ คุยกับทีมพัฒนา ค้านดีไซน์ ที่หลอกให้กด",
+        "stressTh": "ค้านดีไซน์",
         "mood": "serious",
         "scene": "career:ux-design/work",
         "ms": 4000
@@ -427,12 +469,14 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "แบบปุ่มยกเลิก เมื่อกี้เลยปะ",
+        "stressTh": "ปุ่มยกเลิก",
         "scene": "career:ux-design/work",
         "ms": 2100
       },
       {
         "who": "host",
         "lineTh": "ใช่ หางานแรก แข่งกันดุ บริษัทอยากเห็น วิธีแก้ปัญหา ไม่ใช่แค่รูปสวย",
+        "stressTh": "วิธีแก้ปัญหา",
         "mood": "talk",
         "scene": "career:ux-design/work",
         "ms": 4300
@@ -440,6 +484,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "host",
         "lineTh": "คืนนี้ลองแก้หน้าแอป ที่ทำเธอหงุดหงิด แล้วให้เพื่อนลองกดดู",
+        "stressTh": "หงุดหงิด",
         "mood": "wow",
         "scene": "career:ux-design/tonight",
         "ms": 3600
@@ -447,6 +492,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "วาดไม่เก่ง แต่จับผิดแอปเก่ง แบบนี้มีลุ้นแฮะ",
+        "stressTh": "จับผิดแอปเก่ง",
         "scene": "radar",
         "ms": 2900
       }
@@ -497,18 +543,21 @@ const launch: readonly StoryScript[] = [
       {
         "who": "parent",
         "lineTh": "ถามจริง ใครเขาจ้าง คนตัดคลิปกัน?",
+        "stressTh": "ใครเขาจ้าง",
         "scene": "dinner-table",
         "ms": 2600
       },
       {
         "who": "student",
         "lineTh": "ก็นึกว่าต้องดังก่อน ถึงจะมีคนจ้าง",
+        "stressTh": "ต้องดังก่อน",
         "scene": "dinner-table",
         "ms": 2400
       },
       {
         "who": "host",
         "lineTh": "ไม่ต้องดังเลย หลายคนทำให้แบรนด์ ดูแลเพจ ตัดคลิป ยันไลฟ์ขายของ",
+        "stressTh": "ไม่ต้องดังเลย",
         "mood": "wow",
         "scene": "career:content-creator/dream",
         "ms": 4200
@@ -516,6 +565,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "text",
         "lineTh": "ครีเอเตอร์ ถึง 86% ใช้ AI ช่วยแล้ว",
+        "stressTh": "86%",
         "scene": "career:content-creator/work",
         "ms": 2600,
         "big": true
@@ -523,6 +573,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "host",
         "lineTh": "AI ช่วยได้ แต่จะเล่าอะไร ให้ต่าง เธอยังต้องคิดเอง",
+        "stressTh": "เธอยังต้องคิดเอง",
         "mood": "serious",
         "scene": "career:content-creator/work",
         "ms": 3500
@@ -530,6 +581,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "host",
         "lineTh": "คืนนี้ลองถ่ายคลิปสั้น เปิดด้วยช็อตเด็ด แล้วดูว่าคนดู หลุดตรงไหน",
+        "stressTh": "หลุดตรงไหน",
         "mood": "wink",
         "scene": "career:content-creator/tonight",
         "ms": 4000
@@ -537,6 +589,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "ไม่ต้องรอดังก่อน งั้นคืนนี้ ลองถ่ายคลิปแรกเลย",
+        "stressTh": "คลิปแรก",
         "scene": "radar",
         "ms": 3100
       }
@@ -582,18 +635,21 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "ชอบชีวะ อยากช่วยคนไข้ แต่ไม่อยากเป็นหมอ",
+        "stressTh": "ไม่อยากเป็นหมอ",
         "scene": "classroom",
         "ms": 3000
       },
       {
         "who": "friend",
         "lineTh": "เทคนิคการแพทย์ไง ใส่กาวน์ กดเครื่องตรวจชิลๆ",
+        "stressTh": "ชิลๆ",
         "scene": "career:medical-technologist/dream",
         "ms": 3200
       },
       {
         "who": "text",
         "lineTh": "เครื่องอ่านค่า นักเทคนิคการแพทย์ เช็กก่อนถึงมือหมอ",
+        "stressTh": "ก่อนถึงมือหมอ",
         "scene": "career:medical-technologist/work",
         "ms": 3400,
         "big": true
@@ -601,6 +657,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "host",
         "lineTh": "บางค่าต้อง ส่องกล้องเอง เจอค่าวิกฤต ต้องรีบแจ้งหมอ",
+        "stressTh": "ค่าวิกฤต",
         "mood": "talk",
         "scene": "career:medical-technologist/work",
         "ms": 3600
@@ -608,12 +665,14 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "ถ้าพลาดขึ้นมา คนไข้ก็แย่เลยดิ",
+        "stressTh": "คนไข้ก็แย่",
         "scene": "career:medical-technologist/work",
         "ms": 2200
       },
       {
         "who": "host",
         "lineTh": "ใช่ เลยต้องสอบ ใบประกอบวิชาชีพ ก่อนเข้า แล็บโรงพยาบาล",
+        "stressTh": "ใบประกอบวิชาชีพ",
         "mood": "serious",
         "scene": "career:medical-technologist/work",
         "ms": 3900
@@ -621,6 +680,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "host",
         "lineTh": "คืนนี้ลองหยดน้ำเล็กๆ บนเลนส์มือถือ ส่องเกลือ แล้วจดผลแบบคนทำแล็บ",
+        "stressTh": "ส่องเกลือ",
         "mood": "wink",
         "scene": "career:medical-technologist/tonight",
         "ms": 4200
@@ -628,6 +688,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "โห คนเบื้องหลัง สำคัญสุดๆ เพิ่งเห็นภาพชัดเลย",
+        "stressTh": "สำคัญสุดๆ",
         "scene": "radar",
         "ms": 3100
       }
@@ -693,18 +754,21 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "ชอบรื้อของ อยากเข้า วิศวะเครื่องกล",
+        "stressTh": "ชอบรื้อของ",
         "scene": "classroom",
         "ms": 2600
       },
       {
         "who": "friend",
         "lineTh": "เท่เลย นั่งออกแบบหุ่นยนต์ ในห้องแอร์ทั้งวันปะ",
+        "stressTh": "หุ่นยนต์",
         "scene": "career:mechanical-engineer/dream",
         "ms": 3100
       },
       {
         "who": "text",
         "lineTh": "ใส่รองเท้าเซฟตี้ ลงโรงงาน สืบหาจุดพัง",
+        "stressTh": "สืบหาจุดพัง",
         "scene": "career:mechanical-engineer/work",
         "ms": 2800,
         "big": true
@@ -712,6 +776,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "host",
         "lineTh": "จำลองแรงกด ตรวจแบบให้เป๊ะ ผ่าดูว่า ทำไมชิ้นส่วนแตก",
+        "stressTh": "ทำไมชิ้นส่วนแตก",
         "mood": "talk",
         "scene": "career:mechanical-engineer/work",
         "ms": 3500
@@ -719,6 +784,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "host",
         "lineTh": "AI ช่วยร่างแบบได้ แต่คนรับผิดชอบ ยังเป็นวิศวกร",
+        "stressTh": "ยังเป็นวิศวกร",
         "mood": "serious",
         "scene": "career:mechanical-engineer/work",
         "ms": 3300
@@ -726,6 +792,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "text",
         "lineTh": "แอร์ก็งานเครื่องกล ปีเดียวไทยส่งออก ถึง 21 ล้านเครื่อง",
+        "stressTh": "21 ล้านเครื่อง",
         "scene": "career:mechanical-engineer/work",
         "ms": 3700,
         "big": true
@@ -733,6 +800,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "host",
         "lineTh": "คืนนี้ลองแกะ ปากกากดสักด้าม วาดดูว่ามันทำงานยังไง",
+        "stressTh": "ปากกากด",
         "mood": "wink",
         "scene": "career:mechanical-engineer/tonight",
         "ms": 3400
@@ -740,6 +808,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "ไม่ได้แค่นั่งห้องแอร์ แต่ออกแบบแอร์ ได้ด้วย น่าลองแฮะ",
+        "stressTh": "ออกแบบแอร์",
         "scene": "radar",
         "ms": 3600
       }
@@ -785,18 +854,21 @@ const launch: readonly StoryScript[] = [
       {
         "who": "parent",
         "lineTh": "เรียนบัญชีสิ มั่นคง ทุกบริษัท ต้องมีคนทำบัญชี",
+        "stressTh": "มั่นคง",
         "scene": "dinner-table",
         "ms": 2900
       },
       {
         "who": "student",
         "lineTh": "แต่เดี๋ยวนี้ AI ลงบัญชีแทนคน ได้หมดแล้ว ไม่ใช่เหรอ?",
+        "stressTh": "ลงบัญชีแทนคน",
         "scene": "dinner-table",
         "ms": 3500
       },
       {
         "who": "text",
         "lineTh": "งานลงบิลซ้ำๆ กำลังโดน AI แทนที่จริง",
+        "stressTh": "แทนที่จริง",
         "scene": "dinner-table",
         "ms": 2600,
         "big": true
@@ -804,6 +876,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "host",
         "lineTh": "นายจ้างทั่วโลกคาดว่า งานนักบัญชี กับผู้สอบบัญชี จะลดลงเร็ว",
+        "stressTh": "จะลดลงเร็ว",
         "mood": "serious",
         "scene": "career:accountant/work",
         "ms": 3900
@@ -811,12 +884,14 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "งั้นเรียนบัญชี ยังไปต่อได้ไหมเนี่ย",
+        "stressTh": "ยังไปต่อได้ไหม",
         "scene": "career:accountant/work",
         "ms": 2400
       },
       {
         "who": "host",
         "lineTh": "งานที่ต้องคิด อย่างจับพิรุธในงบ วางแผนภาษี ยังต้องใช้คน",
+        "stressTh": "ยังต้องใช้คน",
         "mood": "talk",
         "scene": "career:accountant/work",
         "ms": 3700
@@ -824,6 +899,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "host",
         "lineTh": "คืนนี้ลองจด รายจ่ายตัวเอง แล้วดูว่า เงินรั่วตรงไหน",
+        "stressTh": "เงินรั่ว",
         "mood": "wink",
         "scene": "career:accountant/tonight",
         "ms": 3400
@@ -831,6 +907,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "อ๋อ ไม่ใช่แค่บวกเลข แต่คืองาน นักสืบตัวเลขชัดๆ",
+        "stressTh": "นักสืบตัวเลข",
         "scene": "radar",
         "ms": 3200
       }
@@ -871,18 +948,21 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "ไวรัลจัด อยากทำการตลาด คิดมุกปังๆ ทั้งวัน",
+        "stressTh": "มุกปังๆ",
         "scene": "phone-feed",
         "ms": 2900
       },
       {
         "who": "friend",
         "lineTh": "แต่เดี๋ยวนี้ AI ก็เขียนแคปชัน กับยิงแอด แทนได้แล้วปะ",
+        "stressTh": "แทนได้แล้วปะ",
         "scene": "career:marketing-strategist/dream",
         "ms": 3500
       },
       {
         "who": "text",
         "lineTh": "นักการตลาด ถึง 80% ใช้ AI ทำคอนเทนต์แล้ว",
+        "stressTh": "80%",
         "scene": "career:marketing-strategist/dream",
         "ms": 3100,
         "big": true
@@ -890,6 +970,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "host",
         "lineTh": "แต่ทำคอนเทนต์ กับวางกลยุทธ์ เป็นคนละงานกันนะ",
+        "stressTh": "คนละงาน",
         "mood": "serious",
         "scene": "career:marketing-strategist/work",
         "ms": 3200
@@ -897,6 +978,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "host",
         "lineTh": "อ่านข้อมูล อ่านใจคนซื้อ วางงบ วัดผล เลือกว่าจะพูดกับใคร",
+        "stressTh": "อ่านใจคนซื้อ",
         "mood": "talk",
         "scene": "career:marketing-strategist/work",
         "ms": 3800
@@ -904,12 +986,14 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "แล้วจะรู้ได้ไง ว่าใครจะซื้อ",
+        "stressTh": "ใครจะซื้อ",
         "scene": "career:marketing-strategist/work",
         "ms": 2100
       },
       {
         "who": "host",
         "lineTh": "คืนนี้ลองเขียน แผนหน้าเดียว ชวนเพื่อนแวะ ร้านหน้าโรงเรียน",
+        "stressTh": "แผนหน้าเดียว",
         "mood": "wink",
         "scene": "career:marketing-strategist/tonight",
         "ms": 3900
@@ -917,6 +1001,7 @@ const launch: readonly StoryScript[] = [
       {
         "who": "student",
         "lineTh": "นึกว่ามีแค่คิดคำเก๋ๆ ที่แท้คือ เกมอ่านใจคนนี่เอง",
+        "stressTh": "เกมอ่านใจคน",
         "scene": "radar",
         "ms": 3100
       }

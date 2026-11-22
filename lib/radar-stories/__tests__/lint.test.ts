@@ -98,9 +98,24 @@ describe("lintStory", () => {
 
   it("checks scene art when asked", () => {
     const s = base();
-    s.beats[0].scene = "career:ux-design/work";
+    s.beats[0].scene = "career:ux-design/round1";
     const problems = lintStory(s, { sceneExists: (p) => !p.includes("ux-design") });
-    expect(problems.find((p) => p.rule === "scene-art")?.message).toContain("public/radar/guides/ux-design/work.webp");
+    expect(problems.find((p) => p.rule === "scene-art")?.message).toContain("public/radar/guides/ux-design/round1.webp");
+    s.beats[0].scene = "career:ux-design/work"; // a photo scene
+    expect(lintStory(s, { sceneExists: (p) => !p.includes("ux-design") }).find((p) => p.rule === "scene-art")?.message).toContain(
+      "public/radar/stories/career/ux-design/work.webp"
+    );
+  });
+
+  it("keeps stressed words inside one phrase of the line", () => {
+    const s = base();
+    s.beats[0].lineTh = "ไม่รู้ว่าชอบอะไร ไม่ได้แปลว่า เธอช้านะ";
+    s.beats[0].stressTh = "ไม่ได้แปลว่า";
+    expect(lintStory(s).filter((p) => p.rule === "stress")).toEqual([]);
+    s.beats[0].stressTh = "แปลว่า เธอ"; // spans two phrases
+    expect(lintStory(s).find((p) => p.rule === "stress")?.level).toBe("error");
+    s.beats[0].stressTh = "ไม่มีในบรรทัด";
+    expect(lintStory(s).find((p) => p.rule === "stress")).toBeDefined();
   });
 
   it("knows who speaks and P'Seed's moods", () => {

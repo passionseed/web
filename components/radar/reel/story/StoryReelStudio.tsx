@@ -23,6 +23,7 @@ import type { StoryScript } from "@/lib/radar-stories/types";
 
 import { SAFE, STORY_FRAME } from "./cast";
 import { storyEndCard, type StoryPlatform } from "./endCard";
+import { trirong } from "./fonts";
 import { STORY_FRAME_ID, StoryReel } from "./StoryReel";
 import { buildStoryTimeline } from "./storyTimeline";
 
@@ -73,8 +74,11 @@ function Warm({ script }: { script: StoryScript }) {
         // eslint-disable-next-line @next/next/no-img-element -- a plain eager preload, never shown
         <img key={src} src={src} alt="" width={4} height={4} />
       ))}
-      <span style={{ fontFamily: "var(--sr-thai)", fontWeight: 600 }}>{script.hookTh} ฉัน</span>
-      <span style={{ fontFamily: "var(--sr-thai)", fontWeight: 700 }}>{script.endCardTh}</span>
+      {[200, 300, 400, 500, 600].map((w) => (
+        <span key={w} style={{ fontFamily: "var(--sr-serif)", fontWeight: w }}>
+          {script.hookTh} {script.endCardTh} ฉัน
+        </span>
+      ))}
       <span style={{ fontFamily: "var(--sr-pixel)" }}>CAREER RADAR</span>
       <span style={{ fontFamily: "var(--sr-mono)", fontWeight: 700 }}>passionseed.org</span>
     </div>
@@ -172,7 +176,7 @@ export function StoryReelStudio({
   const frameBox = (
     <div
       id={STORY_FRAME_ID}
-      className="sr-frame"
+      className={`sr-frame ${trirong.variable}`}
       // Render mode: pinned over the site's navbar and everything else, like the demo reels' PageFrame.
       style={{ width: STORY_FRAME.width, height: STORY_FRAME.height, ...(render ? { position: "fixed", left: 0, top: 0, zIndex: 2147483000 } : {}) }}
     >
