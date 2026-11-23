@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 /**
  * The Elemental sign-up funnel: every step a person passes from the landing
  * page to a paid seat. The pages send one `elemental_funnel` event per step
@@ -37,12 +39,49 @@ export type FunnelEventData = {
   detail?: string;
   mode?: "solo" | "create" | "join";
   source?: string;
-  /** The site that sent it, so preview deploys can be left out. */
+  /** The site it was sent to, set by the server from the request (never trusted from the browser). */
   host?: string;
 };
 
 /** Only these sites count; previews and local dev don't. */
 export const FUNNEL_HOSTS = ["passionseed.org", "www.passionseed.org"];
+
+const STEP_KEYS: [string, ...string[]] = [
+  "invalid",
+  "submit_failed",
+  "slip_result",
+  "qr_saved",
+  ...FUNNEL_STEPS.map((s) => s.key),
+];
+
+const incomingEvent = z.object({
+  sid: z.string().uuid(),
+  step: z.enum(STEP_KEYS),
+  detail: z
+    .string()
+    .max(200)
+    .regex(/^[a-zA-Z0-9_:,]*$/)
+    .optional(),
+  mode: z.enum(["solo", "create", "join"]).optional(),
+  source: z
+    .string()
+    .max(60)
+    .regex(/^[a-z0-9_-]*$/)
+    .optional(),
+});
+
+/**
+ * Check an event from the browser before it's stored: a known step, a UUID
+ * browser id and short, plain details. The host comes from the request, not
+ * the browser, so only events really sent to passionseed.org count. Returns
+ * null for anything else.
+ */
+export function cleanFunnelEvent(data: unknown, requestHost: string | null): FunnelEventData | null {
+  const parsed = incomingEvent.safeParse(data);
+  if (!parsed.success) return null;
+  const host = (requestHost ?? "").toLowerCase().replace(/:\d+$/, "");
+  return { ...(parsed.data as Omit<FunnelEventData, "host">), host };
+}
 
 export type FunnelRow = { event_data: unknown; created_at: string };
 

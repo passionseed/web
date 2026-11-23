@@ -37,7 +37,7 @@ export function trackElemental(event: Omit<FunnelEventData, "sid" | "host">, { o
   const body = JSON.stringify({
     event_type: FUNNEL_EVENT_TYPE,
     page_path: window.location.pathname.startsWith("/hackathon/join/") ? "/hackathon/join/[token]" : window.location.pathname,
-    event_data: { ...event, sid: browserId(), host: window.location.hostname },
+    event_data: { ...event, sid: browserId() },
   });
   void fetch("/api/hackathon/track-event", {
     method: "POST",

@@ -1,4 +1,4 @@
-import { summarizeFunnel, worstDrop, type FunnelRow } from "../funnel";
+import { cleanFunnelEvent, summarizeFunnel, worstDrop, type FunnelRow } from "../funnel";
 
 const row = (sid: string, step: string, extra: Record<string, string> = {}): FunnelRow => ({
   event_data: { sid, step, ...extra },
@@ -65,5 +65,28 @@ describe("worstDrop", () => {
       ...["a"].map((sid) => row(sid, "step:mode")),
     ];
     expect(worstDrop(summarizeFunnel(rows).stages)?.key).toBe("step:mode");
+  });
+});
+
+describe("cleanFunnelEvent", () => {
+  const sid = "6f1c7c1e-1d2b-4c3a-9f00-0a1b2c3d4e5f";
+
+  it("keeps a known step and takes the host from the request", () => {
+    expect(cleanFunnelEvent({ sid, step: "step:name", host: "evil.example" }, "passionseed.org")).toEqual({
+      sid,
+      step: "step:name",
+      host: "passionseed.org",
+    });
+  });
+
+  it("rejects unknown steps, bad ids and odd details", () => {
+    expect(cleanFunnelEvent({ sid, step: "paid_for_real" }, "passionseed.org")).toBeNull();
+    expect(cleanFunnelEvent({ sid: "abc", step: "landing" }, "passionseed.org")).toBeNull();
+    expect(cleanFunnelEvent({ sid, step: "invalid", detail: "<script>" }, "passionseed.org")).toBeNull();
+    expect(cleanFunnelEvent(null, "passionseed.org")).toBeNull();
+  });
+
+  it("drops the port from the host", () => {
+    expect(cleanFunnelEvent({ sid, step: "landing" }, "localhost:3000")?.host).toBe("localhost");
   });
 });
