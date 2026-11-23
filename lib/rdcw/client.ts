@@ -46,13 +46,19 @@ type RdcwBody = {
  */
 export function slipReceiver(data: RdcwBody["data"]): "us" | "not_us" | "unknown" {
   const bank = data?.receivingBank;
+  const proxyType = data?.receiver?.proxy?.type;
   const proxy = data?.receiver?.proxy?.value?.replace(/[^0-9a-z]/gi, "");
   const last4 = proxy?.slice(-4);
   const last4Visible = Boolean(last4 && /^\d{4}$/.test(last4));
 
   if (bank && /^\d{3}$/.test(bank) && bank !== SHIFT_PAYMENT.receiverBankCode) return "not_us";
   if (last4Visible && last4 !== SHIFT_PAYMENT.promptPayLast4) return "not_us";
-  if (bank === SHIFT_PAYMENT.receiverBankCode && last4Visible) return "us";
+  // A real PromptPay slip to us (checked 2026-11-23) reads: receivingBank "",
+  // receiver.proxy { type: "NATID", value: "XXXXXXXXX2167" }. So our 13-digit
+  // PromptPay ID with our last 4 is enough; the bank may be blank or ours.
+  const ourProxy =
+    proxyType === SHIFT_PAYMENT.promptPayProxyType && proxy?.length === 13 && last4 === SHIFT_PAYMENT.promptPayLast4;
+  if (ourProxy && (!bank || bank === SHIFT_PAYMENT.receiverBankCode)) return "us";
   return "unknown";
 }
 

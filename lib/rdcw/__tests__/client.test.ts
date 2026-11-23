@@ -8,7 +8,7 @@ const ok = (over: Record<string, unknown> = {}) => ({
     transTime: "10:15:00",
     amount: 199,
     receivingBank: "006",
-    receiver: { proxy: { type: "NATID", value: "x-xxxx-xxxxx-21-67" } },
+    receiver: { proxy: { type: "NATID", value: "XXXXXXXXX2167" } },
     ...over,
   },
 });
@@ -86,6 +86,25 @@ describe("interpretRdcw", () => {
 describe("slipReceiver", () => {
   it("is us only with our bank and our visible PromptPay digits", () => {
     expect(slipReceiver(ok().data)).toBe("us");
+  });
+
+  it("is us for a real PromptPay slip, where RDCW leaves the receiving bank blank", () => {
+    // Shape of a real ฿149 slip checked on 2026-11-23.
+    expect(
+      slipReceiver({
+        receivingBank: "",
+        receiver: { proxy: { type: "NATID", value: "XXXXXXXXX2167" }, account: { type: "", value: "" } },
+      }),
+    ).toBe("us");
+  });
+
+  it("is not us for a phone PromptPay or an ID that isn't 13 digits, even ending 2167", () => {
+    expect(slipReceiver({ receivingBank: "", receiver: { proxy: { type: "MSISDN", value: "XXXXXX2167" } } })).toBe(
+      "unknown",
+    );
+    expect(slipReceiver({ receivingBank: "", receiver: { proxy: { type: "NATID", value: "XX2167" } } })).toBe(
+      "unknown",
+    );
   });
 
   it("is unknown when the receiver is masked, missing or unfamiliar, so a person checks", () => {
