@@ -23,9 +23,9 @@ describe("elementalPriceBaht", () => {
 });
 
 describe("elementalRegistrationOpen", () => {
-  it("is open through the end of Thu 3 Dec, Bangkok time", () => {
-    expect(elementalRegistrationOpen(new Date("2026-12-03T23:59:00+07:00"))).toBe(true);
-    expect(elementalRegistrationOpen(new Date("2026-12-04T00:00:01+07:00"))).toBe(false);
+  it("is open through the end of Fri 4 Dec, Bangkok time", () => {
+    expect(elementalRegistrationOpen(new Date("2026-12-04T23:59:00+07:00"))).toBe(true);
+    expect(elementalRegistrationOpen(new Date("2026-12-05T00:00:01+07:00"))).toBe(false);
   });
 });
 
