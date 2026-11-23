@@ -112,7 +112,7 @@ export function ProfileHoverCard({
 
         {/* Link to participants page */}
         <Link
-          href="/admin/hackathon/participants"
+          href="/admin/archive/hackathon-healthcare/participants"
           target="_blank"
           className="flex items-center justify-center gap-1.5 border-t border-slate-800 px-3 py-2 text-[11px] text-blue-400 hover:text-blue-300 hover:bg-slate-800/50 transition-colors"
         >

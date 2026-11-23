@@ -1,19 +1,26 @@
 import { render, screen } from "@testing-library/react";
 
-import { HACKATHON_ITEMS, HackathonNav, activeHackathonHref } from "../HackathonNav";
+import { FIRST_EDITION_ITEMS, HACKATHON_ITEMS, HackathonNav, activeHackathonHref } from "../HackathonNav";
 
-let mockPathname = "/admin/hackathon/activities";
+let mockPathname = "/admin/hackathon/elemental";
 jest.mock("next/navigation", () => ({ usePathname: () => mockPathname }));
 
 describe("activeHackathonHref", () => {
-  it("matches a tab's own page and the pages under it", () => {
-    expect(activeHackathonHref("/admin/hackathon/teams")).toBe("/admin/hackathon/teams");
-    expect(activeHackathonHref("/admin/hackathon/activities/abc/clusters")).toBe("/admin/hackathon/activities");
+  it("matches the current hackathon's tabs", () => {
+    expect(activeHackathonHref("/admin/hackathon/elemental")).toBe("/admin/hackathon/elemental");
+    expect(activeHackathonHref("/admin/hackathon/registrations")).toBe("/admin/hackathon/registrations");
+  });
+
+  it("matches an archived tab's own page and the pages under it", () => {
+    const base = "/admin/archive/hackathon-healthcare";
+    expect(activeHackathonHref(`${base}/teams`, FIRST_EDITION_ITEMS)).toBe(`${base}/teams`);
+    expect(activeHackathonHref(`${base}/activities/abc/clusters`, FIRST_EDITION_ITEMS)).toBe(`${base}/activities`);
   });
 
   it("does not confuse tabs that share a prefix", () => {
-    expect(activeHackathonHref("/admin/hackathon/team-submissions")).toBe("/admin/hackathon/team-submissions");
-    expect(activeHackathonHref("/admin/hackathon/team-finder")).toBe("/admin/hackathon/team-finder");
+    const base = "/admin/archive/hackathon-healthcare";
+    expect(activeHackathonHref(`${base}/team-submissions`, FIRST_EDITION_ITEMS)).toBe(`${base}/team-submissions`);
+    expect(activeHackathonHref(`${base}/team-finder`, FIRST_EDITION_ITEMS)).toBe(`${base}/team-finder`);
   });
 
   it("selects nothing on the bare section path, which only redirects", () => {
@@ -22,12 +29,19 @@ describe("activeHackathonHref", () => {
 });
 
 describe("HackathonNav", () => {
-  it("has no Overview tab and links the Learning page", () => {
-    expect(HACKATHON_ITEMS.map((i) => i.label)).not.toContain("Overview");
-    mockPathname = "/admin/hackathon/learning";
+  it("shows only Elemental's tabs by default", () => {
+    mockPathname = "/admin/hackathon/registrations";
     render(<HackathonNav />);
+    expect(screen.getAllByRole("link")).toHaveLength(HACKATHON_ITEMS.length);
+    expect(screen.getByRole("link", { name: "Sign-ups and slips" })).toHaveAttribute("aria-current", "page");
+    expect(screen.queryByRole("link", { name: "Teams" })).toBeNull();
+  });
+
+  it("shows the archived tabs when given them", () => {
+    mockPathname = "/admin/archive/hackathon-healthcare/learning";
+    render(<HackathonNav items={FIRST_EDITION_ITEMS} />);
     const learning = screen.getByRole("link", { name: "Learning" });
-    expect(learning).toHaveAttribute("href", "/admin/hackathon/learning");
+    expect(learning).toHaveAttribute("href", "/admin/archive/hackathon-healthcare/learning");
     expect(learning).toHaveAttribute("aria-current", "page");
     expect(screen.getAllByRole("link").filter((l) => l.getAttribute("aria-current") === "page")).toHaveLength(1);
   });
