@@ -1,4 +1,4 @@
-import { interpretRdcw, rdcwSlipTime, slipReceiver } from "../client";
+import { interpretRdcw, rdcwSlipTime, receiverNameIsOurs, slipReceiver } from "../client";
 
 const ok = (over: Record<string, unknown> = {}) => ({
   valid: true,
@@ -8,7 +8,11 @@ const ok = (over: Record<string, unknown> = {}) => ({
     transTime: "10:15:00",
     amount: 199,
     receivingBank: "006",
-    receiver: { proxy: { type: "NATID", value: "x-xxxx-xxxxx-21-67" } },
+    receiver: {
+      displayName: "บริษัท แพชชั่นซี้ด จ",
+      name: "PASSION S",
+      proxy: { type: "NATID", value: "XXXXXXXXX2167" },
+    },
     ...over,
   },
 });
@@ -88,6 +92,39 @@ describe("slipReceiver", () => {
     expect(slipReceiver(ok().data)).toBe("us");
   });
 
+  it("is us for a real PromptPay slip, where RDCW leaves the receiving bank blank", () => {
+    // Shape of a real ฿149 slip checked on 2026-11-23.
+    expect(
+      slipReceiver({
+        receivingBank: "",
+        receiver: {
+          displayName: "บริษัท แพชชั่นซี้ด จ",
+          name: "PASSION S",
+          proxy: { type: "NATID", value: "XXXXXXXXX2167" },
+          account: { type: "", value: "" },
+        },
+      }),
+    ).toBe("us");
+  });
+
+  it("sends our ID digits with someone else's name to review", () => {
+    expect(
+      slipReceiver({
+        receivingBank: "",
+        receiver: { displayName: "นาย สมชาย ใจดี", name: "SOMCHAI J", proxy: { type: "NATID", value: "XXXXXXXXX2167" } },
+      }),
+    ).toBe("unknown");
+  });
+
+  it("is not us for a phone PromptPay or an ID that isn't 13 digits, even ending 2167", () => {
+    expect(slipReceiver({ receivingBank: "", receiver: { proxy: { type: "MSISDN", value: "XXXXXX2167" } } })).toBe(
+      "unknown",
+    );
+    expect(slipReceiver({ receivingBank: "", receiver: { proxy: { type: "NATID", value: "XX2167" } } })).toBe(
+      "unknown",
+    );
+  });
+
   it("is unknown when the receiver is masked, missing or unfamiliar, so a person checks", () => {
     expect(slipReceiver({ receivingBank: "006", receiver: { proxy: { value: "xxxxxxxxxxxxx" } } })).toBe("unknown");
     expect(slipReceiver({ receivingBank: "006" })).toBe("unknown");
@@ -97,5 +134,14 @@ describe("slipReceiver", () => {
 
   it("sends a paid-looking slip with an unconfirmed receiver to review, never to paid", () => {
     expect(interpretRdcw(ok({ receiver: undefined }), 199)).toMatchObject({ kind: "unverified" });
+  });
+});
+
+describe("receiverNameIsOurs", () => {
+  it("matches the bank's truncated Thai or English name, ignoring case and spacing", () => {
+    expect(receiverNameIsOurs({ displayName: "บริษัท แพชชั่นซี้ด จ" })).toBe(true);
+    expect(receiverNameIsOurs({ name: "passion  s" })).toBe(true);
+    expect(receiverNameIsOurs({ name: "PASSION" })).toBe(false);
+    expect(receiverNameIsOurs({})).toBe(false);
   });
 });
