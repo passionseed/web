@@ -21,6 +21,8 @@ export function rdcwConfigured(): boolean {
 }
 
 type Party = {
+  displayName?: string | null;
+  name?: string | null;
   proxy?: { type?: string; value?: string } | null;
   account?: { type?: string; value?: string } | null;
 };
@@ -44,6 +46,16 @@ type RdcwBody = {
  * PromptPay ID's visible last 4 digits are ours. Anything masked, missing or
  * in an unfamiliar shape is "unknown", and a person checks it.
  */
+const normalizeName = (s: string) => s.replace(/\s+/g, " ").trim().toUpperCase();
+
+/** True when the receiver's Thai or English name starts with how the bank shows us. */
+export function receiverNameIsOurs(receiver: Party | undefined): boolean {
+  const names = [receiver?.displayName, receiver?.name].filter((n): n is string => Boolean(n?.trim()));
+  return names.some((n) =>
+    SHIFT_PAYMENT.receiverNamePrefixes.some((p) => normalizeName(n).startsWith(normalizeName(p))),
+  );
+}
+
 export function slipReceiver(data: RdcwBody["data"]): "us" | "not_us" | "unknown" {
   const bank = data?.receivingBank;
   const proxyType = data?.receiver?.proxy?.type;
@@ -54,11 +66,13 @@ export function slipReceiver(data: RdcwBody["data"]): "us" | "not_us" | "unknown
   if (bank && /^\d{3}$/.test(bank) && bank !== SHIFT_PAYMENT.receiverBankCode) return "not_us";
   if (last4Visible && last4 !== SHIFT_PAYMENT.promptPayLast4) return "not_us";
   // A real PromptPay slip to us (checked 2026-11-23) reads: receivingBank "",
-  // receiver.proxy { type: "NATID", value: "XXXXXXXXX2167" }. So our 13-digit
-  // PromptPay ID with our last 4 is enough; the bank may be blank or ours.
+  // receiver.proxy { type: "NATID", value: "XXXXXXXXX2167" }, and the receiver
+  // name "บริษัท แพชชั่นซี้ด จ" / "PASSION S". Four masked digits alone could
+  // match someone else's ID, so the receiver's name must match too.
   const ourProxy =
     proxyType === SHIFT_PAYMENT.promptPayProxyType && proxy?.length === 13 && last4 === SHIFT_PAYMENT.promptPayLast4;
-  if (ourProxy && (!bank || bank === SHIFT_PAYMENT.receiverBankCode)) return "us";
+  const bankOk = !bank || bank === SHIFT_PAYMENT.receiverBankCode;
+  if (ourProxy && bankOk && receiverNameIsOurs(data?.receiver)) return "us";
   return "unknown";
 }
 

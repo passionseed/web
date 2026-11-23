@@ -378,6 +378,8 @@ export const SHIFT_PAYMENT = {
   promptPayLast4: "2167",
   /** Our PromptPay ID is a 13-digit national/tax ID; RDCW calls that proxy type NATID. */
   promptPayProxyType: "NATID",
+  /** How the bank shows the receiver (truncated) on a slip to us, checked 2026-11-23. A slip must start with one. */
+  receiverNamePrefixes: ["บริษัท แพชชั่นซี้ด", "PASSION S"],
 } as const;
 
 /** "฿670", or "ฟรี" for a free round. */
