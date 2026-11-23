@@ -13,7 +13,7 @@ import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 
 export const metadata: Metadata = {
   title: `${ELEMENTAL.edition} Hackathon: details`,
-  description: `${ELEMENTAL.edition} Hackathon: dates, format, teams, price, prize, the five elements and the schedule`,
+  description: `${ELEMENTAL.edition} Hackathon: dates, format, who can join, teams, price, prizes, the five elements and the schedule`,
   robots: { index: false, follow: false },
 };
 
@@ -27,7 +27,7 @@ export default async function ElementalInfoPage({ searchParams }: { searchParams
           id: "elemental-info",
           width: W,
           height: H,
-          alt: `${ELEMENTAL.edition} Hackathon details: dates, online on Discord, teams, price, prize, the five elements and the schedule`,
+          alt: `${ELEMENTAL.edition} Hackathon details: dates, online on Discord, who can join, teams, price, the three prizes, the five elements, the schedule and a QR code to sign up`,
           live: <ElementalInfoPoster />,
         },
       ]}

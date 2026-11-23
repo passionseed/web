@@ -9,10 +9,17 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
  *   ฿149 a person with others (company-brain numbers.md).
  * - Elements and theme: private/hackathon-december-2026.md (PR #87) and
  *   Angpao, 2026-11-19 (Aether is the fifth element).
- * - Prize total: told by Angpao, 2026-11-19 (not yet in company-brain).
+ * - Aether's Thai name and scope: ธาตุที่มองไม่เห็น, covering AI, social
+ *   media and the harms of tech we don't notice (Big, 2026-11-21). It
+ *   replaces ธาตุที่ 5 and อีเธอร์.
+ * - Prize total: told by Angpao, 2026-11-19. The three prizes: Angpao,
+ *   2026-11-21 (company-brain numbers.md).
+ * - Who can join: M.4 to M.6, from anywhere in Thailand (Big, 2026-11-22;
+ *   company-brain decisions/log.md).
  * - Online, on Discord; groups of up to 5 (Bunyasit, 2026-11-20).
- * - Sign-up closes Thu 3 Dec 2026 (hackathon-ops registration.md); a group
- *   is 2 or more people (Big's draft there) and pays on one slip.
+ * - Sign-up closes Fri 4 Dec 2026 (Angpao, 2026-11-23; it replaces Thu 3 Dec
+ *   in hackathon-ops registration.md); a group is 2 or more people (Big's
+ *   draft there) and pays on one slip.
  * Change a fact here, never in a poster.
  */
 export const ELEMENTAL = {
@@ -26,16 +33,30 @@ export const ELEMENTAL = {
   priceBaht: 199,
   groupPriceBaht: 149,
   prizeTotalBaht: 20000,
+  /** The three prizes: cash and Claude credit, in baht. They add up to prizeTotalBaht. */
+  prizes: [
+    { place: 1, cashBaht: 7000, creditBaht: 4000 },
+    { place: 2, cashBaht: 3000, creditBaht: 3000 },
+    { place: 3, cashBaht: 0, creditBaht: 3000 },
+  ],
+  /** Who can join: school years, from anywhere in Thailand. */
+  gradesTh: "ม.4–ม.6",
   theme: "Environmental negligence",
   url: "passionseed.org/hackathon",
   /** Database key for registrations. */
   slug: "elemental-2026",
   /** Last day to sign up, Bangkok time (inclusive). */
-  registrationClosesOn: "2026-12-03",
+  registrationClosesOn: "2026-12-04",
   /** Where it happens. */
   venueTh: "ออนไลน์ทาง Discord",
   /** Largest group on one sign-up. */
   maxGroupSize: 5,
+  /**
+   * Sponsor packages, paid in cash or in goods of the same value (Angpao,
+   * 2026-11-20; company-brain numbers.md). What each one gets is in the
+   * sponsor deck.
+   */
+  sponsorPackagesBaht: [10000, 5000, 1000],
   /** Team size: 2 to 5 (Angpao, 2026-11-20; company-brain numbers.md). */
   teamMin: 2,
   teamMax: 5,
@@ -55,7 +76,7 @@ export const ELEMENTAL = {
     { key: "earth", en: "Earth", th: "ดิน" },
     { key: "air", en: "Air", th: "ลม" },
     { key: "fire", en: "Fire", th: "ไฟ" },
-    { key: "aether", en: "Aether", th: "ธาตุที่ 5" },
+    { key: "aether", en: "Aether", th: "ธาตุที่มองไม่เห็น" },
   ],
 } as const;
 

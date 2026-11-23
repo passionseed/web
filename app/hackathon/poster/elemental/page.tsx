@@ -8,7 +8,7 @@ import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
  * The Next Decade: Elemental key visual. Visitors see the exported image;
  * ?render=1 shows the live sheet.
  * Export: node scripts/render-poster.mjs --route /hackathon/poster/elemental
- *         --ids elemental-key --out <dir>
+ *         --ids elemental-key-blue,elemental-key --out <dir>
  *         --publish public/hackathon/poster/elemental/sheets
  */
 
@@ -29,7 +29,7 @@ export default async function ElementalPosterPage({ searchParams }: { searchPara
           id: "elemental-key-blue",
           width: W,
           height: H,
-          alt: `${ELEMENTAL.edition} Hackathon poster: a calm river valley under a blue sky, poisoned by pixels. A fire bursts out of the far bank, smog pours over the ridge, the river turns toxic green and an e-waste dump sits on the bank`,
+          alt: `${ELEMENTAL.edition} Hackathon poster: a calm river valley under a blue sky, poisoned by pixels. A fire bursts out of the far bank and its smoke climbs the sky, the river turns toxic green and an e-waste dump sits on the bank. ${ELEMENTAL.prizeTotalBaht.toLocaleString("en-US")} baht in prizes, and a QR code to sign up`,
           live: <ElementalKeyPoster id="elemental-key-blue" sky="blue" />,
         },
         {
