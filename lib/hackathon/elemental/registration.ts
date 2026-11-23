@@ -11,11 +11,18 @@ import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 /** Under this age a parent's consent is required (Big, 2026-11-20). */
 export const ADULT_AGE = 20;
 
-/** ฿199 alone, ฿149 a person for a group of 2 or more, on one slip. */
-export function elementalPriceBaht(memberCount: number): number {
+/**
+ * ฿199 alone, ฿149 a person in a group. A person who creates or joins a team
+ * pays the group price on their own slip, even before friends join: if the
+ * team ends up with one paid member, we let it go (Big, 2026-11-23).
+ */
+export function elementalPriceBaht(memberCount: number, inTeam = false): number {
   if (!Number.isInteger(memberCount) || memberCount < 1) return 0;
-  return memberCount === 1 ? ELEMENTAL.priceBaht : ELEMENTAL.groupPriceBaht * memberCount;
+  return memberCount === 1 && !inTeam ? ELEMENTAL.priceBaht : ELEMENTAL.groupPriceBaht * memberCount;
 }
+
+/** Team invite codes: 12 hex characters, made by the database. */
+export const INVITE_CODE_RE = /^[0-9a-f]{12}$/;
 
 /** Sign-up is open until the end of registrationClosesOn, Bangkok time. */
 export function elementalRegistrationOpen(now: Date = new Date()): boolean {
@@ -62,7 +69,10 @@ export const memberSchema = z
   });
 
 export const registrationSchema = z.object({
+  /** solo: alone (maybe matched); create: start a team; join: join one by its invite code. */
+  teamMode: z.enum(["solo", "create", "join"]).default("solo"),
   teamName: optionalTrimmed(80),
+  inviteCode: z.string().regex(INVITE_CODE_RE).optional(),
   members: z.array(memberSchema).min(1).max(ELEMENTAL.maxGroupSize),
   contactEmail: z.string().trim().toLowerCase().email().max(200),
   contactPhone: thaiPhone,
@@ -72,6 +82,13 @@ export const registrationSchema = z.object({
   contactAfterConsent: z.boolean().default(false),
   source: optionalTrimmed(60),
   utm: z.record(z.string(), z.string().max(120)).optional(),
+}).superRefine((r, ctx) => {
+  if (r.teamMode === "create" && !r.teamName) {
+    ctx.addIssue({ code: "custom", path: ["teamName"], message: "required" });
+  }
+  if (r.teamMode === "join" && !r.inviteCode) {
+    ctx.addIssue({ code: "custom", path: ["inviteCode"], message: "required" });
+  }
 });
 
 export type MemberInput = z.input<typeof memberSchema>;

@@ -2,17 +2,21 @@
 
 import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Plus, X } from "lucide-react";
+import { Loader2, User, Users } from "lucide-react";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { ADULT_AGE, elementalPriceBaht } from "@/lib/hackathon/elemental/registration";
+import type { PublicTeam } from "@/lib/supabase/hackathon-event-registrations";
 
 /**
- * Elemental sign-up: everyone in the group, a parent for each person under
- * 20, one contact, then the price for the whole group. Saving opens the pay
- * page. Validation messages are Thai and sit next to the field.
+ * Elemental sign-up, one person at a time: come alone, start a team, or join
+ * a friend's team from its invite link. Each person gives their own parent's
+ * consent and pays on their own, now or later. Saving opens the person's page
+ * (pay + team invite). Validation messages are Thai and sit next to the field.
  */
+
+type Mode = "solo" | "create" | "join";
 
 type Member = {
   fullName: string;
@@ -70,8 +74,9 @@ function Check({ checked, onChange, children, error }: { checked: boolean; onCha
 
 type Errors = Record<string, string>;
 
-function validate(members: Member[], email: string, phone: string, noRefund: boolean): Errors {
+function validate(members: Member[], email: string, phone: string, noRefund: boolean, mode: Mode, teamName: string): Errors {
   const e: Errors = {};
+  if (mode === "create" && !teamName.trim()) e.teamName = "ตั้งชื่อทีม เพื่อนจะเห็นชื่อนี้ตอนกดลิงก์";
   members.forEach((m, i) => {
     if (!m.fullName.trim()) e[`m${i}.fullName`] = "ใส่ชื่อ-นามสกุล";
     const age = Number(m.age);
@@ -89,8 +94,9 @@ function validate(members: Member[], email: string, phone: string, noRefund: boo
   return e;
 }
 
-export function JoinForm({ source, utm }: { source?: string; utm?: Record<string, string> }) {
+export function JoinForm({ source, utm, team }: { source?: string; utm?: Record<string, string>; team?: PublicTeam }) {
   const router = useRouter();
+  const [mode, setMode] = useState<Mode>(team ? "join" : "create");
   const [members, setMembers] = useState<Member[]>([emptyMember()]);
   const [teamName, setTeamName] = useState("");
   const [email, setEmail] = useState("");
@@ -103,15 +109,14 @@ export function JoinForm({ source, utm }: { source?: string; utm?: Record<string
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
-  const solo = members.length === 1;
-  const total = elementalPriceBaht(members.length);
+  const total = elementalPriceBaht(1, mode !== "solo");
 
   const update = (i: number, patch: Partial<Member>) =>
     setMembers((ms) => ms.map((m, j) => (j === i ? { ...m, ...patch } : m)));
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    const found = validate(members, email, phone, noRefund);
+    const found = validate(members, email, phone, noRefund, mode, teamName);
     setErrors(found);
     if (Object.keys(found).length) {
       setServerError("ยังมีช่องที่ต้องแก้ ดูข้อความสีแดงด้านบน");
@@ -124,7 +129,9 @@ export function JoinForm({ source, utm }: { source?: string; utm?: Record<string
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          teamName: solo ? undefined : teamName,
+          teamMode: mode,
+          teamName: mode === "create" ? teamName : undefined,
+          inviteCode: mode === "join" ? team?.inviteCode : undefined,
           members: members.map((m) => {
             const minor = Number(m.age) < ADULT_AGE;
             return {
@@ -140,7 +147,7 @@ export function JoinForm({ source, utm }: { source?: string; utm?: Record<string
           contactEmail: email,
           contactPhone: phone,
           contactLineId: lineId,
-          wantsTeamMatching: solo && wantsTeam,
+          wantsTeamMatching: mode === "solo" && wantsTeam,
           noRefundAck: noRefund,
           contactAfterConsent: contactAfter,
           source,
@@ -155,7 +162,11 @@ export function JoinForm({ source, utm }: { source?: string; utm?: Record<string
       setServerError(
         data.error === "closed"
           ? "ปิดรับสมัครแล้ว"
-          : "บันทึกไม่สำเร็จ ลองตรวจข้อมูลอีกครั้ง หรือทักไลน์ @passionseed",
+          : data.error === "team_full"
+            ? `ทีมนี้ครบ ${ELEMENTAL.maxGroupSize} คนแล้ว สมัครคนเดียวหรือสร้างทีมใหม่ได้`
+            : data.error === "team_not_found"
+              ? "ไม่เจอทีมนี้ ขอลิงก์ใหม่จากเพื่อน หรือสมัครคนเดียวก่อน"
+              : "บันทึกไม่สำเร็จ ลองตรวจข้อมูลอีกครั้ง หรือทักไลน์ @passionseed",
       );
     } catch {
       setServerError("เชื่อมต่อไม่ได้ ลองใหม่อีกครั้ง");
@@ -166,24 +177,67 @@ export function JoinForm({ source, utm }: { source?: string; utm?: Record<string
 
   return (
     <form onSubmit={submit} noValidate className="space-y-10">
+      {team ? (
+        <section className="space-y-3 rounded-2xl p-5 sm:p-6" style={{ backgroundColor: "rgba(236,100,36,0.08)" }}>
+          <p className="text-xs" style={{ fontFamily: EL_FONT.mono, color: EL.inkSoft }}>[เข้าร่วมทีม]</p>
+          <p className="text-2xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>{team.name}</p>
+          <p className="text-sm" style={{ color: EL.inkSoft }}>
+            ในทีมตอนนี้: {team.roster.map((r) => r.name).join(", ") || "ยังไม่มีใคร"} · ว่างอีก {team.spotsLeft} ที่
+          </p>
+          {mode === "join" ? (
+            <button type="button" onClick={() => setMode("create")} className="text-sm underline underline-offset-4" style={{ color: EL.inkSoft }}>
+              ไม่ใช่ทีมนี้? สร้างทีมใหม่หรือมาคนเดียว
+            </button>
+          ) : (
+            <button type="button" onClick={() => setMode("join")} className="text-sm underline underline-offset-4" style={{ color: EL.inkSoft }}>
+              กลับไปเข้าทีม {team.name}
+            </button>
+          )}
+        </section>
+      ) : null}
+
+      {mode !== "join" && (
+        <section className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="สมัครแบบไหน">
+          {([
+            { value: "create", icon: Users, title: "มากับเพื่อน", price: ELEMENTAL.groupPriceBaht, note: "สร้างทีม แล้วส่งลิงก์ให้เพื่อนสมัครเอง จ่ายเองคนละส่วน" },
+            { value: "solo", icon: User, title: "มาคนเดียว", price: ELEMENTAL.priceBaht, note: "เราช่วยจับคู่เข้าทีมให้ได้" },
+          ] as const).map((o) => {
+            const on = mode === o.value;
+            return (
+              <button
+                key={o.value}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                onClick={() => setMode(o.value)}
+                className="rounded-2xl border p-5 text-left transition-colors"
+                style={{ borderColor: on ? EL.flame : "rgba(29,33,31,0.18)", boxShadow: on ? `inset 0 0 0 1px ${EL.flame}` : undefined }}
+              >
+                <span className="flex items-center justify-between gap-3">
+                  <span className="inline-flex items-center gap-2 font-semibold"><o.icon className="h-5 w-5" /> {o.title}</span>
+                  <span style={{ fontFamily: EL_FONT.display, fontWeight: 300 }} className="text-2xl">฿{o.price}</span>
+                </span>
+                <span className="mt-2 block text-sm" style={{ color: EL.inkSoft }}>{o.note}</span>
+              </button>
+            );
+          })}
+        </section>
+      )}
+
+      {mode === "create" && (
+        <Field label="ชื่อทีม" error={errors.teamName}>
+          <input className={inputClass} style={inputStyle} value={teamName} maxLength={80} onChange={(e) => setTeamName(e.target.value)} />
+        </Field>
+      )}
+
       <section className="space-y-6">
         {members.map((m, i) => {
           const minor = m.age !== "" && Number(m.age) < ADULT_AGE;
           return (
             <fieldset key={i} className="space-y-4 rounded-2xl border p-5 sm:p-6" style={{ borderColor: "rgba(29,33,31,0.18)" }}>
               <legend className="px-2 text-xs" style={{ fontFamily: EL_FONT.mono, color: EL.inkSoft }}>
-                [คนที่ {i + 1}{i === 0 ? " · คนกรอก" : ""}]
+                [ข้อมูลของคุณ]
               </legend>
-              {i > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setMembers((ms) => ms.filter((_, j) => j !== i))}
-                  className="float-right -mt-2 inline-flex items-center gap-1 text-xs"
-                  style={{ color: EL.inkSoft }}
-                >
-                  <X className="h-4 w-4" /> เอาออก
-                </button>
-              )}
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="ชื่อ-นามสกุล" error={errors[`m${i}.fullName`]}>
                   <input className={inputClass} style={inputStyle} value={m.fullName} autoComplete={i === 0 ? "name" : "off"} onChange={(e) => update(i, { fullName: e.target.value })} />
@@ -218,31 +272,16 @@ export function JoinForm({ source, utm }: { source?: string; utm?: Record<string
           );
         })}
 
-        {members.length < ELEMENTAL.maxGroupSize && (
-          <button
-            type="button"
-            onClick={() => setMembers((ms) => [...ms, emptyMember()])}
-            className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold"
-            style={{ boxShadow: `inset 0 0 0 1px ${EL.ink}` }}
-          >
-            <Plus className="h-4 w-4" /> เพิ่มเพื่อนในกลุ่ม (สูงสุด {ELEMENTAL.maxGroupSize} คน)
-          </button>
-        )}
-
-        {solo ? (
+        {mode === "solo" && (
           <Check checked={wantsTeam} onChange={setWantsTeam}>
-            มาคนเดียว อยากให้ทีมงานช่วยจับคู่เข้าทีม
+            อยากให้ทีมงานช่วยจับคู่เข้าทีม
           </Check>
-        ) : (
-          <Field label="ชื่อทีม (ไม่บังคับ)">
-            <input className={inputClass} style={inputStyle} value={teamName} maxLength={80} onChange={(e) => setTeamName(e.target.value)} />
-          </Field>
         )}
       </section>
 
       <section className="space-y-4">
         <h2 className="text-2xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>ช่องทางติดต่อ</h2>
-        <p className="text-sm" style={{ color: EL.inkSoft }}>ของคนกรอก เราจะส่งข่าวของงานให้ทั้งกลุ่มผ่านช่องทางนี้</p>
+        <p className="text-sm" style={{ color: EL.inkSoft }}>เราส่งลิงก์จ่ายเงินและข่าวของงานไปที่นี่</p>
         <div className="grid gap-4 sm:grid-cols-3">
           <Field label="อีเมล" error={errors.email}>
             <input className={inputClass} style={inputStyle} type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -258,18 +297,14 @@ export function JoinForm({ source, utm }: { source?: string; utm?: Record<string
 
       <section className="space-y-4 rounded-2xl p-5 sm:p-6" style={{ backgroundColor: EL.char, color: EL.cream }}>
         <div className="flex items-baseline justify-between gap-4">
-          <span>
-            {solo ? "สมัครคนเดียว" : `${members.length} คน × ฿${ELEMENTAL.groupPriceBaht}`}
-          </span>
+          <span>{mode === "solo" ? "มาคนเดียว" : "ราคาในทีม ต่อคน"}</span>
           <span className="text-3xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
             ฿{total.toLocaleString("en-US")}
           </span>
         </div>
-        {solo && (
-          <p className="text-sm" style={{ color: EL.creamSoft }}>
-            มากับเพื่อนตั้งแต่ 2 คน เหลือคนละ ฿{ELEMENTAL.groupPriceBaht}
-          </p>
-        )}
+        <p className="text-sm" style={{ color: EL.creamSoft }}>
+          สมัครก่อน จ่ายทีหลังได้ ที่นั่งยืนยันเมื่อจ่ายแล้ว
+        </p>
         <div className="space-y-3 border-t pt-4" style={{ borderColor: "rgba(243,239,230,0.2)" }}>
           <Check checked={noRefund} onChange={setNoRefund} error={errors.noRefund}>
             รับทราบว่าชำระค่าสมัครแล้ว <strong>ไม่มีการคืนเงิน</strong>
@@ -293,7 +328,7 @@ export function JoinForm({ source, utm }: { source?: string; utm?: Record<string
         style={{ backgroundColor: EL.flame, color: EL.flameWhite }}
       >
         {submitting && <Loader2 className="h-5 w-5 animate-spin" />}
-        ไปหน้าชำระเงิน ฿{total.toLocaleString("en-US")}
+        {mode === "create" ? "สร้างทีมและสมัคร" : mode === "join" ? `เข้าทีม ${team?.name ?? ""}` : "สมัคร"}
       </button>
     </form>
   );
