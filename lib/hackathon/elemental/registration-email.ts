@@ -1,14 +1,22 @@
+import { createHash } from "crypto";
 import { Resend } from "resend";
 
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { SHIFT_PAYMENT } from "@/lib/content/shift-cohort";
+import { checkRateLimit } from "@/lib/expert-interview/rate-limiter";
 import { siteUrl } from "@/lib/shift/notifyDiscord";
 
 /**
  * After sign-up, email the person their own page link, so "pay later" works:
  * they can close the tab and come back to pay, see the team, or share the
  * invite. Best effort: a failed email never fails the sign-up.
+ *
+ * Sign-up needs no login, so anyone can put any address in the form. The email
+ * therefore carries nothing the person typed (not even the team name), and one
+ * address gets at most EMAILS_PER_HOUR of them.
  */
+
+const EMAILS_PER_HOUR = 3;
 
 const escape = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -30,7 +38,7 @@ export function registrationEmailContent({ payToken, amountBaht, team }: Omit<Re
     `สมัคร ${ELEMENTAL.edition} Hackathon เรียบร้อย`,
     `จ่ายค่าสมัคร ฿${amountBaht.toLocaleString("en-US")} ตอนนี้หรือทีหลังก็ได้ ที่นั่งยืนยันเมื่อสลิปผ่าน: ${payUrl}`,
     ...(team && inviteUrl
-      ? [`ส่งลิงก์นี้ให้เพื่อนเข้าทีม ${team.name} (แต่ละคนสมัครและจ่ายเอง คนละ ฿${ELEMENTAL.groupPriceBaht}): ${inviteUrl}`]
+      ? [`ส่งลิงก์นี้ให้เพื่อนเข้าทีมของคุณ (แต่ละคนสมัครและจ่ายเอง คนละ ฿${ELEMENTAL.groupPriceBaht}): ${inviteUrl}`]
       : []),
     `ปิดรับสมัคร ${ELEMENTAL.registrationClosesOn} มีคำถามทักไลน์ ${SHIFT_PAYMENT.lineId}`,
   ];
@@ -40,7 +48,7 @@ export function registrationEmailContent({ payToken, amountBaht, team }: Omit<Re
     `<p>สมัคร ${ELEMENTAL.edition} Hackathon เรียบร้อย</p>`,
     `<p>จ่ายค่าสมัคร ฿${amountBaht.toLocaleString("en-US")} ตอนนี้หรือทีหลังก็ได้ ที่นั่งยืนยันเมื่อสลิปผ่าน<br>${link(payUrl)}</p>`,
     team && inviteUrl
-      ? `<p>ส่งลิงก์นี้ให้เพื่อนเข้าทีม <strong>${escape(team.name)}</strong> แต่ละคนสมัครและจ่ายเอง คนละ ฿${ELEMENTAL.groupPriceBaht}<br>${link(inviteUrl)}</p>`
+      ? `<p>ส่งลิงก์นี้ให้เพื่อนเข้าทีมของคุณ แต่ละคนสมัครและจ่ายเอง คนละ ฿${ELEMENTAL.groupPriceBaht}<br>${link(inviteUrl)}</p>`
       : "",
     `<p>ปิดรับสมัคร ${ELEMENTAL.registrationClosesOn} มีคำถามทักไลน์ ${SHIFT_PAYMENT.lineId}</p>`,
   ].join("");
@@ -53,6 +61,13 @@ export async function sendRegistrationEmail(email: RegistrationEmail): Promise<v
   if (!apiKey) return;
   const from = process.env.RESEND_FROM_EMAIL || "hi@noreply.passionseed.org";
   try {
+    const address = email.to.trim().toLowerCase();
+    const key = createHash("sha256").update(`hackathon-register-email:${address}`).digest("hex");
+    const { allowed } = await checkRateLimit(key, EMAILS_PER_HOUR);
+    if (!allowed) {
+      console.warn("[hackathon register] email skipped: hourly limit for this address");
+      return;
+    }
     const { subject, html, text } = registrationEmailContent(email);
     const { error } = await new Resend(apiKey).emails.send({
       from: `PassionSeed <${from}>`,

@@ -1,4 +1,4 @@
-import { interpretRdcw, slipReceiver } from "../client";
+import { bangkokDay, interpretRdcw, slipReceiver } from "../client";
 
 const ok = (over: Record<string, unknown> = {}) => ({
   valid: true,
@@ -21,6 +21,16 @@ describe("interpretRdcw", () => {
       amount: 199,
       transTimestamp: "20261123 10:15:00",
     });
+  });
+
+  it("sends a slip dated before the sign-up to a person", () => {
+    expect(interpretRdcw(ok(), 199, "image/jpeg", "20261124")).toMatchObject({ kind: "unverified" });
+    expect(interpretRdcw(ok(), 199, "image/jpeg", "20261123")).toMatchObject({ kind: "paid" });
+  });
+
+  it("reads the sign-up day in Bangkok time", () => {
+    expect(bangkokDay("2026-11-22T17:30:00Z")).toBe("20261123");
+    expect(bangkokDay("2026-11-22T16:59:00Z")).toBe("20261122");
   });
 
   it("rejects the wrong amount", () => {

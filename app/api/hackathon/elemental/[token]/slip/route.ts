@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { MAX_SLIP_BYTES } from "@/lib/hackathon/elemental/slip-image";
 import { safeServerError } from "@/lib/security/route-guards";
-import { rdcwConfigured, verifySlipRdcw } from "@/lib/rdcw/client";
+import { bangkokDay, rdcwConfigured, verifySlipRdcw } from "@/lib/rdcw/client";
 import { verifySlip } from "@/lib/slipok/client";
 import {
   getRegistrationByToken,
@@ -46,8 +46,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     await uploadSlip(file, slipPath);
 
     const provider = rdcwConfigured() ? "rdcw" : "slipok";
-    const verify = provider === "rdcw" ? verifySlipRdcw : verifySlip;
-    const verdict = await verify(file, `slip.${ext}`, registration.amountBaht);
+    const verdict = provider === "rdcw"
+      ? await verifySlipRdcw(file, `slip.${ext}`, registration.amountBaht, bangkokDay(registration.createdAt))
+      : await verifySlip(file, `slip.${ext}`, registration.amountBaht);
     const check = {
       provider,
       kind: verdict.kind,

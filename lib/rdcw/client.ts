@@ -56,8 +56,23 @@ export function slipReceiver(data: RdcwBody["data"]): "us" | "not_us" | "unknown
   return "unknown";
 }
 
-/** Turn RDCW's reply into what we do next. Pure, so it is tested on its own. */
-export function interpretRdcw(body: unknown, expectedAmount: number, fileType = "image/jpeg"): SlipVerdict {
+/** A timestamp's calendar day in Bangkok, as RDCW writes transDate: "YYYYMMDD". */
+export function bangkokDay(iso: string): string {
+  return new Date(new Date(iso).getTime() + 7 * 3_600_000).toISOString().slice(0, 10).replace(/-/g, "");
+}
+
+/**
+ * Turn RDCW's reply into what we do next. Pure, so it is tested on its own.
+ * `notBefore` is the sign-up day (YYYYMMDD, Bangkok). RDCW, unlike SlipOK, does
+ * not flag a slip it has seen before, so a slip dated before the sign-up (one
+ * paid to the same PromptPay for something else) goes to a person instead.
+ */
+export function interpretRdcw(
+  body: unknown,
+  expectedAmount: number,
+  fileType = "image/jpeg",
+  notBefore?: string,
+): SlipVerdict {
   const b = (body ?? {}) as RdcwBody;
 
   if (b.valid === true && b.data?.transRef) {
@@ -69,6 +84,10 @@ export function interpretRdcw(body: unknown, expectedAmount: number, fileType = 
     const amount = Number(b.data.amount);
     if (!Number.isFinite(amount) || Math.abs(amount - expectedAmount) > 0.001) {
       return { kind: "rejected", reason: "amount", raw: body };
+    }
+    const transDate = b.data.transDate;
+    if (notBefore && transDate && /^\d{8}$/.test(transDate) && transDate < notBefore) {
+      return { kind: "unverified", detail: "RDCW slip is dated before the sign-up", raw: body };
     }
     const transTimestamp =
       b.data.transDate && b.data.transTime ? `${b.data.transDate} ${b.data.transTime}` : undefined;
@@ -98,7 +117,12 @@ export function interpretRdcw(body: unknown, expectedAmount: number, fileType = 
 }
 
 /** Send one slip image to RDCW. Never throws: failures come back as "unverified". */
-export async function verifySlipRdcw(file: Blob, filename: string, expectedAmount: number): Promise<SlipVerdict> {
+export async function verifySlipRdcw(
+  file: Blob,
+  filename: string,
+  expectedAmount: number,
+  notBefore?: string,
+): Promise<SlipVerdict> {
   const id = process.env.RDCW_CLIENT_ID;
   const secret = process.env.RDCW_CLIENT_SECRET;
   if (!id || !secret) {
@@ -120,7 +144,7 @@ export async function verifySlipRdcw(file: Blob, filename: string, expectedAmoun
     if (body === null) {
       return { kind: "unverified", detail: `RDCW HTTP ${res.status} without JSON`, raw: null };
     }
-    return interpretRdcw(body, expectedAmount, file.type);
+    return interpretRdcw(body, expectedAmount, file.type, notBefore);
   } catch (error) {
     const detail = error instanceof Error ? error.message : "RDCW request failed";
     return { kind: "unverified", detail, raw: null };

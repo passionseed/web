@@ -19,6 +19,7 @@ export type PublicRegistration = {
   amountBaht: number;
   memberNicknames: string[];
   team: PublicTeam | null;
+  createdAt: string;
 };
 
 /** What an invite link shows: the team's name and who is in it (first names only). */
@@ -186,7 +187,7 @@ export async function getRegistrationByToken(
   const { data, error } = await db
     .from("hackathon_event_registrations")
     .select(
-      "id, status, team_id, team_name, member_count, amount_baht, hackathon_event_registration_members(position, nickname, full_name)",
+      "id, status, team_id, team_name, member_count, amount_baht, created_at, hackathon_event_registration_members(position, nickname, full_name)",
     )
     .eq("pay_token", token)
     .maybeSingle();
@@ -203,6 +204,7 @@ export async function getRegistrationByToken(
     amountBaht: data.amount_baht,
     memberNicknames: members.map(firstName),
     team: data.team_id ? await loadTeam({ id: data.team_id }, maxTeamSize) : null,
+    createdAt: data.created_at,
   };
 }
 
