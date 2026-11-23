@@ -34,6 +34,13 @@ const nextConfig = {
         destination: "/hackathon/elemental",
         permanent: false,
       },
+      // The 1st edition's admin tools moved to the archive; old bookmarks follow.
+      {
+        source:
+          "/admin/hackathon/:section(activities|analytics|email-sender|gallery|learning|mentors|participants|push-sender|questionnaire|team-directions|team-finder|team-submissions|teams)/:rest*",
+        destination: "/admin/archive/hackathon-healthcare/:section/:rest*",
+        permanent: false,
+      },
     ];
   },
   // Dev only: Tailscale hosts, plus this Mac on the home Wi-Fi for phone previews.

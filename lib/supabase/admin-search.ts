@@ -508,7 +508,7 @@ export const SEARCH_ENTITIES: Record<AdminSearchType, SearchEntity> = {
             maskEmail(str(r.email)),
             shape === "digits" ? maskPhone(str(r.phone)) : null,
           ),
-          href: "/admin/hackathon/participants",
+          href: "/admin/archive/hackathon-healthcare/participants",
         },
         fields: [
           str(r.display_name),

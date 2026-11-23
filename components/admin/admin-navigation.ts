@@ -98,6 +98,13 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         icon: CalendarDays,
         keywords: ["discord", "sessions"],
       },
+      {
+        href: "/admin/hackathon",
+        label: "Elemental hackathon",
+        description: "Seats, sign-ups and slips to check",
+        icon: Trophy,
+        keywords: ["hackathon", "slips", "registrations", "payments"],
+      },
     ],
   },
   {
@@ -235,7 +242,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         keywords: ["traffic", "sources"],
       },
       {
-        href: "/admin/hackathon/analytics",
+        href: "/admin/archive/hackathon-healthcare/analytics",
         label: "Traffic and links",
         description: "Unique visitors, referrers and link events",
         icon: LineChart,
@@ -263,12 +270,6 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         href: "/admin/competitions",
         label: "Competitions",
         description: "Student opportunities",
-        icon: Trophy,
-      },
-      {
-        href: "/admin/hackathon",
-        label: "Hackathon",
-        description: "Teams, mentors and submissions",
         icon: Trophy,
       },
       {

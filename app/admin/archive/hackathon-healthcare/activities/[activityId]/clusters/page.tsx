@@ -25,7 +25,7 @@ export default async function ActivityClustersPage({
           </p>
         </div>
         <Button asChild variant="outline" className="min-h-11">
-          <Link href="/admin/hackathon/activities">
+          <Link href="/admin/archive/hackathon-healthcare/activities">
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             Back to activities
           </Link>
