@@ -42,7 +42,8 @@ export const ELEMENTAL = {
   /** Who can join: school years, from anywhere in Thailand. */
   gradesTh: "ม.4–ม.6",
   theme: "Environmental negligence",
-  url: "passionseed.org/hackathon",
+  /** The permanent link. /hackathon redirects here while Elemental is current. */
+  url: "passionseed.org/hackathon/elemental",
   /** Database key for registrations. */
   slug: "elemental-2026",
   /** Last day to sign up, Bangkok time (inclusive). */

@@ -27,6 +27,11 @@ export const TEASER_MEDIA = {
   poster9x16: "/hackathon/elemental/media/teaser-reels.webp",
 } as const;
 
+/** "ดิน" reads as "ธาตุดิน"; a name that already says ธาตุ stays as it is. */
+export function elementLabel(th: string): string {
+  return th.startsWith("ธาตุ") ? th : `ธาตุ${th}`;
+}
+
 export interface ElementChapter {
   key: ElementKey;
   en: string;

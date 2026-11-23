@@ -2,46 +2,28 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { motion, useReducedMotion, useTransform } from "framer-motion";
 
 import { EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 
 import { ELEMENT_DETAILS } from "./challenges";
 import { ElementDetailSheet } from "./ElementDetailSheet";
+import { MoreButton } from "./MoreButton";
 import {
   ELEMENT_CHAPTERS,
   ELEMENT_KEYFRAMES,
+  elementLabel,
   elementFrameUrl,
   type ElementChapter,
   type ElementKey,
 } from "./media";
 import { blockThresholds, DISSOLVE_BLOCK_PX, keyframeBlend, seedFromKey } from "./scrub-dissolve";
+import { useSectionScroll } from "./use-section-scroll";
 
 const HASH_PREFIX = "#element-";
 
-/** Opens the element's full brief. Lives in each chapter, under its examples. */
-function MoreButton({ chapter, onOpen }: { chapter: ElementChapter; onOpen: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="pointer-events-auto mt-5 inline-flex items-center gap-2 border-b pb-1 text-sm text-[#faf8f4] transition-opacity hover:opacity-80 sm:text-base lg:mt-7"
-      style={{ borderColor: chapter.color, fontFamily: "var(--font-bai-jamjuree), sans-serif" }}
-      aria-haspopup="dialog"
-    >
-      ดูโจทย์และเคสที่เกิดขึ้นจริง
-      <span aria-hidden="true">→</span>
-    </button>
-  );
-}
-
 const CANVAS_W = 600;
 const CANVAS_H = 750;
-
-/** "ดิน" reads as "ธาตุดิน"; a name that already says ธาตุ stays as it is. */
-function elementLabel(th: string) {
-  return th.startsWith("ธาตุ") ? th : `ธาตุ${th}`;
-}
 
 /**
  * Thai has no spaces between words, so the browser can break inside one
@@ -92,7 +74,7 @@ function ScrubbedElementChapter({
   const progressBarRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
 
-  const { scrollYProgress } = useScroll({
+  const scrollYProgress = useSectionScroll({
     target: runwayRef,
     offset: ["start start", "end end"],
   });
@@ -269,14 +251,15 @@ function ScrubbedElementChapter({
       ref={runwayRef}
       className="relative h-[220svh] w-full border-t border-[#f3efe6]/10 bg-[#0c0d0c]"
     >
-      <div className="sticky top-0 flex h-[100svh] w-full overflow-hidden">
+      {/* Pinned under the fixed top bar, so the bar never covers the picture. */}
+      <div className="sticky top-[var(--el-header-h,0px)] flex h-[calc(100svh-var(--el-header-h,0px))] w-full overflow-hidden">
         <div
           className={`flex h-full w-full flex-col lg:items-center ${
             mediaOnRight ? "lg:flex-row-reverse" : "lg:flex-row"
           }`}
         >
-          {/* Sharp full-height 4:5 scroll-scrubbed canvas */}
-          <div className="relative h-[56svh] w-full shrink-0 bg-black lg:h-[100svh] lg:w-auto lg:aspect-[4/5] lg:max-w-[54vw]">
+          {/* Sharp full-height 4:5 scroll-scrubbed canvas. On phones it takes the height the text leaves. */}
+          <div className="relative min-h-0 w-full flex-1 bg-black lg:h-full lg:w-auto lg:flex-none lg:aspect-[4/5] lg:max-w-[54vw]">
             <canvas
               ref={canvasRef}
               width={CANVAS_W}
@@ -297,7 +280,7 @@ function ScrubbedElementChapter({
 
           {/* Opposite editorial typography moving in parallax */}
           <div
-            className={`relative z-10 flex flex-1 flex-col justify-center overflow-hidden px-5 py-6 lg:px-12 lg:py-16 xl:px-16 ${
+            className={`relative z-10 flex shrink-0 flex-col justify-center overflow-hidden px-5 pb-16 pt-6 lg:flex-1 lg:px-12 lg:py-16 xl:px-16 ${
               mediaOnRight ? "lg:items-end lg:text-right" : "lg:items-start lg:text-left"
             }`}
           >

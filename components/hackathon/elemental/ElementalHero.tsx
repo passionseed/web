@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { motion, useReducedMotion, useTransform } from "framer-motion";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL, prizeTotal, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
@@ -10,6 +10,7 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
 
 import { EditorialLink } from "./EditorialLink";
 import { KEY_VISUAL_MEDIA } from "./media";
+import { useSectionScroll } from "./use-section-scroll";
 
 export function ElementalHero({ joinHref, open }: { joinHref: string; open: boolean }) {
   const runwayRef = useRef<HTMLElement>(null);
@@ -17,7 +18,7 @@ export function ElementalHero({ joinHref, open }: { joinHref: string; open: bool
   const reduceMotion = useReducedMotion();
   const [corrupted, setCorrupted] = useState(false);
 
-  const { scrollYProgress } = useScroll({
+  const scrollYProgress = useSectionScroll({
     target: runwayRef,
     offset: ["start start", "end start"],
   });

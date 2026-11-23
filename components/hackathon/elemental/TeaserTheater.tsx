@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { motion, useReducedMotion, useTransform } from "framer-motion";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 
 import styles from "./elemental-cinema.module.css";
 import { TEASER_MEDIA } from "./media";
 import { useElementalSound } from "./sound-context";
+import { useSectionScroll } from "./use-section-scroll";
 
 const VIDEO_ID = "teaser";
 
@@ -30,7 +31,7 @@ export function TeaserScreening({ joinHref, open }: { joinHref: string; open: bo
   const [ended, setEnded] = useState(false);
   const hasPlayedInViewRef = useRef(false);
 
-  const { scrollYProgress } = useScroll({
+  const scrollYProgress = useSectionScroll({
     target: sectionRef,
     offset: ["start end", "end start"],
   });

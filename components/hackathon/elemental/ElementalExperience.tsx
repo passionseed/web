@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { motion, useReducedMotion, useTransform } from "framer-motion";
 
 import { BACKGROUND, EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
@@ -17,6 +17,7 @@ import { ScrollHookStatement } from "./ScrollHookStatement";
 import { SponsorSection } from "./SponsorSection";
 import { ElementalSoundProvider, useElementalSound } from "./sound-context";
 import { TeaserScreening } from "./TeaserTheater";
+import { useSectionScroll } from "./use-section-scroll";
 
 function GlobalSoundControl() {
   const { soundOn, audioUnlocked, toggleSound } = useElementalSound();
@@ -45,7 +46,7 @@ function ClosingPoster({ joinHref, open }: { joinHref: string; open: boolean }) 
   // The poster sits at the bottom of the page: load nothing until it's near.
   const [nearViewport, setNearViewport] = useState(false);
 
-  const { scrollYProgress } = useScroll({
+  const scrollYProgress = useSectionScroll({
     target: sectionRef,
     offset: ["start end", "center center"],
   });
@@ -174,6 +175,20 @@ function ElementalExperienceInner({
   fontClassName: string;
 }) {
   const [pastHero, setPastHero] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+
+  // Sticky sections read the top bar's height from --el-header-h, so they pin under it.
+  useEffect(() => {
+    const main = mainRef.current;
+    const header = headerRef.current;
+    if (!main || !header) return;
+    const observer = new ResizeObserver(() => {
+      main.style.setProperty("--el-header-h", `${header.offsetHeight}px`);
+    });
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setPastHero(window.scrollY > window.innerHeight * 0.95);
@@ -187,12 +202,13 @@ function ElementalExperienceInner({
   );
 
   return (
-    <main className={`${fontClassName} ${styles.cinemaRoot} min-h-screen`}>
+    <main ref={mainRef} className={`${fontClassName} ${styles.cinemaRoot} min-h-screen`}>
       {/* Global 35mm analog grain */}
       <div className={styles.filmGrain} aria-hidden="true" />
 
       {/* Minimal Header: ink on sky over hero, solid black + cream once past */}
       <header
+        ref={headerRef}
         className="fixed inset-x-0 top-0 z-40 transition-colors duration-200"
         style={{
           backgroundColor: pastHero ? "#0c0d0c" : "transparent",
@@ -254,7 +270,7 @@ function ElementalExperienceInner({
       {/* ACT 1: THE VALLEY (STICKY PARALLAX HERO) */}
       <ElementalHero joinHref={joinHref} open={open} />
 
-      {/* ACT 2: SCROLL-DRIVEN HOOK ("ทีละนิด นิดๆ ในที่ที่คุณไม่เห็น") */}
+      {/* ACT 2: SCROLL-DRIVEN HOOK ("ธรรมชาติไม่ได้พังเอง ... ตรงที่ไม่มีใครมอง") */}
       <ScrollHookStatement />
 
       {/* ACT 3: THE SCREENING (FULL TEASER WITH PARALLAX + DEFAULT-ON SOUND) */}
