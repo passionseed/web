@@ -8,7 +8,7 @@ import { guideStaticParams, loadGuidePage } from "@/lib/radar-guides/registry.se
 export const dynamicParams = false;
 // The root layout reads cookies (supabase.auth.getSession, value unused).
 // force-static makes cookies() empty here so every level prerenders at build
-// with no network. Precedent: app/epic-sprint/page.tsx.
+// with no network. Precedent: app/admin/epic-sprint/page.tsx.
 export const dynamic = "force-static";
 
 type Params = Promise<{ slug: string; page: string }>;

@@ -172,7 +172,9 @@ developer portal.
 
 Permissions: `View Channel` on the voice channels it should observe. It never
 connects to voice. projectseed also needs `Send Messages` and
-`Use Slash Commands` on the reminder channel.
+`Use Slash Commands` on the reminder channel. shift-quests' deep fire also
+needs `Manage Channels` and `Move Members` (and the permissions its rooms set)
+on the deep fire lobby's category: see "The deep fire" under SHIFT High quests.
 
 ## SHIFT voice participation
 
@@ -222,7 +224,7 @@ display.
 
 ## Safeguarding constraints — not optional
 
-`docs/project/PROJECTSEED-SAFEGUARDING.md` §3 permits bot DMs under three rules,
+`docs/project/PROJECTSEED-SAFEGUARDING.md` §4 permits bot DMs under three rules,
 and the code implements all three. Do not relax them without changing that
 policy first.
 
@@ -259,9 +261,11 @@ The short version for whoever runs the bot:
   (one upsert per command; other commands are left alone).
 - Its delivery loop posts queued messages every 10 seconds and touches the
   same health file as shift-voice, so the Docker `HEALTHCHECK` covers it.
-- It never reads message content and never DMs anyone who did not opt in in
-  `/settings`. DMs it does send are content-free nudges ("there is an update,
-  use /inbox"), which keeps the safeguarding rules below intact.
+- It never reads message content and never DMs anyone who did not opt in.
+  DMs it does send are content-free: the nudge ("there is an update, use
+  /inbox") and the reminder, both opted into in `/settings`, and from schema
+  23 the come-back DM (outbox kind `away`, below), opted into on the island
+  or in `/settings`. That keeps the safeguarding rules above intact.
 - Tests: `pnpm test:db:quests` needs Postgres 15 or newer, finds it on `PATH`
   or in the usual install folders (`PG_BIN=<folder>` picks one) and says how to
   install it when missing. On throwaway databases it applies every shift_quest
@@ -342,16 +346,19 @@ The short version for whoever runs the bot:
   polite "not yet", and someone in the pilot who has not started gets the
   /start story. The post is edited about 5 seconds after every gateway
   ready (so a new release puts its buttons on the existing post right away),
-  then within a minute of anything shown changing, and at least every 10
-  minutes; at most one edit a minute. It is not gated on sharing: setting the channel turns it
+  then only within a minute of something real changing on the island
+  (approvals, new plots, opt-ins, roots and looks, the goal, the campfire
+  count, the day count); never on a timer, and not for a new light of the
+  hour. At most one edit a minute. It is not gated on sharing: setting the channel turns it
   on, clearing it stops the edits and leaves the last message as it is.
   - Finding its message after a restart: the message id is stored in the
     database (`shift_quest_live_state`) with its channel, written with a
     compare-and-set (`shift_quest_live_mark`), so two overlapping processes
     during a deploy never leave two posts (the loser deletes its own). When
-    the stored message is gone (staff deleted it; noticed at the next edit,
-    within 10 minutes) or no id was stored, the bot first adopts its own
-    pinned message carrying the "🏝️ โพสต์นี้อัปเดตเองทุก 10 นาที" line, and only
+    the stored message is gone (staff deleted it; the bot reads, never
+    edits, the post every 10 minutes to notice) or no id was stored, the bot
+    first adopts its own pinned message carrying the "🏝️ โพสต์นี้อัปเดตเองเมื่อเกาะเปลี่ยน"
+    line (or an earlier release's "🏝️ โพสต์นี้อัปเดตเองทุก 10 นาที"), and only
     then posts and pins a new one. Moving the live channel posts once in the
     new channel and leaves the old message alone. A send or edit refused
     because of the picture (the bot lost Attach Files, Discord 50013, or the
@@ -482,6 +489,98 @@ The short version for whoever runs the bot:
     the first one that person can take, on their project's route first.
     Nothing is stored, nothing pays for being there: a side quest pays only
     through its normal mentor review.
+- The deep fire, กองไฟโฟกัส (`bot/src/quests/deepfire.ts`, decisions in
+  `deepfire-state.ts`, copy in `deepfireCopy.ts`, schema 22,
+  `20261120120000_shift_quest_deep_fire`; design in
+  `docs/designs/shift-island-deep-fire.md`): a voice room built for one
+  person to work alone. Join to create: whoever joins the lobby gets a new
+  voice channel, "🔥 กองไฟโฟกัส" (never their name), in the lobby's category,
+  and is moved in. The room is deleted the moment it is empty; joining the
+  lobby while your room stands moves you back into it. At most 40 rooms at
+  once; at the cap people stay in the lobby.
+  - **Locked, but visible.** A room copies the lobby's role overwrites
+    (@everyone's too) with only View Channel kept, so whoever sees the lobby
+    sees the room and who sits in it. Connect and the room's chat (messages,
+    threads, voice messages, polls, reactions) are denied on every role and
+    for the owner too; only the owner and the bot may connect; user limit 1.
+    The lobby's member overwrites are not copied.
+  - **The bot is the lock.** Administrators, the server owner and anyone
+    with Move Members get past overwrites, so anyone other than the owner
+    and the bot who is in a room (other bots too) is disconnected at once,
+    straight from the voice update (never waiting behind a build or the
+    heartbeat) and on every reconcile, never moved anywhere else. When
+    Discord will not disconnect someone, the room is deleted, which
+    disconnects everyone in it; an owner is never moved back into a room
+    someone else is in. The owner leaving while someone else is inside
+    disconnects them and deletes the room. Moves and disconnects check the
+    voice cache first, so nobody is pulled out of wherever they went.
+  - **Nothing stored per person.** The bot recognises its rooms by a marker,
+    in any category: a voice channel, never a lobby, with user limit 1, a
+    member overwrite for the bot's own user allowing exactly View Channel,
+    Connect, Manage Channels and Move Members, and `@everyone` denied
+    Connect; the owner is the room's one other member overwrite allowing
+    Connect. A room stays guarded after the lobby moves, changes or is
+    cleared, across restarts. It reconciles on ready, resume, a lobby
+    change and every 5 minutes from the gateway caches (no new intent, no
+    member fetch), at most 5 new rooms per pass. Stopping leaves every room
+    as it is (it waits a few seconds at most); the next start picks them
+    up. Logs carry counts and short codes only.
+  - **Heartbeat.** Every 60 seconds `shift_quest_deepfire_beat(guild,
+    ready)` records whether rooms can be built and answers the lobby. The
+    web's จุดไฟ button is live only while the last beat named the current
+    lobby, said ready, and is under 3 minutes old. Never ready while the
+    gateway is disconnected. A Discord 50013 (missing permissions) stops
+    building, and the next beat says not ready, then checks again. The
+    heartbeat runs beside the work on the rooms and gives up on the
+    database after 20 seconds. Below schema 22 the module
+    only re-reads the version each beat (while connected), so deploy the bot
+    first, then apply the migration; no restart needed.
+  - **Setup.** Make a voice channel inside a category (for example
+    "🔥 จุดกองไฟโฟกัส"), visible and joinable by students, with no user limit.
+    Give the bot, on that category: View Channel, Connect, Manage Channels,
+    Move Members, plus every permission a room sets (Speak, Video, Use Voice
+    Activity, Send Messages, Send Messages in Threads, Create Public Threads,
+    Create Private Threads, Send Voice Messages, Create Polls, Add
+    Reactions; Discord lets a bot set only permissions it holds there), and
+    View Channel, Connect, Manage Channels and Move Members on the lobby
+    itself. Then `/admin channel kind:deepfire channel:<the lobby>`. It
+    refuses a channel that is not a plain voice channel, has no category,
+    where the bot lacks any of these (unknown counts as missing), that
+    students cannot see and join, or that is the campfire's coworking
+    channel. Clear
+    it with `/admin channel kind:deepfire` and no channel. Leave room for the
+    rooms: Discord allows 50 channels per category. No rounds, chimes, music
+    or bot messages in a room, and the evening guest never counts the rooms.
+    In SHIFT cohort weeks shift-voice records voice time in every channel,
+    these rooms included.
+- The come-back DM (`bot/src/quests/away.ts`, copy `AWAY_DM` in `copy.ts`,
+  schema 23, `20261121090000_shift_quest_away`; design in
+  `docs/designs/shift-island-away.md`): a student who said yes (on the
+  island's one-line strip, its ตั้งค่า, or the 🌱 button in `/settings`) gets
+  one short DM after a stretch away from the island. It is a pointer, never a
+  question (safeguarding §4): a title, one line, one "🌐 เปิดเกาะบนเว็บ" link
+  button (no interaction), why it came and where to turn it off, and "the bot
+  does not read or answer private messages". No question, no day count, no
+  project. Without an island address (`SHIFT_ISLAND_URL` or
+  `NEXT_PUBLIC_SITE_URL`) it fails permanently and nothing is sent. The
+  question about why lives on the island, in a card the website opens once
+  when anyone comes back; its answers are read by admins without names,
+  never by mentors. The database decides everything: each minute the
+  delivery loop calls `shift_quest_enqueue_away()` (students only, onboarded,
+  never resting or waiting on a review of their own quest or their team's
+  milestone, at most one per stretch and per 14 days, queued at the set hour,
+  17:00 Bangkok by default, during a season; time on hold and the break
+  between seasons never count as time away, and a mentor's decision or the
+  end of a rest starts a fresh stretch), and the claim drops a come-back DM
+  outside 09:00 to 19:59 Bangkok or for someone who came back (or whose hold
+  ended) meanwhile. `/admin feature away` turns the whole
+  feature on (off by default; it shows in `/admin status` from schema 23).
+  Below schema 23 the loop only re-reads the version each minute and starts
+  by itself once the migration is applied; `/settings` shows the line only
+  from 23, while the switch is on (or, while it is off, to a student who said
+  yes, offering only "off", so a yes can always be taken back), and never to
+  staff. A new command choice:
+  run `pnpm bot:register` once after deploying.
 - Quest card (`bot/src/quests/handlers/board.ts`, copy `QB` in
   `island/copy.ts`): "📜 กระดานเควสต์" on the island card and the live post's
   panel shows the website's quest board in Discord, read with the same

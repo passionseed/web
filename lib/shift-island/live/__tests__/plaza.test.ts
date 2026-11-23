@@ -50,10 +50,10 @@ function festival(over: Partial<Festival> = {}): Festival {
   };
 }
 
-/** Everything at once: every booth, a full board, more people than seats, the prize board. */
+/** Everything at once: every booth, a full board, more people than seats, the prize board, the deep fire lit. */
 function fullInput(scene: IslandScene): PlazaInput {
   const booths = scene.trees.map((t) => ({ slot: t.slot, kind: t.slot % 2 ? ("stage" as const) : ("table" as const) }));
-  return { festival: festival({ booths }), pins: ["active", "main", "side"], campfire: { count: 12 }, prizes: true };
+  return { festival: festival({ booths }), pins: ["active", "main", "side"], campfire: { count: 12 }, prizes: true, deepfire: { lit: true } };
 }
 
 function actorRect(actor: LiveActor): Rect {
@@ -435,6 +435,104 @@ describe("plazaWorld content", () => {
     });
   });
 
+  describe("deep fire", () => {
+    const deep = (world: PlazaWorld) => world.actors.filter((a) => a.frames[0].startsWith("deepfire_"));
+
+    it("draws nothing and has no spot without a lobby", () => {
+      for (const deepfire of [undefined, null]) {
+        const world = plazaWorld(scene, { festival: null, pins: ["main"], campfire: { count: 2 }, deepfire });
+        expect(deep(world)).toEqual([]);
+        expect(world.spots.map((s) => s.id)).not.toContain("deepfire");
+      }
+      expect(plazaWorld(scene, { festival: null, pins: null, campfire: null, deepfire: null })).toBe(NO_PLAZA);
+    });
+
+    it("stands alone on an otherwise empty plaza: the ring with its log, the flame on its back rim, one spot, no words", () => {
+      const world = plazaWorld(scene, { festival: null, pins: null, campfire: null, deepfire: { lit: true } });
+      expect(world).not.toBe(NO_PLAZA);
+      expect(world.actors).toEqual([
+        { frames: ["deepfire_pit"], x: c.x + 45, y: c.y + 56 },
+        { frames: ACTOR_FRAMES.deepfireFlame, x: c.x + 48, y: c.y + 50, frameMs: 250 },
+      ]);
+      expect(world.spots).toHaveLength(1);
+      expect(world.spots[0]).toMatchObject({ id: "deepfire", actors: [0, 1] });
+      // No count, no name, nobody at it: the one log stays empty.
+      expect(world.labels).toEqual([]);
+      expect(world.figures).toEqual([]);
+    });
+
+    it("sleeps while its keeper is away: the cold ring, no flame, and the spot still opens its sheet", () => {
+      const world = plazaWorld(scene, { festival: null, pins: null, campfire: null, deepfire: { lit: false } });
+      expect(names(world)).toEqual(["deepfire_pit_cold"]);
+      expect(world.spots).toEqual([expect.objectContaining({ id: "deepfire", actors: [0] })]);
+      // Nothing that glows at night: the cold ring keeps no embers.
+      expect(allSprites().deepfire_pit_cold.join("")).not.toMatch(/[yi]/);
+      expect(allSprites().deepfire_pit.join("")).toMatch(/[yi]/);
+    });
+
+    it("draws after the campfire's front seats and before today's visitors, its spot last", () => {
+      const world = plazaWorld(scene, { ...fullInput(scene), campfire: { count: 8 }, visitors: { count: 6, team: 1, me: true } });
+      const order = names(world);
+      const ring = order.indexOf("deepfire_pit");
+      expect(order[ring + 1]).toBe("deepfire_flame_0");
+      expect(order.slice(0, ring).filter((n) => n.startsWith("sit_"))).toHaveLength(MAX_SEATS);
+      expect(order.slice(ring + 2).every((n) => n.startsWith("crowd_"))).toBe(true);
+      expect(world.spots.map((s) => s.id)).toEqual(["notice", "stage", "prizes", "campfire", "deepfire"]);
+    });
+
+    it("keeps its ring and flame inside its spot, with a spot about a 48px tap wide", () => {
+      const world = plazaWorld(scene, { festival: null, pins: null, campfire: null, deepfire: { lit: true } });
+      const spot = nativeSpot(scene, world.spots[0]);
+      for (const actor of world.actors) {
+        const rect = actorRect(actor);
+        expect(rect.x).toBeGreaterThanOrEqual(spot.x - 0.02);
+        expect(rect.y).toBeGreaterThanOrEqual(spot.y - 0.02);
+        expect(rect.x + rect.w).toBeLessThanOrEqual(spot.x + spot.w + 0.02);
+        expect(rect.y + rect.h).toBeLessThanOrEqual(spot.y + spot.h + 0.02);
+      }
+      expect(PLAZA_LAYOUT.deepfireSpot.w).toBeGreaterThanOrEqual(TAP);
+      // A small fire for one: no wider than 20 native px.
+      expect(MOTION_SIZES.deepfire_pit[0]).toBeLessThanOrEqual(20);
+    });
+
+    // Every island size, every plot as the viewer's (the pin over any tree), plain and decorated.
+    const every: { n: number; mine: number; decorated: boolean }[] = [];
+    for (const n of SIZES) for (let mine = 0; mine <= n; mine++) for (const decorated of [true, false]) every.push({ n, mine, decorated });
+
+    it("keeps its spot's 48px floor off every other tap target and pin, and its art on land, whoever is looking", () => {
+      const problems = new Set<string>();
+      for (const { n, mine, decorated } of every) {
+        const scene1 = buildScene(plots(n, mine, mine, decorated), { markMine: true, festival: true });
+        const world = plazaWorld(scene1, { ...fullInput(scene1), visitors: { count: 40, team: 3, me: true } });
+        const spot = world.spots.find((s) => s.id === "deepfire")!;
+        const exact = nativeSpot(scene1, spot);
+        const tap = grow(exact, TAP);
+        const list = obstacles(scene1);
+        for (const o of list) {
+          if (overlaps(exact, o.rect)) problems.add(`spot on ${o.what.replace(/\d+/g, "#")}`);
+          if ((o.what.startsWith("hotspot ") || o.what === "pin") && overlaps(tap, o.rect)) problems.add(`48px spot on ${o.what.replace(/\d+/g, "#")}`);
+        }
+        for (const other of world.spots.filter((s) => s.id !== "deepfire")) {
+          if (overlaps(tap, nativeSpot(scene1, other))) problems.add(`48px spot on spot ${other.id}`);
+        }
+        for (const actor of deep(world)) {
+          for (const o of list) if (overlaps(actorRect(actor), o.rect)) problems.add(`${actor.frames[0]} on ${o.what.replace(/\d+/g, "#")}`);
+          if (!onLand(scene1, actorRect(actor))) problems.add(`${actor.frames[0]} over water (${n} plots)`);
+          // No other plaza piece and no person ever stands over it.
+          for (const other of world.actors.filter((a) => !a.frames[0].startsWith("deepfire_"))) {
+            const frames = Math.max(1, other.steps?.length ?? 0);
+            for (let f = 0; f < frames; f++) {
+              const step = other.steps?.[f] ?? { dx: 0, dy: 0 };
+              const [w, h] = MOTION_SIZES[other.frames[0] as MotionSpriteName] ?? [10, 14];
+              if (overlaps(actorRect(actor), { x: other.x + step.dx, y: other.y + step.dy, w, h })) problems.add(`${actor.frames[0]} under ${other.frames[0]}`);
+            }
+          }
+        }
+      }
+      expect([...problems]).toEqual([]);
+    });
+  });
+
   describe("festival", () => {
     it("draws no festival props without a festival", () => {
       const world = plazaWorld(scene, { festival: null, pins: ["main"], campfire: { count: 2 } });
@@ -522,10 +620,10 @@ describe("plazaWorld cost", () => {
     const scene = buildScene(plots(20, 3), { markMine: true, festival: true });
     const input = fullInput(scene);
     expect(plazaWorld(scene, input)).toEqual(plazaWorld(scene, JSON.parse(JSON.stringify(input))));
-    // Only the people and the flame animate; the board, stage, flags and bulbs are single frames.
+    // Only the people and the two flames animate; the board, stage, flags, bulbs and the deep fire's ring are single frames.
     const moving = plazaWorld(scene, input).actors.filter((a) => a.frames.length > 1).map((a) => a.frames[0]);
-    expect(moving.length).toBe(MAX_SEATS + 1);
-    expect(moving.every((n) => n.startsWith("sit_") || n === "campfire_flame_0")).toBe(true);
+    expect(moving.length).toBe(MAX_SEATS + 2);
+    expect(moving.every((n) => n.startsWith("sit_") || n === "campfire_flame_0" || n === "deepfire_flame_0")).toBe(true);
   });
 
   it("keeps the plaza's pieces inside the scene's festival room on the smallest island", () => {

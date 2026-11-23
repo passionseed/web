@@ -1,0 +1,121 @@
+/* Elemental Hackathon editorial cinema styles.
+ * Sharp geometry, zero rounding, zero blur, zero utility chrome.
+ * Only texture: 35mm analog film grain (approved for Elemental in brand.ts).
+ * Only hover motion: slow-tension underline grow + crisp snap-out (+ touch in-view).
+ */
+
+.cinemaRoot {
+  --el-bg: #0c0d0c;
+  --el-cream: #f3efe6;
+  --el-ink: #1d211f;
+  --el-ease-tension: cubic-bezier(0.05, 0.7, 0.35, 0.99);
+  --el-ease-snap: cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: var(--el-bg);
+  color: var(--el-cream);
+  position: relative;
+  overflow-x: clip;
+}
+
+/* 35mm analog grain over everything (explicitly approved in brand.ts) */
+.filmGrain {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  opacity: 0.055;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 240 240' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 220px 220px;
+}
+
+/* Full-height sharp 4:5 cinema column */
+.mediaColumn {
+  height: 100svh;
+  aspect-ratio: 4 / 5;
+  max-width: 100vw;
+  object-fit: cover;
+  display: block;
+}
+
+/* Editorial link: slow-tension underline reveal on hover-in, fast snap on hover-out */
+.textLink {
+  position: relative;
+  display: inline-block;
+  padding-bottom: 3px;
+}
+
+.textLink::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background-color: currentColor;
+  clip-path: inset(0 100% 0 0);
+  opacity: 0.25;
+  filter: blur(2px);
+  transition:
+    clip-path 160ms var(--el-ease-snap),
+    opacity 160ms var(--el-ease-snap),
+    filter 160ms var(--el-ease-snap);
+}
+
+.textLink:hover::after {
+  animation: underlineGrow 900ms var(--el-ease-tension) forwards;
+}
+
+@keyframes underlineGrow {
+  0% {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0.25;
+    filter: blur(2px);
+  }
+  100% {
+    clip-path: inset(0 0% 0 0);
+    opacity: 1;
+    filter: blur(0px);
+  }
+}
+
+@media (hover: none) {
+  .textLinkInView::after {
+    animation: underlineGrow 900ms var(--el-ease-tension) forwards;
+  }
+}
+
+.cinemaRoot a:focus-visible,
+.cinemaRoot button:focus-visible,
+.cinemaRoot video:focus-visible {
+  outline: 2px solid #ffd57a;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .textLink::after {
+    animation: none !important;
+    transition: none !important;
+    clip-path: inset(0 0% 0 0);
+    opacity: 0.7;
+    filter: none;
+  }
+}
+
+/* Sponsor CTA: the arrow leans forward on hover, like it wants to go. */
+.nudgeArrow {
+  display: inline-block;
+  transition: transform 160ms var(--el-ease-snap);
+}
+
+.nudgeLink:hover .nudgeArrow,
+.nudgeLink:focus-visible .nudgeArrow {
+  transform: translateX(6px);
+  transition: transform 700ms var(--el-ease-tension);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nudgeArrow {
+    transition: none !important;
+    transform: none !important;
+  }
+}

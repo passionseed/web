@@ -16,6 +16,7 @@ function mockHalfOnboardedUser() {
   (createServerClient as jest.Mock).mockReturnValue({
     auth: { getUser: async () => ({ data: { user: { id: "student-1" } }, error: null }) },
     from: () => query,
+    rpc: () => query,
   });
 }
 

@@ -4,7 +4,7 @@
 import { MessageFlags } from "discord.js";
 
 import { ACTION_HANDLERS, COMMAND_HANDLERS } from "..";
-import { QuestDbError, type QuestApi, type Session } from "../api";
+import { QuestDbError, QuestError, type QuestApi, type Session } from "../api";
 import type { Ctx } from "../context";
 import { DAY_NAMES, T } from "../copy";
 import { I } from "../island/copy";
@@ -730,8 +730,10 @@ describe("/settings", () => {
     expect(body).toContain(`-# ${T.remindersPaused}`);
     expect(body).toContain(T.dmOn);
     expect(customIds(p)).toEqual(["sq|rem_on", "sq|rem_off", "sq|dm|off", "sq|is_view"]);
-    // One read: whether the 18:50 campfire call pings now (schema 21).
-    expect(calls(c)).toEqual([["shift_quest_call_pings"]]);
+    // Two reads: whether the 18:50 campfire call pings now (schema 21), and whether the database has the come-back
+    // DM (schema 23). Below 23 nothing more, and no come-back line.
+    expect(calls(c)).toEqual([["shift_quest_call_pings"], ["shift_quest_schema_version"]]);
+    expect(body).not.toContain("DM ชวนกลับเกาะ");
   });
 
   it("says how to stop the 18:50 campfire call's role ping only while the call pings", async () => {
@@ -767,6 +769,152 @@ describe("/settings", () => {
   });
 });
 
+describe("/settings: the come-back DM (schema 23)", () => {
+  const STATE = { enabled: true, days: 7, dm: null as boolean | null, ask_consent: true, ask_return: null };
+
+  /** A database at schema 23 whose shift_quest_away_state answers state (or throws it). */
+  function awayCtx(state: unknown, s: Session = session(), extra: Record<string, unknown> = {}): Ctx {
+    return ctx((fn) => {
+      if (fn === "shift_quest_schema_version") return 23;
+      if (fn === "shift_quest_away_state") {
+        if (state instanceof Error) throw state;
+        return state;
+      }
+      return fn in extra ? extra[fn] : null;
+    }, s);
+  }
+
+  async function settingsOf(c: Ctx): Promise<Payload> {
+    const { i, sent } = interaction("command");
+    await COMMAND_HANDLERS.get("settings")!(i, c);
+    expect(sent).toHaveLength(1);
+    expectCard(sent[0].payload);
+    return sent[0].payload;
+  }
+
+  it("shows one line and one button: off (or never asked) offers to turn it on", async () => {
+    for (const dm of [null, false]) {
+      const c = awayCtx({ ...STATE, dm });
+      const p = await settingsOf(c);
+      // Right after the update DM's line.
+      const body = bodyText(p);
+      expect(body).toContain(T.awayOff(7));
+      expect(body.indexOf(T.awayOff(7))).toBeGreaterThan(body.indexOf(T.dmOff));
+      expect(bodyText(p)).not.toContain(T.awayOn(7));
+      expect(T.awayOff(7)).toContain("**ปิด**");
+      expect(T.awayOff(7)).toContain("7 วัน");
+      // In the first row, after the update DM's button; the island button stays below.
+      expect(rowsOf(p)).toEqual([["sq|rem_on", "sq|rem_off", "sq|dm|on", "sq|away|on"], ["sq|is_view"]]);
+      expect(viewText(p)).toContain(T.btnAwayOn);
+      expect(calls(c)).toContainEqual(["shift_quest_away_state", "1111111111"]);
+    }
+  });
+
+  it("says on, with what the DM is, and offers to turn it off", async () => {
+    const p = await settingsOf(awayCtx({ ...STATE, dm: true, days: 10 }));
+    expect(bodyText(p)).toContain(T.awayOn(10));
+    expect(T.awayOn(10)).toContain("**เปิด**");
+    expect(customIds(p)).toContain("sq|away|off");
+    expect(customIds(p)).not.toContain("sq|away|on");
+    expect(viewText(p)).toContain(T.btnAwayOff);
+  });
+
+  it("leaves the day count out when the database gives none it trusts", async () => {
+    const p = await settingsOf(awayCtx({ ...STATE, days: 40 }));
+    expect(bodyText(p)).toContain(T.awayOff(null));
+    expect(T.awayOff(null)).not.toMatch(/[0-9]/);
+  });
+
+  it("is hidden below schema 23, while /admin feature away is off, for staff, and when the read fails", async () => {
+    const older = ctx((fn) => (fn === "shift_quest_schema_version" ? 22 : null));
+    const hidden: [string, Ctx][] = [
+      ["schema 22", older],
+      ["switched off, never asked", awayCtx({ ...STATE, enabled: false, dm: null })],
+      ["switched off, said no", awayCtx({ ...STATE, enabled: false, dm: false })],
+      ["staff", awayCtx({ ...STATE, dm: true }, session({ roles: ["reviewer"] }))],
+      ["not started", awayCtx(new QuestError("not_started"))],
+      ["database down", awayCtx(new QuestDbError("shift_quest_away_state", "08006"))],
+    ];
+    for (const [why, c] of hidden) {
+      const p = await settingsOf(c);
+      expect([why, bodyText(p).includes("DM ชวนกลับเกาะ")]).toEqual([why, false]);
+      expect([why, customIds(p).some((id) => id.startsWith("sq|away"))]).toEqual([why, false]);
+    }
+    // Below 23 and for staff the state is never read.
+    expect(calls(older).map((call) => call[0])).not.toContain("shift_quest_away_state");
+    expect(calls(hidden[3][1])).toEqual([["shift_quest_call_pings"]]);
+  });
+
+  it("keeps a yes reachable while /admin feature away is off: the line offers only off", async () => {
+    const p = await settingsOf(awayCtx({ ...STATE, enabled: false, dm: true }));
+    expect(bodyText(p)).toContain(T.awayOn(7));
+    expect(customIds(p)).toContain("sq|away|off");
+    expect(customIds(p)).not.toContain("sq|away|on");
+
+    // Turning it off then takes the line away until the switch is on again.
+    const c = awayCtx({ ...STATE, enabled: false, dm: true }, session(), { shift_quest_away_set: { ...STATE, enabled: false, dm: false } });
+    const { i, sent } = interaction("button");
+    await ACTION_HANDLERS.get("away")!(i, c, ["off"]);
+    expect(calls(c)).toContainEqual(["shift_quest_away_set", "1111111111", false]);
+    expect(bodyText(sent[0].payload)).not.toContain("DM ชวนกลับเกาะ");
+    expect(customIds(sent[0].payload).some((id) => id.startsWith("sq|away"))).toBe(false);
+  });
+
+  it("🌱 turns it on or off with shift_quest_away_set and redraws /settings in place from its answer", async () => {
+    for (const [arg, on] of [["on", true], ["off", false]] as const) {
+      const c = awayCtx({ ...STATE, dm: !on }, session(), { shift_quest_away_set: { ...STATE, dm: on } });
+      const { i, sent } = interaction("button");
+      await ACTION_HANDLERS.get("away")!(i, c, [arg]);
+      expect(calls(c)).toContainEqual(["shift_quest_away_set", "1111111111", on]);
+      // The answer is the new state: no second state read.
+      expect(calls(c).map((call) => call[0])).not.toContain("shift_quest_away_state");
+      expect(sent).toHaveLength(1);
+      expect(sent[0].how).toBe("update");
+      expect(bodyText(sent[0].payload)).toContain(on ? T.awayOn(7) : T.awayOff(7));
+      expect(customIds(sent[0].payload)).toContain(on ? "sq|away|off" : "sq|away|on");
+    }
+  });
+
+  it("follows the answer when the switch went off meanwhile, and ignores a forged argument", async () => {
+    // A no while it is off: no line.
+    const off = awayCtx(STATE, session(), { shift_quest_away_set: { ...STATE, enabled: false, dm: false } });
+    const a = interaction("button");
+    await ACTION_HANDLERS.get("away")!(a.i, off, ["off"]);
+    expect(bodyText(a.sent[0].payload)).not.toContain("DM ชวนกลับเกาะ");
+
+    // A yes that went in from an older card while it is off: the line stays, offering only off.
+    const yes = awayCtx(STATE, session(), { shift_quest_away_set: { ...STATE, enabled: false, dm: true } });
+    const y = interaction("button");
+    await ACTION_HANDLERS.get("away")!(y.i, yes, ["on"]);
+    expect(bodyText(y.sent[0].payload)).toContain(T.awayOn(7));
+    expect(customIds(y.sent[0].payload)).toContain("sq|away|off");
+    expect(customIds(y.sent[0].payload)).not.toContain("sq|away|on");
+
+    const forged = awayCtx(STATE);
+    const b = interaction("button");
+    await ACTION_HANDLERS.get("away")!(b.i, forged, ["maybe"]);
+    expect(calls(forged)).toEqual([]);
+    expect(b.sent).toEqual([]);
+  });
+
+  it("keeps the line after a reminder or update-DM change", async () => {
+    const c = awayCtx({ ...STATE, dm: true }, session(), { shift_quest_update_prefs: session() });
+    for (const [handler, args] of [["rem_off", []], ["dm", ["on"]]] as [string, string[]][]) {
+      const { i, sent } = interaction("button");
+      await ACTION_HANDLERS.get(handler)!(i, c, args);
+      expect(bodyText(sent[0].payload)).toContain(T.awayOn(7));
+      expect(customIds(sent[0].payload)).toContain("sq|away|off");
+    }
+  });
+
+  it("keeps the copy rules: no dashes, no talking down, no guilt", () => {
+    const words = [T.awayOn(7), T.awayOff(7), T.awayOn(null), T.awayOff(null), T.btnAwayOn, T.btnAwayOff, T.dataAway].join("\n");
+    for (const banned of ["—", "–", "น้องๆ", "เด็กๆ", "พรุ่งนี้", "ยังไม่ได้", "พลาด", "หายไป", "สตรีค", "ติดต่อกัน", "?"]) {
+      expect([banned, words.includes(banned)]).toEqual([banned, false]);
+    }
+  });
+});
+
 describe("/data", () => {
   it("says what is kept and offers export, correction and erasure", async () => {
     const c = ctx(() => null, session({ onboarded: false }));
@@ -776,6 +924,11 @@ describe("/data", () => {
     expectCard(p);
     expect(viewText(p)).toContain(T.dataBody);
     expect(viewText(p)).toContain(T.dataRights);
+    // The come-back DM's choice and the return card's answers: who reads them, and when the short lines go.
+    expect(bodyText(p)).toContain(`-# ${T.dataAway.split("\n")[0]}`);
+    expect(T.dataAway).toContain("แบบไม่มีชื่อ");
+    expect(T.dataAway).toContain("พี่เลี้ยงไม่เห็น");
+    expect(T.dataAway).toContain("90 วัน");
     expect(customIds(p)).toEqual(["sq|data_export", "sq|data_fix", "sq|data_erase"]);
   });
 

@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { SESSION_COOKIE } from "@/lib/hackathon/auth";
-import { getSessionParticipant } from "@/lib/hackathon/db";
+import { getHackathonAdminClient, getSessionParticipant } from "@/lib/hackathon/db";
 import { isInvitedMember } from "@/lib/hackathon/invites";
 import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
 
 const TEAM_OPERATIONS_LOCKED = false;
 
@@ -28,7 +27,9 @@ export async function POST() {
       return NextResponse.json({ error: "ไม่สามารถออกจากทีมได้ เนื่องจากคุณเข้าร่วมผ่านลิงก์เชิญ" }, { status: 403 });
     }
 
-    const supabase = await createClient();
+    // The participant is verified from the hackathon session above; hackathon
+    // tables are not readable with the public key, so use the service role.
+    const supabase = getHackathonAdminClient();
 
     // Get current team
     const { data: membership } = await supabase

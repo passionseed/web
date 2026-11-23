@@ -93,6 +93,19 @@ describe("ISLAND_NOTICE", () => {
     expect(ai?.text).toContain("ยินยอมแยก");
   });
 
+  it("names the come-back DM as the student's own choice, who reads the return answers, and how long a line is kept", () => {
+    const away = ISLAND_NOTICE.rows.find((row) => row.lead.includes("DM ชวนกลับเกาะ"));
+    expect(away?.lead).toContain("เลือกได้");
+    const words = JSON.stringify(away);
+    expect(words).toContain("เลือกเอง");
+    expect(words).toContain("ไม่ถามอะไร");
+    expect(words).toContain("บอทไม่อ่านข้อความตอบ");
+    expect(words).toContain("พี่เลี้ยงไม่เห็น");
+    expect(words).toContain("ไม่มีใครตอบกลับ");
+    expect(words).toContain("90 วัน");
+    expect(words).toContain("ระบบบันทึกทุกครั้งที่เปิดดู");
+  });
+
   it("says what stays private until consent, and the money prize note from the content file", () => {
     expect(ISLAND_NOTICE.rows.some((row) => row.lead === "ก่อนยินยอม")).toBe(true);
     expect(JSON.stringify(ISLAND_NOTICE)).toContain(ISLAND_PRIZES_DRAFT.moneyNote);

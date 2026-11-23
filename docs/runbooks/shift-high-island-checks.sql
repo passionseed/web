@@ -37,7 +37,11 @@ WITH fns0 AS (
         'shift_quest_admin_member_recognize', 'shift_quest_admin_member_award',
         'shift_quest_admin_member_consent_reset', 'shift_quest_admin_seasons')
       -- 20261118110000_shift_quest_island_visitors: the plaza's visitors are the website's.
-      OR p.proname = 'shift_quest_island_visitors' AS web_only
+      OR p.proname = 'shift_quest_island_visitors'
+      -- 20261120120000_shift_quest_deep_fire: the island's read of the deep fire.
+      OR p.proname = 'shift_quest_deepfire'
+      -- 20261121090000_shift_quest_away: the return card's answer, the admin report and its reveal.
+      OR p.proname IN ('shift_quest_away_answer', 'shift_quest_admin_away', 'shift_quest_admin_away_reveal') AS web_only
   FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
   WHERE n.nspname = 'public' AND p.proname LIKE 'shift\_quest\_%'
 ), fns AS (
@@ -177,16 +181,24 @@ web_allow(sig) AS (VALUES
   ('shift_quest_admin_data_close(text,uuid,boolean)'),
   ('shift_quest_admin_erase(text,uuid)'),
   -- 20261118110000_shift_quest_island_visitors.
-  ('shift_quest_island_visitors(text)')
+  ('shift_quest_island_visitors(text)'),
+  -- 20261120120000_shift_quest_deep_fire.
+  ('shift_quest_deepfire(text)'),
+  -- 20261121090000_shift_quest_away.
+  ('shift_quest_away_state(text)'),
+  ('shift_quest_away_set(text,boolean)'),
+  ('shift_quest_away_answer(text,date,text,text)'),
+  ('shift_quest_admin_away(text)'),
+  ('shift_quest_admin_away_reveal(text,uuid)')
 )
--- The schema: 21 is every migration on this branch (the campfire call and
--- the evening guest, 20261118150000). run-local.sh runs this file on its
+-- The schema: 23 is every migration on this branch (the come-back DM and
+-- the return card, 20261121090000). run-local.sh runs this file on its
 -- single pass, so a new migration that moves the version fails there until
 -- this line follows.
-SELECT 'schema: shift_quest_schema_version() is ' || coalesce(v::text, 'missing') || ', expected 21' AS problem
+SELECT 'schema: shift_quest_schema_version() is ' || coalesce(v::text, 'missing') || ', expected 23' AS problem
 FROM (SELECT CASE WHEN to_regprocedure('public.shift_quest_schema_version()') IS NULL THEN NULL
   ELSE public.shift_quest_schema_version() END AS v) s
-WHERE v IS DISTINCT FROM 21
+WHERE v IS DISTINCT FROM 23
 UNION ALL
 -- The two logins: they exist, NOINHERIT, member of no role, their connection
 -- limit and statement_timeout. LOGIN itself is step D, so it is not checked here.

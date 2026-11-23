@@ -24,6 +24,7 @@ import {
 import { REFLECTION_MIN_CHARS, REFLECTIONS_PER_DAY } from "@/lib/shift-island/rounds-rules";
 import type { ProjectRoute, SeasonUnlock, TileStatus } from "@/lib/supabase/shift-quests/types";
 
+import { COMPOSER } from "./canvas/copy";
 import type { IconKey } from "./sprites";
 import type { ShiftDiscordAuthError } from "@/lib/shift/discordAuth";
 
@@ -38,6 +39,8 @@ export const PLACES = {
   plaza: "ลานกลางเกาะ",
   board: "กระดานเควสต์",
   campfire: "กองไฟ",
+  /** DRAFT (2026-11-20): the small one-person fire; the bot builds a locked voice room for whoever lights it. */
+  deepfire: "กองไฟโฟกัส",
   stage: "เวที Demo Day",
 };
 
@@ -598,6 +601,107 @@ export const STUCK = {
   required: "เล่าสั้นๆ ก่อนส่ง",
 };
 
+/**
+ * DRAFT (2026-11-21, needs the three-model Thai review): the come-back DM and
+ * the return card (code name away, docs/designs/shift-island-away.md). The
+ * bot's DM is a link and asks nothing (safeguarding section 4); the one
+ * question is asked here, on the island, once per stretch away, and closing
+ * it is a skip. No guilt: never a day count on the card, no "you missed", no
+ * ยังไม่ได้ / พลาด / เมื่อวาน / หายไป / สตรีค / ติดต่อกัน
+ * (checked by __tests__/away.test.tsx). Only the consent strip says the
+ * setting's number of days, so the student knows what they agree to.
+ */
+export const AWAY = {
+  /** DRAFT: the one-line consent strip in the team sheet, asked once, with two equal buttons. */
+  strip: {
+    label: "DM ชวนกลับเกาะ",
+    ask: (days: number) => `ถ้าห่างเกาะไป ${days} วัน ให้บอทส่ง DM สั้นๆ พร้อมลิงก์กลับเกาะได้ไหม`,
+    yes: "ส่งได้",
+    no: "ไม่ต้อง",
+  },
+  /** DRAFT: the switch line in the ตั้งค่า fold (MENU.on / MENU.off at its end). */
+  setting: "DM ชวนกลับเกาะ",
+  /** DRAFT: after a choice, on the strip or the switch. */
+  saved: {
+    on: "บันทึกแล้ว ถ้าห่างเกาะสักพัก บอทจะส่ง DM สั้นๆ หนึ่งข้อความ เปลี่ยนได้ในตั้งค่า",
+    off: "บันทึกแล้ว บอทจะไม่ส่ง DM ชวนกลับเกาะ เปลี่ยนได้ในตั้งค่า",
+  },
+  /** DRAFT: the chip's lamp-dot words while the strip waits in the team sheet. */
+  chip: "มีเรื่อง DM ให้เลือก",
+  /** DRAFT: the return card, opened once on arrival after a stretch away. Never a day count here. */
+  card: {
+    title: "ช่วยเราปรับเกาะหน่อย",
+    intro: "ยินดีต้อนรับกลับ ช่วงที่ผ่านมา อะไรทำให้แวะเกาะยาก เลือกข้อที่ใกล้ที่สุด เราจะเอาไปปรับเกาะ",
+    legend: "ข้อที่ใกล้ที่สุด",
+    reasons: {
+      busy: "ช่วงนี้งานอื่นเยอะ",
+      stuck: "ติดอยู่ ไปต่อไม่ถูก",
+      unclear: "ไม่แน่ใจว่าต้องทำอะไรต่อ",
+      team: "รอเพื่อนในทีมอยู่",
+      island: "เกาะใช้ยาก หรือเจอบั๊ก",
+      break: "อยากพักสักหน่อย",
+    },
+    lineLabel: "อยากเล่าเพิ่มไหม (ไม่บังคับ)",
+    /** The quest form's own hint: forms never ask for a real name, a phone number or an address. */
+    lineHint: DETAIL.proofHint,
+    /** The quest card's warning, word for word, when the line looks like it carries contact details. */
+    pii: COMPOSER.piiLine,
+    safety: "ถ้ามีเรื่องหนักใจ คุยกับผู้ใหญ่ที่ไว้ใจ หรือโทร 1323\u00a0(24\u00a0ชม.)",
+    /**
+     * Never a promise of secrecy (safeguarding 7.3): the audited admin reveal is said here, where the student
+     * decides what to type, in the words of the notice's row and the bot's /data card.
+     */
+    who: "ทีมงานอ่านคำตอบแบบไม่มีชื่อ เพื่อเอาไปปรับเกาะ พี่เลี้ยงไม่เห็น และไม่มีใครตอบกลับ ถ้าห่วงเรื่องความปลอดภัยของใคร แอดมินเปิดดูได้ว่าใครเขียน และระบบบันทึกทุกครั้ง",
+    send: "ส่ง",
+    needReason: "เลือกหนึ่งข้อก่อนส่ง",
+    thanks: "ขอบคุณที่บอก เราจะเอาไปปรับเกาะ",
+    /** After Send: one line, and at most one way on. */
+    after: {
+      stuck: "ขอบคุณที่บอก ถ้าอยากได้ตัวช่วยตอนนี้ ขอจากเพื่อนในห้องช่วยเหลือ หรือจากทีมพี่เลี้ยงได้ ไม่มีแชตส่วนตัว",
+      stuckAction: "ขอตัวช่วย",
+      island: "ขอบคุณที่บอก ถ้าเจอบั๊กหรือมีไอเดีย เล่าในห้องเสนอไอเดียได้ ทีมงานและเพื่อนเห็นทุกโพสต์",
+      islandAction: HUD.suggest,
+      unclear: "ขอบคุณที่บอก ขั้นต่อไปอยู่ที่ปุ่มด้านล่างของเกาะ เริ่มจากตรงนั้นได้เลย",
+      unclearAction: "ดูขั้นต่อไป",
+      break: "ขอบคุณที่บอก พักได้เสมอ แตะชื่อทีมมุมบนแล้วกด ขอพัก งานและต้นไม้อยู่ครบ",
+      back: "กลับไปที่เกาะ",
+    },
+  },
+  /** DRAFT: the admins' overview section. Counts and nameless lines; the database masks one or two as "1-2". */
+  admin: {
+    heading: "คนที่ห่างเกาะ",
+    intro: "ไม่มีชื่อใคร นับรวมทั้งเกาะ จำนวน 1 หรือ 2 แสดงเป็น 1-2 ข้อความไม่มีชื่อ ไม่มีใครตอบกลับ และลบเองหลัง 90 วัน",
+    off: "ส่วนนี้ปิดอยู่ เปิดด้วย /admin feature away ใน Discord",
+    loading: "กำลังโหลด",
+    failed: "ยังโหลดส่วนนี้ไม่ได้ ลองเปิดภาพรวมใหม่อีกครั้ง",
+    consent: "DM ชวนกลับเกาะ",
+    consentYes: "ยินยอม",
+    consentNo: "ไม่ต้องการ",
+    consentUnasked: "ยังไม่ตอบ",
+    awayNow: "ห่างเกาะตอนนี้",
+    resting: "พักอยู่",
+    waiting: "รอพี่เลี้ยง",
+    other: "อื่นๆ",
+    dms: "DM",
+    queued: "รอส่ง",
+    sent: "ส่งแล้ว",
+    unreachable: "ส่งไม่ถึง",
+    dropped: "ไม่ส่ง (ตกเงื่อนไข)",
+    answers: "คำตอบตอนกลับมา",
+    skipped: "ปิดโดยไม่ตอบ",
+    cameByDm: "มาจาก DM",
+    lines: "ข้อความสั้น",
+    noLines: "ยังไม่มีข้อความ",
+    week: (date: string) => `สัปดาห์ที่เริ่ม ${date}`,
+    noReason: "ไม่ระบุข้อ",
+    reveal: "ดูว่าใครเขียน",
+    revealWhy: "เปิดดูชื่อเฉพาะเมื่อห่วงเรื่องความปลอดภัยของผู้เขียน ระบบบันทึกทุกครั้งที่เปิด",
+    revealConfirm: "เปิดดูชื่อ",
+    revealCancel: "ยกเลิก",
+    revealed: (name: string) => `เขียนโดย ${name}`,
+  },
+};
+
 export const PROPOSE = {
   heading: "เสนอเควสต์ของฉัน",
   title: "ชื่อเควสต์",
@@ -713,6 +817,33 @@ export const CAMPFIRE = {
    * reviewed (Gemini, Codex, Claude), 2026-11-18.
    */
   fine: "กองไฟบนเกาะเก็บแค่ว่าใครอยู่ในห้องตอนนี้ และลบทันทีเมื่อออก ส่วนตอนแขกแวะมาที่กองไฟ ระบบจะเก็บว่าทีมไหนมีคนนั่งช่วงพักนั้นและผลลุ้นของทีม แล้วลบในวันถัดไป ไม่เก็บว่าใครในทีมนั่งหรือนั่งตอนไหน (ถ้าทีมมีคุณคนเดียว ข้อมูลของทีมก็คือของคุณ) ลุคที่ทีมได้จะเป็นของขวัญของทีม เก็บไว้พร้อมวันที่ได้",
+};
+
+/**
+ * DRAFT (2026-11-20, needs the three-model Thai review): the deep fire, a
+ * small one-person fire on the plaza (docs/designs/shift-island-deep-fire.md).
+ * Its button opens the Discord lobby; joining it builds a voice room for that
+ * person alone, locked, visible to everyone who can see the lobby, deleted
+ * when they leave. No count and no names anywhere. Never "nobody counts your
+ * time": in a SHIFT cohort week shift-voice records voice time in every
+ * voice channel, so the sheet says so then (cohortWeek).
+ */
+export const DEEPFIRE = {
+  /** DRAFT: the fire's accessible name on the island while its keeper (the bot) is there. */
+  spot: `${PLACES.deepfire}: ห้องเงียบของคุณคนเดียว`,
+  /** DRAFT: the same while the bot is away (the fire drawn cold). */
+  spotAsleep: `${PLACES.deepfire}: ตอนนี้ไฟยังไม่ติด`,
+  title: PLACES.deepfire,
+  /** DRAFT: what happens, in one line. */
+  body: "กดจุดไฟ แล้วเข้าห้องเสียงใน Discord บอทจะสร้างห้องให้คุณคนเดียว ล็อกไว้ ไม่มีใครเข้ามาได้",
+  /** DRAFT: the one button. */
+  join: "จุดไฟ",
+  /** DRAFT: the bot is not beating ready; the button is greyed. Never a promise of when. */
+  asleep: "ตอนนี้คนดูแลไฟไม่อยู่ ลองใหม่อีกสักพัก",
+  /** DRAFT: who sees what, and what is kept (nothing). */
+  fine: "คนอื่นในเซิร์ฟเวอร์เห็นห้องนี้และเห็นว่าใครอยู่ข้างใน แต่ไม่มีใครเข้ามาได้ ห้องหายไปเมื่อคุณออก และเกาะไม่เก็บอะไรเกี่ยวกับห้องนี้เลย",
+  /** DRAFT: only in a SHIFT cohort week (lib/shift/voiceWindow.ts roundsInSession). */
+  cohort: "สัปดาห์นี้มีรอบ SHIFT ระบบของ SHIFT บันทึกเวลาในห้องเสียงทุกห้องของผู้เรียนรอบนี้ ห้องนี้ด้วย",
 };
 
 /**

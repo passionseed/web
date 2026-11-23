@@ -7,7 +7,7 @@ import path from "node:path";
 import { MessageFlags, type Client } from "discord.js";
 
 import type { QuestApi } from "../api";
-import { T, TREE_GREW, renderOutbox } from "../copy";
+import { AWAY_DM, T, TREE_GREW, renderOutbox } from "../copy";
 import { DIGEST } from "../digestCopy";
 import { STAGE_NAMES } from "../island/copy";
 import { NEWS } from "../newsCopy";
@@ -15,6 +15,7 @@ import type { IslandPlot } from "../island/render";
 import {
   PING_NAMED_TEAMS,
   TREE_GREW_REACTIONS,
+  awayRows,
   deliver,
   outboxView,
   renderDelivery,
@@ -23,7 +24,7 @@ import {
   type Claimed,
 } from "../outbox";
 import { LIMITS, NO_MENTIONS, TONE_COLORS, renderView, setCommandIds } from "../ui";
-import { accentColor, bodyText, cardsOf, componentCount, mediaUrls, textLength, viewText } from "../test-helpers/view";
+import { accentColor, bodyText, cardsOf, componentCount, customIds, mediaUrls, textLength, viewText } from "../test-helpers/view";
 
 const MIGRATIONS = path.join(__dirname, "..", "..", "..", "..", "supabase", "migrations");
 
@@ -34,7 +35,8 @@ function queuedKinds(): string[] {
     .filter((f) => f.includes("shift_quest"))
     .map((f) => fs.readFileSync(path.join(MIGRATIONS, f), "utf8"))
     .join("\n");
-  const kinds = new Set<string>(["celebration", "recognition", "intention", "nudge", "reminder", "island_weekly"]);
+  // The DMs the database queues itself (nudge, reminder and, from schema 23, away), plus the posts it shares.
+  const kinds = new Set<string>(["celebration", "recognition", "intention", "nudge", "reminder", "away", "island_weekly"]);
   for (const match of sql.matchAll(/shift_quest__post\(\s*[^,]+,\s*'[a-z]+',\s*'([a-z_]+)'\s*,/g)) kinds.add(match[1]);
   return [...kinds];
 }
@@ -469,5 +471,119 @@ describe("tree_grew: the celebrate post when a mentor's approval grows a tree", 
   it("is not a kind the plain renderer knows, so nothing renders it without the send-time read", () => {
     expect(renderOutbox("tree_grew", queued, null, null)).toBeNull();
     expect(renderDelivery("tree_grew", queued, null, null)?.title).toBe(TREE_GREW.title);
+  });
+});
+
+describe("away: the come-back DM (schema 23)", () => {
+  const WEB = "https://island.example/shift/island";
+  const SAVED = { island: process.env.SHIFT_ISLAND_URL, site: process.env.NEXT_PUBLIC_SITE_URL };
+  /** Words the come-back DM never says: guilt, counting, a day, a question, talking down (AGENTS.md, the island's rules). */
+  const BANNED = ["ยังไม่ได้", "พลาด", "เมื่อวาน", "หายไป", "สตรีค", "ติดต่อกัน", "ไหม", "ทำไม", "น้องๆ", "น้อง ๆ", "เด็กๆ", "พรุ่งนี้", "—", "–"];
+
+  type ButtonJson = { type: number; style?: number; url?: string; custom_id?: string; label?: string; components?: ButtonJson[] };
+
+  /** The card's action rows, each as its buttons' JSON. */
+  function rowsOf(payload: unknown): ButtonJson[][] {
+    const card = cardsOf(payload)[0] as unknown as ButtonJson;
+    return (card.components ?? []).filter((c) => c.type === 1).map((row) => row.components ?? []);
+  }
+
+  async function sendAway(params: Record<string, unknown> = {}) {
+    const { client, channelSend, userSend } = fakeClient();
+    const api = fakeApi();
+    const id = await deliver(client, api, claimed({ kind: "away", params, channel_id: null, dm_user_id: "111", member_user_id: "111" }));
+    return { id, api, client, channelSend, userSend };
+  }
+
+  beforeEach(() => {
+    process.env.SHIFT_ISLAND_URL = WEB;
+  });
+  afterEach(() => {
+    if (SAVED.island === undefined) delete process.env.SHIFT_ISLAND_URL;
+    else process.env.SHIFT_ISLAND_URL = SAVED.island;
+    if (SAVED.site === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
+    else process.env.NEXT_PUBLIC_SITE_URL = SAVED.site;
+  });
+
+  it("is a title, one line, why it came and the no-replies line, the same for everyone", () => {
+    const post = renderOutbox("away", {}, "111", null)!;
+    expect(post).toEqual({
+      title: AWAY_DM.title,
+      body: AWAY_DM.body,
+      note: `${AWAY_DM.why}\n${T.dmNoReplies}`,
+      mentionUserIds: [],
+    });
+    // One line of body; nothing the database might pass ever reaches it.
+    expect(post.body.split("\n")).toHaveLength(1);
+    expect(renderOutbox("away", { title: "ร้านขนม", days: 9, name: "ทีม", open_quests: 3 }, "111", "222")).toEqual(post);
+    expect(renderDelivery("away", {}, null, null)).toEqual(post);
+  });
+
+  it("sends a DM card whose only row is the island's link button: no interaction, nobody pinged", async () => {
+    // Loaded command ids never turn /settings into a mention in a DM (the commands are guild-only).
+    setCommandIds(new Map([["settings", "888"]]));
+    const { id, api, client, channelSend, userSend } = await sendAway();
+    expect(id).toBe("dm-1");
+    expect(channelSend).not.toHaveBeenCalled();
+    expect(client.users.fetch).toHaveBeenCalledWith("111");
+    // Nothing is read at send time.
+    expect(api.call).not.toHaveBeenCalled();
+    const payload = sentPayload(userSend);
+    expect(payload.flags).toBe(MessageFlags.IsComponentsV2);
+    expect(payload.allowedMentions).toEqual(NO_MENTIONS);
+    expect(payload.files).toEqual([]);
+    expect(cardsOf(payload)).toHaveLength(1);
+    expect(accentColor(payload)).toBe(TONE_COLORS.island);
+    expect(bodyText(payload)).toBe(`### ${AWAY_DM.title}\n${AWAY_DM.body}\n-# ${AWAY_DM.why}\n-# ${T.dmNoReplies}`);
+    expect(bodyText(payload)).toContain("/settings ในเซิร์ฟเวอร์");
+    expect(bodyText(payload)).not.toContain("</settings:");
+    const rows = rowsOf(payload);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toEqual([{ type: 2, style: 5, url: WEB, label: "🌐 เปิดเกาะบนเว็บ" }]);
+    // Link buttons only: no custom id anywhere, so there is nothing to press that reaches the bot.
+    expect(customIds(payload)).toEqual([]);
+    expect(componentCount(payload)).toBeLessThanOrEqual(LIMITS.components);
+  });
+
+  it("asks nothing, counts nothing and carries no guilt", async () => {
+    const { userSend } = await sendAway({ days: 9 });
+    const text = viewText(sentPayload(userSend));
+    const words = [AWAY_DM.title, AWAY_DM.body, AWAY_DM.why, text].join("\n");
+    // No question mark (Thai or Latin), no digits (Arabic or Thai): never a day count, a date or a number of anything.
+    expect(words).not.toMatch(/[?？]/);
+    expect(words).not.toMatch(/[0-9๐-๙]/);
+    for (const banned of BANNED) expect([banned, words.includes(banned)]).toEqual([banned, false]);
+  });
+
+  it("fails permanently, sending nothing, when the island has no address: a DM must point somewhere", async () => {
+    delete process.env.SHIFT_ISLAND_URL;
+    delete process.env.NEXT_PUBLIC_SITE_URL;
+    expect(() => awayRows()).toThrow("no island address");
+    const { client, channelSend, userSend } = fakeClient();
+    await expect(
+      deliver(client, fakeApi(), claimed({ kind: "away", channel_id: null, dm_user_id: "111" }))
+    ).rejects.toMatchObject({ permanent: true, message: "no island address" });
+    expect(client.users.fetch).not.toHaveBeenCalled();
+    expect(userSend).not.toHaveBeenCalled();
+    expect(channelSend).not.toHaveBeenCalled();
+  });
+
+  it("is never posted to a channel, even if one is given", async () => {
+    const { client, channelSend, userSend } = fakeClient();
+    await expect(deliver(client, fakeApi(), claimed({ kind: "away", channel_id: "900", dm_user_id: null }))).rejects.toMatchObject({
+      permanent: true,
+    });
+    expect(client.channels.fetch).not.toHaveBeenCalled();
+    expect(channelSend).not.toHaveBeenCalled();
+    expect(userSend).not.toHaveBeenCalled();
+  });
+
+  it("leaves every other DM without a button", async () => {
+    const { client, userSend } = fakeClient();
+    await deliver(client, fakeApi(), claimed({ kind: "nudge", channel_id: null, dm_user_id: "111" }));
+    expect(rowsOf(sentPayload(userSend))).toEqual([]);
+    userSend.mockClear();
+    await deliver(client, fakeApi(), claimed({ kind: "reminder", params: { open_quests: 1 }, channel_id: null, dm_user_id: "111" }));
+    expect(rowsOf(sentPayload(userSend))).toEqual([]);
   });
 });

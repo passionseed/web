@@ -2,7 +2,8 @@ import fs from "node:fs";
 
 import { ActionRowBuilder, AttachmentBuilder, DiscordAPIError, type ButtonBuilder, type Client, type Message } from "discord.js";
 
-import type { QuestApi } from "./api";
+import { QuestDbError, QuestError, type QuestApi } from "./api";
+import { enqueueAway } from "./away";
 import { TREE_GREW, renderOutbox, safePost, type OutboxRender } from "./copy";
 import { I, STAGE_NAMES, stageBar } from "./island/copy";
 import { renderIsland, type IslandPlot } from "./island/render";
@@ -77,6 +78,8 @@ const OUTBOX_TONE: Record<string, Tone> = {
   tree_grew: "success",
   recognition: "success",
   island_weekly: "island",
+  // The come-back DM (schema 23): about the island, nothing else.
+  away: "island",
 };
 
 export interface IslandPost {
@@ -200,10 +203,22 @@ export function renderDelivery(
   return kind === "tree_grew" ? renderTreeGrew(params) : renderOutbox(kind, params, memberUserId, peerUserId);
 }
 
-/** "🌐 เปิดเกาะบนเว็บ" under a tree_grew post, when the island has an address. */
+/** "🌐 เปิดเกาะบนเว็บ" under a tree_grew post and in the come-back DM, when the island has an address. */
 function islandRows(): Row[] {
   const button = islandLinkButton();
   return button ? [new ActionRowBuilder<ButtonBuilder>().addComponents(button)] : [];
+}
+
+/**
+ * The come-back DM's only row: the island's link button (a link, never an
+ * interaction: the bot reads and answers nothing in a DM). Without an island
+ * address the DM would point nowhere, so it fails permanently and nothing is
+ * sent.
+ */
+export function awayRows(): Row[] {
+  const rows = islandRows();
+  if (!rows.length) throw Object.assign(new Error("no island address"), { permanent: true });
+  return rows;
 }
 
 /**
@@ -244,12 +259,16 @@ export async function deliver(client: Client, api: QuestApi, msg: Claimed): Prom
   const post = renderDelivery(msg.kind, params, msg.member_user_id, msg.peer_user_id);
   if (!post) throw Object.assign(new Error(`unknown kind ${msg.kind}`), { permanent: true });
   const island = msg.kind === "island_weekly" ? await islandPost(api) : null;
+  // The come-back DM is a DM or nothing: never a channel post.
+  if (msg.kind === "away" && !msg.dm_user_id) throw Object.assign(new Error("away without a DM target"), { permanent: true });
 
   if (msg.dm_user_id) {
+    // The come-back DM carries the island's link; every other DM no button at all.
+    const rows = msg.kind === "away" ? awayRows() : [];
     const user = await client.users.fetch(msg.dm_user_id);
     // Pings nobody (renderView's default).
     const sent = await user.send(
-      renderView(outboxView(msg.kind, post), { ephemeral: false, action: msg.kind, commands: NO_COMMAND_LINKS })
+      renderView(outboxView(msg.kind, post, null, rows), { ephemeral: false, action: msg.kind, commands: NO_COMMAND_LINKS })
     );
     return sent.id;
   }
@@ -268,10 +287,32 @@ export async function deliver(client: Client, api: QuestApi, msg: Claimed): Prom
   return sent.id;
 }
 
+/**
+ * The minute block's come-back step (schema 23, ./away): never throws, so a
+ * failure (or an older database) never holds back the deliveries. A failure
+ * is logged when its reason changes, not every minute.
+ */
+export function awayStep(api: QuestApi, log: (line: string) => void = console.error): () => Promise<void> {
+  let problem: string | null = null;
+  return async () => {
+    try {
+      await enqueueAway(api);
+      problem = null;
+    } catch (error) {
+      // The SQLSTATE or the refusal's code only: never a database message.
+      const reason =
+        error instanceof QuestDbError ? `SQLSTATE ${error.sqlstate}` : error instanceof QuestError ? `sq:${error.code}` : "unknown";
+      if (reason !== problem) log(`[shift-quests] come-back DMs not queued this minute: ${reason}`);
+      problem = reason;
+    }
+  };
+}
+
 export function startOutbox(client: Client, api: QuestApi, isConnected: () => boolean): { stop: () => Promise<void> } {
   let running: Promise<void> | null = null;
   let lastMinute = 0;
   let stopped = false;
+  const away = awayStep(api);
 
   async function tick(): Promise<void> {
     if (!isConnected() || stopped) return;
@@ -281,6 +322,8 @@ export function startOutbox(client: Client, api: QuestApi, isConnected: () => bo
       await api.call("shift_quest_enqueue_reminders");
       await api.call("shift_quest_enqueue_island_post");
       await api.call("shift_quest_outbox_unblock");
+      // The come-back DMs (schema 23): below it, only the version is read again, each minute.
+      await away();
     }
     const due = await api.rows<Claimed>("shift_quest_outbox_claim", BATCH);
     try {

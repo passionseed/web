@@ -1,0 +1,193 @@
+/*
+ * The come-back DM strip and the return card (code name away). Dawn on the
+ * island's night sky, island tokens from island.module.css (.page and .sheet
+ * carry them; fallbacks keep the strip readable anywhere). Pixel corners
+ * through --notch, no rounded pills. Phones first: the strip's two buttons
+ * share the row equally at 375px.
+ */
+
+/* ---------------------------------------------------------------- strip */
+
+.strip {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 12px 12px 14px;
+  color: var(--text-hi, #fef9e7);
+  background: rgba(244, 197, 106, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(244, 197, 106, 0.45);
+  clip-path: var(--notch, none);
+}
+
+.stripText {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.lamp {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 10px;
+  vertical-align: 0.1em;
+  background: var(--isl-lamp, #f4c56a);
+  box-shadow: 0 0 0 2px rgba(244, 197, 106, 0.25);
+}
+
+/* Two equal buttons: the same size and the same weight, so neither answer is the "right" one. */
+.stripButtons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.stripButton {
+  min-height: 44px;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--isl-cream, #fff1d6);
+  background: rgba(255, 241, 214, 0.06);
+  border: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 241, 214, 0.3);
+  clip-path: var(--notch, none);
+  cursor: pointer;
+  transition:
+    background var(--snap, 160ms) var(--ease-snap, ease),
+    transform var(--press, 80ms) var(--ease-snap, ease);
+}
+
+.stripButton:hover:not(:disabled) {
+  background: rgba(255, 241, 214, 0.12);
+}
+
+/* The touch equivalent of the hover: the press itself. */
+.stripButton:active:not(:disabled) {
+  background: rgba(255, 241, 214, 0.12);
+  transform: translateY(1px);
+}
+
+.stripButton:focus-visible {
+  /* The notch clips anything outside the box: the ring goes inside. */
+  outline: 2px solid var(--action-soft, #9fd3a8);
+  outline-offset: -4px;
+}
+
+.stripButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------------- card */
+
+.chips {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.legend {
+  margin-bottom: 8px;
+  padding: 0;
+}
+
+/* The optional line and its contact-details warning, close together. */
+.line {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.note {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--isl-lamp, #f4c56a);
+}
+
+.safety {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-hi, #fef9e7);
+}
+
+.after {
+  display: grid;
+  gap: 16px;
+}
+
+.afterLine {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-hi, #fef9e7);
+}
+
+/* ---------------------------------------------------------------- admin */
+
+.adminCounts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+  margin: 0;
+}
+
+.adminCounts dt {
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+.adminCounts dd {
+  margin: 0.25rem 0 0;
+  font-size: 1.125rem;
+}
+
+.adminGroup {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.adminWeek {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.adminLine {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 10px 12px;
+  overflow-wrap: anywhere;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  clip-path: var(--notch, none);
+}
+
+.adminLine p {
+  margin: 0;
+}
+
+.adminConfirm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stripButton {
+    transition: none;
+  }
+
+  .stripButton:active:not(:disabled) {
+    transform: none;
+  }
+}

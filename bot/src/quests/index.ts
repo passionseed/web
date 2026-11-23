@@ -20,6 +20,7 @@ import { tree } from "./handlers/tree";
 import type { ActionHandler, AutocompleteHandler, CommandHandler, HandlerSet } from "./handlers/types";
 import { parseCid } from "./ids";
 import { startCall, type CallLoop } from "./call";
+import { startDeepFire } from "./deepfire";
 import { digestFor, startDigestPost } from "./digest";
 import { liveFor, startLivePost } from "./live";
 import { newsFor, startNewsPost } from "./news";
@@ -132,6 +133,15 @@ export async function handleInteraction(api: QuestApi, guildId: string, i: Inter
  * in the news channel and the evening guest's drop; also optional: below 21
  * the call loop only reads the version again each check and starts by itself
  * once the migration is applied (CALL_SCHEMA in call.ts).
+ * 22 (20261120120000_shift_quest_deep_fire) adds the deep fire: a lobby voice
+ * channel where joining builds a locked room of one's own; also optional:
+ * below 22 the module only reads the version again each heartbeat and starts
+ * by itself once the migration is applied (DEEPFIRE_SCHEMA in deepfire.ts).
+ * 23 (20261121090000_shift_quest_away) adds the come-back DM (outbox kind
+ * 'away') and its /settings line; also optional: below 23 the delivery loop
+ * only reads the version again each minute and starts queueing by itself once
+ * the migration is applied, and /settings shows no come-back line
+ * (AWAY_SCHEMA in away.ts).
  */
 export const REQUIRED_SCHEMA = 2;
 
@@ -188,9 +198,12 @@ export async function loadCommandIds(client: Client<true>, guildId: string): Pro
  * SHIFT High quests: slash commands, buttons and modals over the
  * shift_quest_* database functions, plus the delivery loop, from schema 7 the
  * island campfire, and from schema 8 the live island post (live.ts: one
- * message the bot keeps editing). The bot never reads message content and
- * never joins voice. The one thing it notices on its own is who is in the coworking voice
+ * message the bot keeps editing). The bot never reads message content. The
+ * one thing it notices on its own is who is in the coworking voice
  * channel right now (campfire.ts): never audio, deleted on leave, no history.
+ * From schema 22 it also keeps the deep fire's rooms (deepfire.ts): builds a
+ * locked room for whoever joins the lobby, disconnects anyone else who gets
+ * in, and deletes a room once it is empty, storing nothing per person.
  * Checks the database schema first and throws (starting nothing) when the
  * database is older than this bot.
  */
@@ -259,9 +272,16 @@ export async function registerShiftQuests(client: Client, env: ShiftQuestsEnv): 
   const news = newsFor(version, () =>
     startNewsPost(client, api, { guildId: env.guildId, connected: () => connected, schema: version })
   );
+  // The deep fire (schema 22): a locked room of one's own for whoever joins the lobby. Below 22 it only reads the
+  // version again each heartbeat (no listener, no other call) and starts by itself once the migration is applied.
+  const deepfire = startDeepFire(client, api, { guildId: env.guildId, connected: () => connected, schema: version });
 
   return {
     async stop() {
+      // The deep fire: it waits for running work (a few seconds at most, so the modules below still stop before the
+      // deploy's kill) and leaves every room as it is (a restart picks them up), then tells the database it is not
+      // ready, so it still needs the pool.
+      await deepfire.stop();
       // The campfire call: it waits for a running check, then sends and edits nothing more.
       await call?.stop();
       // The nightly island news card: it waits for a running check, then sends nothing more.

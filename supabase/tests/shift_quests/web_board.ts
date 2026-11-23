@@ -50,7 +50,10 @@ const NAMES: Record<string, string> = { [A]: "Board Aye", [B]: "Board Bee", [C]:
  * 20261111095000_shift_quest_player.sql and the roots read of 20261113090000_shift_quest_roots.sql
  * plus the own-tree roots read of 20261113173515_shift_quest_own_roots.sql, the web reflection of
  * 20261114100000_shift_quest_web_reflect.sql and the tree style of 20261114120000_shift_quest_tree_style.sql,
- * through every later grant up to 20261118100000_shift_quest_web_everything.sql (regprocedure text).
+ * through every later grant up to 20261118100000_shift_quest_web_everything.sql, the plaza visitors of
+ * 20261118110000_shift_quest_island_visitors.sql, the deep fire read of
+ * 20261120120000_shift_quest_deep_fire.sql and the come-back state, choice, answer and admin report
+ * of 20261121090000_shift_quest_away.sql (regprocedure text).
  */
 const WEB_ALLOWLIST = [
   "shift_quest_board(text)",
@@ -180,6 +183,14 @@ const WEB_ALLOWLIST = [
   "shift_quest_admin_erase(text,uuid)",
   // 20261118110000_shift_quest_island_visitors.
   "shift_quest_island_visitors(text)",
+  // 20261120120000_shift_quest_deep_fire.
+  "shift_quest_deepfire(text)",
+  // 20261121090000_shift_quest_away.
+  "shift_quest_away_state(text)",
+  "shift_quest_away_set(text,boolean)",
+  "shift_quest_away_answer(text,date,text,text)",
+  "shift_quest_admin_away(text)",
+  "shift_quest_admin_away_reveal(text,uuid)",
 ];
 
 /**
@@ -499,6 +510,15 @@ async function main(): Promise<void> {
     ["admin_erase", "select public.shift_quest_admin_erase($1::text, $2::uuid)", [NOBODY, randomUUID()], "not_authorized"],
     // 20261118110000_shift_quest_island_visitors: an unknown caller is refused.
     ["island_visitors", "select public.shift_quest_island_visitors($1::text)", [NOBODY], "not_started"],
+    // 20261120120000_shift_quest_deep_fire: an unknown caller is refused.
+    ["deepfire", "select public.shift_quest_deepfire($1::text)", [NOBODY], "not_started"],
+    // 20261121090000_shift_quest_away: an unknown caller is refused; the admin report and reveal are admins'.
+    ["away_state", "select public.shift_quest_away_state($1::text)", [NOBODY], "not_started"],
+    ["away_set", "select public.shift_quest_away_set($1::text, $2::boolean)", [NOBODY, true], "not_started"],
+    ["away_answer", "select public.shift_quest_away_answer($1::text, $2::date, $3::text, $4::text)",
+      [NOBODY, "2026-11-01", null, null], "not_started"],
+    ["admin_away", "select public.shift_quest_admin_away($1::text)", [NOBODY], "not_authorized"],
+    ["admin_away_reveal", "select public.shift_quest_admin_away_reveal($1::text, $2::uuid)", [NOBODY, randomUUID()], "not_authorized"],
   ];
   check(allowCalls.length === WEB_ALLOWLIST.length, "every allowlisted function is called below");
   for (const [name, sql, args, expected] of allowCalls) {
@@ -539,6 +559,12 @@ async function main(): Promise<void> {
     ["the evening guest's presence check", "select public.shift_quest_campfire_seen($1::date, $2::text[])", ["2026-11-18", [A]]],
     ["the evening guest's drop", "select public.shift_quest_campfire_drop($1::date)", ["2026-11-18"]],
     ["the evening guest's check", "select public.shift_quest_guest_status($1)", [A]],
+    // 20261120120000_shift_quest_deep_fire: the heartbeat is the bot's.
+    ["the deep fire's heartbeat", "select public.shift_quest_deepfire_beat($1, $2)", [null, true]],
+    // 20261121090000_shift_quest_away: queueing the come-back DMs is the bot's.
+    ["the come-back DM queue", "select public.shift_quest_enqueue_away()", []],
+    ["helper shift_quest__away_due", "select public.shift_quest__away_due($1::uuid, 'away:x', now())", [randomUUID()]],
+    ["helper shift_quest__away_last", "select public.shift_quest__away_last($1::uuid, current_date)", [randomUUID()]],
     ["helper shift_quest__guest_seen", "select public.shift_quest__guest_seen(now(), $1::text[])", [[A]]],
     ["helper shift_quest__guest_settle", "select public.shift_quest__guest_settle(now(), 1)", []],
     // The raw functions that take a Discord id for someone else, and the flows that stay in Discord or were
@@ -586,6 +612,8 @@ async function main(): Promise<void> {
     ["helper shift_quest__news_totals", "select public.shift_quest__news_totals($1::date)", ["2026-11-18"]],
     ["reading shift_quest_voice_presence", "select * from public.shift_quest_voice_presence", []],
     ["reading shift_quest_voice_state", "select * from public.shift_quest_voice_state", []],
+    ["reading shift_quest_deepfire_state", "select * from public.shift_quest_deepfire_state", []],
+    ["reading shift_quest_away_answers", "select * from public.shift_quest_away_answers", []],
     ["helper shift_quest__fail", "select public.shift_quest__fail('x')", []],
     ["helper shift_quest__side_open", "select public.shift_quest__side_open($1, $2, true)", [A, randomUUID()]],
     ["helper shift_quest__side_missing", "select public.shift_quest__side_missing(null, null::public.shift_quest_templates)", []],

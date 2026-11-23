@@ -66,13 +66,16 @@ import { ISLAND_LINK_LABEL, islandWebUrl } from "./weblink";
  * out once more without the picture, with LIVE.pictureFailed, and the next
  * edit tries the picture again.
  *
- * Updates: about 5 seconds after every gateway ready (always edits), then a
- * check every minute that edits only when something shown changed (approvals,
- * new plots, opt-ins, campfire count, the day count) or the last edit is 10
- * minutes old. Approvals made on the web are picked up the same way. At most
- * one edit a minute, which keeps well inside Discord's rate limits. A message
- * staff delete comes back within 10 minutes (the bot has no message intent,
- * so it learns of the deletion at its next edit).
+ * Updates: about 5 seconds after every gateway ready (always edits: a new
+ * release may change the buttons), then a check every minute that edits only
+ * when something real changed on the island (approvals, new plots, opt-ins,
+ * roots and looks, the goal, the campfire count, the day count). Approvals
+ * made on the web are picked up the same way. Nothing else edits it: no
+ * timed refresh, and not the light of the hour (each edit draws the light of
+ * its own moment). At most one edit a minute, which keeps well inside
+ * Discord's rate limits. Every 10 minutes the bot reads (never edits) the
+ * post to see that it is still there: one staff deleted comes back then (the
+ * bot has no message intent, so it learns of a deletion only by looking).
  */
 
 /** The island schema that adds shift_quest_live_post and shift_quest_live_mark (20261111094000_shift_quest_live.sql). */
@@ -87,8 +90,12 @@ export const LIVE_GIF_MAX_BYTES = 2 * 1024 * 1024;
 
 /** One check a minute: also the debounce for approvals, new plots, opt-ins and campfire changes. */
 const TICK_MS = 60_000;
-/** Edits at least this often even when nothing changed, so "อัปเดตล่าสุด" stays honest. */
-const REFRESH_MS = 10 * 60_000;
+/**
+ * While nothing changes, the post is read (never edited) this often, so one
+ * staff deleted comes back. "อัปเดตล่าสุด" then says when the island last
+ * changed, which is what it means.
+ */
+const CHECK_MS = 10 * 60_000;
 /** After a gateway ready: lets the guild cache fill before the first edit. */
 const READY_DELAY_MS = 5_000;
 /** Pinned messages read when looking for the bot's own post (Discord's page size). */
@@ -189,16 +196,16 @@ export function normalizeLivePost(raw: unknown): LivePostData | null {
 }
 
 /**
- * Everything the post shows except the time, the light of the hour
- * included (dawn, day, dusk, night): when it is unchanged and the
- * last edit is under 10 minutes old, the tick edits nothing. The message id
+ * What the post shows that is real: when it is unchanged, the tick edits
+ * nothing. The time is left out, and so is the light of the hour (dawn, day,
+ * dusk, night): a new light alone is not news, and each edit draws the light
+ * of its own moment. The message id
  * is left out (where the post is, not what it shows). So are the panel's
  * buttons: they change only with a release, and a new process always edits
  * (last starts empty, and every gateway ready forces an edit).
  */
-export function liveSignature(d: LivePostData, webUrl: string | null, phase: LightPhase = "day"): string {
+export function liveSignature(d: LivePostData, webUrl: string | null): string {
   return JSON.stringify({
-    phase,
     plots: d.plots,
     goal: d.goal,
     season: d.season,
@@ -313,11 +320,12 @@ export function isPictureRefused(error: unknown): boolean {
   return error instanceof DiscordAPIError && PICTURE_REFUSED.has(Number(error.code));
 }
 
-/** The bot's own live post: its author is the bot and its card carries the marker. */
+/** The bot's own live post: its author is the bot and its card carries the marker (or one an earlier release used). */
 function isLivePost(message: Message, botId: string | undefined): boolean {
   if (!botId || message.author?.id !== botId) return false;
   try {
-    return JSON.stringify(message.components ?? []).includes(LIVE.marker);
+    const shown = JSON.stringify(message.components ?? []);
+    return [LIVE.marker, ...LIVE.earlierMarkers].some((marker) => shown.includes(marker));
   } catch {
     return false;
   }
@@ -340,8 +348,8 @@ export function startLivePost(client: Client, api: QuestApi, guildId: string, co
   /** A forced run asked for while another run was going: the next run forces. */
   let forceNext = false;
   let readyTimer: ReturnType<typeof setTimeout> | null = null;
-  /** What the last edit or post showed, and where. */
-  let last: { where: string; sig: string; at: number } | null = null;
+  /** What the last edit or post showed, and where, and when the post was last seen to be there. */
+  let last: { where: string; sig: string; checked: number } | null = null;
   /** A post this process made that the database did not record (the write failed): reused before any new post. */
   let unrecorded: { channel: string; id: string } | null = null;
   /** The last tick failure, so each cause is logged once. */
@@ -356,7 +364,7 @@ export function startLivePost(client: Client, api: QuestApi, guildId: string, co
     console.warn(`[shift-quests] live post: ${reason}; nothing new posted, trying again in a minute`);
   }
 
-  /** The last moving picture, by what it shows: the 10 minute refresh reuses it instead of drawing it again. */
+  /** The last moving picture, by what it shows: an edit that shows the same island reuses it instead of drawing it again. */
   let gifCache: { key: string; gif: Buffer | null } | null = null;
   let gifWarned = false;
 
@@ -412,6 +420,17 @@ export function startLivePost(client: Client, api: QuestApi, guildId: string, co
       return null;
     }
     return channel;
+  }
+
+  /** Whether the post is still in the channel: a read from Discord (never the cache, which never hears of a deletion). */
+  async function stillThere(channel: TextChannel, id: string): Promise<boolean> {
+    try {
+      await channel.messages.fetch({ message: id, force: true });
+      return true;
+    } catch (error) {
+      if (isUnknownMessage(error)) return false;
+      throw error;
+    }
   }
 
   /** Stores id as the live post unless another one won; returns the id the database kept (null: the channel moved). */
@@ -508,12 +527,21 @@ export function startLivePost(client: Client, api: QuestApi, guildId: string, co
     const webUrl = islandWebUrl();
     const now = Date.now();
     const phase = bangkokPhase(now);
-    const sig = liveSignature(d, webUrl, phase);
+    const sig = liveSignature(d, webUrl);
     const where = `${channelId}:${d.message_id ?? ""}`;
-    if (!force && last && last.where === where && last.sig === sig && now - last.at < REFRESH_MS) return;
+    const unchanged = !force && last !== null && last.where === where && last.sig === sig;
+    if (unchanged && now - last!.checked < CHECK_MS) return;
 
     const channel = await liveChannel(channelId);
     if (!channel || stopped) return;
+    if (unchanged) {
+      // Nothing real changed: only look that the post is still there. A read, never an edit.
+      if (d.message_id && (await stillThere(channel, d.message_id))) {
+        last!.checked = now;
+        return;
+      }
+      // Deleted (or no id stored): the card goes back below.
+    }
     const payload = (files: AttachmentBuilder[]): ViewPayload => {
       const view: View = { ...liveView(d, { nowMs: now, guildId, webUrl, picture: files[0]?.name ?? false }), files };
       return renderView(view, { ephemeral: false, action: "live_post" });
@@ -536,7 +564,7 @@ export function startLivePost(client: Client, api: QuestApi, guildId: string, co
       }
     }
     if (!placed) return;
-    last = { where: `${channelId}:${placed}`, sig, at: now };
+    last = { where: `${channelId}:${placed}`, sig, checked: now };
     problem = "";
   }
 

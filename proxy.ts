@@ -94,6 +94,9 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
+  // The root layout reads this to set <html lang> (lib/i18n/page-language.ts).
+  request.headers.set("x-page-path", routePath);
+
   // Handle Supabase session updates for page navigations only
   return await updateSession(request);
 }

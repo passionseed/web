@@ -68,6 +68,7 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
   // Optimize bundle splitting
   experimental: {
+    agentUpgrade: "security",
     optimizePackageImports: ["lucide-react"],
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
@@ -123,6 +124,15 @@ const nextConfig = {
           {
             key: "Cache-Control",
             value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/hackathon/elemental/media/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=604800, stale-while-revalidate=86400",
           },
         ],
       },

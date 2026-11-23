@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import type { AdminIslandOverview, AdminIslandProject } from "@/lib/supabase/shift-quests/adminTypes";
+import { AwaySection, type AwayAdmin } from "./away/AwayAdmin";
 import { ADMIN_OVERVIEW } from "./copy";
 import { IslandSheet } from "./IslandSheet";
 import styles from "./island.module.css";
@@ -24,7 +25,22 @@ export function AdminProjectDetails({ project }: { project: AdminIslandProject }
   );
 }
 
-export function AdminOverview({ open, onClose, data }: { open: boolean; onClose: () => void; data: AdminIslandOverview | null }) {
+export function AdminOverview({
+  open,
+  onClose,
+  data,
+  away = null,
+}: {
+  open: boolean;
+  onClose: () => void;
+  data: AdminIslandOverview | null;
+  /**
+   * The come-back section (schema 23): the page's away state and the admin
+   * actions that read the report, passed in by the page so this sheet stays
+   * free of server imports. Null before the migration: no section.
+   */
+  away?: AwayAdmin | null;
+}) {
   const [query, setQuery] = useState("");
   const inputId = useId();
   const needle = query.trim().toLocaleLowerCase();
@@ -46,6 +62,7 @@ export function AdminOverview({ open, onClose, data }: { open: boolean; onClose:
           </div>
           {projects.length === 0 ? <p className={styles.quiet}>{needle ? ADMIN_OVERVIEW.noMatch : ADMIN_OVERVIEW.empty}</p> : null}
         </> : <p role="status">{ADMIN_OVERVIEW.failed}</p>}
+        {away ? <AwaySection open={open} away={away} /> : null}
       </div>
     </IslandSheet>
   );

@@ -144,7 +144,12 @@ async function main(): Promise<void> {
       "shift_quest_admin_member_consent_reset", "shift_quest_admin_seasons",
     ].includes(f.proname) ||
     // 20261118110000_shift_quest_island_visitors.
-    f.proname === "shift_quest_island_visitors";
+    f.proname === "shift_quest_island_visitors" ||
+    // 20261120120000_shift_quest_deep_fire: the island's read of the deep fire.
+    f.proname === "shift_quest_deepfire" ||
+    // 20261121090000_shift_quest_away: the return card's answer and the admin report and reveal
+    // (the state and the choice are the bot's too, for Discord /settings).
+    ["shift_quest_away_answer", "shift_quest_admin_away", "shift_quest_admin_away_reveal"].includes(f.proname);
   const missing = fns.filter((f) => !internal(f) && !webOnly(f) && !f.bot).map((f) => f.sig);
   check(missing.length === 0, "the bot can execute every shift_quest entry point but the website-only ones", missing);
   const leaked = fns.filter((f) => internal(f) && f.bot).map((f) => f.sig);

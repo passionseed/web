@@ -2,9 +2,9 @@ import type { Festival } from "@/lib/shift-island/festival";
 import type { VisitorsInput } from "@/lib/shift-island/live/crowd";
 import { plazaCrowd, type PlazaInput, type PlazaLabelId, type PlazaSpotId } from "@/lib/shift-island/live/plaza";
 import type { NoticePin } from "@/lib/shift-island/notice";
-import type { CampfireSummary } from "@/lib/supabase/shift-quests/types";
+import type { CampfireSummary, DeepFire } from "@/lib/supabase/shift-quests/types";
 
-import { CAMPFIRE, FESTIVAL, NOTICE, SEASON, VISITORS, thaiShortDate } from "./copy";
+import { CAMPFIRE, DEEPFIRE, FESTIVAL, NOTICE, SEASON, VISITORS, thaiShortDate } from "./copy";
 import { SHOP } from "./player/copy";
 import { PRIZES_UI } from "./prizes/copy";
 
@@ -26,15 +26,17 @@ export interface PlazaProps {
 /**
  * The plaza for the world: the Demo Day festival, the notice board's pins
  * (null: no board), the campfire's count, today's visitors (null: none
- * drawn) and the merchant ship (the shop), always moored off the coast. Only
+ * drawn), the deep fire (null: no lobby set; lit only while its keeper, the
+ * bot, is there) and the merchant ship (the shop), always moored off the coast. Only
  * the viewer's tag is drawn over the canvas (aria-hidden). The stage's
  * countdown board is pixel art; its accessible name says the date and the
  * days in words. The ship carries no sign over it: its painted board is part
  * of the sprite and its accessible name says it is the shop. The notice
  * board, the campfire and the day's count are not printed on the island: a
  * tap opens the board, the campfire's sheet with its count, or has a person
- * say the day's count. Without `onSpot` there is nothing to tap, so no names
- * either.
+ * say the day's count. The deep fire carries no count and no name at all: its
+ * button says what it is (and whether it can be lit now). Without `onSpot`
+ * there is nothing to tap, so no names either.
  */
 export function plazaProps(
   festival: Festival | null,
@@ -42,6 +44,7 @@ export function plazaProps(
   campfire: CampfireSummary | null,
   onSpot?: (id: PlazaSpotId) => void,
   visitors: VisitorsInput | null = null,
+  deepfire: DeepFire | null = null,
 ): PlazaProps {
   const count = campfire ? Math.max(0, Math.trunc(campfire.count) || 0) : 0;
   const date = festival ? thaiShortDate(festival.demoDay) : "";
@@ -58,12 +61,21 @@ export function plazaProps(
     if (pins) names.notice = pins.length > 0 ? NOTICE.pinned(pins.map((pin) => pin.title)) : NOTICE.board;
     if (festival) names.stage = FESTIVAL.stage(`${date} · ${SEASON.daysLeft(festival.daysToDemo)}`);
     if (campfire) names.campfire = CAMPFIRE.spot(count);
+    if (deepfire) names.deepfire = deepfire.live ? DEEPFIRE.spot : DEEPFIRE.spotAsleep;
     names.prizes = PRIZES_UI.spot;
     names.ship = SHOP.shipSpot;
   }
   return {
     // The Demo Day prize board always stands in the plaza, and the merchant ship always waits offshore.
-    input: { festival, pins: pins ? pins.map((pin) => pin.kind) : null, campfire: campfire ? { count } : null, prizes: true, visitors, ship: true },
+    input: {
+      festival,
+      pins: pins ? pins.map((pin) => pin.kind) : null,
+      campfire: campfire ? { count } : null,
+      prizes: true,
+      visitors,
+      ship: true,
+      deepfire: deepfire ? { lit: deepfire.live === true } : null,
+    },
     labels,
     names,
     onSpot,

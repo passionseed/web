@@ -52,13 +52,14 @@ function festival(scene: IslandScene): Festival {
   };
 }
 
-/** Everything at once, and the busiest plaza: the viewer, a full team, a crowd, guests at a half-empty fire. */
+/** Everything at once, and the busiest plaza: the viewer, a full team, a crowd, guests at a half-empty fire, the deep fire lit. */
 function busy(scene: IslandScene, visitors: Partial<VisitorsInput> = {}): PlazaInput {
   return {
     festival: festival(scene),
     pins: ["active", "main", "side"],
     campfire: { count: 3 },
     prizes: true,
+    deepfire: { lit: true },
     visitors: { count: 40, team: 5, me: true, shirt: "l", ...visitors },
   };
 }
@@ -118,7 +119,7 @@ function obstacles(scene: IslandScene, world: PlazaWorld): Obstacle[] {
   out.push({ what: "well", rect: { x: scene.well.x, y: scene.well.y, w: 24, h: 24 } });
   lampRects(model).forEach((rect, i) => out.push({ what: `lamp ${i}`, rect }));
   if (scene.banner) out.push({ what: "banner", rect: { x: scene.banner.x, y: scene.banner.y, w: 48, h: 20 } });
-  // The plaza's own pieces (board, notes, countdown, stage, prize board, campfire, its seats and flame).
+  // The plaza's own pieces (board, notes, countdown, stage, prize board, campfire, its seats and flame, the deep fire).
   for (const a of world.actors) {
     if (isCrowd(a)) continue;
     const [w, h] = MOTION_SIZES[a.frames[0] as MotionSpriteName];

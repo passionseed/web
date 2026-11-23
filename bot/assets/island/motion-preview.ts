@@ -60,6 +60,10 @@ const FAMILY_KEYS: [RegExp, string][] = [
   [/^campfire_flame_/, "ryfi"],
   [/^campfire_pit$/, "otazbcyi"],
   [/^campfire_pit_cold$/, "otazbc"],
+  // The deep fire (schema 22): the campfire's keys, plus its log seat's cut end (e).
+  [/^deepfire_flame_/, "ryfi"],
+  [/^deepfire_pit$/, "otazbcyie"],
+  [/^deepfire_pit_cold$/, "otazbce"],
   // Only the finished stage has lights (y stays untinted on fest_stage_3 at night).
   [/^fest_stage_[012]$/, Object.keys(PALETTE).filter((key) => key !== "y").join("")],
 ];

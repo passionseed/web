@@ -9,7 +9,7 @@ import type { Session } from "@/bot/src/quests/api";
 import type { CanvasLinkState } from "@/lib/shift-island/quest-canvas";
 import type { TreeStyle } from "@/lib/shift-island/tree-style";
 
-import type { CharacterStats, IslandConsent, IslandNews } from "./playerTypes";
+import type { AwayState, CharacterStats, IslandConsent, IslandNews } from "./playerTypes";
 
 export type { Session as QuestSession } from "@/bot/src/quests/api";
 
@@ -342,6 +342,37 @@ export interface IslandPageData {
    * compiling. null: an older database or a failed read; no figures drawn.
    */
   visitors?: import("@/lib/shift-island/visitors").IslandVisitors | null;
+  /**
+   * The deep fire (กองไฟโฟกัส, shift_quest_deepfire, schema 22): the lobby's
+   * join link and whether the bot that builds the rooms is there. Optional so
+   * older fixtures keep compiling. null: no lobby set, an older database, a
+   * failed read or no guild known; the plaza then draws no deep fire.
+   */
+  deepfire?: DeepFire | null;
+  /**
+   * A SHIFT cohort round is in session on the server's Bangkok day
+   * (lib/shift/voiceWindow.ts roundsInSession): shift-voice records voice
+   * time in every voice channel that week, the deep fire's rooms included.
+   * The deep fire's sheet says so only then. Absent reads as false.
+   */
+  cohortWeek?: boolean;
+  /**
+   * The come-back DM and the return card (shift_quest_away_state, schema 23):
+   * the switch, the viewer's own DM choice, and whether to ask for it or open
+   * the return card. Optional so older fixtures keep compiling. null: an
+   * older database or a failed read; no strip, no settings line, no card.
+   */
+  away?: AwayState | null;
+}
+
+/**
+ * The deep fire on the page: the lobby's link
+ * (https://discord.com/channels/<guild>/<lobby>) and whether the bot beat
+ * ready in the last 3 minutes. Nothing about anyone in a room.
+ */
+export interface DeepFire {
+  joinUrl: string;
+  live: boolean;
 }
 
 /** Page payload for the voice campfire: no names, no ids. */

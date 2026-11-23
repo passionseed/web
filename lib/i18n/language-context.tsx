@@ -1,7 +1,9 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { Language } from "./direction-finder";
+import { pageLanguage } from "./page-language";
 
 interface LanguageContextType {
   language: Language;
@@ -73,6 +75,15 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
     initializeLanguage();
   }, []);
+
+  // Keep <html lang> right as the visitor moves between pages (the root
+  // layout only sets it on the first load). Pages that follow the switch
+  // take the visitor's choice.
+  const pathname = usePathname();
+  useEffect(() => {
+    const page = pageLanguage(pathname);
+    document.documentElement.lang = page.followsSwitch ? language : page.lang;
+  }, [pathname, language]);
 
   // Save language to localStorage AND Supabase on change
   const handleSetLanguage = async (lang: Language) => {

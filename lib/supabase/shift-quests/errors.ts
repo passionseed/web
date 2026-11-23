@@ -27,6 +27,8 @@ const ERRORS: Record<string, string> = {
   // Students
   not_started: "กดเริ่มบนหน้าเกาะก่อน ใช้เวลาไม่ถึงนาที",
   not_authorized: "ส่วนนี้สำหรับทีมพี่เลี้ยงที่ได้รับสิทธิ์เท่านั้น",
+  // Staff on a students-only choice (20261121090000: shift_quest_away_set, the come-back DM). DRAFT.
+  not_allowed: "ส่วนนี้สำหรับนักเรียนเท่านั้น",
   bad_input: "ข้อมูลไม่ถูกต้อง ลองใหม่อีกครั้ง",
   // Raised only by the bot's voice presence writers (migration 093000).
   invalid: "ข้อมูลไม่ถูกต้อง ลองใหม่อีกครั้ง",
