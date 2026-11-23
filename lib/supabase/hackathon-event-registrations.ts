@@ -220,6 +220,41 @@ export async function uploadSlip(file: File, path: string): Promise<void> {
  * yet changes, so two uploads at once can't both win. Returns false when
  * the slip's transaction is already on another registration (unique index).
  */
+/**
+ * Claim a slip's bank reference for one registration (payment_slip_refs).
+ * - "ours": first time we've seen it, or this registration already holds it
+ * - "taken": another registration used this slip
+ * - "unknown": the check itself failed; never confirm a seat on that
+ */
+export async function claimSlipRef(
+  transRef: string,
+  registrationId: string,
+  source: string,
+  provider: string,
+): Promise<"ours" | "taken" | "unknown"> {
+  try {
+    const db = createAdminClient();
+    const { error: insertError } = await db
+      .from("payment_slip_refs")
+      .upsert(
+        { trans_ref: transRef, source, registration_id: registrationId, provider },
+        { onConflict: "trans_ref", ignoreDuplicates: true },
+      );
+    if (insertError) throw insertError;
+    const { data, error } = await db
+      .from("payment_slip_refs")
+      .select("registration_id")
+      .eq("trans_ref", transRef)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return "unknown";
+    return data.registration_id === registrationId ? "ours" : "taken";
+  } catch (error) {
+    console.error("[hackathon slip] slip reference check failed", error instanceof Error ? error.message : error);
+    return "unknown";
+  }
+}
+
 export async function recordSlip(
   registrationId: string,
   update: {

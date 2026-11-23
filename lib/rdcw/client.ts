@@ -56,42 +56,56 @@ export function slipReceiver(data: RdcwBody["data"]): "us" | "not_us" | "unknown
   return "unknown";
 }
 
-/** A timestamp's calendar day in Bangkok, as RDCW writes transDate: "YYYYMMDD". */
-export function bangkokDay(iso: string): string {
-  return new Date(new Date(iso).getTime() + 7 * 3_600_000).toISOString().slice(0, 10).replace(/-/g, "");
+/** RDCW's transDate + transTime ("20261123", "10:15:00", Bangkok) as epoch ms, or null. */
+export function rdcwSlipTime(transDate?: string, transTime?: string): number | null {
+  const d = transDate?.match(/^(\d{4})(\d{2})(\d{2})$/);
+  const t = transTime?.match(/^(\d{2}):(\d{2})(?::(\d{2}))?$/);
+  if (!d || !t) return null;
+  const ms = Date.parse(`${d[1]}-${d[2]}-${d[3]}T${t[1]}:${t[2]}:${t[3] ?? "00"}+07:00`);
+  return Number.isNaN(ms) ? null : ms;
 }
+
+/** Bank and server clocks drift a little; a slip this close to the sign-up still counts. */
+const CLOCK_GRACE_MS = 2 * 60_000;
 
 /**
  * Turn RDCW's reply into what we do next. Pure, so it is tested on its own.
- * `notBefore` is the sign-up day (YYYYMMDD, Bangkok). RDCW, unlike SlipOK, does
- * not flag a slip it has seen before, so a slip dated before the sign-up (one
- * paid to the same PromptPay for something else) goes to a person instead.
+ * `signedUpAt` is when the registration was created (ISO). RDCW, unlike SlipOK,
+ * does not flag a slip it has seen before, so a slip made before the sign-up
+ * (an older payment to the same PromptPay), or one with no readable time, goes
+ * to a person. Reuse of a slip already seen is caught by payment_slip_refs.
  */
 export function interpretRdcw(
   body: unknown,
   expectedAmount: number,
   fileType = "image/jpeg",
-  notBefore?: string,
+  signedUpAt?: string,
 ): SlipVerdict {
   const b = (body ?? {}) as RdcwBody;
 
   if (b.valid === true && b.data?.transRef) {
     const receiver = slipReceiver(b.data);
     if (receiver === "not_us") return { kind: "rejected", reason: "receiver", raw: body };
+    const transRef = String(b.data.transRef);
     if (receiver === "unknown") {
-      return { kind: "unverified", detail: "RDCW slip receiver could not be confirmed", raw: body };
+      return { kind: "unverified", transRef, detail: "RDCW slip receiver could not be confirmed", raw: body };
     }
     const amount = Number(b.data.amount);
     if (!Number.isFinite(amount) || Math.abs(amount - expectedAmount) > 0.001) {
       return { kind: "rejected", reason: "amount", raw: body };
     }
-    const transDate = b.data.transDate;
-    if (notBefore && transDate && /^\d{8}$/.test(transDate) && transDate < notBefore) {
-      return { kind: "unverified", detail: "RDCW slip is dated before the sign-up", raw: body };
+    if (signedUpAt) {
+      const paidAt = rdcwSlipTime(b.data.transDate, b.data.transTime);
+      if (paidAt === null) {
+        return { kind: "unverified", transRef, detail: "RDCW slip has no readable time", raw: body };
+      }
+      if (paidAt < Date.parse(signedUpAt) - CLOCK_GRACE_MS) {
+        return { kind: "unverified", transRef, detail: "RDCW slip was made before the sign-up", raw: body };
+      }
     }
     const transTimestamp =
       b.data.transDate && b.data.transTime ? `${b.data.transDate} ${b.data.transTime}` : undefined;
-    return { kind: "paid", transRef: String(b.data.transRef), amount, transTimestamp, raw: body };
+    return { kind: "paid", transRef, amount, transTimestamp, raw: body };
   }
 
   const code = b.code === undefined || b.code === null ? undefined : Number(b.code);
@@ -121,7 +135,7 @@ export async function verifySlipRdcw(
   file: Blob,
   filename: string,
   expectedAmount: number,
-  notBefore?: string,
+  signedUpAt?: string,
 ): Promise<SlipVerdict> {
   const id = process.env.RDCW_CLIENT_ID;
   const secret = process.env.RDCW_CLIENT_SECRET;
@@ -144,7 +158,7 @@ export async function verifySlipRdcw(
     if (body === null) {
       return { kind: "unverified", detail: `RDCW HTTP ${res.status} without JSON`, raw: null };
     }
-    return interpretRdcw(body, expectedAmount, file.type, notBefore);
+    return interpretRdcw(body, expectedAmount, file.type, signedUpAt);
   } catch (error) {
     const detail = error instanceof Error ? error.message : "RDCW request failed";
     return { kind: "unverified", detail, raw: null };

@@ -2,10 +2,12 @@ import { randomBytes } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 
 import { MAX_SLIP_BYTES } from "@/lib/hackathon/elemental/slip-image";
+import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { safeServerError } from "@/lib/security/route-guards";
-import { bangkokDay, rdcwConfigured, verifySlipRdcw } from "@/lib/rdcw/client";
-import { verifySlip } from "@/lib/slipok/client";
+import { rdcwConfigured, verifySlipRdcw } from "@/lib/rdcw/client";
+import { verifySlip, type SlipVerdict } from "@/lib/slipok/client";
 import {
+  claimSlipRef,
   getRegistrationByToken,
   recordSlip,
   uploadSlip,
@@ -24,6 +26,8 @@ const EXTENSION: Record<string, string> = {
  * - paid: the seat is confirmed on the spot
  * - rejected / retry: the person sees why and can upload again
  * - unverified (checker down, quota, not configured): status "review", a person checks it
+ * Every slip reference read is claimed in payment_slip_refs, so a slip used by
+ * one registration is rejected as a duplicate on any other.
  */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   try {
@@ -46,9 +50,21 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     await uploadSlip(file, slipPath);
 
     const provider = rdcwConfigured() ? "rdcw" : "slipok";
-    const verdict = provider === "rdcw"
-      ? await verifySlipRdcw(file, `slip.${ext}`, registration.amountBaht, bangkokDay(registration.createdAt))
+    const checked = provider === "rdcw"
+      ? await verifySlipRdcw(file, `slip.${ext}`, registration.amountBaht, registration.createdAt)
       : await verifySlip(file, `slip.${ext}`, registration.amountBaht);
+
+    // One slip pays for one registration, whatever the checker says.
+    let verdict: SlipVerdict = checked;
+    const transRef = "transRef" in checked ? checked.transRef : undefined;
+    if (transRef) {
+      const claim = await claimSlipRef(transRef, registration.id, `hackathon:${ELEMENTAL.slug}`, provider);
+      if (claim === "taken") {
+        verdict = { kind: "rejected", reason: "duplicate", raw: checked.raw };
+      } else if (claim === "unknown" && checked.kind === "paid") {
+        verdict = { kind: "unverified", transRef, detail: "slip reference check failed", raw: checked.raw };
+      }
+    }
     const check = {
       provider,
       kind: verdict.kind,

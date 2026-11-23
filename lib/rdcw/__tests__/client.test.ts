@@ -1,4 +1,4 @@
-import { bangkokDay, interpretRdcw, slipReceiver } from "../client";
+import { interpretRdcw, rdcwSlipTime, slipReceiver } from "../client";
 
 const ok = (over: Record<string, unknown> = {}) => ({
   valid: true,
@@ -23,14 +23,29 @@ describe("interpretRdcw", () => {
     });
   });
 
-  it("sends a slip dated before the sign-up to a person", () => {
-    expect(interpretRdcw(ok(), 199, "image/jpeg", "20261124")).toMatchObject({ kind: "unverified" });
-    expect(interpretRdcw(ok(), 199, "image/jpeg", "20261123")).toMatchObject({ kind: "paid" });
+  // ok() is paid at 2026-11-23 10:15 Bangkok = 03:15 UTC.
+  it("sends a slip made before the sign-up to a person, keeping its reference", () => {
+    expect(interpretRdcw(ok(), 199, "image/jpeg", "2026-11-23T03:30:00Z")).toMatchObject({
+      kind: "unverified",
+      transRef: "016330120000ATF01234",
+    });
+    expect(interpretRdcw(ok(), 199, "image/jpeg", "2026-11-22T12:00:00Z")).toMatchObject({ kind: "paid" });
   });
 
-  it("reads the sign-up day in Bangkok time", () => {
-    expect(bangkokDay("2026-11-22T17:30:00Z")).toBe("20261123");
-    expect(bangkokDay("2026-11-22T16:59:00Z")).toBe("20261122");
+  it("allows two minutes of clock drift", () => {
+    expect(interpretRdcw(ok(), 199, "image/jpeg", "2026-11-23T03:16:30Z")).toMatchObject({ kind: "paid" });
+  });
+
+  it("sends a slip with no readable time to a person", () => {
+    expect(interpretRdcw(ok({ transTime: undefined }), 199, "image/jpeg", "2026-11-22T12:00:00Z")).toMatchObject({
+      kind: "unverified",
+    });
+  });
+
+  it("reads RDCW's date and time as Bangkok time", () => {
+    expect(rdcwSlipTime("20261123", "10:15:00")).toBe(Date.parse("2026-11-23T03:15:00Z"));
+    expect(rdcwSlipTime("20261123", "10:15")).toBe(Date.parse("2026-11-23T03:15:00Z"));
+    expect(rdcwSlipTime("2026-11-23", "10:15:00")).toBeNull();
   });
 
   it("rejects the wrong amount", () => {

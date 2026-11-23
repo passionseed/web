@@ -20,8 +20,11 @@ export type SlipVerdict =
   | { kind: "rejected"; reason: SlipRejectReason; code?: number; raw: unknown }
   /** Try again in a few minutes (the bank is slow or down). */
   | { kind: "retry"; code?: number; delayMinutes?: number; raw: unknown }
-  /** SlipOK can't decide (not configured, quota, network): a person checks it. */
-  | { kind: "unverified"; code?: number; detail: string; raw: unknown };
+  /**
+   * The checker can't decide (not configured, quota, network, unclear slip): a
+   * person checks it. transRef is set when the slip itself was read.
+   */
+  | { kind: "unverified"; code?: number; detail: string; transRef?: string; raw: unknown };
 
 export type SlipRejectReason = "duplicate" | "amount" | "receiver" | "unreadable" | "expired";
 
