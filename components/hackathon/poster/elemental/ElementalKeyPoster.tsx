@@ -594,8 +594,6 @@ function BottomBlock({ design, label = "tag", rule = true, side = "facts", troph
  * them. The other values are the layouts tried on the way there.
  */
 export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs = true, bottom = "number", label = "beside", rule = false, qr = "bottom", facts = "top", qrStyle = "art", trophy = "solid", prizeWeight = 200 }: { id?: string; sky?: keyof typeof PLATES; glyphs?: boolean; bottom?: BottomDesign; label?: PrizeLabel; rule?: boolean; qr?: false | "left" | "right" | "bottom"; facts?: "bottom" | "top"; trophy?: TrophyDesign; prizeWeight?: number; qrStyle?: "art" | "plain" | "glass" | "scan" | "fire" }) {
-  // The fire letters follow the fire, which sits elsewhere on the dam photo.
-  const shift = sky === "dam" ? [24, -143] : [0, 0];
   return (
     <div id={id} className={`${trirong.variable} relative overflow-hidden`} style={{ width: W, height: H, backgroundColor: "#2a2b26" }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -617,14 +615,14 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
         {LETTERS.map((l, i) => (
           <text
             key={i}
-            x={l.x + shift[0]}
-            y={l.y + shift[1]}
+            x={l.x}
+            y={l.y}
             fill={l.fill}
             fontFamily={EL_FONT.display}
             fontWeight={600}
             fontSize={l.size}
             opacity={0.95}
-            transform={`rotate(${l.rotate} ${l.x + shift[0]} ${l.y + shift[1]})`}
+            transform={`rotate(${l.rotate} ${l.x} ${l.y})`}
           >
             {l.ch}
           </text>

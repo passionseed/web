@@ -374,7 +374,7 @@ export function CsiiDeck() {
               {label}
             </span>
           ))}
-          <span>Sign-up closes Thu 3 Dec · Request for Winners opens Fri 11 Dec</span>
+          <span>Sign-up closes Fri 4 Dec · Request for Winners opens Fri 11 Dec</span>
         </div>
       </Section>
 
