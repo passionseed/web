@@ -8,6 +8,7 @@ import { TeamInvite } from "@/components/hackathon/elemental/TeamInvite";
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
 import { SHIFT_PAYMENT } from "@/lib/content/shift-cohort";
+import { elementalCommunityLinks } from "@/lib/hackathon/elemental/community-links";
 import { getRegistrationByToken } from "@/lib/supabase/hackathon-event-registrations";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +25,8 @@ export default async function ElementalPayPage({ params }: { params: Promise<{ t
   const { token } = await params;
   const reg = await getRegistrationByToken(token, ELEMENTAL.maxGroupSize);
   if (!reg) notFound();
+  // Only a paid page renders these.
+  const links = elementalCommunityLinks();
 
   const who = reg.team ? reg.memberNicknames.join(", ") : (reg.teamName ?? reg.memberNicknames.join(", "));
   const people = reg.team ? `ทีม ${reg.team.name}` : `${reg.memberCount} คน`;
@@ -44,9 +47,42 @@ export default async function ElementalPayPage({ params }: { params: Promise<{ t
             <p className="text-lg">
               {who} · {people} · ชำระแล้ว ฿{reg.amountBaht.toLocaleString("en-US")}
             </p>
-            <p style={{ color: EL.inkSoft }}>
-              งานจัด{ELEMENTAL.venueTh} ทีมงานจะส่งลิงก์เข้า Discord ทางอีเมลและเบอร์โทรที่ให้ไว้ ก่อนวันงาน มีคำถามทักไลน์ {SHIFT_PAYMENT.lineId}
-            </p>
+            {links.line || links.discord ? (
+              <div className="space-y-3">
+                <p>ขั้นต่อไป เข้ากลุ่มของงาน ประกาศ ทีม และงานทั้งหมดอยู่ที่นี่</p>
+                <div className="flex flex-wrap gap-2">
+                  {links.line && (
+                    <a
+                      href={links.line}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center rounded-full px-6 py-3 text-base font-semibold"
+                      style={{ backgroundColor: EL.flame, color: EL.flameWhite }}
+                    >
+                      เข้ากลุ่ม LINE
+                    </a>
+                  )}
+                  {links.discord && (
+                    <a
+                      href={links.discord}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center rounded-full px-6 py-3 text-base font-semibold"
+                      style={{ boxShadow: `inset 0 0 0 1px ${EL.ink}` }}
+                    >
+                      เข้า Discord
+                    </a>
+                  )}
+                </div>
+                <p className="text-sm" style={{ color: EL.inkSoft }}>
+                  งานจัด{ELEMENTAL.venueTh} มีคำถามทักไลน์ {SHIFT_PAYMENT.lineId}
+                </p>
+              </div>
+            ) : (
+              <p style={{ color: EL.inkSoft }}>
+                งานจัด{ELEMENTAL.venueTh} ทีมงานจะส่งลิงก์เข้า Discord ทางอีเมลและเบอร์โทรที่ให้ไว้ ก่อนวันงาน มีคำถามทักไลน์ {SHIFT_PAYMENT.lineId}
+              </p>
+            )}
             {reg.team && <TeamInvite team={reg.team} />}
             <Link href="/hackathon/elemental" className="inline-block text-sm underline underline-offset-4" style={{ color: EL.inkSoft }}>
               กลับหน้า {ELEMENTAL.edition} Hackathon
