@@ -17,9 +17,9 @@
  * (scripts/shift-reel-audio.py), loudnorm, faststart.
  *
  * Output (~/Movies/radar-guide/stories/ or --out): <id>.ig.mp4, <id>.tt.mp4,
- * <id>.cover.webp (frame 0, the hook) and <id>.caption.txt (both captions,
- * the pinned comment, the Trial Reels hooks, the sources). --variant N films
- * the Nth hook variant as <id>.vN.*. --dry-run lints and prints the timeline
+ * <id>.cover.webp (frame 0: the reel opens cold on its first line) and
+ * <id>.caption.txt (both captions, the pinned comment, the Trial Reels hooks,
+ * the sources). --dry-run lints and prints the timeline
  * and the caption file: no browser, no ffmpeg, nothing written.
  *
  * Needs: the studio server (scripts/studio-server.sh, :3010) or --base, ffmpeg,
@@ -195,7 +195,7 @@ async function main(): Promise<void> {
   const platformFlag = flagString(args, "platform") ?? "both";
   if (platformFlag !== "ig" && platformFlag !== "tt" && platformFlag !== "both") fail("--platform must be ig, tt or both.");
   const variantFlag = flagString(args, "variant");
-  if (variantFlag !== undefined && variantFlag !== "1" && variantFlag !== "2") fail("--variant must be 1 or 2.");
+  if (variantFlag !== undefined) fail("--variant is retired: reels open cold on their first line, so hook variants no longer change the film. They are in the caption file, for Trial Reels captions.");
   const opts: Options = {
     platforms: platformFlag === "both" ? [...STORY_PLATFORMS] : [platformFlag],
     variant: variantFlag ? (Number(variantFlag) as 1 | 2) : null,

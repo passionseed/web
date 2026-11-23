@@ -3,8 +3,7 @@
 /**
  * The words on a story reel, in the Elemental hackathon's type: speech
  * bubbles that point at whoever speaks (bubble.ts: no name tags), quiet
- * narration set straight on the photo, and huge Trirong for the hook and
- * `big` lines, with the line's stressed words (StoryBeat.stressTh) in the
+ * narration set straight on the photo, and huge Trirong for `big` lines, with the line's stressed words (StoryBeat.stressTh) in the
  * speaker's colour. A line lands whole (no typewriter) so reading starts on
  * its first frame. Everything sits inside the platforms' safe zone (cast.ts
  * SAFE) and is drawn from the frame number.
@@ -71,9 +70,9 @@ export function Phrased({ line, typed = Infinity, decorate }: { line: string; ty
 }
 
 /** Font size for huge text by length, before fitting to its plate. */
-export function bigFontSize(text: string, hook = false): number {
+export function bigFontSize(text: string): number {
   const n = charCount(text);
-  if (n <= 10) return hook ? 52 : 50;
+  if (n <= 10) return 50;
   if (n <= 16) return 46;
   if (n <= 22) return 42;
   if (n <= 30) return 38;
@@ -85,21 +84,10 @@ export function bigFontSize(text: string, hook = false): number {
  * The band huge text is centred in: below the top band (and its name tag),
  * above the highest head on stage (`headY`, null for an empty stage).
  */
-export function bigBand(headY: number | null, hook = false): { top: number; bottom: number } {
-  const top = hook ? SAFE.top + 8 : BOX_TOP;
+export function bigBand(headY: number | null): { top: number; bottom: number } {
+  const top = BOX_TOP;
   const bottom = headY === null ? top + 236 : Math.min(top + 236, headY - HEAD_ROOM);
   return { top, bottom: Math.max(top + 90, bottom) };
-}
-
-/**
- * The hook plate's scale at frame `f`: frame 0 (the cover) at rest, a punch
- * in over the next frames, then a slow push for the rest of the hook. Pure.
- */
-const HOOK_PUNCH = [1, 1.03, 1.05, 1.04, 1.02, 1.01];
-export function hookScale(f: number, hookF: number): number {
-  if (f <= 0) return 1;
-  const push = 0.02 * Math.min(1, f / Math.max(1, hookF));
-  return Math.round(((HOOK_PUNCH[f] ?? 1) + push) * 10000) / 10000;
 }
 
 /** Paper and ink: the bubble for people, and the guide's dark one. */
@@ -129,14 +117,9 @@ export function stressed(stress: string | undefined, color: string, weight?: num
   };
 }
 
-/** The last phrase of a line: what the hook stresses unless told otherwise. */
-export function lastPhrase(line: string): string {
-  const all = phrases(line);
-  return all.length > 1 ? all[all.length - 1] : "";
-}
-
 /** Scale while a line lands: two stepped frames in, then still. */
-export function landScale(frameInLine: number): number {
+export function landScale(frameInLine: number, startF = 1): number {
+  if (startF === 0) return 1; // the cold open: frame 0 is the cover, so the first line is already landed
   return frameInLine <= 0 ? 0.9 : frameInLine === 1 ? 0.96 : 1;
 }
 
@@ -173,7 +156,7 @@ export function SpeechBubble({ cue, frame, speakerX, headY }: { cue: StoryBeatCu
   const { box } = place;
   const tail = speakerX === null ? [] : place.tail;
   const bg = guide ? GUIDE : PAPER;
-  const k = landScale(frame - cue.startF);
+  const k = landScale(frame - cue.startF, cue.startF);
   const clip = steppedClip(box.w, box.h);
   const wrap: CSSProperties = {
     visibility: size ? "visible" : "hidden",
@@ -206,7 +189,7 @@ export function NarrationLine({ cue, frame, headY = null }: { cue: StoryBeatCue;
   const text = useRef<HTMLParagraphElement>(null);
   const room = headY === null ? undefined : headY - 24 - BOX_TOP;
   useFitText(text, { base: 26, min: 18, plate: text, maxHeight: room });
-  const k = landScale(frame - cue.startF);
+  const k = landScale(frame - cue.startF, cue.startF);
   return (
     <div className="absolute flex justify-center" style={{ left: BOX_SIDE, right: BOX_RIGHT, top: BOX_TOP }} data-line={cue.index}>
       <div className="sr-scrim relative min-w-0" style={{ transform: k !== 1 ? `scale(${k})` : undefined }}>
@@ -219,43 +202,22 @@ export function NarrationLine({ cue, frame, headY = null }: { cue: StoryBeatCue;
 }
 
 /**
- * Huge Trirong on the dimmed photo: the hook (left aligned like the poster's
- * title, its last phrase in fire orange) or a big line (its stressed words in
- * the speaker's colour). It stays between the top band and the highest head
- * on stage (`headY`), shrinking to fit; the hook punches in from `scale`.
+ * Huge Trirong on the dimmed photo, its stressed words in the speaker's
+ * colour. It stays between the top band and the highest head on stage
+ * (`headY`), shrinking to fit.
  */
-export function BigLine({
-  text,
-  who,
-  stress,
-  hook = false,
-  headY = null,
-  scale = 1,
-}: {
-  text: string;
-  who: Who | null;
-  stress?: string;
-  hook?: boolean;
-  headY?: number | null;
-  scale?: number;
-}) {
-  const band = bigBand(headY, hook);
+export function BigLine({ text, who, stress, headY = null }: { text: string; who: Who | null; stress?: string; headY?: number | null }) {
+  const band = bigBand(headY);
   const ref = useRef<HTMLParagraphElement>(null);
-  const side = hook ? 10 : 0;
-  useFitText(ref, { base: bigFontSize(text, hook) + 6, min: 22, plate: ref, maxHeight: (band.bottom - band.top) / (hook ? 1.06 : 1) });
-  const color = hook ? STRESS_ON_PHOTO.text : STRESS_ON_PHOTO[who ?? "text"];
+  useFitText(ref, { base: bigFontSize(text) + 6, min: 22, plate: ref, maxHeight: band.bottom - band.top });
   return (
     <div
-      className={`absolute flex items-center ${hook ? "justify-start" : "justify-center"}`}
-      style={{ left: BOX_SIDE + side, right: BOX_RIGHT + side, top: band.top, height: band.bottom - band.top }}
-      data-big={hook ? "hook" : "line"}
+      className="absolute flex items-center justify-center"
+      style={{ left: BOX_SIDE, right: BOX_RIGHT, top: band.top, height: band.bottom - band.top }}
+      data-big="line"
     >
-      <p
-        ref={ref}
-        className={`sr-big m-0 ${hook ? "text-left" : "text-center"}`}
-        style={{ transform: scale !== 1 ? `scale(${scale})` : undefined, transformOrigin: hook ? "left center" : "center" }}
-      >
-        <Phrased line={text} decorate={stressed(hook ? stress ?? lastPhrase(text) : stress, color, 300)} />
+      <p ref={ref} className="sr-big m-0 text-center">
+        <Phrased line={text} decorate={stressed(stress, STRESS_ON_PHOTO[who ?? "text"], 300)} />
       </p>
     </div>
   );

@@ -4,7 +4,8 @@
  * way on every run and `radar:story` scores the soundtrack from the same
  * numbers (scripts/shift-reel-audio.py).
  *
- * Order: the hook card over the first scene, the beats, the end card. Beats
+ * Order: the beats, then the end card. There is no hook card: frame 0 is the
+ * first line, already landed (lib/radar-stories/timing.ts storyFrames). Beats
  * in a row that share a scene form a segment; a pixel wipe covers each change
  * of scene (and the cut to the end card), centred on the boundary, so it
  * never adds time. Lengths come from lib/radar-stories/timing.ts.
@@ -74,8 +75,8 @@ export interface StoryTimeline {
   fps: number;
   totalF: number;
   seconds: number;
+  /** The hook, for the caption (it is not drawn: the reel opens cold). */
   hookTh: string;
-  hook: { startF: number; endF: number };
   beats: StoryBeatCue[];
   segments: StorySegment[];
   end: { startF: number; endF: number };
@@ -145,9 +146,9 @@ export function buildStoryTimeline(
   hookTh: string = script.hookTh,
   options?: StoryTimelineOptions,
 ): StoryTimeline {
-  const lengths = storyFrames(script, hookTh);
+  const lengths = storyFrames(script);
   const voiceMap = options?.voiceDurationsMs;
-  let cursor = lengths.hook;
+  let cursor = 0;
   const beats: StoryBeatCue[] = script.beats.map((beat, index) => {
     const startF = cursor;
     const voiceMs = voiceMap?.[index];
@@ -166,7 +167,7 @@ export function buildStoryTimeline(
   const end = { startF: cursor, endF: cursor + lengths.end };
   const totalF = end.endF;
 
-  // Segments: runs of beats sharing a scene. The first one also spans the hook.
+  // Segments: runs of beats sharing a scene.
   const segments: StorySegment[] = [];
   for (const b of beats) {
     const last = segments[segments.length - 1];
@@ -181,7 +182,7 @@ export function buildStoryTimeline(
   castSegments(segments, beats);
 
   const wipes = [...segments.slice(1).map((s) => s.startF), end.startF];
-  return { fps: STORY_FPS, totalF, seconds: sec(totalF), hookTh, hook: { startF: 0, endF: lengths.hook }, beats, segments, end, wipes, cues: buildCues(beats, segments, end, totalF) };
+  return { fps: STORY_FPS, totalF, seconds: sec(totalF), hookTh, beats, segments, end, wipes, cues: buildCues(beats, segments, end, totalF) };
 }
 
 function buildCues(beats: StoryBeatCue[], segments: StorySegment[], end: StoryTimeline["end"], totalF: number): ReelCues {
@@ -199,8 +200,8 @@ function buildCues(beats: StoryBeatCue[], segments: StorySegment[], end: StoryTi
 
   const firstHost = beats.find((b) => b.beat.who === "host");
   const twist = beats.find((b) => b.beat.big && (!firstHost || b.index > firstHost.index)) ?? beats[beats.length - 1];
-  const moods: [number, Mood][] = [[0, "build"]];
-  if (beats.length) moods.push([sec(beats[0].startF), firstHost && firstHost.index > 0 ? "dark" : "light"]);
+  // A cold open: the score starts in the story's mood on frame 0 (no build-up under a title card).
+  const moods: [number, Mood][] = [[0, firstHost && firstHost.index > 0 ? "dark" : "light"]];
   if (firstHost && firstHost.index > 0) moods.push([sec(firstHost.startF), "light"]);
   if (twist && (!firstHost || twist.index > firstHost.index)) moods.push([sec(twist.startF), "full"]);
   moods.push([sec(end.startF), "offer"]);
@@ -219,10 +220,9 @@ function buildCues(beats: StoryBeatCue[], segments: StorySegment[], end: StoryTi
 }
 
 // ---------------------------------------------------------------- lookups for a frame
-export type StoryPhase = { kind: "hook" } | { kind: "beat"; cue: StoryBeatCue } | { kind: "end" };
+export type StoryPhase = { kind: "beat"; cue: StoryBeatCue } | { kind: "end" };
 
 export function phaseAt(t: StoryTimeline, f: number): StoryPhase {
-  if (f < t.hook.endF) return { kind: "hook" };
   if (f >= t.end.startF) return { kind: "end" };
   const cue = t.beats.find((b) => f >= b.startF && f < b.endF) ?? t.beats[t.beats.length - 1];
   return { kind: "beat", cue };

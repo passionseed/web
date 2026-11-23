@@ -20,8 +20,6 @@ export const STORY_TIMING = {
   padMs: 600,
   /** A beat without `ms` lasts this long at least and at most. */
   beatMs: [1600, 4000] as const,
-  /** The hook card: on screen from frame 0 for its reading time, within these bounds. */
-  hookMs: [1500, 2500] as const,
   /** The end card with the call to action. */
   endMs: 4200,
   /** Story reels are 20 to 40 seconds. */
@@ -129,10 +127,6 @@ export function beatMs(beat: Pick<StoryBeat, "lineTh" | "ms">): number {
   return typeof beat.ms === "number" && beat.ms > 0 ? beat.ms : defaultBeatMs(beat.lineTh);
 }
 
-export function hookMs(hookTh: string): number {
-  return clamp(readMs(hookTh), STORY_TIMING.hookMs);
-}
-
 /** Whole frames for a duration (at least one). */
 export function toFrames(ms: number): number {
   return Math.max(1, Math.round(ms / FRAME_MS));
@@ -143,21 +137,23 @@ export function framesToMs(frames: number): number {
 }
 
 export interface StoryFrames {
-  hook: number;
   beats: number[];
   end: number;
   total: number;
 }
 
-/** Frames per part. `hookTh` overrides the script's hook (a Trial Reels variant). */
-export function storyFrames(script: Pick<StoryScript, "hookTh" | "beats">, hookTh: string = script.hookTh): StoryFrames {
-  const hook = toFrames(hookMs(hookTh));
+/**
+ * Frames per part. There is no hook card: a reel opens cold on its first line
+ * (frame 0 is that line, fully on screen, and the cover), because the first
+ * second decides whether anyone stays. The hook text lives in the caption.
+ */
+export function storyFrames(script: Pick<StoryScript, "beats">): StoryFrames {
   const beats = script.beats.map((b) => toFrames(beatMs(b)));
   const end = toFrames(STORY_TIMING.endMs);
-  return { hook, beats, end, total: hook + beats.reduce((a, b) => a + b, 0) + end };
+  return { beats, end, total: beats.reduce((a, b) => a + b, 0) + end };
 }
 
 /** Reel length in seconds. */
-export function storySeconds(script: Pick<StoryScript, "hookTh" | "beats">, hookTh?: string): number {
-  return storyFrames(script, hookTh).total / STORY_FPS;
+export function storySeconds(script: Pick<StoryScript, "beats">): number {
+  return storyFrames(script).total / STORY_FPS;
 }

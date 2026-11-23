@@ -251,7 +251,7 @@ export function lintStory(s: StoryScript, opts: StoryLintOptions = {}): StoryPro
 
   // ---- length
   if (beats.length && beats.every((b) => b && typeof b.lineTh === "string")) {
-    const seconds = storySeconds({ hookTh: hook, beats });
+    const seconds = storySeconds({ beats });
     const [lo, hi] = STORY_TIMING.targetSeconds;
     if (seconds < lo || seconds > hi) warn("length", "beats", `the reel is ${seconds.toFixed(1)} s; story reels are ${lo} to ${hi} s`);
   }

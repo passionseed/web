@@ -56,7 +56,7 @@ is missing, and checks before it starts encoding. Commands that upload have a
 | `pnpm radar:clip <slug> <page> <take.mov>` | ffmpeg, ffprobe, `B2_APPLICATION_KEY_ID`, `B2_APPLICATION_KEY`, `B2_BUCKET_NAME`; whisper-cli optional | Fails if the page has no `clip` slot or its script fails guide-lint. Tone-maps iPhone HLG to SDR, writes the clean 1080x1920 master, the 540x960 web clip (about 1.2 Mbps, faststart), a webp poster under 60KB, captions (whisper times, our script text) and the cut list. Uploads clip and poster to `radar/guide/<slug>/<page>.<sha8>.{mp4,webp}`, then writes `clips/<page>.vtt` and `clips.json` (sorted, 2-space JSON). No database. `--dry-run` skips B2 and writes the would-be `clips.json` and VTT to `<out>/dry-run/`, with copies of the web clip and poster. `--no-whisper`, `--out dir`, `--allow-lint-errors`. |
 | `pnpm radar:reel <slug>` | the studio server, ffmpeg, python3 + numpy (unless `--no-audio`), Playwright | Films reels into `~/Movies/radar-guide/<slug>/`. Motion (default): the Dusk City scene reel, "อาชีพนี้ใน 30 วินาที", built from the guide's fact-backed lines (dump cards are a fallback). `--page key` makes a one-level reel, `--compare other-slug` "เทียบ 2 อาชีพ", `--cover` saves the cover frame. `--format demo --page key` films the level itself being played (below). `--platform tt` swaps the end card. `--dry-run` writes the payload or plan and prints the timeline: no browser, no ffmpeg. Nothing is uploaded. |
 | `pnpm radar:art <slug>` | nothing (`--source agy`: the `agy` CLI) | Scene art for every level, the level map, the profile card frame and the host sprite, as webp of at most 120KB. Hand-made pixel art by default; `--source agy` asks Antigravity's image tool (normal permission prompts). No people, no text, no logos. `--dry-run`. |
-| `pnpm radar:story <id>` (or `--all`) | the studio server, ffmpeg, python3 + numpy (unless `--no-audio`), Playwright | Lints and films story reels (below) into `~/Movies/radar-guide/stories/`: `<id>.ig.mp4`, `<id>.tt.mp4`, `<id>.cover.webp`, `<id>.caption.txt`. Picks up processed voice files from `~/Movies/radar-guide/voice/<id>/` automatically (pass `--no-voice` to film silent). `--platform ig\|tt` films one master, `--variant 1\|2` a Trial Reels hook, `--dry-run` prints the lint and the timeline only, `--allow-lint-errors` films a draft. |
+| `pnpm radar:story <id>` (or `--all`) | the studio server, ffmpeg, python3 + numpy (unless `--no-audio`), Playwright | Lints and films story reels (below) into `~/Movies/radar-guide/stories/`: `<id>.ig.mp4`, `<id>.tt.mp4`, `<id>.cover.webp`, `<id>.caption.txt`. Picks up processed voice files from `~/Movies/radar-guide/voice/<id>/` automatically (pass `--no-voice` to film silent). `--platform ig\|tt` films one master, `--dry-run` prints the lint and the timeline only, `--allow-lint-errors` films a draft. |
 | `pnpm radar:voice [<id>]` | ffmpeg, `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Downloads the starred voice take for each voiced line from the private `radar-voice` bucket, processes each with ffmpeg (80 Hz high-pass, gentle denoise, de-ess, light compression, -16 LUFS loudnorm, 44.1 kHz mono) into `~/Movies/radar-guide/voice/<id>/<beat>.wav`, and reports missing, unpicked or stale lines. `--force`, `--out dir`, `--dry-run`. |
 | `pnpm radar:story-art` | nothing | The generic story scenes as hand-made pixel art, `public/radar/stories/<scene>.webp` (108x192 cells, lossless). Deterministic. `--only scene,scene`, `--dry-run`. |
 | `pnpm radar:tcas <slug>` | network (local only) | Refreshes `tcas.json` from mytcas. Review the diff in a PR; the build never fetches it. |
@@ -185,8 +185,11 @@ that does not start "ส่งให้เพื่อน", captions off the tem
 reel outside 20 to 40 seconds.
 
 **Timing** (`lib/radar-stories/timing.ts`, `components/radar/reel/story/storyTimeline.ts`,
-both pure and in whole frames at 30 fps). The hook card is on screen from
-frame 0 for its reading time, 1.5 to 2.5 s. A beat without `ms` lasts its
+both pure and in whole frames at 30 fps). There is no hook card: a reel opens
+cold on its first line, already on screen at frame 0 (which is also the
+cover), because the first second decides whether anyone stays. Write the
+first beat as the peak: the question or the jab, mid-scene. `hookTh` and its
+variants are caption text. A beat without `ms` lasts its
 reading time, about 14 characters a second plus 600 ms, clamped to 1.6 to 4 s.
 Lines type at 28 ms a character, finishing within 45% of the beat; `big`
 lines slam in whole. A pixel wipe covers each change of scene and the cut to
@@ -197,7 +200,7 @@ the end card).
 
 **The frame** (`components/radar/reel/story/`). 432x768 CSS px filmed at
 deviceScaleFactor 2.5 (1080x1920). Scene art fills it (108x192 cells at 4x);
-the dialogue box, the hook and big lines sit between the top 12% and the
+the bubbles and big lines sit between the top 12% and the
 bottom 35% that Instagram covers; characters stand with their feet on that
 line. Every frame is a pure function of its number: P'Seed runs on
 GuideNPC's `clock` prop (its moods, flicker, blink, mouth and hops set from
@@ -209,8 +212,8 @@ the TikTok caption (else the career alias, else `passionseed.org/radar`).
 
 **Preview** a script at `/studio/radar-story/<id>` on the studio server: it
 plays in a loop with the safe zones drawn over it (click to restart).
-`?t=12.5` holds a moment, `?platform=tt` shows the TikTok end card, `?hook=1`
-a hook variant. `?render=1` is the filming mode. Not served in production.
+`?t=12.5` holds a moment, `?platform=tt` shows the TikTok end card.
+`?render=1` is the filming mode. Not served in production.
 
 **Filming.**
 
@@ -218,7 +221,6 @@ a hook variant. `?render=1` is the filming mode. Not served in production.
 scripts/studio-server.sh                # once; scripts/studio-server.sh --sync after edits
 pnpm radar:story lost-00-midnight       # one script: .ig.mp4, .tt.mp4, .cover.webp, .caption.txt
 pnpm radar:story --all                  # every script
-pnpm radar:story lost-00-midnight --variant 1   # Trial Reels hook: lost-00-midnight.v1.*
 ```
 
 **Recording P'Seed voice-overs (phone studio).** By default every P'Seed line (`who === "host"` in `lib/radar-stories/voice.ts`) can be voiced by the founder and mixed under the soundtrack:

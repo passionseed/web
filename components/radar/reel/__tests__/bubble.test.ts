@@ -4,7 +4,7 @@
 import { BUBBLE_SIDE, BUBBLE_TOP, bubbleRoom, CELL, placeBubble, splitStress, steppedClip, TAIL_CELLS } from "../story/bubble";
 import { headTop, SAFE } from "../story/cast";
 import { GRAIN_HOLD, grainOffset } from "../story/StoryScene";
-import { landScale, lastPhrase } from "../story/StoryText";
+import { landScale } from "../story/StoryText";
 
 describe("speech bubble", () => {
   const head = headTop("parent");
@@ -51,12 +51,14 @@ describe("speech bubble", () => {
     ]);
     expect(splitStress("ทำไม", "ไม่มี")).toEqual([{ text: "ทำไม", stress: false }]);
     expect(splitStress("ทำไม", undefined)).toEqual([{ text: "ทำไม", stress: false }]);
-    expect(lastPhrase("ตีสองแล้ว ยังไม่รู้ จะเลือกคณะอะไร")).toBe("จะเลือกคณะอะไร");
-    expect(lastPhrase("สั้น")).toBe("");
   });
 
   it("lands a line in two stepped frames, whole from the first", () => {
-    expect([0, 1, 2, 40].map(landScale)).toEqual([0.9, 0.96, 1, 1]);
+    expect([0, 1, 2, 40].map((f) => landScale(f, 90))).toEqual([0.9, 0.96, 1, 1]);
+  });
+
+  it("opens cold: a line starting on frame 0 (the cover) is already landed", () => {
+    expect(landScale(0, 0)).toBe(1);
   });
 });
 

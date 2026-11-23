@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 import { STORY_SCRIPTS } from "@/lib/radar-stories";
-import { beatMs, defaultBeatMs, FRAME_MS, hookMs, STORY_FPS, toFrames } from "@/lib/radar-stories/timing";
+import { beatMs, defaultBeatMs, FRAME_MS, STORY_FPS, toFrames } from "@/lib/radar-stories/timing";
 import type { StoryScript } from "@/lib/radar-stories/types";
 
 import { storyEndCard, storyTiktokUrl, splitKeyword } from "../story/endCard";
@@ -21,10 +21,8 @@ describe("beat lengths", () => {
     expect(defaultBeatMs("ที่".repeat(28))).toBeCloseTo(defaultBeatMs("ก".repeat(28)));
   });
 
-  it("honours an explicit ms, and keeps the hook within 1.5 to 2.5 s", () => {
+  it("honours an explicit ms", () => {
     expect(beatMs({ lineTh: "สั้น", ms: 3200 })).toBe(3200);
-    expect(hookMs("ก")).toBe(1500);
-    expect(hookMs("ก".repeat(28))).toBe(2500);
   });
 });
 
@@ -36,9 +34,8 @@ describe.each([lost, round1])("timeline for $id", (script: StoryScript) => {
     expect(JSON.stringify(buildStoryTimeline(structuredClone(script)))).toBe(JSON.stringify(t));
   });
 
-  it("sums: hook, beats and end card back to back, whole frames, total = sum", () => {
-    expect(t.hook.startF).toBe(0);
-    expect(t.beats[0].startF).toBe(t.hook.endF);
+  it("opens cold on the first line, then beats and end card back to back, whole frames, total = sum", () => {
+    expect(t.beats[0].startF).toBe(0);
     t.beats.forEach((b, i) => {
       expect(Number.isInteger(b.startF) && Number.isInteger(b.endF)).toBe(true);
       expect(b.endF - b.startF).toBe(toFrames(beatMs(script.beats[i])));
@@ -46,7 +43,7 @@ describe.each([lost, round1])("timeline for $id", (script: StoryScript) => {
     });
     expect(t.end.startF).toBe(t.beats[t.beats.length - 1].endF);
     expect(t.end.endF).toBe(t.totalF);
-    const sum = t.hook.endF + t.beats.reduce((a, b) => a + b.endF - b.startF, 0) + (t.end.endF - t.end.startF);
+    const sum = t.beats.reduce((a, b) => a + b.endF - b.startF, 0) + (t.end.endF - t.end.startF);
     expect(sum).toBe(t.totalF);
     expect(t.seconds).toBeCloseTo(t.totalF / STORY_FPS, 3);
     expect(t.seconds).toBeGreaterThanOrEqual(20);
@@ -95,7 +92,8 @@ describe.each([lost, round1])("timeline for $id", (script: StoryScript) => {
   });
 
   it("finds the phase and segment for any frame", () => {
-    expect(phaseAt(t, 0).kind).toBe("hook");
+    const first = phaseAt(t, 0);
+    expect(first.kind === "beat" && first.cue.index).toBe(0); // frame 0, the cover, is the first line
     expect(phaseAt(t, t.end.startF).kind).toBe("end");
     const mid = t.beats[2];
     const p = phaseAt(t, mid.startF + 1);
@@ -113,7 +111,8 @@ describe.each([lost, round1])("timeline for $id", (script: StoryScript) => {
     }
     expect(cues.coin).toBeGreaterThan(cues.cuts[cues.cuts.length - 1]);
     const moods = cues.moods!;
-    expect(moods[0]).toEqual([0, "build"]);
+    expect(moods[0][0]).toBe(0);
+    expect(["dark", "light"]).toContain(moods[0][1]); // a cold open: straight into the story's mood, no build-up
     expect(moods[moods.length - 1][1]).toBe("offer");
     moods.slice(1).forEach((m, i) => expect(m[0]).toBeGreaterThan(moods[i][0]));
   });
@@ -150,13 +149,11 @@ describe("cast continuity", () => {
 });
 
 describe("hook variants", () => {
-  it("only change the hook's length", () => {
+  it("do not change the film: the reel opens cold, the hook is caption text", () => {
     const main = buildStoryTimeline(lost);
     const v = buildStoryTimeline(lost, lost.hookVariantsTh[1]);
     expect(v.hookTh).toBe(lost.hookVariantsTh[1]);
-    const shift = v.hook.endF - main.hook.endF;
-    expect(v.totalF - main.totalF).toBe(shift);
-    expect(v.beats.map((b) => b.endF - b.startF)).toEqual(main.beats.map((b) => b.endF - b.startF));
+    expect({ ...v, hookTh: main.hookTh }).toEqual(main);
   });
 });
 

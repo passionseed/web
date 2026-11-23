@@ -19,7 +19,7 @@ import type { StoryEndCard } from "./endCard";
 import { AvatarActor, HostActor, mouthOpen } from "./StoryCast";
 import { EndCardView } from "./StoryEndCard";
 import { Dim, FilmGrain, PixelWipe, SceneArt, SceneForeground } from "./StoryScene";
-import { BigLine, hookScale, NarrationLine, SpeechBubble } from "./StoryText";
+import { BigLine, NarrationLine, SpeechBubble } from "./StoryText";
 import { hostMoodAt, phaseAt, segmentAt, wipeAt, type CastWho, type StoryTimeline } from "./storyTimeline";
 import "./storyReel.css";
 
@@ -53,10 +53,9 @@ export function StoryReel({ timeline, frame, card }: { timeline: StoryTimeline; 
 
   const xs = stageXs(segment.cast.map((c) => c.who));
   const placed = segment.cast.map((c, i) => ({ ...c, x: xs[i], enterF: c.enterF > segment.startF ? c.enterF : NO_ENTRANCE }));
-  // During the hook only the people already there at the start are on stage.
-  const onStage = placed.filter((p) => f >= p.enterF && (phase.kind !== "hook" || p.enterF === NO_ENTRANCE));
+  const onStage = placed.filter((p) => f >= p.enterF);
   const host = placed.find((p) => p.who === "host");
-  const big = phase.kind === "hook" || Boolean(cue?.beat.big);
+  const big = Boolean(cue?.beat.big);
   // Words stay above the highest head on stage.
   const headY = onStage.length ? Math.min(...onStage.map((p) => headTop(p.who))) : null;
 
@@ -119,7 +118,6 @@ export function StoryReel({ timeline, frame, card }: { timeline: StoryTimeline; 
         />
       </div>
       <div key="words" className="absolute inset-0">
-        {phase.kind === "hook" ? <BigLine text={timeline.hookTh} who={null} hook headY={headY} scale={hookScale(f, timeline.hook.endF)} /> : null}
         {cue && cue.beat.big ? <BigLine text={cue.beat.lineTh} who={cue.beat.who} stress={cue.beat.stressTh} headY={headY} /> : null}
         {cue && !cue.beat.big && cue.beat.who === "text" ? <NarrationLine cue={cue} frame={f} headY={headY} /> : null}
         {cue && !cue.beat.big && speaker ? (

@@ -9,7 +9,7 @@ import { nextFitSize, overflowFactor } from "../story/fit";
 import { AVATAR_FRAMES, FRIEND_FRAMES, MOTHER_FRAMES, topRow } from "../story/sprites";
 import { blinking, HOST_LISTENER_FILTER, idleBob, mouthOpen } from "../story/StoryCast";
 import { endUrlSize, END_COLUMN } from "../story/StoryEndCard";
-import { bigBand, BOX_TOP, bigFontSize, hookScale, lineLength, phraseParts, phrases } from "../story/StoryText";
+import { bigBand, BOX_TOP, bigFontSize, lineLength, phraseParts, phrases } from "../story/StoryText";
 
 describe("story text", () => {
   it("breaks lines only between phrases, keeping numbers with their words", () => {
@@ -78,15 +78,6 @@ describe("big text", () => {
     expect(bigBand(headTop("parent")).bottom).toBeLessThan(band.bottom); // the mother is taller
     const empty = bigBand(null);
     expect(empty.bottom - empty.top).toBe(236);
-    expect(bigBand(studentHead, true).top).toBeGreaterThanOrEqual(SAFE.top);
-  });
-
-  it("punches the hook in after the cover frame, from the frame number alone", () => {
-    expect(hookScale(0, 60)).toBe(1); // frame 0 is the cover: at rest
-    const scales = Array.from({ length: 60 }, (_, f) => hookScale(f, 60));
-    expect(new Set(scales.slice(0, 45)).size).toBeGreaterThan(20); // it moves through the first 1.5 s
-    expect(Math.max(...scales)).toBeLessThanOrEqual(1.06);
-    expect(hookScale(17, 60)).toBe(hookScale(17, 60));
   });
 });
 
@@ -154,7 +145,7 @@ describe("story stage", () => {
     expect(topRow(FRIEND_FRAMES.idle)).toBeGreaterThan(topRow(AVATAR_FRAMES.idle));
   });
 
-  it("breathes and blinks from the frame number, inside the hook", () => {
+  it("breathes and blinks from the frame number, from the first frames", () => {
     for (const who of ["student", "friend", "parent"] as const) {
       const bobs = Array.from({ length: 45 }, (_, f) => idleBob(f, who));
       expect(new Set(bobs).size).toBe(2); // moves within the first 1.5 s
