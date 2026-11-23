@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { trirong } from "@/components/hackathon/elemental/fonts";
+import { NextSteps } from "@/components/hackathon/elemental/NextSteps";
 import { PaidBadge, PayWithSlip } from "@/components/hackathon/elemental/PayWithSlip";
 import { TeamInvite } from "@/components/hackathon/elemental/TeamInvite";
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
@@ -44,10 +45,10 @@ export default async function ElementalPayPage({ params }: { params: Promise<{ t
             <p className="text-lg">
               {who} · {people} · ชำระแล้ว ฿{reg.amountBaht.toLocaleString("en-US")}
             </p>
-            <p style={{ color: EL.inkSoft }}>
-              งานจัด{ELEMENTAL.venueTh} ทีมงานจะส่งลิงก์เข้า Discord ทางอีเมลและเบอร์โทรที่ให้ไว้ ก่อนวันงาน มีคำถามทักไลน์ {SHIFT_PAYMENT.lineId}
-            </p>
             {reg.team && <TeamInvite team={reg.team} />}
+            <div className="pt-4">
+              <NextSteps inTeam={Boolean(reg.team)} paid={reg.status === "paid"} />
+            </div>
             <Link href="/hackathon/elemental" className="inline-block text-sm underline underline-offset-4" style={{ color: EL.inkSoft }}>
               กลับหน้า {ELEMENTAL.edition} Hackathon
             </Link>
@@ -60,8 +61,10 @@ export default async function ElementalPayPage({ params }: { params: Promise<{ t
             <p className="text-lg">
               ระบบตรวจสลิปอัตโนมัติไม่ได้ในตอนนี้ ทีมงานจะตรวจให้เองภายใน 24 ชั่วโมง แล้วหน้านี้จะเปลี่ยนเป็นยืนยันที่นั่ง
             </p>
-            <p style={{ color: EL.inkSoft }}>เก็บลิงก์หน้านี้ไว้ มีคำถามทักไลน์ {SHIFT_PAYMENT.lineId}</p>
             {reg.team && <TeamInvite team={reg.team} />}
+            <div className="pt-4">
+              <NextSteps inTeam={Boolean(reg.team)} paid={reg.status === "paid"} />
+            </div>
           </section>
         ) : reg.status === "cancelled" ? (
           <section className="mt-6 space-y-4">

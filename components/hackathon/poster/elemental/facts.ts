@@ -30,7 +30,13 @@ export const ELEMENTAL = {
   groupPriceBaht: 149,
   prizeTotalBaht: 20000,
   theme: "Environmental negligence",
-  url: "passionseed.org/hackathon",
+  /** The permanent link. /hackathon redirects here while Elemental is current. */
+  url: "passionseed.org/hackathon/elemental",
+  /** Discord invite for the event (Big, 2026-11-23). Shown only once a seat is paid. */
+  discordInviteUrl: "https://discord.gg/ZrJUR8VnC",
+  /** LINE OpenChat for people who signed up (Big, 2026-11-23). Shown only after sign-up. */
+  lineOpenChatUrl:
+    "https://line.me/ti/g2/5prSQrsDW52jlyXOWzmuQwIw7MB31rA1fL4DzA?utm_source=invitation&utm_medium=link_copy&utm_campaign=default",
   /** Database key for registrations. */
   slug: "elemental-2026",
   /** Last day to sign up, Bangkok time (inclusive). */

@@ -28,8 +28,18 @@ export type RegistrationEmail = {
   team: { name: string; inviteCode: string } | null;
 };
 
+/**
+ * Where the email's links go: this deployment on a Vercel preview (so a test
+ * sign-up comes back to the code being tested), passionseed.org otherwise.
+ */
+function linkBase(): string {
+  const branchUrl = process.env.VERCEL_BRANCH_URL;
+  if (process.env.VERCEL_ENV === "preview" && branchUrl) return `https://${branchUrl}`;
+  return siteUrl();
+}
+
 export function registrationEmailContent({ payToken, amountBaht, team }: Omit<RegistrationEmail, "to">) {
-  const base = siteUrl();
+  const base = linkBase();
   const payUrl = `${base}/hackathon/join/${payToken}`;
   const inviteUrl = team ? `${base}/hackathon/join?team=${team.inviteCode}` : null;
   const subject = `สมัคร ${ELEMENTAL.edition} Hackathon แล้ว: ลิงก์ของคุณ`;

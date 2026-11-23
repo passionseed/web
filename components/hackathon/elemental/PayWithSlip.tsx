@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Download, Loader2, Upload } from "lucide-react";
 
@@ -11,8 +11,59 @@ import { prepareSlip } from "@/lib/hackathon/elemental/slip-image";
 
 /**
  * Pay for a sign-up: transfer the exact amount by PromptPay, then upload
- * the slip. The server checks it with SlipOK and answers right away.
+ * the slip. The server checks it (RDCW or SlipOK) and answers right away.
  */
+
+/**
+ * Save the QR to the phone's photos so a bank app can scan it. A plain
+ * download link lands in Files on iOS browsers (Arc, Safari), where bank apps
+ * can't see it; the share sheet has "Save Image", which goes to Photos.
+ */
+function SaveQrButton() {
+  // Loaded ahead, so the share sheet opens straight from the tap (iOS refuses
+  // a share that starts after an await).
+  const qrFile = useRef<File | null>(null);
+  useEffect(() => {
+    fetch(SHIFT_PAYMENT.qrSrc)
+      .then((res) => res.blob())
+      .then((blob) => {
+        qrFile.current = new File([blob], "passionseed-promptpay.jpg", { type: blob.type || "image/jpeg" });
+      })
+      .catch(() => {});
+  }, []);
+
+  const save = async () => {
+    const file = qrFile.current;
+    if (file && navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file] });
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return; // closed the share sheet
+      }
+    }
+    const a = document.createElement("a");
+    a.href = SHIFT_PAYMENT.qrSrc;
+    a.download = "passionseed-promptpay.jpg";
+    a.click();
+  };
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={save}
+        className="mt-3 inline-flex w-full items-center justify-center gap-2 text-sm underline underline-offset-4"
+        style={{ color: EL.inkSoft }}
+      >
+        <Download className="h-4 w-4" /> บันทึก QR ลงรูปภาพ
+      </button>
+      <p className="mt-1 text-center text-xs" style={{ color: EL.inkSoft }}>
+        บนมือถือ กดแล้วเลือก &quot;Save Image&quot; หรือแคปหน้าจอนี้ แล้วเปิดสแกนจากรูปในแอปธนาคาร
+      </p>
+    </>
+  );
+}
 
 type Result =
   | { result: "paid" }
@@ -88,14 +139,7 @@ export function PayWithSlip({ token, amountBaht }: { token: string; amountBaht: 
             className="h-auto w-full"
           />
         </div>
-        <a
-          href={SHIFT_PAYMENT.qrSrc}
-          download
-          className="mt-3 inline-flex w-full items-center justify-center gap-2 text-sm underline underline-offset-4"
-          style={{ color: EL.inkSoft }}
-        >
-          <Download className="h-4 w-4" /> บันทึก QR ไปสแกนในแอปธนาคาร
-        </a>
+        <SaveQrButton />
       </div>
 
       <div>
