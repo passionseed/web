@@ -1,8 +1,12 @@
+import type { Metadata } from "next";
+
 import { HomePage } from "@/components/home/HomePage";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { unstable_cache } from "next/cache";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 /**
  * The real "น้องๆ ที่เราได้ดูแล" figure for the landing testimonials: every

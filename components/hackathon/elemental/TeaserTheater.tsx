@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { motion, useReducedMotion, useTransform } from "framer-motion";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 
 import styles from "./elemental-cinema.module.css";
 import { TEASER_MEDIA } from "./media";
 import { useElementalSound } from "./sound-context";
+import { useSectionScroll } from "./use-section-scroll";
 
 const VIDEO_ID = "teaser";
 
@@ -30,7 +31,7 @@ export function TeaserScreening({ joinHref, open }: { joinHref: string; open: bo
   const [ended, setEnded] = useState(false);
   const hasPlayedInViewRef = useRef(false);
 
-  const { scrollYProgress } = useScroll({
+  const scrollYProgress = useSectionScroll({
     target: sectionRef,
     offset: ["start end", "end start"],
   });
@@ -50,7 +51,10 @@ export function TeaserScreening({ joinHref, open }: { joinHref: string; open: bo
   const videoSrc = isPortraitScreen ? TEASER_MEDIA.video9x16 : TEASER_MEDIA.video4x5;
   const posterSrc = isPortraitScreen ? TEASER_MEDIA.poster9x16 : TEASER_MEDIA.poster4x5;
 
-  // Progressive loading: only fetch the 5.5 MB teaser once the user approaches it.
+  // Lazy loading: nothing until the teaser is about half a screen away, then
+  // only the poster and the video's header. The 5 to 8 MB video itself streams
+  // when it starts playing (55% in view), so visitors who never reach it
+  // download none of it.
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
@@ -61,7 +65,7 @@ export function TeaserScreening({ joinHref, open }: { joinHref: string; open: bo
           preloader.disconnect();
         }
       },
-      { rootMargin: "1000px 0px" }
+      { rootMargin: "400px 0px" }
     );
     preloader.observe(section);
     return () => preloader.disconnect();
@@ -162,10 +166,10 @@ export function TeaserScreening({ joinHref, open }: { joinHref: string; open: bo
             key={videoSrc}
             ref={videoRef}
             src={videoSrc}
-            poster={posterSrc}
+            poster={nearViewport ? posterSrc : undefined}
             muted={!soundOn}
             playsInline
-            preload={nearViewport ? "auto" : "none"}
+            preload={nearViewport ? "metadata" : "none"}
             tabIndex={0}
             aria-label="ทีเซอร์ Elemental Hackathon คลิกเพื่อเล่นใหม่พร้อมเสียง กด Space หรือ K เพื่อหยุด"
             onClick={handleVideoClick}

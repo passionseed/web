@@ -48,7 +48,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/hackathon`,
+      url: `${baseUrl}/hackathon/elemental`,
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.8,
@@ -60,16 +60,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
+      url: `${baseUrl}/request-for-winners`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.7,
+    },
+    {
       url: `${baseUrl}/about`,
       lastModified: now,
       changeFrequency: "monthly",
       priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/hackathon/sponsor`,
-      lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.5,
     },
     // Career Radar code guides: cover + every level (live guides only on production).
     ...guideSitemapEntries(allGuides(), baseUrl),

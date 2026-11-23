@@ -19,7 +19,7 @@ export const ELEMENT_LABELS: Readonly<Record<ElementKey, { readonly en: string; 
   earth: { en: "Earth", th: "ดิน" },
   air: { en: "Air", th: "ลม" },
   fire: { en: "Fire", th: "ไฟ" },
-  aether: { en: "Aether", th: "ธาตุที่ 5" },
+  aether: { en: "Aether", th: "ธาตุที่มองไม่เห็น" },
 };
 
 export function isElementKey(value: unknown): value is ElementKey {

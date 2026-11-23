@@ -9,6 +9,7 @@ jest.mock("@/lib/supabase/auth", () => ({ isAnonymousUser: () => false }));
 const ORIGIN = "https://passionseed.org";
 const getUser = jest.fn();
 const from = jest.fn();
+const rpc = jest.fn();
 
 // A fresh account with no profile row and no guardian consent: the onboard
 // gate considers it unfinished.
@@ -24,7 +25,8 @@ function noRowQuery() {
 beforeEach(() => {
   jest.clearAllMocks();
   from.mockImplementation(noRowQuery);
-  (createServerClient as jest.Mock).mockReturnValue({ auth: { getUser }, from });
+  rpc.mockImplementation(noRowQuery);
+  (createServerClient as jest.Mock).mockReturnValue({ auth: { getUser }, from, rpc });
 });
 
 function signedIn() {
@@ -55,6 +57,7 @@ describe("onboard gate for a signed-in user who has not finished onboard", () =>
     expect(response.status).toBe(200);
     // The exemption skips the profile lookup entirely.
     expect(from).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
   });
 
   it("keeps the query string of a board share link", async () => {
@@ -66,6 +69,7 @@ describe("onboard gate for a signed-in user who has not finished onboard", () =>
     const response = await visit("/shift/island");
     expect(response.headers.get("location")).toBeNull();
     expect(from).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
   });
 
   it.each(["/dashboard", "/hackathon-old", "/whiteboards"])(
@@ -73,7 +77,7 @@ describe("onboard gate for a signed-in user who has not finished onboard", () =>
     async (path) => {
       const response = await visit(path);
       expect(response.headers.get("location")).toBe(`${ORIGIN}/onboard`);
-      expect(from).toHaveBeenCalledWith("profiles");
+      expect(rpc).toHaveBeenCalledWith("get_my_profile");
     }
   );
 

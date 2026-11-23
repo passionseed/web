@@ -158,23 +158,23 @@ export default function ProfilePage() {
 
   const createProfile = async (user: any) => {
     try {
-      const { data: newProfile, error } = await supabase
-        .from('profiles')
-        .insert({
-          id: user.id,
-          email: user.email,
-          full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
-          username:
-            user.user_metadata?.preferred_username ||
-            user.email?.split('@')[0] ||
-            `user_${user.id.slice(0, 8)}`,
-          avatar_url: user.user_metadata?.avatar_url || null,
-          education_level: 'high_school',
-        })
-        .select('*')
-        .single()
+      const { error: insertError } = await supabase.from('profiles').insert({
+        id: user.id,
+        email: user.email,
+        full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
+        username:
+          user.user_metadata?.preferred_username ||
+          user.email?.split('@')[0] ||
+          `user_${user.id.slice(0, 8)}`,
+        avatar_url: user.user_metadata?.avatar_url || null,
+        education_level: 'high_school',
+      })
+      // Private profile columns are only readable for your own row, through get_my_profile.
+      const { data: newProfile, error } = insertError
+        ? { data: null, error: insertError }
+        : await supabase.rpc('get_my_profile').single()
 
-      if (error) {
+      if (error || !newProfile) {
         console.error('Error creating profile:', error)
         toast.error('Failed to create profile')
         return null
@@ -226,9 +226,7 @@ export default function ProfilePage() {
       let nextProfile: UserProfile | null = null
 
       const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
+        .rpc('get_my_profile')
         .single()
 
       if (profileError) {

@@ -73,9 +73,8 @@ async function needsOnboard(
 ): Promise<boolean> {
   const [{ data: profile }, { data: guardianConsent }] = await Promise.all([
     supabase
-      .from('profiles')
+      .rpc('get_my_profile')
       .select(`${PROFILE_COMPLETION_SELECT}, is_onboarded`)
-      .eq('id', userId)
       .maybeSingle(),
     supabase
       .from('profile_guardian_consents')

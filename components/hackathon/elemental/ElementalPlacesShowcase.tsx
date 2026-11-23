@@ -1,22 +1,46 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { motion, useReducedMotion, useTransform } from "framer-motion";
 
 import { EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 
+import { ELEMENT_DETAILS } from "./challenges";
+import { ElementDetailSheet } from "./ElementDetailSheet";
+import { MoreButton } from "./MoreButton";
 import {
   ELEMENT_CHAPTERS,
-  ELEMENT_SCRUB_FRAME_COUNT,
+  ELEMENT_KEYFRAMES,
+  elementLabel,
   elementFrameUrl,
   type ElementChapter,
+  type ElementKey,
 } from "./media";
+import { blockThresholds, DISSOLVE_BLOCK_PX, keyframeBlend, seedFromKey } from "./scrub-dissolve";
+import { useSectionScroll } from "./use-section-scroll";
+
+const HASH_PREFIX = "#element-";
 
 const CANVAS_W = 600;
 const CANVAS_H = 750;
-/** Milestone frames fetched first so fast scrollers immediately see calm -> wrecked progression. */
-const MILESTONE_INDICES = [1, 8, 15, 22, 29, 36];
+
+/**
+ * Thai has no spaces between words, so the browser can break inside one
+ * ("ไม่รู้/ตัว", "ดี/ปเฟก"). Keep each phrase between separators on one line.
+ */
+function Phrases({ text, separator }: { text: string; separator: string }) {
+  return (
+    <>
+      {text.split(separator).map((part, i) => (
+        <span key={i}>
+          {i > 0 && separator}
+          <span className="whitespace-nowrap">{part}</span>
+        </span>
+      ))}
+    </>
+  );
+}
 
 function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement) {
   const iw = img.naturalWidth || CANVAS_W;
@@ -30,25 +54,27 @@ function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement) {
 }
 
 /**
- * Apple-style scroll-scrubbed chapter:
- * A 220svh sticky runway where vertical scroll directly determines which of the
- * 36 pre-extracted WebP corruption frames is drawn onto a sharp 4:5 canvas.
- * Zero video-seek stutter, silky 60fps forward and backward on iOS/Desktop,
- * lazy-loaded one chapter ahead via IntersectionObserver.
+ * Scroll-scrubbed chapter: a 220svh sticky runway where scroll position picks
+ * the picture on a sharp 4:5 canvas. Only the 6 keyframes are downloaded
+ * (about 250 KB a chapter instead of 1.5 MB for all 36 frames); between two
+ * keyframes the next one dissolves in block by block, which keeps the glitch
+ * look. Frames load once the chapter is about a screen away.
  */
 function ScrubbedElementChapter({
   chapter,
   mediaOnRight,
+  onOpenDetail,
 }: {
   chapter: ElementChapter;
   mediaOnRight: boolean;
+  onOpenDetail: () => void;
 }) {
   const runwayRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
 
-  const { scrollYProgress } = useScroll({
+  const scrollYProgress = useSectionScroll({
     target: runwayRef,
     offset: ["start start", "end end"],
   });
@@ -67,101 +93,94 @@ function ScrubbedElementChapter({
     const canvas = canvasRef.current;
     if (!runway || !canvas) return;
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    const layer = document.createElement("canvas");
+    layer.width = CANVAS_W;
+    layer.height = CANVAS_H;
+    const layerCtx = layer.getContext("2d");
+    if (!ctx || !layerCtx) return;
 
-    const frames: (HTMLImageElement | null)[] = new Array(ELEMENT_SCRUB_FRAME_COUNT).fill(null);
-    let loadedStarted = false;
+    const cols = Math.ceil(CANVAS_W / DISSOLVE_BLOCK_PX);
+    const rows = Math.ceil(CANVAS_H / DISSOLVE_BLOCK_PX);
+    const thresholds = blockThresholds(cols * rows, seedFromKey(chapter.key));
+    const frames: (HTMLImageElement | null)[] = ELEMENT_KEYFRAMES.map(() => null);
     let disposed = false;
-    let targetFloat = 0;
-    let currentFloat = 0;
-    let lastDrawnIndex = -1;
+    let targetProgress = 0;
+    let currentProgress = 0;
+    let lastDrawnKey = "";
     let rafId = 0;
 
-    const drawNearestLoaded = (desiredIndex: number) => {
-      const clamped = Math.min(ELEMENT_SCRUB_FRAME_COUNT - 1, Math.max(0, desiredIndex));
-      let pick = frames[clamped];
-      if (!pick) {
-        // Fall back to nearest already-loaded frame so canvas is never blank while streaming.
-        for (let d = 1; d < ELEMENT_SCRUB_FRAME_COUNT; d++) {
-          if (clamped - d >= 0 && frames[clamped - d]) {
-            pick = frames[clamped - d];
-            break;
-          }
-          if (clamped + d < ELEMENT_SCRUB_FRAME_COUNT && frames[clamped + d]) {
-            pick = frames[clamped + d];
-            break;
-          }
+    const nearestLoaded = (index: number): HTMLImageElement | null => {
+      for (let d = 0; d < frames.length; d++) {
+        const before = frames[index - d];
+        if (before) return before;
+        const after = frames[index + d];
+        if (after) return after;
+      }
+      return null;
+    };
+
+    // Draw keyframe `from`, then the blocks of `to` whose threshold the mix has passed.
+    const draw = (progress: number): boolean => {
+      const { from, to, mix } = keyframeBlend(progress, frames.length);
+      const base = frames[from] ?? nearestLoaded(from);
+      if (!base) return false;
+      drawCover(ctx, base);
+      const next = frames[to];
+      if (!frames[from] || !next || mix <= 0) return true;
+
+      layerCtx.globalCompositeOperation = "source-over";
+      layerCtx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+      drawCover(layerCtx, next);
+      const mask = new Path2D();
+      for (let i = 0; i < thresholds.length; i++) {
+        if (thresholds[i] < mix) {
+          mask.rect((i % cols) * DISSOLVE_BLOCK_PX, Math.floor(i / cols) * DISSOLVE_BLOCK_PX, DISSOLVE_BLOCK_PX, DISSOLVE_BLOCK_PX);
         }
       }
-      if (pick && pick.complete && pick.naturalWidth > 0) {
-        drawCover(ctx, pick);
-      }
+      layerCtx.globalCompositeOperation = "destination-in";
+      layerCtx.fill(mask);
+      ctx.drawImage(layer, 0, 0);
+      return true;
     };
 
-    // Draw pristine before still immediately
-    const posterImg = new window.Image();
-    posterImg.decoding = "async";
-    posterImg.src = chapter.before;
-    posterImg.onload = () => {
-      if (disposed) return;
-      if (!frames[0]) frames[0] = posterImg;
-      if (lastDrawnIndex <= 0) drawCover(ctx, posterImg);
-    };
-
-    const loadFrame = (oneBasedIndex: number) => {
-      const img = new window.Image();
-      img.decoding = "async";
-      img.src = elementFrameUrl(chapter.key, oneBasedIndex);
-      img.onload = () => {
-        if (disposed) return;
-        frames[oneBasedIndex - 1] = img;
-        if (Math.round(currentFloat) === oneBasedIndex - 1) {
-          drawCover(ctx, img);
-        }
-      };
-    };
-
-    const startLoadingSequence = () => {
-      if (loadedStarted) return;
-      loadedStarted = true;
-      // Milestones first, then fill in the intermediate frames
-      for (const idx of MILESTONE_INDICES) {
-        loadFrame(idx);
-      }
-      const milestoneSet = new Set(MILESTONE_INDICES);
-      for (let i = 1; i <= ELEMENT_SCRUB_FRAME_COUNT; i++) {
-        if (!milestoneSet.has(i)) loadFrame(i);
-      }
+    const loadKeyframes = () => {
+      ELEMENT_KEYFRAMES.forEach((frameNumber, i) => {
+        const img = new window.Image();
+        img.decoding = "async";
+        img.onload = () => {
+          if (disposed) return;
+          frames[i] = img;
+          lastDrawnKey = "";
+        };
+        img.src = elementFrameUrl(chapter.key, frameNumber);
+      });
     };
 
     const loaderObserver = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          startLoadingSequence();
+          loadKeyframes();
           loaderObserver.disconnect();
         }
       },
-      { rootMargin: "1400px 0px" }
+      { rootMargin: "800px 0px" }
     );
     loaderObserver.observe(runway);
 
     // Smooth damped RAF loop synced to Framer Motion scroll progress
     const unsubscribe = scrollYProgress.on("change", (p) => {
-      const clampedP = Math.min(1, Math.max(0, p));
-      targetFloat = clampedP * (ELEMENT_SCRUB_FRAME_COUNT - 1);
+      targetProgress = Math.min(1, Math.max(0, p));
       if (progressBarRef.current) {
-        progressBarRef.current.style.transform = `scaleX(${clampedP})`;
+        progressBarRef.current.style.transform = `scaleX(${targetProgress})`;
       }
     });
 
     const tick = () => {
       if (disposed) return;
-      currentFloat += (targetFloat - currentFloat) * 0.22;
-      const idx = Math.round(currentFloat);
-      if (idx !== lastDrawnIndex) {
-        lastDrawnIndex = idx;
-        drawNearestLoaded(idx);
-      }
+      currentProgress += (targetProgress - currentProgress) * 0.22;
+      const { from, mix } = keyframeBlend(currentProgress, frames.length);
+      const key = `${from}:${Math.round(mix * 48)}`;
+      if (key !== lastDrawnKey && draw(currentProgress)) lastDrawnKey = key;
       rafId = window.requestAnimationFrame(tick);
     };
     rafId = window.requestAnimationFrame(tick);
@@ -172,7 +191,7 @@ function ScrubbedElementChapter({
       loaderObserver.disconnect();
       window.cancelAnimationFrame(rafId);
     };
-  }, [chapter.before, chapter.key, reduceMotion, scrollYProgress]);
+  }, [chapter.key, reduceMotion, scrollYProgress]);
 
   if (reduceMotion) {
     return (
@@ -202,7 +221,7 @@ function ScrubbedElementChapter({
                 fontFamily: EL_FONT.display,
                 fontSize:
                   chapter.key === "aether"
-                    ? "clamp(3.6rem, 10vw, 9.5rem)"
+                    ? "clamp(2.6rem, 6.5vw, 6.5rem)"
                     : "clamp(5.5rem, 18vw, 16rem)",
                 fontWeight: 200,
                 color: chapter.color,
@@ -211,23 +230,16 @@ function ScrubbedElementChapter({
             >
               {chapter.th}
             </h2>
-            {chapter.key === "aether" && (
-              <p
-                className="mt-2 italic text-[#e4d8ff]"
-                style={{ fontFamily: EL_FONT.display, fontSize: "clamp(1.25rem, 2.4vw, 2.2rem)", fontWeight: 300 }}
-              >
-                ธาตุที่ 5
-              </p>
-            )}
             <p className="mt-6 text-2xl text-[#faf8f4] sm:text-3xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
-              {chapter.subtitleTh}
+              <Phrases text={chapter.subtitleTh} separator=" " />
             </p>
             <p className="mt-4 max-w-[34ch] text-base leading-relaxed text-[#e6e1d7]" style={{ fontFamily: "var(--font-bai-jamjuree), sans-serif" }}>
               {chapter.whatHappensTh}
             </p>
             <p className="mt-6 max-w-[46ch] text-xs text-[#cfc9bd]" style={{ fontFamily: EL_FONT.mono }}>
-              {chapter.examplesTh}
+              <Phrases text={chapter.examplesTh} separator=" · " />
             </p>
+            <MoreButton chapter={chapter} onOpen={onOpenDetail} />
           </div>
         </div>
       </article>
@@ -239,20 +251,21 @@ function ScrubbedElementChapter({
       ref={runwayRef}
       className="relative h-[220svh] w-full border-t border-[#f3efe6]/10 bg-[#0c0d0c]"
     >
-      <div className="sticky top-0 flex h-[100svh] w-full overflow-hidden">
+      {/* Pinned under the fixed top bar, so the bar never covers the picture. */}
+      <div className="sticky top-[var(--el-header-h,0px)] flex h-[calc(100svh-var(--el-header-h,0px))] w-full overflow-hidden">
         <div
           className={`flex h-full w-full flex-col lg:items-center ${
             mediaOnRight ? "lg:flex-row-reverse" : "lg:flex-row"
           }`}
         >
-          {/* Sharp full-height 4:5 scroll-scrubbed canvas */}
-          <div className="relative h-[56svh] w-full shrink-0 bg-black lg:h-[100svh] lg:w-auto lg:aspect-[4/5] lg:max-w-[54vw]">
+          {/* Sharp full-height 4:5 scroll-scrubbed canvas. On phones it takes the height the text leaves. */}
+          <div className="relative min-h-0 w-full flex-1 bg-black lg:h-full lg:w-auto lg:flex-none lg:aspect-[4/5] lg:max-w-[54vw]">
             <canvas
               ref={canvasRef}
               width={CANVAS_W}
               height={CANVAS_H}
               role="img"
-              aria-label={`ธาตุ${chapter.th}: ${chapter.subtitleTh} เลื่อนหน้าจอเพื่อดูการเปลี่ยนแปลงจากสภาพปกติจนถูกทำลาย`}
+              aria-label={`${elementLabel(chapter.th)}: ${chapter.subtitleTh} เลื่อนหน้าจอเพื่อดูการเปลี่ยนแปลงจากสภาพปกติจนถูกทำลาย`}
               className="block h-full w-full object-cover"
             />
             {/* Hair-thin 1px bottom progress trace in element accent */}
@@ -267,7 +280,7 @@ function ScrubbedElementChapter({
 
           {/* Opposite editorial typography moving in parallax */}
           <div
-            className={`relative z-10 flex flex-1 flex-col justify-center overflow-hidden px-5 py-6 lg:px-12 lg:py-16 xl:px-16 ${
+            className={`relative z-10 flex shrink-0 flex-col justify-center overflow-hidden px-5 pb-16 pt-6 lg:flex-1 lg:px-12 lg:py-16 xl:px-16 ${
               mediaOnRight ? "lg:items-end lg:text-right" : "lg:items-start lg:text-left"
             }`}
           >
@@ -277,7 +290,7 @@ function ScrubbedElementChapter({
                 fontFamily: EL_FONT.display,
                 fontSize:
                   chapter.key === "aether"
-                    ? "clamp(3.2rem, 9.5vw, 9.5rem)"
+                    ? "clamp(2.6rem, 6.5vw, 6.5rem)"
                     : "clamp(4.6rem, 17vw, 16rem)",
                 fontWeight: 200,
                 color: chapter.color,
@@ -288,14 +301,6 @@ function ScrubbedElementChapter({
               {chapter.th}
             </motion.h2>
 
-            {chapter.key === "aether" && (
-              <p
-                className="mt-1 italic text-[#e4d8ff]"
-                style={{ fontFamily: EL_FONT.display, fontSize: "clamp(1.2rem, 2.4vw, 2.2rem)", fontWeight: 300, lineHeight: 1.2 }}
-              >
-                ธาตุที่ 5
-              </p>
-            )}
 
             <motion.p
               style={{
@@ -308,7 +313,7 @@ function ScrubbedElementChapter({
               }}
               className="mt-4 text-[#faf8f4] will-change-transform lg:mt-6"
             >
-              {chapter.subtitleTh}
+              <Phrases text={chapter.subtitleTh} separator=" " />
             </motion.p>
 
             <motion.p
@@ -326,8 +331,10 @@ function ScrubbedElementChapter({
               style={{ opacity: examplesOpacity, fontFamily: EL_FONT.mono }}
               className="mt-4 max-w-[46ch] text-xs leading-relaxed text-[#cfc9bd] lg:mt-6"
             >
-              {chapter.examplesTh}
+              <Phrases text={chapter.examplesTh} separator=" · " />
             </motion.p>
+
+            <MoreButton chapter={chapter} onOpen={onOpenDetail} />
           </div>
         </div>
       </div>
@@ -335,7 +342,41 @@ function ScrubbedElementChapter({
   );
 }
 
-export function ElementalPlacesShowcase() {
+function isElementKey(value: string): value is ElementKey {
+  return ELEMENT_CHAPTERS.some((c) => c.key === value);
+}
+
+/**
+ * The five chapters. Each one opens its full brief in a side panel, and the
+ * panel is linkable (#element-water), so a post can send people straight to it.
+ */
+export function ElementalPlacesShowcase({ joinHref, open }: { joinHref: string; open: boolean }) {
+  const [activeKey, setActiveKey] = useState<ElementKey | null>(null);
+
+  useEffect(() => {
+    const fromHash = () => {
+      const hash = window.location.hash;
+      if (!hash.startsWith(HASH_PREFIX)) return;
+      const key = hash.slice(HASH_PREFIX.length);
+      if (isElementKey(key)) setActiveKey(key);
+    };
+    fromHash();
+    window.addEventListener("hashchange", fromHash);
+    return () => window.removeEventListener("hashchange", fromHash);
+  }, []);
+
+  const openDetail = useCallback((key: ElementKey) => {
+    setActiveKey(key);
+    window.history.replaceState(null, "", `${HASH_PREFIX}${key}`);
+  }, []);
+
+  const closeDetail = useCallback(() => {
+    setActiveKey(null);
+    if (window.location.hash.startsWith(HASH_PREFIX)) {
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+  }, []);
+
   return (
     <section id="elements" aria-label="ห้าธาตุ Elemental Hackathon">
       {ELEMENT_CHAPTERS.map((chapter, i) => (
@@ -343,6 +384,18 @@ export function ElementalPlacesShowcase() {
           key={chapter.key}
           chapter={chapter}
           mediaOnRight={i % 2 === 1}
+          onOpenDetail={() => openDetail(chapter.key)}
+        />
+      ))}
+      {ELEMENT_CHAPTERS.map((chapter) => (
+        <ElementDetailSheet
+          key={chapter.key}
+          chapter={chapter}
+          detail={ELEMENT_DETAILS[chapter.key]}
+          open={activeKey === chapter.key}
+          onOpenChange={(next) => (next ? openDetail(chapter.key) : closeDetail())}
+          joinHref={joinHref}
+          registrationOpen={open}
         />
       ))}
     </section>

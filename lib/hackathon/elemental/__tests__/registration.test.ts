@@ -20,12 +20,39 @@ describe("elementalPriceBaht", () => {
     expect(elementalPriceBaht(5)).toBe(745);
     expect(elementalPriceBaht(0)).toBe(0);
   });
+
+  it("charges the group price to one person who creates or joins a team", () => {
+    expect(elementalPriceBaht(1, true)).toBe(149);
+  });
+});
+
+describe("registrationSchema team modes", () => {
+  it("defaults to solo", () => {
+    expect(registrationSchema.parse({ ...base, members: [adult] }).teamMode).toBe("solo");
+  });
+
+  it("needs a team name to create a team", () => {
+    expect(registrationSchema.safeParse({ ...base, members: [adult], teamMode: "create" }).success).toBe(false);
+    expect(
+      registrationSchema.safeParse({ ...base, members: [adult], teamMode: "create", teamName: "Fire" }).success,
+    ).toBe(true);
+  });
+
+  it("needs a well-formed invite code to join a team", () => {
+    expect(registrationSchema.safeParse({ ...base, members: [adult], teamMode: "join" }).success).toBe(false);
+    expect(
+      registrationSchema.safeParse({ ...base, members: [adult], teamMode: "join", inviteCode: "not-a-code" }).success,
+    ).toBe(false);
+    expect(
+      registrationSchema.safeParse({ ...base, members: [adult], teamMode: "join", inviteCode: "0123456789ab" }).success,
+    ).toBe(true);
+  });
 });
 
 describe("elementalRegistrationOpen", () => {
-  it("is open through the end of Thu 3 Dec, Bangkok time", () => {
-    expect(elementalRegistrationOpen(new Date("2026-12-03T23:59:00+07:00"))).toBe(true);
-    expect(elementalRegistrationOpen(new Date("2026-12-04T00:00:01+07:00"))).toBe(false);
+  it("is open through the end of Fri 4 Dec, Bangkok time", () => {
+    expect(elementalRegistrationOpen(new Date("2026-12-04T23:59:00+07:00"))).toBe(true);
+    expect(elementalRegistrationOpen(new Date("2026-12-05T00:00:01+07:00"))).toBe(false);
   });
 });
 

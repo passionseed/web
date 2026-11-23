@@ -38,7 +38,7 @@ describe("ElementalIslandView", () => {
       "03Rain Barrel Trackerน้ำ",
       "12Smoke Alert Mapไฟ",
       "41Ash Sorterไฟ",
-      "120Quiet Hoursธาตุที่ 5",
+      "120Quiet Hoursธาตุที่มองไม่เห็น",
     ]);
     expect(screen.getByRole("img")).toHaveAttribute("alt", ISLAND_COPY.pictureAlt(4));
   });
@@ -59,7 +59,7 @@ describe("ElementalIslandView", () => {
   it("draws five level bars in the fixed element order, filled against the highest element", () => {
     render(<ElementalIslandView island={island(SEEDED)} />);
     const bars = screen.getAllByRole("meter");
-    expect(bars.map((b) => b.getAttribute("aria-label"))).toEqual(["น้ำ", "ดิน", "ลม", "ไฟ", "ธาตุที่ 5"]);
+    expect(bars.map((b) => b.getAttribute("aria-label"))).toEqual(["น้ำ", "ดิน", "ลม", "ไฟ", "ธาตุที่มองไม่เห็น"]);
     expect(bars.map((b) => b.getAttribute("aria-valuenow"))).toEqual(["33", "0", "0", "100", "50"]);
     expect(screen.getByText(ISLAND_COPY.levelLine(6, 2))).toBeInTheDocument();
   });

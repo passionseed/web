@@ -4,6 +4,9 @@ export type ElementKey = "earth" | "water" | "air" | "fire" | "aether";
 
 export const ELEMENT_SCRUB_FRAME_COUNT = 36;
 
+/** The frames the scroll chapters load (6 of the 36); the page dissolves between them. */
+export const ELEMENT_KEYFRAMES = [1, 8, 15, 22, 29, 36] as const;
+
 export function elementFrameUrl(key: ElementKey, frameIndex: number): string {
   const clamped = Math.min(ELEMENT_SCRUB_FRAME_COUNT, Math.max(1, frameIndex));
   return `/hackathon/elemental/media/frames/${key}/${String(clamped).padStart(2, "0")}.webp`;
@@ -23,6 +26,11 @@ export const TEASER_MEDIA = {
   video9x16: "/hackathon/elemental/media/teaser-reels.mp4",
   poster9x16: "/hackathon/elemental/media/teaser-reels.webp",
 } as const;
+
+/** "ดิน" reads as "ธาตุดิน"; a name that already says ธาตุ stays as it is. */
+export function elementLabel(th: string): string {
+  return th.startsWith("ธาตุ") ? th : `ธาตุ${th}`;
+}
 
 export interface ElementChapter {
   key: ElementKey;
@@ -94,10 +102,10 @@ export const ELEMENT_CHAPTERS: readonly ElementChapter[] = [
   {
     key: "aether",
     en: "Aether",
-    th: "อีเธอร์",
-    subtitleTh: "ภัยที่มองไม่เห็น",
+    th: "ธาตุที่มองไม่เห็น",
+    subtitleTh: "AI โซเชียล และเทคที่ทำร้ายเราแบบไม่รู้ตัว",
     whatHappensTh: "ดาต้าเซ็นเตอร์ขนาดยักษ์ผุดขึ้น ดึงไฟจากสายส่งจนแสงสีม่วงแล่นผ่านและทุ่งนาแห้งเหือด",
-    examplesTh: "พลังงานที่แอปและ AI ใช้ · การฟอกเขียว · ข่าวปลอม · ขยะที่ไร้ปลายทาง",
+    examplesTh: "แอปที่ออกแบบให้เลื่อนไม่หยุด · ข่าวปลอมและคลิป AI · ดีปเฟก · พลังงานที่ AI ใช้",
     color: EL.aetherViolet,
     video: "/hackathon/elemental/media/elements/aether.mp4",
     before: "/hackathon/elemental/media/elements/aether-before.webp",

@@ -123,7 +123,7 @@ export function ElementalA4Poster({ id = "elemental-a4" }: { id?: string }) {
         </Info>
         <Info tag="[สมัคร]">{ELEMENTAL.url}</Info>
         <Info tag="[ธีม]">{ELEMENTAL.theme}</Info>
-        <Info tag="[โจทย์]">ดิน น้ำ ลม ไฟ และธาตุที่ 5</Info>
+        <Info tag="[โจทย์]">ดิน น้ำ ลม ไฟ และธาตุที่มองไม่เห็น</Info>
         <Info tag="[จัดโดย]">PassionSeed · {ELEMENTAL.series}</Info>
       </div>
 
