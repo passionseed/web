@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/utils/supabase/admin";
-import type { Registration } from "@/lib/hackathon/elemental/registration";
+import { INVITE_CODE_RE, type Registration } from "@/lib/hackathon/elemental/registration";
 
 /**
  * Paid hackathon sign-ups (hackathon_event_registrations). Every call uses
@@ -18,6 +18,17 @@ export type PublicRegistration = {
   memberCount: number;
   amountBaht: number;
   memberNicknames: string[];
+  team: PublicTeam | null;
+};
+
+/** What an invite link shows: the team's name and who is in it (first names only). */
+export type PublicTeam = {
+  id: string;
+  name: string;
+  inviteCode: string;
+  roster: { name: string; paid: boolean }[];
+  /** Seats left before the team reaches ELEMENTAL.maxGroupSize. */
+  spotsLeft: number;
 };
 
 export type AdminRegistration = {
@@ -56,25 +67,87 @@ export function isPayToken(token: string): boolean {
   return TOKEN_RE.test(token);
 }
 
+const firstName = (m: { nickname: string | null; full_name: string }) =>
+  m.nickname || m.full_name.split(" ")[0];
+
+/** Start a team. Returns its id and invite code. */
+export async function createTeam(eventSlug: string, name: string): Promise<{ id: string; inviteCode: string }> {
+  const db = createAdminClient();
+  const { data, error } = await db
+    .from("hackathon_event_teams")
+    .insert({ event_slug: eventSlug, name })
+    .select("id, invite_code")
+    .single();
+  if (error || !data) throw error ?? new Error("team insert failed");
+  return { id: data.id, inviteCode: data.invite_code };
+}
+
+/** A team and its sign-ups that aren't cancelled. */
+async function loadTeam(
+  filter: { inviteCode: string; eventSlug: string } | { id: string },
+  maxSize: number,
+): Promise<PublicTeam | null> {
+  const db = createAdminClient();
+  let query = db
+    .from("hackathon_event_teams")
+    .select(
+      "id, name, invite_code, hackathon_event_registrations(status, member_count, created_at, hackathon_event_registration_members(position, nickname, full_name))",
+    );
+  query = "id" in filter
+    ? query.eq("id", filter.id)
+    : query.eq("invite_code", filter.inviteCode).eq("event_slug", filter.eventSlug);
+  const { data, error } = await query.maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+
+  const regs = (data.hackathon_event_registrations ?? [])
+    .filter((r) => r.status !== "cancelled")
+    .sort((a, b) => a.created_at.localeCompare(b.created_at));
+  const roster = regs.flatMap((r) =>
+    [...(r.hackathon_event_registration_members ?? [])]
+      .sort((a, b) => a.position - b.position)
+      .map((m) => ({ name: firstName(m), paid: r.status === "paid" })),
+  );
+  const seats = regs.reduce((n, r) => n + r.member_count, 0);
+  return {
+    id: data.id,
+    name: data.name,
+    inviteCode: data.invite_code,
+    roster,
+    spotsLeft: Math.max(0, maxSize - seats),
+  };
+}
+
+export async function getTeamByInviteCode(
+  eventSlug: string,
+  inviteCode: string,
+  maxSize: number,
+): Promise<PublicTeam | null> {
+  if (!INVITE_CODE_RE.test(inviteCode)) return null;
+  return loadTeam({ inviteCode, eventSlug }, maxSize);
+}
+
 /** Save a new sign-up and its members. Returns the pay token. */
 export async function createRegistration(
   eventSlug: string,
   input: Registration,
   amountBaht: number,
+  team: { id: string; name: string } | null = null,
 ): Promise<{ id: string; payToken: string }> {
   const db = createAdminClient();
   const { data, error } = await db
     .from("hackathon_event_registrations")
     .insert({
       event_slug: eventSlug,
-      team_name: input.teamName ?? null,
+      team_id: team?.id ?? null,
+      team_name: team?.name ?? input.teamName ?? null,
       member_count: input.members.length,
       amount_baht: amountBaht,
       contact_email: input.contactEmail,
       contact_phone: input.contactPhone,
       contact_line_id: input.contactLineId ?? null,
       // A person alone is matched with a team unless they say otherwise.
-      wants_team_matching: input.members.length === 1 ? input.wantsTeamMatching : false,
+      wants_team_matching: input.members.length === 1 && !team ? input.wantsTeamMatching : false,
       no_refund_ack: input.noRefundAck,
       contact_after_consent: input.contactAfterConsent,
       source: input.source ?? null,
@@ -104,13 +177,16 @@ export async function createRegistration(
   return { id: data.id, payToken: data.pay_token };
 }
 
-export async function getRegistrationByToken(token: string): Promise<PublicRegistration | null> {
+export async function getRegistrationByToken(
+  token: string,
+  maxTeamSize = 5,
+): Promise<PublicRegistration | null> {
   if (!isPayToken(token)) return null;
   const db = createAdminClient();
   const { data, error } = await db
     .from("hackathon_event_registrations")
     .select(
-      "id, status, team_name, member_count, amount_baht, hackathon_event_registration_members(position, nickname, full_name)",
+      "id, status, team_id, team_name, member_count, amount_baht, hackathon_event_registration_members(position, nickname, full_name)",
     )
     .eq("pay_token", token)
     .maybeSingle();
@@ -125,7 +201,8 @@ export async function getRegistrationByToken(token: string): Promise<PublicRegis
     teamName: data.team_name,
     memberCount: data.member_count,
     amountBaht: data.amount_baht,
-    memberNicknames: members.map((m) => m.nickname || m.full_name.split(" ")[0]),
+    memberNicknames: members.map(firstName),
+    team: data.team_id ? await loadTeam({ id: data.team_id }, maxTeamSize) : null,
   };
 }
 
@@ -148,6 +225,8 @@ export async function recordSlip(
     slipPath: string;
     slipCheck: unknown;
     transRef?: string;
+    /** Which checker confirmed the payment: "rdcw" or "slipok". */
+    paidBy?: string;
   },
 ): Promise<"saved" | "already_paid" | "duplicate"> {
   const db = createAdminClient();
@@ -159,7 +238,7 @@ export async function recordSlip(
       slip_check: update.slipCheck as object,
       slip_trans_ref: update.transRef ?? null,
       paid_at: update.status === "paid" ? new Date().toISOString() : null,
-      paid_by: update.status === "paid" ? "slipok" : null,
+      paid_by: update.status === "paid" ? (update.paidBy ?? "slipok") : null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", registrationId)

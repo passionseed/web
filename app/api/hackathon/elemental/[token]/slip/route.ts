@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { MAX_SLIP_BYTES } from "@/lib/hackathon/elemental/slip-image";
 import { safeServerError } from "@/lib/security/route-guards";
+import { rdcwConfigured, verifySlipRdcw } from "@/lib/rdcw/client";
 import { verifySlip } from "@/lib/slipok/client";
 import {
   getRegistrationByToken,
@@ -10,7 +11,7 @@ import {
   uploadSlip,
 } from "@/lib/supabase/hackathon-event-registrations";
 
-// SlipOK reads JPG, JPEG, PNG, JFIF and WEBP.
+// RDCW documents JPEG and PNG; SlipOK also reads WEBP.
 const EXTENSION: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
@@ -19,10 +20,10 @@ const EXTENSION: Record<string, string> = {
 
 /**
  * Upload a payment slip. The slip is stored first (so an admin can always
- * see it), then SlipOK checks it:
+ * see it), then RDCW checks it (SlipOK when RDCW isn't configured):
  * - paid: the seat is confirmed on the spot
  * - rejected / retry: the person sees why and can upload again
- * - unverified (SlipOK down, quota, not configured): status "review", a person checks it
+ * - unverified (checker down, quota, not configured): status "review", a person checks it
  */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   try {
@@ -44,8 +45,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const slipPath = `${registration.id}/${Date.now()}-${randomBytes(6).toString("hex")}.${ext}`;
     await uploadSlip(file, slipPath);
 
-    const verdict = await verifySlip(file, `slip.${ext}`, registration.amountBaht);
+    const provider = rdcwConfigured() ? "rdcw" : "slipok";
+    const verify = provider === "rdcw" ? verifySlipRdcw : verifySlip;
+    const verdict = await verify(file, `slip.${ext}`, registration.amountBaht);
     const check = {
+      provider,
       kind: verdict.kind,
       code: "code" in verdict ? verdict.code : undefined,
       checkedAt: new Date().toISOString(),
@@ -58,13 +62,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         slipPath,
         slipCheck: check,
         transRef: verdict.transRef,
+        paidBy: provider,
       });
       if (saved === "duplicate") return NextResponse.json({ result: "rejected", reason: "duplicate" });
       return NextResponse.json({ result: "paid" });
     }
 
     if (verdict.kind === "unverified") {
-      console.error("[hackathon slip] SlipOK could not decide", { code: verdict.code, detail: verdict.detail });
+      console.error("[hackathon slip] slip check could not decide", { provider, code: verdict.code, detail: verdict.detail });
       await recordSlip(registration.id, { status: "review", slipPath, slipCheck: check });
       return NextResponse.json({ result: "review" });
     }
