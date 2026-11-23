@@ -100,3 +100,22 @@
     filter: none;
   }
 }
+
+/* Sponsor CTA: the arrow leans forward on hover, like it wants to go. */
+.nudgeArrow {
+  display: inline-block;
+  transition: transform 160ms var(--el-ease-snap);
+}
+
+.nudgeLink:hover .nudgeArrow,
+.nudgeLink:focus-visible .nudgeArrow {
+  transform: translateX(6px);
+  transition: transform 700ms var(--el-ease-tension);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nudgeArrow {
+    transition: none !important;
+    transform: none !important;
+  }
+}

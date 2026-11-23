@@ -1,11 +1,12 @@
 "use client";
 
 import { useRef } from "react";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { motion, useReducedMotion, useTransform } from "framer-motion";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
-import { ELEMENTAL, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
+import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { formatThaiDate } from "@/lib/content/shift-cohort";
+import { useSectionScroll } from "./use-section-scroll";
 
 const SCHEDULE_TIME_COLOR = {
   open: EL.creamSoft,
@@ -19,15 +20,15 @@ const BEGINNER_JOURNEY = [
     color: EL.toxicCyan,
     fear: "ยังไม่มีทีม ยังไม่มีไอเดีย",
     answer:
-      "มาคนเดียวได้เลย เราช่วยจับคู่ทีมให้ก่อนเริ่มแข่ง แล้วเข้าเวิร์กช็อปแรกเพื่อฝึกสัมภาษณ์คนจริงและจับปัญหาให้เจอไปด้วยกัน",
+      "มาคนเดียวได้เลย เราช่วยจับคู่ทีมให้ก่อนเริ่ม แล้วเข้าเวิร์กช็อปแรก ฝึกสัมภาษณ์คนจริงจนเจอปัญหาที่ใช่",
     session: "เสาร์ 5 ธ.ค. · 10:00–11:00 น. · เวิร์กช็อปสัมภาษณ์และหากลุ่มลูกค้า",
   },
   {
     step: "02",
     color: EL.flameLight,
-    fear: "ไม่เคยแข่ง ไม่ต้องเขียนโค้ดเก่ง",
+    fear: "ไม่เคยแข่ง เขียนโค้ดไม่เก่ง",
     answer:
-      "งานนี้เปิดรับมือใหม่เต็มที่ เรามีเวิร์กช็อปลงมือสร้างจริงพร้อมทีมพี่เลี้ยงคอยช่วยดู ช่วยแก้จุดติดขัด และประกบให้คำปรึกษาบน Discord ตลอด 3 วัน",
+      "มีเวิร์กช็อปพาลงมือสร้างจริง พร้อมพี่เลี้ยงช่วยแก้จุดติดขัดตลอดงาน",
     session: "เสาร์ 5 ธ.ค. · 19:00–20:00 น. · เวิร์กช็อปสร้างผลงาน",
   },
   {
@@ -35,7 +36,7 @@ const BEGINNER_JOURNEY = [
     color: EL.flameCore,
     fear: "ไม่เคยพรีเซนต์งานแข่งมาก่อน",
     answer:
-      "ก่อนถึงคืนส่งงาน เรามีเวิร์กช็อปช่วยเรียบเรียงเรื่องและวิธีเล่า ให้คลิปผลงานของคุณชัด คม และส่งให้กรรมการเห็นคุณค่าได้จริง",
+      "ก่อนถึงคืนส่งงาน มีเวิร์กช็อปช่วยเรียบเรียงเรื่องและวิธีเล่า ให้คลิปผลงานของคุณชัด คม และตรงประเด็น",
     session: "อาทิตย์ 6 ธ.ค. · 19:00–20:00 น. · เวิร์กช็อปการนำเสนอ",
   },
 ] as const;
@@ -47,7 +48,7 @@ function JourneyRow({
 }) {
   const rowRef = useRef<HTMLLIElement>(null);
   const reduceMotion = useReducedMotion();
-  const { scrollYProgress } = useScroll({
+  const scrollYProgress = useSectionScroll({
     target: rowRef,
     offset: ["start 92%", "start 45%"],
   });
@@ -100,7 +101,7 @@ function JourneyRow({
 export function BeginnerJourneySection() {
   const headRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
-  const { scrollYProgress } = useScroll({
+  const scrollYProgress = useSectionScroll({
     target: headRef,
     offset: ["start 90%", "start 35%"],
   });
@@ -136,9 +137,7 @@ export function BeginnerJourneySection() {
             className="mt-6 max-w-2xl text-base leading-relaxed text-[#e8e3d9] sm:text-xl"
             style={{ fontFamily: "var(--font-bai-jamjuree), sans-serif" }}
           >
-            ไม่เคยแข่ง Hackathon มาก่อน ไม่ต้องเขียนโค้ดเก่ง และไม่ต้องมีทีมพร้อมมาจากบ้าน ตลอด{" "}
-            {ELEMENTAL.days} วันหยุดยาว ({thaiDateLine()}) {ELEMENTAL.venueTh} เรามีเวิร์กช็อปนำทางครบ
-            และทีมพี่เลี้ยงคอยช่วยดูอย่างใกล้ชิดตั้งแต่เริ่มจับโจทย์จนส่งคลิปผลงาน
+            เริ่มจากศูนย์ได้เลย ใน {ELEMENTAL.days} วันบน Discord มีเวิร์กช็อปและพี่เลี้ยงช่วยจนส่งงาน
           </p>
         </motion.div>
 

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { motion, useReducedMotion, useTransform } from "framer-motion";
 
 import { BACKGROUND, EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
@@ -13,8 +14,10 @@ import { ElementalHero } from "./ElementalHero";
 import { ElementalPlacesShowcase } from "./ElementalPlacesShowcase";
 import { ELEMENT_CHAPTERS, KEY_VISUAL_MEDIA } from "./media";
 import { ScrollHookStatement } from "./ScrollHookStatement";
+import { SponsorSection } from "./SponsorSection";
 import { ElementalSoundProvider, useElementalSound } from "./sound-context";
 import { TeaserScreening } from "./TeaserTheater";
+import { useSectionScroll } from "./use-section-scroll";
 
 function GlobalSoundControl() {
   const { soundOn, audioUnlocked, toggleSound } = useElementalSound();
@@ -40,8 +43,10 @@ function ClosingPoster({ joinHref, open }: { joinHref: string; open: boolean }) 
   const reduceMotion = useReducedMotion();
   const [isPortraitScreen, setIsPortraitScreen] = useState(false);
   const [linkInView, setLinkInView] = useState(false);
+  // The poster sits at the bottom of the page: load nothing until it's near.
+  const [nearViewport, setNearViewport] = useState(false);
 
-  const { scrollYProgress } = useScroll({
+  const scrollYProgress = useSectionScroll({
     target: sectionRef,
     offset: ["start end", "center center"],
   });
@@ -53,6 +58,22 @@ function ClosingPoster({ joinHref, open }: { joinHref: string; open: boolean }) 
     const onChange = (e: MediaQueryListEvent) => setIsPortraitScreen(e.matches);
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+    const preloader = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setNearViewport(true);
+          preloader.disconnect();
+        }
+      },
+      { rootMargin: "400px 0px" }
+    );
+    preloader.observe(section);
+    return () => preloader.disconnect();
   }, []);
 
   useEffect(() => {
@@ -85,6 +106,8 @@ function ClosingPoster({ joinHref, open }: { joinHref: string; open: boolean }) 
     return () => observer.disconnect();
   }, []);
 
+  const posterSrc = isPortraitScreen ? KEY_VISUAL_MEDIA.posterVertical : KEY_VISUAL_MEDIA.poster;
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLVideoElement>) => {
     if (e.key === " " || e.key.toLowerCase() === "k") {
       e.preventDefault();
@@ -107,12 +130,11 @@ function ClosingPoster({ joinHref, open }: { joinHref: string; open: boolean }) 
         <video
           ref={videoRef}
           src={KEY_VISUAL_MEDIA.loop}
-          poster={isPortraitScreen ? KEY_VISUAL_MEDIA.posterVertical : KEY_VISUAL_MEDIA.poster}
-          autoPlay={!reduceMotion}
+          poster={nearViewport ? posterSrc : undefined}
           muted
           loop
           playsInline
-          preload="metadata"
+          preload={nearViewport ? "metadata" : "none"}
           tabIndex={0}
           aria-label="โปสเตอร์เคลื่อนไหว Elemental Hackathon กด Space หรือ K เพื่อหยุดหรือเล่น"
           onKeyDown={handleKeyDown}
@@ -153,6 +175,20 @@ function ElementalExperienceInner({
   fontClassName: string;
 }) {
   const [pastHero, setPastHero] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+
+  // Sticky sections read the top bar's height from --el-header-h, so they pin under it.
+  useEffect(() => {
+    const main = mainRef.current;
+    const header = headerRef.current;
+    if (!main || !header) return;
+    const observer = new ResizeObserver(() => {
+      main.style.setProperty("--el-header-h", `${header.offsetHeight}px`);
+    });
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setPastHero(window.scrollY > window.innerHeight * 0.95);
@@ -166,12 +202,13 @@ function ElementalExperienceInner({
   );
 
   return (
-    <main className={`${fontClassName} ${styles.cinemaRoot} min-h-screen`}>
+    <main ref={mainRef} className={`${fontClassName} ${styles.cinemaRoot} min-h-screen`}>
       {/* Global 35mm analog grain */}
       <div className={styles.filmGrain} aria-hidden="true" />
 
       {/* Minimal Header: ink on sky over hero, solid black + cream once past */}
       <header
+        ref={headerRef}
         className="fixed inset-x-0 top-0 z-40 transition-colors duration-200"
         style={{
           backgroundColor: pastHero ? "#0c0d0c" : "transparent",
@@ -180,13 +217,33 @@ function ElementalExperienceInner({
         }}
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-10">
-          <a
-            href="#top"
-            className="text-[15px] italic"
-            style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}
-          >
-            {ELEMENTAL.edition}
-          </a>
+          {/* Who runs it: The Next Decade × PassionSeed, as on the poster */}
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <a href="#top" aria-label={`${ELEMENTAL.series}: กลับขึ้นด้านบน`}>
+              <Image
+                src="/hackathon/HackLogo-header.png"
+                alt={ELEMENTAL.series}
+                width={70}
+                height={28}
+                priority
+                className="block h-6 w-auto sm:h-7"
+                style={{
+                  filter: pastHero ? "brightness(0) invert(1)" : "brightness(0)",
+                  opacity: 0.85,
+                  transition: "filter 200ms ease",
+                }}
+              />
+            </a>
+            <span className="text-[11px] opacity-60" style={{ fontFamily: EL_FONT.mono }} aria-hidden="true">
+              ×
+            </span>
+            <Link href="/" className="flex items-center gap-1.5">
+              <Image src="/passion-seed-logo-84.png" alt="" width={28} height={28} priority className="block h-6 w-6 sm:h-7 sm:w-7" />
+              <span className="text-[15px] sm:text-[17px]" style={{ fontFamily: EL_FONT.display, fontWeight: 400 }}>
+                PassionSeed
+              </span>
+            </Link>
+          </div>
 
           {open ? (
             <Link
@@ -213,14 +270,14 @@ function ElementalExperienceInner({
       {/* ACT 1: THE VALLEY (STICKY PARALLAX HERO) */}
       <ElementalHero joinHref={joinHref} open={open} />
 
-      {/* ACT 2: SCROLL-DRIVEN HOOK ("ทีละนิด นิดๆ ในที่ที่คุณไม่เห็น") */}
+      {/* ACT 2: SCROLL-DRIVEN HOOK ("ธรรมชาติไม่ได้พังเอง ... ตรงที่ไม่มีใครมอง") */}
       <ScrollHookStatement />
 
       {/* ACT 3: THE SCREENING (FULL TEASER WITH PARALLAX + DEFAULT-ON SOUND) */}
       <TeaserScreening joinHref={joinHref} open={open} />
 
       {/* ACT 4: FIVE PLACES (APPLE-STYLE SCROLL-SCRUBBED 60FPS CANVAS CHAPTERS) */}
-      <ElementalPlacesShowcase />
+      <ElementalPlacesShowcase joinHref={joinHref} open={open} />
 
       {/* ACT 5: BEGINNER PITCH, WORKSHOPS, MENTOR SUPPORT & 3-DAY SCHEDULE */}
       <BeginnerJourneySection />
@@ -277,6 +334,18 @@ function ElementalExperienceInner({
             </div>
           </div>
 
+          {/* Where the fee goes (Big, 2026-11-22): all of it, after the hackathon's costs, hosts Request for Winners. */}
+          <p
+            className="mt-6 max-w-2xl text-base leading-relaxed"
+            style={{ fontFamily: "var(--font-bai-jamjuree), sans-serif", color: EL.inkSoft }}
+          >
+            เราไม่เก็บกำไรจากงานนี้ ค่าสมัครที่เหลือหลังหักค่าจัดงาน นำไปจัด{" "}
+            <Link href="/request-for-winners" className="underline underline-offset-4" style={{ color: EL.ink }}>
+              Request for Winners
+            </Link>{" "}
+            ทั้งหมด ให้ผลงานที่ดีที่สุดได้ไปต่อจนเป็นธุรกิจจริง
+          </p>
+
           {/* 3-step editorial list */}
           <ol className="mt-14 grid gap-8 sm:grid-cols-3">
             {[
@@ -328,6 +397,9 @@ function ElementalExperienceInner({
 
       {/* ACT 7: THE POSTER */}
       <ClosingPoster joinHref={joinHref} open={open} />
+
+      {/* For grown-ups, after the students' story: become a sponsor */}
+      <SponsorSection />
 
       {/* Footer with attribution */}
       <footer className="border-t border-[#f3efe6]/16 bg-[#0c0d0c] py-12 text-sm text-[#e0dad0]">

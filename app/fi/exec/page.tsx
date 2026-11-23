@@ -389,7 +389,7 @@ export default async function FIExecPage() {
             {[
               { href: "/hackathon", label: "Hackathon" },
               { href: "/app/beta", label: "Beta Test" },
-              { href: "/epic-sprint", label: "Epic Sprint Report" },
+              { href: "/admin/epic-sprint", label: "Epic Sprint Report" },
               { href: "https://passionseed.org", label: "Landing Page" },
             ].map((item) => (
               <Link

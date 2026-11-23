@@ -47,6 +47,13 @@ describe("Elemental cinematic media manifest", () => {
     }
   });
 
+  it("uses the Thai element names from facts.ts, so the page and the posters say the same thing", () => {
+    for (const chapter of ELEMENT_CHAPTERS) {
+      const fact = ELEMENTAL.elements.find((e) => e.key === chapter.key);
+      expect(chapter.th).toBe(fact?.th);
+    }
+  });
+
   it("contains no em dashes in user-facing copy", () => {
     const strings: string[] = ELEMENT_CHAPTERS.flatMap((c) => [
       c.th,

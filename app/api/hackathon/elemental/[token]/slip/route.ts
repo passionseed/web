@@ -1,17 +1,19 @@
 import { randomBytes } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 
+import { MAX_SLIP_BYTES } from "@/lib/hackathon/elemental/slip-image";
+import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { safeServerError } from "@/lib/security/route-guards";
-import { verifySlip } from "@/lib/slipok/client";
+import { rdcwConfigured, verifySlipRdcw } from "@/lib/rdcw/client";
+import { verifySlip, type SlipVerdict } from "@/lib/slipok/client";
 import {
+  claimSlipRef,
   getRegistrationByToken,
   recordSlip,
   uploadSlip,
 } from "@/lib/supabase/hackathon-event-registrations";
 
-const MAX_SLIP_BYTES = 5 * 1024 * 1024;
-
-// SlipOK reads JPG, JPEG, PNG, JFIF and WEBP.
+// RDCW documents JPEG and PNG; SlipOK also reads WEBP.
 const EXTENSION: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
@@ -20,10 +22,12 @@ const EXTENSION: Record<string, string> = {
 
 /**
  * Upload a payment slip. The slip is stored first (so an admin can always
- * see it), then SlipOK checks it:
+ * see it), then RDCW checks it (SlipOK when RDCW isn't configured):
  * - paid: the seat is confirmed on the spot
  * - rejected / retry: the person sees why and can upload again
- * - unverified (SlipOK down, quota, not configured): status "review", a person checks it
+ * - unverified (checker down, quota, not configured): status "review", a person checks it
+ * Every slip reference read is claimed in payment_slip_refs, so a slip used by
+ * one registration is rejected as a duplicate on any other.
  */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   try {
@@ -45,8 +49,24 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const slipPath = `${registration.id}/${Date.now()}-${randomBytes(6).toString("hex")}.${ext}`;
     await uploadSlip(file, slipPath);
 
-    const verdict = await verifySlip(file, `slip.${ext}`, registration.amountBaht);
+    const provider = rdcwConfigured() ? "rdcw" : "slipok";
+    const checked = provider === "rdcw"
+      ? await verifySlipRdcw(file, `slip.${ext}`, registration.amountBaht, registration.createdAt)
+      : await verifySlip(file, `slip.${ext}`, registration.amountBaht);
+
+    // One slip pays for one registration, whatever the checker says.
+    let verdict: SlipVerdict = checked;
+    const transRef = "transRef" in checked ? checked.transRef : undefined;
+    if (transRef) {
+      const claim = await claimSlipRef(transRef, registration.id, `hackathon:${ELEMENTAL.slug}`, provider);
+      if (claim === "taken") {
+        verdict = { kind: "rejected", reason: "duplicate", raw: checked.raw };
+      } else if (claim === "unknown" && checked.kind === "paid") {
+        verdict = { kind: "unverified", transRef, detail: "slip reference check failed", raw: checked.raw };
+      }
+    }
     const check = {
+      provider,
       kind: verdict.kind,
       code: "code" in verdict ? verdict.code : undefined,
       checkedAt: new Date().toISOString(),
@@ -59,13 +79,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         slipPath,
         slipCheck: check,
         transRef: verdict.transRef,
+        paidBy: provider,
       });
       if (saved === "duplicate") return NextResponse.json({ result: "rejected", reason: "duplicate" });
       return NextResponse.json({ result: "paid" });
     }
 
     if (verdict.kind === "unverified") {
-      console.error("[hackathon slip] SlipOK could not decide", { code: verdict.code, detail: verdict.detail });
+      console.error("[hackathon slip] slip check could not decide", { provider, code: verdict.code, detail: verdict.detail });
       await recordSlip(registration.id, { status: "review", slipPath, slipCheck: check });
       return NextResponse.json({ result: "review" });
     }

@@ -1,5 +1,6 @@
 import type React from "react";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Analytics } from "@vercel/analytics/next";
 import {
   Space_Mono,
@@ -27,6 +28,7 @@ import ErrorBoundary from "@/components/error-boundary";
 import { DevHealthCheck } from "@/components/dev-health-check";
 import { TOSAcceptanceModal } from "@/components/TOSAcceptanceModal";
 import { LanguageProvider } from "@/lib/i18n/language-context";
+import { pageLanguage } from "@/lib/i18n/page-language";
 import { CANONICAL_ORIGIN } from "@/lib/seo/canonical-origin";
 import { DirectionFinderProvider } from "@/components/education/direction-finder/direction-finder-context";
 
@@ -147,9 +149,9 @@ export const metadata: Metadata = {
     "Career exploration",
     "Proof of work",
   ],
-  alternates: {
-    canonical: "/",
-  },
+  // No site-wide canonical: a "/" here made every page that didn't set its
+  // own (358 of 371) tell Google it was a copy of the home page. Pages set
+  // their own; the home page sets "/".
   manifest: "/manifest.json",
   openGraph: {
     type: "website",
@@ -211,6 +213,9 @@ export default async function RootLayout({
     // show their own error/login state.
   }
 
+  // Thai for most pages; see lib/i18n/page-language.ts. The proxy passes the path.
+  const { lang } = pageLanguage((await headers()).get("x-page-path"));
+
   const organizationSchema = {
     "@context": "https://schema.org",
     "@graph": [
@@ -245,7 +250,7 @@ export default async function RootLayout({
   };
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={lang} suppressHydrationWarning>
       <body
         className={`${libreFranklin.variable} ${spaceMono.variable} ${krub.variable} ${baiJamjuree.variable} ${mitr.variable} ${poppins.variable} ${reenieBeanie.variable} ${kodchasan.variable} ${notoSansThai.variable} ${notoSerifThai.variable} ${instrumentSerif.variable} ${athiti.variable} ${tiny5.variable}`}
       >

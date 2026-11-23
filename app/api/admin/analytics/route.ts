@@ -1,4 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -25,9 +26,12 @@ export async function GET(request: NextRequest) {
     if (!roles) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+
+    // Analytics views are not granted to signed-in users; read them as the service role after the admin check.
+    const db = createAdminClient();
     
     // Fetch retention summary
-    const { data: retentionSummary, error: retentionError } = await supabase
+    const { data: retentionSummary, error: retentionError } = await db
       .from("analytics_retention_summary")
       .select("*")
       .single();
@@ -37,7 +41,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Fetch DAU data (last 30 days)
-    const { data: dauData, error: dauError } = await supabase
+    const { data: dauData, error: dauError } = await db
       .from("analytics_daily_active_users")
       .select("*")
       .order("activity_date", { ascending: false })
@@ -48,7 +52,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Fetch WAU data (last 12 weeks)
-    const { data: wauData, error: wauError } = await supabase
+    const { data: wauData, error: wauError } = await db
       .from("analytics_weekly_active_users")
       .select("*")
       .order("activity_week", { ascending: false })
@@ -59,7 +63,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Fetch cohort retention (last 8 weeks)
-    const { data: cohortRetention, error: cohortError } = await supabase
+    const { data: cohortRetention, error: cohortError } = await db
       .from("analytics_cohort_retention_weekly")
       .select("*")
       .order("cohort_week", { ascending: false })
@@ -70,7 +74,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Fetch onboarding funnel
-    const { data: onboardingFunnel, error: funnelError } = await supabase
+    const { data: onboardingFunnel, error: funnelError } = await db
       .from("analytics_onboarding_funnel")
       .select("*")
       .single();
@@ -80,7 +84,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Fetch user journey
-    const { data: userJourney, error: journeyError } = await supabase
+    const { data: userJourney, error: journeyError } = await db
       .from("analytics_complete_user_journey")
       .select("*")
       .single();
@@ -90,7 +94,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Fetch session duration (last 30 days)
-    const { data: sessionDuration, error: sessionError } = await supabase
+    const { data: sessionDuration, error: sessionError } = await db
       .from("analytics_session_duration")
       .select("*")
       .order("session_date", { ascending: false })
@@ -101,7 +105,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Fetch funnel by cohort (last 4 weeks)
-    const { data: funnelByCohort, error: funnelCohortError } = await supabase
+    const { data: funnelByCohort, error: funnelCohortError } = await db
       .from("analytics_funnel_by_cohort")
       .select("*")
       .order("cohort_week", { ascending: false })

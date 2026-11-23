@@ -32,25 +32,27 @@ import { PrintButton } from "./PrintButton";
  *   It prints nothing (Angpao, 2026-11-20); it stays in the source as a note.
  * Remove a marker only when a person confirms the line.
  *
+ * The CSII co-host deck (../csii/CsiiDeck.tsx) reuses the exported parts below.
+ *
  * Editing: on `next dev`, open the page with ?edit (or the button at the
  * bottom right), click any text and type, then Save. DeckEditor.tsx and
  * deck-edits.ts write the change into this file. Keep deck text as plain
  * strings and JSX text so it stays editable there.
  */
 
-const trirong = Trirong({
+export const trirong = Trirong({
   weight: ["200", "300", "400", "600"],
   style: ["normal", "italic"],
   subsets: ["thai", "latin"],
   variable: "--font-trirong",
 });
 
-const DARK = "#151412";
-const PAPER = "#efebe2";
+export const DARK = "#151412";
+export const PAPER = "#efebe2";
 /** The grey sky at the top of the key visual. */
-const SKY = "#e3e6e1";
-const LINE_DARK = "rgba(243,239,230,0.25)";
-const LINE_LIGHT = "rgba(29,33,31,0.22)";
+export const SKY = "#e3e6e1";
+export const LINE_DARK = "rgba(243,239,230,0.25)";
+export const LINE_LIGHT = "rgba(29,33,31,0.22)";
 const YEAR_TH = Number(ELEMENTAL.startDate.slice(0, 4)) + 543;
 
 /** A fact nobody has told us yet. Highlighted so it can't ship by accident. Unused while every gap is filled. */
@@ -78,7 +80,7 @@ function Draft({ children = "ร่าง" }: { children?: ReactNode }) {
   return null;
 }
 
-function Tag({ n, light = false }: { n: string; light?: boolean }) {
+export function Tag({ n, light = false }: { n: string; light?: boolean }) {
   return (
     <p className="m-0 mb-4 text-[13px] sm:text-[14px]" style={{ fontFamily: EL_FONT.mono, color: light ? EL.inkSoft : EL.creamSoft }}>
       <span style={{ letterSpacing: "0.12em" }}>[{n}]</span>
@@ -86,7 +88,7 @@ function Tag({ n, light = false }: { n: string; light?: boolean }) {
   );
 }
 
-function Section({ id, children, tone = "dark" }: { id: string; children: ReactNode; tone?: "dark" | "paper" }) {
+export function Section({ id, children, tone = "dark" }: { id: string; children: ReactNode; tone?: "dark" | "paper" }) {
   const dark = tone === "dark";
   return (
     <section
@@ -100,7 +102,7 @@ function Section({ id, children, tone = "dark" }: { id: string; children: ReactN
 }
 
 /** Thai headings get no letter spacing: it splits Thai into fragments when the PDF is copied. */
-function H2({ children }: { children: ReactNode }) {
+export function H2({ children }: { children: ReactNode }) {
   return (
     <h2 className="m-0 max-w-[960px] text-[32px] leading-[1.3] sm:text-[46px]" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
       {children}
@@ -108,7 +110,7 @@ function H2({ children }: { children: ReactNode }) {
   );
 }
 
-function Body({ children, light = false }: { children: ReactNode; light?: boolean }) {
+export function Body({ children, light = false }: { children: ReactNode; light?: boolean }) {
   return (
     <p className="m-0 mt-4 max-w-[820px] text-[17px] leading-[1.75] sm:text-[19px]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, color: light ? EL.inkSoft : EL.creamSoft }}>
       {children}
@@ -117,7 +119,7 @@ function Body({ children, light = false }: { children: ReactNode; light?: boolea
 }
 
 /** A label and its value, as one row of a two-column list. */
-function Row({ label, children, light = false }: { label: ReactNode; children: ReactNode; light?: boolean }) {
+export function Row({ label, children, light = false }: { label: ReactNode; children: ReactNode; light?: boolean }) {
   return (
     <div className="grid grid-cols-1 gap-1 border-t py-3 sm:grid-cols-[200px_1fr] sm:gap-6" style={{ borderColor: light ? LINE_LIGHT : LINE_DARK, fontFamily: EL_FONT.display }}>
       <div className="text-[15px] sm:text-[16px]" style={{ color: light ? EL.inkSoft : EL.creamSoft }}>
@@ -128,7 +130,7 @@ function Row({ label, children, light = false }: { label: ReactNode; children: R
   );
 }
 
-function Stat({ big, label, light = false }: { big: ReactNode; label: ReactNode; light?: boolean }) {
+export function Stat({ big, label, light = false }: { big: ReactNode; label: ReactNode; light?: boolean }) {
   return (
     <div className="border-t pt-5" style={{ borderColor: light ? LINE_LIGHT : LINE_DARK }}>
       <div className="text-[40px] leading-[1.1] sm:text-[54px]" style={{ fontFamily: EL_FONT.display, fontWeight: 200 }}>
@@ -156,7 +158,7 @@ const ELEMENTS: { key: "water" | "earth" | "air" | "fire" | "aether"; kind: stri
   { key: "water", kind: "ภัยในแหล่งน้ำ", examples: "เช่น น้ำเสียจากโรงงาน สารปนเปื้อนในแม่น้ำ ไมโครพลาสติก น้ำที่คนใช้ดื่มและทำเกษตร" },
   { key: "air", kind: "ภัยในอากาศที่เราหายใจ", examples: "เช่น ฝุ่น PM2.5 ควันจากการเผาในที่โล่ง ไอเสียจากโรงงานใกล้บ้าน การปล่อยคาร์บอน" },
   { key: "fire", kind: "ภัยจากไฟและความร้อน", examples: "เช่น อัคคีภัยในโรงงาน ผับบาร์ หรืออาคาร โกดังเก็บสารเคมี การเผาไร่และป่า" },
-  { key: "aether", kind: "ภัยที่มองไม่เห็น", examples: "เช่น ข่าวปลอม การอ้างว่ารักษ์โลกเกินจริง ขยะที่ไม่มีใครบันทึกว่าไปที่ไหน พลังงานที่แอปและ AI ใช้" },
+  { key: "aether", kind: "ภัยจาก AI โซเชียล และเทคโนโลยี", examples: "เช่น แอปที่ออกแบบให้เลื่อนไม่หยุด ข่าวปลอมและคลิป AI ดีปเฟก พลังงานที่ AI ใช้" },
 ];
 
 /** The Next Decade's last edition, as the live /hackathon page lists them. */
@@ -330,7 +332,7 @@ export function SponsorDeck() {
               </span>
             </h1>
             <p className="m-0 mt-2 text-[24px] sm:text-[32px]" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
-              ดิน · น้ำ · ลม · ไฟ · ธาตุที่ 5
+              ดิน · น้ำ · ลม · ไฟ · ธาตุที่มองไม่เห็น
             </p>
           </div>
 
@@ -860,7 +862,7 @@ export function SponsorDeck() {
  * Print: one section per A4 landscape page, colours kept, nothing else of
  * the site printed.
  */
-const PRINT_CSS = `
+export const PRINT_CSS = `
 @media print {
   @page { size: A4 landscape; margin: 0; }
   html, body { background: ${DARK} !important; }

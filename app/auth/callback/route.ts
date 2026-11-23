@@ -121,9 +121,8 @@ export async function GET(request: Request) {
         await new Promise((resolve) => setTimeout(resolve, waitTime));
 
         const result = await supabase
-          .from("profiles")
+          .rpc("get_my_profile")
           .select(`${PROFILE_COMPLETION_SELECT}, is_onboarded`)
-          .eq("id", userId)
           .single();
 
         profileData = result.data;
