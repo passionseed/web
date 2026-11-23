@@ -56,13 +56,12 @@ export function TeamInvite({ team }: { team: PublicTeam }) {
           <p className="text-sm">
             ส่งลิงก์ให้เพื่อนอีก {team.spotsLeft} คน แต่ละคนสมัครและจ่ายเอง คนละ ฿{ELEMENTAL.groupPriceBaht}
           </p>
-          <p className="break-all rounded-lg bg-white px-3 py-2 text-sm" style={{ fontFamily: EL_FONT.mono }}>{url}</p>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={copy}
               className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold"
-              style={{ backgroundColor: EL.flame, color: EL.flameWhite }}
+              style={{ boxShadow: `inset 0 0 0 1px ${EL.ink}` }}
             >
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} {copied ? "คัดลอกแล้ว" : "คัดลอกลิงก์"}
             </button>

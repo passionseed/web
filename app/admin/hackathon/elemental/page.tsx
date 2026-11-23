@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { AutoRefresh } from "@/components/admin/hackathon/elemental/AutoRefresh";
 import { CopyLineButton } from "@/components/admin/hackathon/elemental/CopyLineButton";
+import { FunnelSection } from "@/components/admin/hackathon/elemental/FunnelSection";
 import { PipelineSection, type PipelineState } from "@/components/admin/hackathon/elemental/PipelineSection";
 import { SeatsSection } from "@/components/admin/hackathon/elemental/SeatsSection";
 import { TasksSection, type TasksState } from "@/components/admin/hackathon/elemental/TasksSection";
@@ -18,9 +19,11 @@ import {
   summarizeRegistrations,
   type RegistrationTotalsRow,
 } from "@/lib/hackathon/elemental/seats";
+import { summarizeFunnel, type FunnelSummary } from "@/lib/hackathon/elemental/funnel";
 import { dailySummary } from "@/lib/hackathon/elemental/summary";
 import { ELEMENTAL_TARGETS } from "@/lib/hackathon/elemental/targets";
 import { buildTodayRows } from "@/lib/hackathon/elemental/today";
+import { listElementalFunnelRows } from "@/lib/supabase/elemental-funnel";
 import { listRegistrationTotals } from "@/lib/supabase/hackathon-event-registrations";
 import {
   listPipeline,
@@ -38,6 +41,18 @@ async function loadSeatRows(): Promise<RegistrationTotalsRow[] | null> {
     return await listRegistrationTotals(ELEMENTAL.slug);
   } catch (error) {
     console.error("[admin/hackathon/elemental] sign-ups failed to load", error);
+    return null;
+  }
+}
+
+const FUNNEL_DAYS = 30;
+
+async function loadFunnel(now: Date): Promise<FunnelSummary | null> {
+  try {
+    const since = new Date(now.getTime() - FUNNEL_DAYS * 24 * 60 * 60 * 1000).toISOString();
+    return summarizeFunnel(await listElementalFunnelRows(since));
+  } catch (error) {
+    console.error("[admin/hackathon/elemental] funnel failed to load", error);
     return null;
   }
 }
@@ -66,7 +81,12 @@ export default async function AdminHackathonElementalPage() {
   await requireAdmin();
   const now = new Date();
   const today = bangkokDate(now);
-  const [seatRows, tasks, pipeline] = await Promise.all([loadSeatRows(), loadTasks(today), loadPipelineState()]);
+  const [seatRows, tasks, pipeline, funnel] = await Promise.all([
+    loadSeatRows(),
+    loadTasks(today),
+    loadPipelineState(),
+    loadFunnel(now),
+  ]);
 
   const totals = seatRows ? summarizeRegistrations(seatRows, now) : null;
   const pace = totals ? seatPace(totals.paidSeats, today) : null;
@@ -122,6 +142,7 @@ export default async function AdminHackathonElementalPage() {
       </div>
       <TodayStrip rows={todayRows} today={today} partial={!seatRows || !tasks.ok || !items} />
       <SeatsSection totals={totals} pace={pace} line={line} today={today} />
+      <FunnelSection summary={funnel} days={FUNNEL_DAYS} />
       <TasksSection state={tasks} today={today} />
       <PipelineSection state={pipeline} today={today} loadedAt={now.toISOString()} />
     </div>
