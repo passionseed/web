@@ -50,6 +50,11 @@ export interface ElementCase {
 }
 
 export interface ElementDetail {
+  /**
+   * The button that opens this brief: a question from one of this element's
+   * cases, so each one is a different hook. Only facts that are in `cases`.
+   */
+  ctaTh: string;
   problemTh: string;
   howMightWeTh: string;
   starterTh: string;
@@ -63,6 +68,7 @@ export const ANY_PROBLEM_NOTE = "ทีมเลือกปัญหาใด�
 
 export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
   water: {
+    ctaTh: "ทำไมน้ำประปาแม่สายต้องหยุดจ่าย",
     problemTh:
       "แม่น้ำทางภาคเหนือมีสารหนูจากเหมืองต้นน้ำ ครอบครัวที่ดื่ม ทำนา และหาปลาจากแม่น้ำมักรู้ตัวช้า และตัวเลขผลตรวจในข่าวก็อ่านยาก",
     howMightWeTh:
@@ -135,6 +141,7 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
   },
 
   earth: {
+    ctaTh: "กากแคดเมียมหมื่นตันถูกขนไปไหน",
     problemTh:
       "กากอันตรายที่ควรถูกเก็บไว้อย่างปลอดภัย ถูกขุดขึ้นมาขนไปขายต่อ แล้วไปโผล่ในโกดังและโรงงานใกล้บ้านคนที่อยู่ไกลออกไป ไม่มีใครรู้จนคนเริ่มป่วย",
     howMightWeTh:
@@ -237,6 +244,7 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
   },
 
   air: {
+    ctaTh: "ทำไมโรงเรียนกว่า 250 แห่งต้องปิด",
     problemTh:
       "ทุกหน้าแล้ง ภาคเหนือจมอยู่ในควันจากการเผา ในเมืองฝุ่นหนาจนโรงเรียนต้องปิด และบางที่ก็มีโรงงานแยกขยะตั้งอยู่ข้างบ้าน เพื่อนบ้านได้กลิ่นทุกวัน แต่พิสูจน์ไม่ได้ และไม่รู้จะแจ้งใคร",
     howMightWeTh:
@@ -342,6 +350,7 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
   },
 
   fire: {
+    ctaTh: "ทำไม 1,992 คนต้องอพยพ",
     problemTh:
       "ที่เก็บกากเคมีที่ถูกสั่งปิดไปแล้ว แต่กากยังกองอยู่ เกิดไฟไหม้ติดต่อกันหลายวัน คนรอบๆ ต้องหนีออกจากบ้าน โดยไม่รู้ว่ากำลังสูดอะไรเข้าไป",
     howMightWeTh:
@@ -429,6 +438,7 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
   },
 
   aether: {
+    ctaTh: "ผู้ประกาศข่าวที่ไม่เคยพูดประโยคนั้น",
     problemTh:
       "ภัยบางอย่างไม่มีควันและไม่มีกลิ่น: แอปที่ออกแบบให้เลื่อนไม่หยุด คลิป AI และข่าวปลอมในกลุ่มไลน์ครอบครัว ดีปเฟกที่ใช้หลอกเอาเงิน และไฟฟ้ามหาศาลที่ AI ใช้ เรามองไม่เห็นมัน จนมันทำร้ายเราไปแล้ว",
     howMightWeTh:

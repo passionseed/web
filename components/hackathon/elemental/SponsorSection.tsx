@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { motion, useInView, useReducedMotion, useScroll, useTransform, type Variants } from "framer-motion";
+import { motion, useInView, useReducedMotion, useTransform, type Variants } from "framer-motion";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 
 import styles from "./elemental-cinema.module.css";
 import { EditorialLink } from "./EditorialLink";
+import { useSectionScroll } from "./use-section-scroll";
 
 const BODY_FONT = "var(--font-bai-jamjuree), sans-serif";
 
@@ -142,7 +143,7 @@ function SponsorPackage({ baht, index, last }: { baht: number; index: number; la
 export function SponsorSection() {
   const reduceMotion = useReducedMotion();
   const headRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
+  const scrollYProgress = useSectionScroll({
     target: headRef,
     offset: ["start 90%", "start 45%"],
   });
