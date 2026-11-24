@@ -211,13 +211,12 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
           </div>
         </div>
 
-        {/* The five elements */}
-        <div style={{ marginTop: 14 }}>
+        {/* The five elements. The whole block, heading and all, sits 10px lower than at first (Angpao, 2026-11-24: "move this element lower abit", "not just element but also the text"). */}
+        <div style={{ marginTop: 24 }}>
           <Head>
             โจทย์ 5 ธาตุ <span style={{ fontWeight: 300, color: EL.creamSoft }}>เลือกปัญหาไหนก็ได้ในธาตุนั้น</span>
           </Head>
-          {/* 10px lower than at first, away from the heading (Angpao, 2026-11-24: "move this element lower abit"). */}
-          <div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "repeat(4, 1fr) 1.55fr", columnGap: 18 }}>
+          <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "repeat(4, 1fr) 1.55fr", columnGap: 18 }}>
             {ELEMENTS.map(({ key, color, line }) => (
               <div key={key}>
                 {key === "aether" ? <AetherPixels rows={SHAPES[key]} size={48} id={`${id}-aether`} /> : <Pixels rows={SHAPES[key]} color={color} size={48} />}
