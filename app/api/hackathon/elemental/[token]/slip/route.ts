@@ -1,6 +1,7 @@
 import { randomBytes } from "crypto";
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 
+import { notifyElementalPaid } from "@/lib/hackathon/elemental/notify";
 import { MAX_SLIP_BYTES } from "@/lib/hackathon/elemental/slip-image";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { safeServerError } from "@/lib/security/route-guards";
@@ -84,6 +85,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         paidBy: provider,
       });
       if (saved === "duplicate") return NextResponse.json({ result: "rejected", reason: "duplicate" });
+      if (saved === "saved") after(() => notifyElementalPaid(registration.id, "slip"));
       return NextResponse.json({ result: "paid" });
     }
 

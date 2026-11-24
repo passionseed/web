@@ -370,14 +370,23 @@ export async function listRegistrations(eventSlug: string): Promise<AdminRegistr
   }));
 }
 
-/** Admin decision on a registration: mark paid, send back to pending, or cancel. */
+/**
+ * Admin decision on a registration: mark paid, send back to pending, or cancel.
+ * Returns true when this call turned an unpaid sign-up into a paid one.
+ */
 export async function setRegistrationStatus(
   id: string,
   status: RegistrationStatus,
   adminUserId: string,
   note?: string,
-): Promise<void> {
-  const { error } = await createAdminClient()
+): Promise<boolean> {
+  const db = createAdminClient();
+  const { data: before } = await db
+    .from("hackathon_event_registrations")
+    .select("status")
+    .eq("id", id)
+    .maybeSingle();
+  const { error } = await db
     .from("hackathon_event_registrations")
     .update({
       status,
@@ -388,6 +397,7 @@ export async function setRegistrationStatus(
     })
     .eq("id", id);
   if (error) throw error;
+  return status === "paid" && before?.status !== "paid";
 }
 
 /**
@@ -419,4 +429,30 @@ export async function listRegistrationTotals(eventSlug: string): Promise<Registr
     }
     if (!data || data.length < PAGE) return out;
   }
+}
+
+/** What a "paid" Discord ping shows: first names, team, group size and amount. */
+export async function getRegistrationForNotice(id: string): Promise<{
+  status: RegistrationStatus;
+  names: string[];
+  memberCount: number;
+  amountBaht: number;
+  teamName: string | null;
+} | null> {
+  const { data, error } = await createAdminClient()
+    .from("hackathon_event_registrations")
+    .select("status, team_name, member_count, amount_baht, hackathon_event_registration_members(position, nickname, full_name)")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return {
+    status: data.status as RegistrationStatus,
+    names: [...(data.hackathon_event_registration_members ?? [])]
+      .sort((a, b) => a.position - b.position)
+      .map(firstName),
+    memberCount: data.member_count,
+    amountBaht: data.amount_baht,
+    teamName: data.team_name,
+  };
 }
