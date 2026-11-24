@@ -46,12 +46,8 @@ const WHY: [IconName, string, string][] = [
   ["sprout", "Little load, little risk", "PassionSeed covers the staff charge and the food, and runs sign-ups, workshops, judging and prizes. If the room doesn't work out, the event still runs online."],
 ];
 
-/** Prizes (Big, 2026-11-22, in the proposal). Cash and Claude credit, in baht. */
-const PRIZES: [string, number, number][] = [
-  ["1st", 7000, 4000],
-  ["2nd", 3000, 3000],
-  ["3rd", 0, 3000],
-];
+/** Prizes (Big, 2026-11-22, in the proposal; the credit changed by Angpao, 2026-11-24). Cash and Claude credit, in baht. */
+const PRIZES: [string, number, number][] = ELEMENTAL.prizes.map((p): [string, number, number] => [["1st", "2nd", "3rd"][p.place - 1], p.cashBaht, p.creditBaht]);
 const PRIZE_TOP = Math.max(...PRIZES.map(([, c, k]) => c + k));
 const baht = (n: number) => `฿${n.toLocaleString("en-US")}`;
 
@@ -325,6 +321,9 @@ export function CsiiDeck() {
               </span>
               <span>Total {prizeTotal()} baht</span>
             </div>
+            <p className="m-0 mt-3 text-[14px]" style={{ color: CREAM_SOFT }}>
+              Plus {baht(ELEMENTAL.elementPrizeCreditBaht)} of Claude credit for the winner of each of the five elements.
+            </p>
             <p className="m-0 mt-8 text-[16px] leading-[1.65]" style={{ fontWeight: 300, color: CREAM_SOFT }}>
               Every team hands in a video by Monday 7 December, 23:00, judged on four things: does it work, evidence from real people, understanding of the problem, and the pitch.
             </p>

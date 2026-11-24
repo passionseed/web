@@ -114,6 +114,13 @@ function Tag({ children }: { children: ReactNode }) {
   return <p style={{ margin: 0, fontFamily: EL_FONT.mono, fontSize: 20, color: EL.creamSoft }}>[{children}]</p>;
 }
 
+/**
+ * The link as printed on the slide: the short one, which redirects to the
+ * permanent link. The permanent link is too long for its column: it widens
+ * the column, the other facts wrap, and the schedule runs under the QR code.
+ */
+const SHORT_URL = ELEMENTAL.url.replace(/\/elemental$/, "");
+
 /** One fact: a tag, the big value, one quiet line under it. */
 function Fact({ tag, big, below }: { tag: string; big: ReactNode; below: ReactNode }) {
   return (
@@ -176,7 +183,7 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
           <Fact tag="ใครสมัครได้" big={ELEMENTAL.gradesTh} below="นักเรียนจากทั่วประเทศ" />
           <Fact tag="ทีม" big={`${ELEMENTAL.teamMin}–${ELEMENTAL.teamMax} คน`} below="มาคนเดียวได้ เราหาทีมให้" />
           <Fact tag="ค่าสมัคร" big={`฿${ELEMENTAL.groupPriceBaht} / คน`} below={`มากับเพื่อน · คนเดียว ฿${ELEMENTAL.priceBaht}`} />
-          <Fact tag="ปิดรับสมัคร" big={formatThaiDate(ELEMENTAL.registrationClosesOn, false)} below={ELEMENTAL.url} />
+          <Fact tag="ปิดรับสมัคร" big={formatThaiDate(ELEMENTAL.registrationClosesOn, false)} below={SHORT_URL} />
         </div>
 
         {/* The prize, as on slide 1 (trophy, the number in yellow), then who gets what. */}
@@ -202,9 +209,15 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
 
         {/* The five elements */}
         <div style={{ marginTop: 18 }}>
-          <Head>
-            โจทย์ 5 ธาตุ <span style={{ fontWeight: 300, color: EL.creamSoft }}>เลือกปัญหาไหนก็ได้ในธาตุนั้น</span>
-          </Head>
+          {/* The winner of each element gets a prize too (Angpao, 2026-11-24: "winner in each track get 500 bath claude credit"). It sits here, on the elements' own line: the prize band above has no room for a fourth row. */}
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16 }}>
+            <Head>
+              โจทย์ 5 ธาตุ <span style={{ fontWeight: 300, color: EL.creamSoft }}>เลือกปัญหาไหนก็ได้ในธาตุนั้น</span>
+            </Head>
+            <p style={{ margin: 0, fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 22, lineHeight: "34px", whiteSpace: "nowrap" }}>
+              <span style={{ fontWeight: 400, color: HIGHLIGHT }}>ผู้ชนะแต่ละธาตุ</span> เครดิต Claude {baht(ELEMENTAL.elementPrizeCreditBaht)}
+            </p>
+          </div>
           <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "repeat(4, 1fr) 1.55fr", columnGap: 18 }}>
             {ELEMENTS.map(({ key, color, line }) => (
               <div key={key}>
