@@ -25,7 +25,7 @@ const EXTENSION: Record<string, string> = {
  * see it), then RDCW checks it (SlipOK when RDCW isn't configured):
  * - paid: the seat is confirmed on the spot
  * - rejected / retry: the person sees why and can upload again
- * - unverified (checker down, quota, not configured): status "review", a person checks it
+ * - unverified (checker down, quota on every SlipOK account, not configured): status "review", a person checks it
  * Every slip reference read is claimed in payment_slip_refs, so a slip used by
  * one registration is rejected as a duplicate on any other.
  */
@@ -69,6 +69,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       provider,
       kind: verdict.kind,
       code: "code" in verdict ? verdict.code : undefined,
+      // The SlipOK account that answered, kept even when the verdict is replaced below (a duplicate slip).
+      account: checked.account,
       checkedAt: new Date().toISOString(),
       raw: verdict.raw,
     };
