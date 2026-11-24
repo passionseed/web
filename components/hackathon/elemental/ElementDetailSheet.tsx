@@ -255,6 +255,14 @@ export function ElementDetailSheet({
             <p className="mt-8 text-sm text-[#cfc9bd]" style={{ fontFamily: BODY_FONT }}>
               {ANY_PROBLEM_NOTE}
             </p>
+            <a
+              href={`/hackathon/elemental/kit/${chapter.key}#frame`}
+              className="mt-4 inline-flex items-center gap-1 text-base text-[#faf8f4] underline underline-offset-4"
+              style={{ fontFamily: BODY_FONT }}
+            >
+              ตั้งโจทย์ของเธอเอง และดูชุดเริ่มต้น
+              <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
+            </a>
           </section>
         </div>
 

@@ -138,6 +138,9 @@ export default async function QuizResultPage({ params, searchParams }: { params:
           <p className="mt-3 text-sm" style={{ color: p.soft }}>
             ธาตุของเธอไม่ได้บังคับโจทย์ {ANY_PROBLEM_NOTE}
           </p>
+          <Link href={`/hackathon/elemental/kit/${element}#frame`} className="mt-4 inline-flex items-center gap-1 underline underline-offset-4">
+            ตั้งโจทย์ของเธอเอง ใช้เวลา 2 นาที <ArrowRight className="h-4 w-4" />
+          </Link>
         </section>
 
         {open && (
