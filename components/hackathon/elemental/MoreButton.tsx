@@ -46,8 +46,8 @@ function useBlocks(key: ElementKey) {
 
 /**
  * Opens the element's full brief. Lives in each chapter, under its examples.
- * Its label is a question from one of that element's cases, so each chapter
- * has its own hook. Hover (or, on touch screens, scrolling it into view)
+ * It says "ดูโจทย์", with a small question from one of that element's cases
+ * under it, so each chapter still has its own hook. Hover (or, on touch screens, scrolling it into view)
  * corrupts it block by block from the clean colour to the toxic one.
  */
 export function MoreButton({ chapter, onOpen }: { chapter: ElementChapter; onOpen: () => void }) {
@@ -55,7 +55,7 @@ export function MoreButton({ chapter, onOpen }: { chapter: ElementChapter; onOpe
   const [inView, setInView] = useState(false);
   const blocks = useBlocks(chapter.key);
   const { clean, toxic } = CORRUPTION[chapter.key];
-  const label = ELEMENT_DETAILS[chapter.key].ctaTh;
+  const hook = ELEMENT_DETAILS[chapter.key].ctaTh;
 
   useEffect(() => {
     const button = buttonRef.current;
@@ -79,7 +79,7 @@ export function MoreButton({ chapter, onOpen }: { chapter: ElementChapter; onOpe
       type="button"
       onClick={onOpen}
       data-element={chapter.key}
-      className={`${styles.button} ${inView ? styles.inView : ""} pointer-events-auto mt-4 inline-flex items-center gap-2.5 rounded-full border px-4 py-2 text-sm text-[#faf8f4] sm:px-5 sm:py-2.5 sm:text-base lg:mt-7`}
+      className={`${styles.button} ${inView ? styles.inView : ""} pointer-events-auto mt-4 inline-flex flex-col items-start rounded-2xl border px-4 py-2 text-left text-[#faf8f4] sm:px-5 sm:py-2.5 lg:mt-7`}
       style={
         {
           "--clean": clean,
@@ -88,19 +88,20 @@ export function MoreButton({ chapter, onOpen }: { chapter: ElementChapter; onOpe
         } as CSSProperties
       }
       aria-haspopup="dialog"
-      aria-label={`${label}: เปิดโจทย์และเคสจริงของ${elementLabel(chapter.th)}`}
+      aria-label={`ดูโจทย์${elementLabel(chapter.th)}: ${hook}`}
     >
       <span aria-hidden="true" className={styles.blocks}>
         {blocks.map((b, i) => (
           <span key={i} style={{ "--d": `${b.delay}ms`, "--a": b.alpha } as CSSProperties} />
         ))}
       </span>
-      <span className={styles.label} data-text={label}>
-        {label}
+      <span className="inline-flex items-center gap-2.5 text-sm sm:text-base">
+        <span className={styles.label}>ดูโจทย์</span>
+        <span aria-hidden="true" className={styles.arrow}>
+          →
+        </span>
       </span>
-      <span aria-hidden="true" className={styles.arrow}>
-        →
-      </span>
+      <span className={`${styles.label} text-xs text-[#e6e1d7]`}>{hook}</span>
     </button>
   );
 }
