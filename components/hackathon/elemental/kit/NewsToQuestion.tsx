@@ -47,7 +47,7 @@ export function NewsToQuestion() {
       <div className="relative mt-6 min-h-[15rem]">
         <div className={`${kit.flip} absolute inset-0`} style={{ opacity: flipped ? 0 : 1, transform: flipped ? "translateY(-8px)" : "none" }} aria-hidden={flipped}>
           <p className="text-sm tracking-widest" style={{ fontFamily: EL_FONT.mono, color: EL.creamSoft }}>
-            [ข่าวบอกว่า · {c.placeTh}]
+            [จากข่าว · {c.placeTh}]
           </p>
           <p className="mt-3 text-pretty text-2xl" style={{ fontFamily: EL_FONT.display, lineHeight: 1.4 }}>
             {c.titleTh}
@@ -59,18 +59,18 @@ export function NewsToQuestion() {
             <span style={{ color: EL.creamSoft }}>{c.impact[0].labelTh}</span>
           </p>
           <p className="mt-4 text-sm" style={{ color: EL.creamSoft }}>
-            แล้วเราก็ถามกันว่า ใครผิด
+            อ่านแล้วอาจนึกว่า “ใครต้องรับผิดชอบเรื่องนี้”
           </p>
         </div>
         <div className={`${kit.flip} absolute inset-0`} style={{ opacity: flipped ? 1 : 0, transform: flipped ? "none" : "translateY(8px)" }} aria-hidden={!flipped}>
           <p className="text-sm tracking-widest" style={{ fontFamily: EL_FONT.mono, color: chapter.color }}>
-            [โจทย์ถามว่า]
+            [ลองถามแบบนี้]
           </p>
           <p className="mt-3 text-pretty text-2xl sm:text-3xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300, lineHeight: 1.45 }}>
             {d.howMightWeTh}
           </p>
           <p className="mt-4 text-sm" style={{ color: EL.creamSoft }}>
-            ใครเจ็บ: {c.whoIsHurtTh}
+            ใครเดือดร้อน {c.whoIsHurtTh}
           </p>
         </div>
       </div>
@@ -81,7 +81,7 @@ export function NewsToQuestion() {
         className={`${styles.choice} mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-lg font-semibold`}
         style={flipped ? { border: "1px solid rgba(243,239,230,0.3)", color: EL.cream } : { backgroundColor: EL.flame, color: EL.char }}
       >
-        <RefreshCw className="h-5 w-5" /> {flipped ? "ดูข่าวอีกครั้ง" : "เปลี่ยนเป็นโจทย์"}
+        <RefreshCw className="h-5 w-5" /> {flipped ? "กลับไปดูข่าว" : "ดูตัวอย่างคำถาม"}
       </button>
     </div>
   );

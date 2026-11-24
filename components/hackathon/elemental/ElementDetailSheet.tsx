@@ -260,7 +260,7 @@ export function ElementDetailSheet({
               className="mt-4 inline-flex items-center gap-1 text-base text-[#faf8f4] underline underline-offset-4"
               style={{ fontFamily: BODY_FONT }}
             >
-              ตั้งโจทย์ของเธอเอง และดูชุดเริ่มต้น
+              ลองตั้งคำถามและดูแหล่งข้อมูล
               <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
             </a>
           </section>

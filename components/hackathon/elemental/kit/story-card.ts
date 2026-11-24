@@ -1,3 +1,4 @@
+import { KIT_TITLE_TH } from "@/components/hackathon/elemental/kit";
 import type { ElementKey } from "@/components/hackathon/elemental/media";
 import { EL } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENT_ICON_COLOR, iconCells } from "@/components/hackathon/poster/elemental/element-icons";
@@ -56,7 +57,7 @@ export async function drawStoryCard({
 
   try {
     // Pass the text: without it only the Latin subset loads, and Thai falls back to a system font.
-    await Promise.all([document.fonts.load(`300 72px ${fontFamily}`, question), document.fonts.load(`200 120px ${fontFamily}`, "จากโทษ เป็นโจทย์")]);
+    await Promise.all([document.fonts.load(`300 72px ${fontFamily}`, question), document.fonts.load(`200 120px ${fontFamily}`, KIT_TITLE_TH)]);
   } catch {
     // Falls back to the system serif; the card still works.
   }
@@ -76,7 +77,7 @@ export async function drawStoryCard({
   let y = rows * cell + 110;
   ctx.fillStyle = p.soft;
   ctx.font = `400 30px ${mono}`;
-  ctx.fillText(`[โจทย์ของฉัน · ${elementTh}]`, PAD, y);
+  ctx.fillText(`[คำถามของฉัน · ${elementTh}]`, PAD, y);
 
   // The element's icon, top right.
   const icon = 18;
@@ -105,7 +106,7 @@ export async function drawStoryCard({
   ctx.fillRect(PAD, footY, W - PAD * 2, 2);
   ctx.fillStyle = p.ink;
   ctx.font = `200 64px ${fontFamily}`;
-  ctx.fillText("จากโทษ เป็นโจทย์", PAD, footY + 100);
+  ctx.fillText(KIT_TITLE_TH, PAD, footY + 100);
   ctx.fillStyle = p.soft;
   ctx.font = `400 30px ${mono}`;
   ctx.fillText(url, PAD, footY + 170);

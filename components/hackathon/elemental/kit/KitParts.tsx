@@ -56,11 +56,11 @@ export function CaseCard({ c }: { c: ElementCase }) {
         ))}
       </dl>
       <p className="mt-4 text-sm">
-        <span style={{ color: EL.creamSoft }}>ใครเจ็บ: </span>
+        <span style={{ color: EL.creamSoft }}>ใครเดือดร้อน </span>
         {c.whoIsHurtTh}
       </p>
       <p className="mt-3 text-xs" style={{ color: EL.creamSoft }}>
-        ที่มา:{" "}
+        ที่มา{" "}
         {c.sources.map((s, i) => (
           <span key={s.url}>
             {i > 0 && ", "}
@@ -151,20 +151,20 @@ export function WhoCanHelp({ open, joinHref }: { open: boolean; joinHref: string
     <div className="grid gap-4 sm:grid-cols-2">
       {open && (
         <section className="rounded-2xl p-6" style={{ backgroundColor: EL.cream, color: EL.ink }}>
-          <Tag color={EL.inkSoft}>ถ้าคุณเป็นนักเรียน {ELEMENTAL.gradesTh}</Tag>
+          <Tag color={EL.inkSoft}>สำหรับนักเรียน {ELEMENTAL.gradesTh}</Tag>
           <p className="mt-3 text-2xl" style={{ fontFamily: EL_FONT.display, lineHeight: 1.4 }}>
-            เอาคำถามนี้ไปทำจริงใน 3 วัน
+            เอาคำถามนี้ไปลองทำโปรเจกต์ใน 3 วัน
           </p>
           <p className="mt-2 text-sm" style={{ color: EL.inkSoft }}>
-            {ELEMENTAL.edition} Hackathon {thaiDateLine()} ออนไลน์ รางวัลรวม {prizeTotal()} บาท มากับเพื่อน ฿{ELEMENTAL.groupPriceBaht} ต่อคน (คนเดียว ฿
-            {ELEMENTAL.priceBaht})
+            {ELEMENTAL.edition} Hackathon จัดออนไลน์ {thaiDateLine()} รางวัลรวม {prizeTotal()} บาท สมัครกับเพื่อนคนละ {ELEMENTAL.groupPriceBaht} บาท สมัครคนเดียว{" "}
+            {ELEMENTAL.priceBaht} บาท
           </p>
           <Link
             href={joinHref}
             className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-lg font-semibold"
             style={{ backgroundColor: EL.ink, color: EL.cream }}
           >
-            สมัคร <ArrowRight className="h-5 w-5" />
+            สมัครแฮกกาธอน <ArrowRight className="h-5 w-5" />
           </Link>
           <p className="mt-3 text-center text-sm" style={{ color: EL.inkSoft }}>
             ปิดรับสมัคร {formatThaiDate(ELEMENTAL.registrationClosesOn, false)} · <DaysLeft closesOn={ELEMENTAL.registrationClosesOn} />
@@ -172,12 +172,12 @@ export function WhoCanHelp({ open, joinHref }: { open: boolean; joinHref: string
         </section>
       )}
       <section className="rounded-2xl border p-6" style={{ borderColor: kitLine }}>
-        <Tag>ถ้าคุณเป็นผู้ใหญ่ที่อยากช่วย</Tag>
+        <Tag>สำหรับผู้ใหญ่</Tag>
         <p className="mt-3 text-2xl" style={{ fontFamily: EL_FONT.display, lineHeight: 1.4 }}>
-          ส่งหน้านี้ให้เด็กหนึ่งคนที่คุณรู้จัก
+          ส่งหน้านี้ให้ลูก หลาน หรือนักเรียน
         </p>
         <p className="mt-2 text-sm" style={{ color: EL.creamSoft }}>
-          ลูก หลาน หรือนักเรียนของคุณ อาจเป็นคนที่ตั้งคำถามข้อต่อไป ถ้าคุณอยากสนับสนุนงานนี้ ดูวิธีได้ที่หน้าผู้สนับสนุน
+          ชวนเขาลองตั้งคำถามจากข่าวสักข้อ ถ้าอยากช่วยให้งานนี้เกิดขึ้น กดดูวิธีสนับสนุนได้เลย
         </p>
         <Link href="/hackathon/elemental/sponsor" className="mt-5 inline-flex items-center gap-2 underline underline-offset-4">
           สนับสนุนงานนี้ <ArrowRight className="h-4 w-4" />

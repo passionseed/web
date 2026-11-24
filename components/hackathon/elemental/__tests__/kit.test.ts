@@ -40,11 +40,19 @@ describe("ELEMENT_KITS", () => {
 
 describe("buildFrame", () => {
   it("puts the parts into a question", () => {
-    expect(buildFrame({ person: "แม่", need: "หยุดคิดก่อนแชร์", moment: "สามวินาทีก่อนกดแชร์" })).toBe("เราจะช่วยให้แม่ หยุดคิดก่อนแชร์ สามวินาทีก่อนกดแชร์ ได้อย่างไร");
+    expect(buildFrame({ person: "แม่", need: "หยุดคิดก่อนแชร์", moment: "สามวินาทีก่อนกดแชร์" })).toBe("สามวินาทีก่อนกดแชร์ เราจะช่วยให้แม่ หยุดคิดก่อนแชร์ได้อย่างไร");
   });
 
-  it("falls back to one person and skips empty parts", () => {
-    expect(buildFrame({ person: " ", need: "", moment: "" })).toBe("เราจะช่วยให้คนหนึ่งคน ได้อย่างไร");
+  it("falls back to someone who has it and skips empty parts", () => {
+    expect(buildFrame({ person: " ", need: "", moment: "" })).toBe("เราจะช่วยให้คนที่เจอเรื่องนี้ได้อย่างไร");
+  });
+
+  it("keeps a space after ๆ", () => {
+    expect(buildFrame({ person: "ลูก", need: "ป้องกันตัวเองจากอากาศแย่ ๆ", moment: "" })).toBe("เราจะช่วยให้ลูก ป้องกันตัวเองจากอากาศแย่ ๆ ได้อย่างไร");
+  });
+
+  it("never says ได้ twice", () => {
+    expect(buildFrame({ person: "แม่", need: "เช็กข่าวได้", moment: "" })).toBe("เราจะช่วยให้แม่ เช็กข่าวได้อย่างไร");
   });
 });
 
@@ -52,7 +60,7 @@ describe("checkFrame", () => {
   const ok = (text: string, person: string) => Object.fromEntries(checkFrame(text, person).map((c) => [c.key, c.ok]));
 
   it("passes a good question", () => {
-    expect(ok("เราจะช่วยให้แม่ หยุดคิดก่อนแชร์ ได้อย่างไร", "แม่")).toEqual({ person: true, question: true, blame: true, open: true });
+    expect(ok("สามวินาทีก่อนกดแชร์ เราจะช่วยให้แม่ หยุดคิดก่อนแชร์ได้อย่างไร", "แม่")).toEqual({ person: true, question: true, blame: true, open: true });
   });
 
   it("flags blame words", () => {

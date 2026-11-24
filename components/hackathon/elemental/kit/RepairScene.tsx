@@ -36,11 +36,11 @@ export function RepairScene({
     <figure className={`relative overflow-hidden rounded-2xl ${className}`} style={{ backgroundColor: EL.char }}>
       <div className="relative aspect-[4/3] w-full sm:aspect-[16/9]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={chapter.before} alt={`${chapter.th} ก่อนถูกทำพัง`} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+        <img src={chapter.before} alt={`ภาพของธาตุ${chapter.th} ก่อนเกิดปัญหา`} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={chapter.after}
-          alt={`${chapter.th} หลังถูกทำพัง`}
+          alt={`ภาพของธาตุ${chapter.th} หลังเกิดปัญหา`}
           className="absolute inset-0 h-full w-full object-cover motion-safe:transition-[clip-path] motion-safe:duration-700"
           style={{ clipPath: `inset(0 0 0 ${pct}%)` }}
           loading="lazy"
@@ -56,13 +56,13 @@ export function RepairScene({
               className="absolute left-3 top-3 rounded-full px-3 py-1 text-xs tracking-widest"
               style={{ fontFamily: EL_FONT.mono, backgroundColor: "rgba(29,33,31,0.7)", color: EL.cream, opacity: pct > 8 ? 1 : 0 }}
             >
-              [ซ่อมแล้ว]
+              [ก่อนเกิดปัญหา]
             </span>
             <span
               className="absolute right-3 top-3 rounded-full px-3 py-1 text-xs tracking-widest"
               style={{ fontFamily: EL_FONT.mono, backgroundColor: "rgba(29,33,31,0.7)", color: EL.cream, opacity: pct < 92 ? 1 : 0 }}
             >
-              [มีคนทำพัง]
+              [หลังเกิดปัญหา]
             </span>
           </>
         )}
@@ -70,7 +70,7 @@ export function RepairScene({
       {!controlled && (
         <div className="px-4 pb-4 pt-3">
           <label htmlFor={id} className="text-sm" style={{ color: EL.creamSoft }}>
-            ลากเพื่อซ่อม
+            ลากดูภาพก่อนและหลัง
           </label>
           <input
             id={id}

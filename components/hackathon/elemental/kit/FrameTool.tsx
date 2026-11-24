@@ -85,13 +85,13 @@ export function FrameTool({ element, elementTh }: { element: ElementKey; element
           ))}
         </div>
         <span className="text-sm tabular-nums" style={{ fontFamily: EL_FONT.mono, color: EL.creamSoft }}>
-          {step}/{STEPS}
+          {Math.min(step + 1, STEPS)}/{STEPS}
         </span>
       </div>
 
       <div key={step} className={`${direction === "forward" ? styles.stepForward : styles.stepBack} mt-6`} aria-live="polite">
         {step === 0 && (
-          <Move n={0} title="อยากโทษใคร ระบายตรงนี้ก่อน" note="โกรธได้ มันมีเหตุผล พิมพ์ได้เต็มที่ ไม่มีใครเห็น และไม่ถูกส่งไปไหน">
+          <Move n={0} title="อ่านแล้วโกรธไหม ระบายตรงนี้ได้" note="พิมพ์ระบายได้เลย ข้อความนี้อยู่ในเครื่อง ทีมงานไม่ได้รับข้อความ">
             {shattered && blame.trim() ? (
               <Shatter text={blame} element={element} />
             ) : (
@@ -112,28 +112,28 @@ export function FrameTool({ element, elementTh }: { element: ElementKey; element
               className={`${styles.choice} mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full px-7 py-4 text-lg font-semibold`}
               style={{ backgroundColor: EL.flame, color: EL.char }}
             >
-              {blame.trim() ? "พักความโกรธไว้ตรงนี้" : "ข้าม ไปหาจุดที่ซ่อมได้"} <ArrowRight className="h-5 w-5" />
+              {blame.trim() ? "พักไว้ก่อน" : "ข้ามไปเลือกคน"} <ArrowRight className="h-5 w-5" />
             </button>
             <p className="mt-3 text-sm" style={{ color: EL.creamSoft }}>
-              ประโยคที่ชี้ว่าใครผิดอาจจะจริง แต่มันไม่ได้บอกว่าต้องซ่อมตรงไหน สี่ขั้นต่อจากนี้จะช่วยหาตรงนั้น
+              พักเรื่องว่าใครผิดไว้ก่อน ลองนึกถึงคนที่เจอเรื่องนี้จริง ๆ
             </p>
           </Move>
         )}
 
         {step === 1 && (
-          <Move n={1} title="ใครหนึ่งคน ที่เจอเรื่องนี้จริง" note="ไม่ใช่ “ชาวบ้าน” หรือ “คนไทย” แต่เป็นคนหนึ่งคนที่คุณนึกหน้าออก">
-            <Chips options={k.people} value={person} onChange={setPerson} placeholder="หรือพิมพ์คนของคุณเอง" />
+          <Move n={1} title="อยากช่วยใคร" note="ลองนึกถึงสักคนที่เจอเรื่องนี้ แล้วเลือกหรือพิมพ์ว่าเขาเป็นใคร">
+            <Chips options={k.people} value={person} onChange={setPerson} placeholder="หรือพิมพ์ว่าอยากช่วยใคร" />
           </Move>
         )}
 
         {step === 2 && (
-          <Move n={2} title="ช่วงไหนที่มันพังสำหรับเขา" note="นาทีที่เขาต้องตัดสินใจ แต่ไม่มีข้อมูล หรือไม่มีใครช่วย">
-            <Chips options={k.moments} value={moment} onChange={setMoment} placeholder="หรือพิมพ์ช่วงเวลาเอง" />
+          <Move n={2} title="เขาติดตรงไหน" note="นึกถึงตอนที่เขาต้องตัดสินใจ แต่ข้อมูลไม่พอหรือไม่มีใครช่วย">
+            <Chips options={k.moments} value={moment} onChange={setMoment} placeholder="หรือพิมพ์ว่าติดตอนทำอะไร" />
           </Move>
         )}
 
         {step === 3 && (
-          <Move n={3} title="ตอนนั้น เขาต้องทำอะไรให้ได้" note="สิ่งที่เขาต้องการ ไม่ใช่สิ่งที่เราอยากสร้าง">
+          <Move n={3} title="ตอนนั้นเขาอยากทำอะไรให้ได้" note="นึกถึงสิ่งที่เขาอยากทำให้ได้ แล้วค่อยคิดว่าจะช่วยยังไง">
             <Chips options={k.needs} value={need} onChange={setNeed} placeholder="หรือพิมพ์เอง" />
           </Move>
         )}
@@ -172,7 +172,7 @@ function Move({ n, title, note, children }: { n: number; title: string; note: st
   return (
     <section>
       <p className="text-sm tracking-widest" style={{ fontFamily: EL_FONT.mono, color: EL.creamSoft }}>
-        [{n === 0 ? "ก่อนเริ่ม" : `ขั้นที่ ${n}`}]
+        [ขั้นที่ {n + 1}]
       </p>
       <h3 className="mt-2 text-balance text-3xl sm:text-4xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300, lineHeight: 1.3 }}>
         {title}
@@ -265,10 +265,10 @@ function Result({
   return (
     <section>
       <p className="text-sm tracking-widest" style={{ fontFamily: EL_FONT.mono, color: EL.creamSoft }}>
-        [โจทย์ของคุณ]
+        [คำถามที่ได้]
       </p>
       <label htmlFor="kit-question" className="sr-only">
-        คำถามของคุณ แก้ได้
+        แก้ไขคำถาม
       </label>
       <textarea
         id="kit-question"
@@ -280,10 +280,10 @@ function Result({
         style={{ borderColor: line, color: EL.cream, fontFamily: EL_FONT.display, fontWeight: 300, lineHeight: 1.45 }}
       />
       <p className="mt-2 text-sm" style={{ color: EL.creamSoft }}>
-        แก้ได้ทุกคำ ให้เป็นภาษาของคุณเอง
+        ลองอ่านอีกทีว่าคนกับเหตุการณ์เข้ากันไหม ปรับคำถามได้เลย
       </p>
 
-      <ul className="mt-6 grid gap-2" aria-label={`ผ่าน ${passed} จาก ${checks.length} ข้อ`}>
+      <ul className="mt-6 grid gap-2" aria-label={`เช็กแล้วตรง ${passed} จาก ${checks.length} ข้อ`}>
         {checks.map((c) => (
           <li key={c.key} className="flex gap-3">
             <span className="mt-0.5 shrink-0" style={{ color: c.ok ? EL.toxicGreen : EL.flameLight }}>
@@ -304,7 +304,7 @@ function Result({
       <ShareQuestion element={element} elementTh={elementTh} question={question} />
 
       <button type="button" onClick={onRestart} className="mt-6 text-sm underline underline-offset-4" style={{ color: EL.creamSoft }}>
-        ลองตั้งโจทย์ใหม่
+        ลองตั้งคำถามใหม่
       </button>
     </section>
   );
@@ -314,7 +314,7 @@ function ShareQuestion({ element, elementTh, question }: { element: ElementKey; 
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
   const pageUrl = () => `${window.location.origin}/hackathon/elemental/kit/${element}`;
-  const shareText = () => `โจทย์ของฉัน: ${question}\nลองตั้งโจทย์ของคุณ`;
+  const shareText = () => `คำถามของฉัน\n${question}\nลองตั้งคำถามของตัวเองดู`;
 
   async function shareImage() {
     setBusy(true);
@@ -370,11 +370,11 @@ function ShareQuestion({ element, elementTh, question }: { element: ElementKey; 
         className={`${styles.choice} inline-flex items-center justify-center gap-2 rounded-full px-7 py-4 text-lg font-semibold disabled:opacity-50`}
         style={{ backgroundColor: EL.flame, color: EL.char }}
       >
-        <Share2 className="h-5 w-5" /> {busy ? "กำลังทำรูป" : "ทำเป็นรูป ลงสตอรี่"}
+        <Share2 className="h-5 w-5" /> {busy ? "กำลังทำรูป" : "ทำรูปไว้ลงสตอรี่"}
       </button>
       <div className="grid grid-cols-2 gap-2 text-sm">
         <button type="button" onClick={shareLine} className={`${styles.choice} rounded-full border px-3 py-3`} style={{ borderColor: "rgba(243,239,230,0.25)" }}>
-          ส่งใน LINE
+          ส่งทาง LINE
         </button>
         <button
           type="button"
@@ -387,7 +387,7 @@ function ShareQuestion({ element, elementTh, question }: { element: ElementKey; 
       </div>
       <p className="text-xs" style={{ color: EL.creamSoft }}>
         <Download className="mr-1 inline h-3 w-3" />
-        บนคอมพิวเตอร์ รูปจะถูกดาวน์โหลด รูปถูกสร้างในเครื่องของคุณ ไม่ถูกส่งมาที่เรา
+        ถ้าเครื่องแชร์รูปไม่ได้ จะดาวน์โหลดให้ รูปสร้างในเครื่อง ทีมงานไม่ได้รับรูป
       </p>
     </div>
   );

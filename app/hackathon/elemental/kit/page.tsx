@@ -4,7 +4,7 @@ import { ArrowRight } from "lucide-react";
 
 import { ELEMENT_DETAILS } from "@/components/hackathon/elemental/challenges";
 import { trirong } from "@/components/hackathon/elemental/fonts";
-import { EVERY_QUESTION_TH, FRAME_MOVES } from "@/components/hackathon/elemental/kit";
+import { EVERY_QUESTION_TH, FRAME_MOVES, KIT_TITLE_TH } from "@/components/hackathon/elemental/kit";
 import { H2, Tag, WhoCanHelp, kitLine } from "@/components/hackathon/elemental/kit/KitParts";
 import { NewsToQuestion } from "@/components/hackathon/elemental/kit/NewsToQuestion";
 import { RepairScene } from "@/components/hackathon/elemental/kit/RepairScene";
@@ -14,9 +14,9 @@ import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ElementIcon } from "@/components/hackathon/poster/elemental/element-icons";
 import { elementalRegistrationOpen, normalizeSource } from "@/lib/hackathon/elemental/registration";
 
-const TITLE = "จากโทษ เป็นโจทย์ | ห้าปัญหาจริงในไทย";
+const TITLE = `${KIT_TITLE_TH} | ห้าปัญหาจริงในไทย`;
 const DESCRIPTION =
-  "น้ำ ดิน อากาศ ไฟ และภัยที่มองไม่เห็น ห้าปัญหาจริงในไทย พร้อมแหล่งข้อมูล คำยาก และเครื่องมือ 2 นาที ที่เปลี่ยนความโกรธให้เป็นคำถามที่ลงมือได้ สำหรับทุกคนที่สนใจ";
+  "ลองตั้งคำถามจากข่าวใน 2 นาที เลือกเรื่องน้ำ ดิน ลม ไฟ หรืออีเธอร์ แต่ละเรื่องมีแหล่งข้อมูลให้อ่านต่อและคำที่เจอบ่อยในข่าว";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -51,12 +51,12 @@ export default async function KitPage({ searchParams }: { searchParams: SearchPa
     <main className={`${trirong.variable} min-h-[100dvh]`} style={{ backgroundColor: EL.char, color: EL.cream }}>
       <TrackStep step="kit_view" detail="index" source={src} />
       <div className="mx-auto max-w-3xl px-6 pb-16 pt-12 sm:pt-20">
-        <Tag>ELEMENTAL · ชุดเริ่มต้น</Tag>
+        <Tag>ELEMENTAL</Tag>
         <h1 className="mt-4 text-balance text-6xl sm:text-8xl" style={{ fontFamily: EL_FONT.display, fontWeight: 200, lineHeight: 1.05 }}>
-          จากโทษ เป็นโจทย์
+          {KIT_TITLE_TH}
         </h1>
         <p className="mt-6 max-w-2xl text-pretty text-xl" style={{ color: EL.creamSoft }}>
-          ห้าปัญหาจริงในไทย ที่เป็นข่าว คนโกรธ แล้วก็เงียบไป ทุกเรื่องในนี้มีคนทำพัง แปลว่ามีคนซ่อมได้ หน้านี้ชวนคุณเริ่มจากคำถามหนึ่งข้อ
+          เคยอ่านข่าวแล้วนึกว่า “ทำไมไม่มีใครทำอะไรสักที” ไหม ลองเลือกสักข่าวจากห้าปัญหาในไทย แล้วถามว่าใครกำลังเดือดร้อนและจะช่วยเขาได้ยังไง
         </p>
 
         <div className="mt-10">
@@ -65,7 +65,7 @@ export default async function KitPage({ searchParams }: { searchParams: SearchPa
 
         <section className="mt-16">
           <Tag>ลองกดดู</Tag>
-          <H2>ข่าวบอกว่าอะไรพัง โจทย์ถามว่าซ่อมตรงไหนได้</H2>
+          <H2>ลองดูว่าข่าวหนึ่งเรื่องตั้งเป็นคำถามได้ยังไง</H2>
           <div className="mt-6">
             <NewsToQuestion />
           </div>
@@ -73,7 +73,7 @@ export default async function KitPage({ searchParams }: { searchParams: SearchPa
 
         <section className="mt-16 border-t pt-10" style={{ borderColor: kitLine }}>
           <Tag>วิธีคิด</Tag>
-          <H2>สี่ขั้น จากความโกรธ ไปเป็นคำถาม</H2>
+          <H2>จากข่าวเป็นคำถามใน 4 ขั้น</H2>
           <ol className="mt-8 grid gap-6 sm:grid-cols-2">
             {FRAME_MOVES.map((m, i) => (
               <li key={m.th} className="border-t pt-4" style={{ borderColor: kitLine }}>
@@ -92,8 +92,8 @@ export default async function KitPage({ searchParams }: { searchParams: SearchPa
         </section>
 
         <section className="mt-16 border-t pt-10" style={{ borderColor: kitLine }}>
-          <Tag>เลือกหนึ่งธาตุ</Tag>
-          <H2>ตั้งโจทย์ของคุณเอง ใช้เวลา 2 นาที</H2>
+          <Tag>เลือกธาตุ</Tag>
+          <H2>ลองตั้งคำถามใน 2 นาที</H2>
           <div className="mt-8 grid gap-4">
             {ELEMENT_CHAPTERS.map((c) => (
               <Link
@@ -132,7 +132,7 @@ export default async function KitPage({ searchParams }: { searchParams: SearchPa
 
         <section className="mt-16 border-t pt-10" style={{ borderColor: kitLine }}>
           <Tag>ใครก็ช่วยได้</Tag>
-          <H2>ไม่ต้องเป็นผู้เชี่ยวชาญ แค่เริ่มจากคนหนึ่งคน</H2>
+          <H2>มีคำถามแล้ว ทำอะไรต่อได้บ้าง</H2>
           <div className="mt-6">
             <WhoCanHelp open={open} joinHref={joinHref} />
           </div>

@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { ANY_PROBLEM_NOTE, ELEMENT_DETAILS } from "@/components/hackathon/elemental/challenges";
 import { trirong } from "@/components/hackathon/elemental/fonts";
-import { ELEMENT_KITS, EVERY_QUESTION_TH } from "@/components/hackathon/elemental/kit";
+import { ELEMENT_KITS, EVERY_QUESTION_TH, KIT_TITLE_TH } from "@/components/hackathon/elemental/kit";
 import { FrameTool } from "@/components/hackathon/elemental/kit/FrameTool";
 import { CaseCard, ElementNav, H2, LookList, Tag, TodayList, WhoCanHelp, Words, kitLine } from "@/components/hackathon/elemental/kit/KitParts";
 import { ELEMENT_CHAPTERS, elementLabel, type ElementKey } from "@/components/hackathon/elemental/media";
@@ -34,8 +34,8 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const { element } = await params;
   if (!isElement(element)) return {};
   const c = ELEMENT_CHAPTERS.find((x) => x.key === element)!;
-  const title = `${elementLabel(c.th)}: จากโทษ เป็นโจทย์ | Elemental`;
-  const description = `${c.subtitleTh} ปัญหาจริงในไทย แหล่งข้อมูล คำยาก และเครื่องมือที่ช่วยเปลี่ยนความโกรธให้เป็นคำถามที่ลงมือได้`;
+  const title = `${elementLabel(c.th)} · ${KIT_TITLE_TH} | Elemental`;
+  const description = `${c.subtitleTh} ลองตั้งคำถามจากข่าว ดูว่าคนที่เจอเรื่องนี้ต้องการอะไร แล้วเปิดดูแหล่งข้อมูลกับคำที่เจอบ่อยในข่าวได้เลย`;
   const url = `/hackathon/elemental/kit/${element}`;
   return {
     title,
@@ -70,12 +70,12 @@ export default async function KitElementPage({ params, searchParams }: { params:
       <PixelBand element={element} />
       <div className="mx-auto max-w-2xl px-6 pb-16">
         <Link href="/hackathon/elemental/kit" className="inline-flex items-center gap-1 text-sm" style={{ color: p.soft }}>
-          <ArrowLeft className="h-4 w-4" /> ทั้งห้าธาตุ
+          <ArrowLeft className="h-4 w-4" /> ดูครบทั้งห้าธาตุ
         </Link>
 
         <header className="mt-6 flex items-start justify-between gap-6">
           <div>
-            <Tag>{chapter.en.toUpperCase()} · จากโทษ เป็นโจทย์</Tag>
+            <Tag>{`${chapter.en.toUpperCase()} · ${KIT_TITLE_TH}`}</Tag>
             <h1 className="mt-3 text-balance text-6xl sm:text-7xl" style={{ fontFamily: EL_FONT.display, fontWeight: 200, lineHeight: 1.1 }}>
               {label}
             </h1>
@@ -90,12 +90,12 @@ export default async function KitElementPage({ params, searchParams }: { params:
 
         <p className="mt-6 text-pretty text-lg">{brief.problemTh}</p>
         <p className="mt-3 text-pretty" style={{ color: p.soft }}>
-          <strong style={{ color: p.ink }}>ใครเจอเรื่องนี้:</strong> {k.whoTh}
+          <strong style={{ color: p.ink }}>ใครเจอเรื่องนี้</strong> {k.whoTh}
         </p>
 
         <section className="mt-12">
           <Tag>ข่าวบอกว่า</Tag>
-          <H2>เกิดขึ้นจริงแล้ว</H2>
+          <H2>เรื่องนี้เกิดขึ้นที่ไหนบ้าง</H2>
           <div className="mt-6 grid gap-4">
             {brief.cases.map((c) => (
               <CaseCard key={c.titleTh} c={c} />
@@ -104,40 +104,40 @@ export default async function KitElementPage({ params, searchParams }: { params:
         </section>
 
         <section id="frame" className="mt-16 border-t pt-10" style={{ borderColor: kitLine }}>
-          <Tag color={EL.flameLight}>ลองเลย 2 นาที</Tag>
-          <H2>จากโทษ เป็นโจทย์</H2>
+          <Tag color={EL.flameLight}>ใช้เวลา 2 นาที</Tag>
+          <H2>{KIT_TITLE_TH}</H2>
           <p className="mt-3 text-pretty" style={{ color: p.soft }}>
-            ข่าวแบบนี้ทำให้โกรธ และเราก็มักหยุดอยู่ที่ว่าใครผิด สี่ขั้นนี้พาไปอีกทาง: หาคนหนึ่งคนที่เจ็บ หาช่วงที่มันพัง แล้วตั้งเป็นคำถามที่ลงมือได้ ภาพด้านล่างจะค่อยๆ
-            ถูกซ่อมไปพร้อมกับคุณ
+            อ่านแล้วโกรธก็พิมพ์ระบายก่อนได้ จากนั้นลองนึกถึงสักคนที่เจอเรื่องนี้ ดูว่าเขาติดตรงไหน แล้วตั้งคำถามว่าจะช่วยให้เขาทำอะไรได้บ้าง
+            ภาพจะค่อย ๆ เปลี่ยนไปตามแต่ละขั้น
           </p>
           <div className="mt-8">
             <FrameTool element={element} elementTh={label} />
           </div>
           <p className="mt-6 text-sm" style={{ color: p.soft }}>
-            ตัวอย่างคำถามจากทีมงาน: “{brief.howMightWeTh}”
+            ทีมงานลองถามแบบนี้ “{brief.howMightWeTh}”
           </p>
         </section>
 
         <section className="mt-16 border-t pt-10" style={{ borderColor: kitLine }}>
-          <Tag>ทำได้วันนี้ ไม่ต้องรอใคร</Tag>
-          <H2>สามอย่างที่ทุกคนทำได้</H2>
+          <Tag>เริ่มได้วันนี้</Tag>
+          <H2>วันนี้ลองทำ 3 อย่างนี้</H2>
           <TodayList items={k.today} />
         </section>
 
         <section className="mt-16 border-t pt-10" style={{ borderColor: kitLine }}>
-          <Tag>ชุดเริ่มต้น</Tag>
-          <H2>อยากเข้าใจให้ลึกกว่าข่าว</H2>
+          <Tag>อ่านต่อ</Tag>
+          <H2>อยากรู้เรื่องนี้เพิ่ม เริ่มตรงไหน</H2>
           <p className="mt-3 text-pretty" style={{ color: p.soft }}>
-            ชุดนี้ชี้ว่าควรไปดูที่ไหน ไม่ได้บอกคำตอบ เปิดดูเอง แล้วตัดสินใจเอง {ANY_PROBLEM_NOTE}
+            ลองเปิดแหล่งข้อมูลหรือหยิบคำถามข้างล่างไปถามคนที่เจอเรื่องนี้ {ANY_PROBLEM_NOTE}
           </p>
 
           <h3 className="mt-10 text-xl" style={{ fontFamily: EL_FONT.display }}>
-            ที่ที่ควรไปดู
+            แหล่งข้อมูล
           </h3>
           <LookList items={k.look} />
 
           <h3 className="mt-10 text-xl" style={{ fontFamily: EL_FONT.display }}>
-            คำถามชวนขุด
+            ลองถามต่อ
           </h3>
           <ul className="mt-4 grid gap-3">
             {[...k.questions, ...EVERY_QUESTION_TH].map((q) => (
@@ -153,7 +153,7 @@ export default async function KitElementPage({ params, searchParams }: { params:
           {k.toolsTh && (
             <>
               <h3 className="mt-10 text-xl" style={{ fontFamily: EL_FONT.display }}>
-                เครื่องมือที่ลองได้
+                เครื่องมือที่ลองใช้ได้
               </h3>
               <p className="mt-3 text-pretty" style={{ color: p.soft }}>
                 {k.toolsTh}
@@ -188,7 +188,7 @@ export default async function KitElementPage({ params, searchParams }: { params:
         </section>
 
         <p className="mt-10 text-xs" style={{ color: p.soft }}>
-          ภาพ: {chapter.credit} · ลิงก์ทุกอันถูกเปิดตรวจเมื่อ 24 พ.ย. 2569 · คำถามที่คุณพิมพ์อยู่ในเครื่องของคุณ ไม่ถูกส่งมาที่เรา
+          ภาพโดย {chapter.credit} · เช็กลิงก์ทั้งหมดเมื่อ 24 พ.ย. 2569 · คำถามที่พิมพ์จะอยู่ในเครื่อง ทีมงานไม่ได้รับข้อความ
         </p>
       </div>
     </main>
