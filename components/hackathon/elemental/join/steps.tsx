@@ -273,8 +273,11 @@ function ParentStep({ draft, set, errors }: StepProps) {
           />
         </Field>
         <CheckRow checked={draft.parentConsent} onChange={(v) => set({ parentConsent: v })} error={errors.parentConsent}>
-          ผู้ปกครองของ{who ? ` ${who}` : "คนนี้"} รู้และยินยอมแล้ว
+          ผู้ปกครองของ{who ? ` ${who}` : "คนนี้"} รู้และยินยอมแล้ว ตามข้อตกลงของงาน
         </CheckRow>
+        <p className="-mt-2 text-sm" style={{ color: EL.inkSoft }}>
+          ให้ผู้ปกครองอ่าน<LegalLink href="/hackathon/elemental/terms">ข้อตกลงของงาน</LegalLink>ก่อนติ๊ก
+        </p>
       </div>
     </>
   );
@@ -382,12 +385,11 @@ function ReviewStep({ draft, set, errors, team, goTo }: StepProps) {
   );
 }
 
-/** Sits right above the sign-up button on the review step. */
+/** Sits right above the sign-up button on the review step. The terms page covers promotion use and links the privacy policy. */
 export function LegalLine() {
   return (
     <p className="mb-3 text-pretty text-center text-xs" style={{ color: EL.inkSoft }}>
-      การกดสมัคร ถือว่ายอมรับ<LegalLink href="/terms">ข้อตกลงการใช้งาน</LegalLink>และ
-      <LegalLink href="/privacy">นโยบายความเป็นส่วนตัว</LegalLink>
+      การกดสมัคร ถือว่ายอมรับ<LegalLink href="/hackathon/elemental/terms">ข้อตกลงของงาน</LegalLink>
     </p>
   );
 }

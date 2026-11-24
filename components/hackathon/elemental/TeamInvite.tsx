@@ -28,7 +28,7 @@ export function TeamInvite({ team, renameToken, demo }: { team: PublicTeam; rena
   }, []);
 
   const url = `${origin}/hackathon/join?team=${team.inviteCode}`;
-  const message = `มาลง ${ELEMENTAL.edition} Hackathon ${teamLabel(name)} กัน คนละ ฿${ELEMENTAL.groupPriceBaht} สมัครที่ลิงก์นี้: ${url}`;
+  const message = `มาเข้า${teamLabel(name)} ลง ${ELEMENTAL.edition} Hackathon ด้วยกัน สมัครที่ลิงก์นี้: ${url}`;
   const full = team.spotsLeft === 0;
 
   const copy = async () => {

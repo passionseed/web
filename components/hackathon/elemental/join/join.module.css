@@ -95,11 +95,48 @@
     border-color 160ms ease;
 }
 
+/* The paid ticket: it rises in, the photo settles like an opening shot, then the title fades up. */
+.ticketIn {
+  animation: ticketIn 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes ticketIn {
+  from {
+    opacity: 0;
+    transform: translateY(28px) rotate(-1.2deg) scale(0.97);
+  }
+}
+
+.kenBurns {
+  animation: kenBurns 9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes kenBurns {
+  from {
+    transform: scale(1.14);
+    filter: saturate(0.4) brightness(0.8);
+  }
+}
+
+.titleIn {
+  animation: titleIn 1100ms 500ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes titleIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .stepForward,
   .stepBack,
   .shake,
-  .pop {
+  .pop,
+  .ticketIn,
+  .kenBurns,
+  .titleIn {
     animation: none;
   }
   .progress,

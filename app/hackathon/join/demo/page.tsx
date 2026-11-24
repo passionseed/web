@@ -18,7 +18,8 @@ const STATES: RegistrationStatus[] = ["pending", "review", "paid", "cancelled"];
 /**
  * Dev only: the pay page with made-up data, so the flow can be walked and
  * screenshotted without saving a sign-up or a slip. 404 everywhere else.
- * /hackathon/join/demo?state=pending|review|paid|cancelled&mode=solo|create|join
+ * /hackathon/join/demo?state=pending|review|paid|cancelled&mode=solo|create|join&n=0..4
+ * (n: the place in sign-up order inside the team, so each teammate's ticket can be seen)
  */
 export default async function PayDemoPage({ searchParams }: { searchParams: SearchParams }) {
   if (process.env.NODE_ENV !== "development") notFound();
@@ -27,6 +28,8 @@ export default async function PayDemoPage({ searchParams }: { searchParams: Sear
   const mode = first(params.mode) ?? "create";
   const inTeam = mode !== "solo";
   const amountBaht = elementalPriceBaht(1, inTeam);
+  const n = Number(first(params.n));
+  const teamPosition = !inTeam ? null : Number.isInteger(n) && n >= 0 ? n : mode === "create" ? 0 : 1;
   const team = inTeam
     ? {
         id: "demo",
@@ -45,7 +48,7 @@ export default async function PayDemoPage({ searchParams }: { searchParams: Sear
       <PayView
         token="demo"
         demo
-        reg={{ status: state, teamName: team?.name ?? null, memberCount: 1, amountBaht, memberNicknames: ["มิว"], team, isTeamStarter: mode === "create" }}
+        reg={{ status: state, teamName: team?.name ?? null, memberCount: 1, amountBaht, memberNicknames: ["มิว"], team, isTeamStarter: mode === "create", teamPosition }}
         qrSrc={state === "pending" ? await elementalPayQr(amountBaht) : null}
         links={{ line: "https://line.me/ti/g/demo", discord: "https://discord.gg/demo" }}
       />

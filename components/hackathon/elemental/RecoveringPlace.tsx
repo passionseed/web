@@ -2,18 +2,10 @@ import Image from "next/image";
 
 import { EL } from "@/components/hackathon/poster/elemental/brand";
 
-/**
- * A real place that came back: Maya Bay, closed to visitors from 2018 to
- * 2022 so its reef and beach could recover. Washed out on the first sign-up
- * step, in full colour on the paid seat.
- */
-export const RECOVERED_PLACE = {
-  src: "/hackathon/elemental/places/maya-bay-2022.webp",
-  altTh: "น้ำทะเลสีมรกตและหาดทรายขาวที่อ่าวมาหยา เกาะพีพีเล กระบี่ ปี 2565",
-  captionTh: "อ่าวมาหยา ปิดให้ธรรมชาติฟื้น 2561 ถึง 2565",
-  credit: "ภาพ: Janjira Jane, CC BY-SA 4.0",
-  creditUrl: "https://commons.wikimedia.org/wiki/File:Emerald_water_at_Maya_Bay_Ko_Phi_Phi_Le.jpg",
-} as const;
+import { PLACES } from "./places";
+
+/** Maya Bay, washed out on the first sign-up step; each paid ticket shows a recovered place in full colour. */
+const RECOVERED_PLACE = PLACES[0];
 
 /** `restored` runs from 0 (grey) to 1 (full colour). */
 export function RecoveringPlace({ restored, className = "" }: { restored: number; className?: string }) {
@@ -37,7 +29,7 @@ export function RecoveringPlace({ restored, className = "" }: { restored: number
           className="absolute bottom-2.5 left-3.5 right-3.5 text-xs sm:text-sm"
           style={{ color: EL.cream, textShadow: "0 1px 6px rgba(0,0,0,0.55)" }}
         >
-          {RECOVERED_PLACE.captionTh}
+          {RECOVERED_PLACE.nameTh} {RECOVERED_PLACE.storyTh}
         </figcaption>
       </div>
       <a

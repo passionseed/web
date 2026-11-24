@@ -1,6 +1,4 @@
-import Image from "next/image";
 import Link from "next/link";
-import { CheckCircle2 } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
@@ -9,10 +7,10 @@ import { SHIFT_PAYMENT } from "@/lib/content/shift-cohort";
 import { teamLabel } from "@/lib/hackathon/elemental/team-name";
 import type { PublicRegistration } from "@/lib/supabase/hackathon-event-registrations";
 
-import styles from "./join/join.module.css";
 import { PayWithSlip } from "./PayWithSlip";
-import { RECOVERED_PLACE } from "./RecoveringPlace";
+import { placeFor, ticketNumber } from "./places";
 import { TeamInvite } from "./TeamInvite";
+import { Ticket } from "./Ticket";
 import { TrackStep } from "./TrackStep";
 
 /**
@@ -22,7 +20,7 @@ import { TrackStep } from "./TrackStep";
 
 type Props = {
   token: string;
-  reg: Pick<PublicRegistration, "status" | "teamName" | "memberCount" | "amountBaht" | "memberNicknames" | "team" | "isTeamStarter">;
+  reg: Pick<PublicRegistration, "status" | "teamName" | "memberCount" | "amountBaht" | "memberNicknames" | "team" | "isTeamStarter" | "teamPosition">;
   qrSrc: string | null;
   links: { line: string | null; discord: string | null };
   demo?: boolean;
@@ -33,53 +31,6 @@ function Title({ children }: { children: ReactNode }) {
     <h1 className="text-5xl sm:text-6xl" style={{ fontFamily: EL_FONT.display, fontWeight: 200, lineHeight: 1.05 }}>
       {children}
     </h1>
-  );
-}
-
-function Seat({ who, people, amountBaht }: { who: string; people: string; amountBaht: number }) {
-  return (
-    <div className={`${styles.pop} overflow-hidden rounded-3xl`} style={{ backgroundColor: EL.char, color: EL.cream }}>
-      {/* The place from the sign-up, now in full colour. */}
-      <div className="relative h-40 sm:h-52">
-        <Image src={RECOVERED_PLACE.src} alt={RECOVERED_PLACE.altTh} fill sizes="(min-width: 640px) 576px, 100vw" className="object-cover" style={{ objectPosition: "50% 58%" }} />
-        <div
-          className="absolute inset-x-4 bottom-2.5 sm:inset-x-6"
-          style={{ color: EL.cream, textShadow: "0 1px 6px rgba(0,0,0,0.6)" }}
-        >
-          <p className="text-sm">{RECOVERED_PLACE.captionTh}</p>
-          <a href={RECOVERED_PLACE.creditUrl} target="_blank" rel="noopener noreferrer" className="mt-0.5 block text-[10px] opacity-80">
-            {RECOVERED_PLACE.credit}
-          </a>
-        </div>
-      </div>
-      <div className="p-6 sm:p-8">
-        <p className="text-4xl sm:text-5xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300, fontStyle: "italic" }}>
-          {ELEMENTAL.edition}
-        </p>
-        <p className="mt-6 text-2xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
-          {who}
-        </p>
-        <p className="mt-1 text-sm" style={{ color: EL.creamSoft }}>{people}</p>
-      </div>
-      <div
-        className="grid grid-cols-2 gap-4 border-t border-dashed px-6 py-5 text-sm sm:px-8"
-        style={{ borderColor: "rgba(243,239,230,0.25)" }}
-      >
-        <div>
-          <p className="text-xs" style={{ color: EL.creamSoft }}>วันงาน</p>
-          <p className="mt-1">{thaiDateLine()}</p>
-        </div>
-        <div>
-          <p className="text-xs" style={{ color: EL.creamSoft }}>ที่ไหน</p>
-          <p className="mt-1">{ELEMENTAL.venueTh}</p>
-        </div>
-        <div className="col-span-2">
-          <span className="inline-flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5" style={{ color: EL.toxicGreen }} aria-hidden="true" /> ชำระแล้ว ฿{amountBaht.toLocaleString("en-US")}
-          </span>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -114,7 +65,12 @@ function PaidSection(props: Props) {
     <section className="mt-6 space-y-6">
       {!demo && <TrackStep step="paid" />}
       <Title>ได้ที่นั่งแล้ว</Title>
-      <Seat who={who} people={people} amountBaht={reg.amountBaht} />
+      <Ticket
+        who={who}
+        people={people}
+        place={placeFor(props.token, reg.teamPosition)}
+        number={ticketNumber(props.token)}
+      />
       {links.line || links.discord ? (
         <div className="space-y-3">
           <p className="text-lg">ขั้นต่อไป เข้ากลุ่มของงาน ประกาศ ทีม และงานทั้งหมดอยู่ที่นี่</p>
