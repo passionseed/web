@@ -15,8 +15,8 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
  * - Prize total: told by Angpao, 2026-11-19. The three prizes: Angpao,
  *   2026-11-21 (company-brain numbers.md). Changed by Angpao, 2026-11-24:
  *   the Claude credit drops to 3,000 / 2,500 / 2,000, and the winner of
- *   each track gets 500 of Claude credit. A track is read here as one of
- *   the five elements, which keeps the total at 20,000.
+ *   each track gets 500 of Claude credit. A track is one of the five
+ *   elements (confirmed by Angpao the same day), so the total stays 20,000.
  * - Who can join: M.3 to M.6, from anywhere in Thailand (Angpao, 2026-11-24;
  *   it replaces M.4 to M.6, Big, 2026-11-22; company-brain decisions/log.md).
  * - Online, on Discord; groups of up to 5 (Bunyasit, 2026-11-20).
