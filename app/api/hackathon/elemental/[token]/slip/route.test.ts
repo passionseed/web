@@ -23,6 +23,8 @@ jest.mock("@/lib/rdcw/client", () => ({
   verifySlipRdcw: (...args: unknown[]) => verifySlipRdcw(...args),
 }));
 jest.mock("@/lib/slipok/client", () => ({ verifySlip: jest.fn() }));
+jest.mock("@/lib/hackathon/elemental/notify", () => ({ notifyElementalPaid: jest.fn() }));
+jest.mock("next/server", () => ({ ...jest.requireActual("next/server"), after: jest.fn() }));
 
 import { POST } from "./route";
 
