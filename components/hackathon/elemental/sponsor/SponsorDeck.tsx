@@ -399,7 +399,7 @@ export function SponsorDeck() {
             {thaiDayRange()} {YEAR_TH} ({ELEMENTAL.days} วัน ช่วงวันหยุดยาว)
           </Row>
           <Row light label="ผู้เข้าร่วม">
-            นักเรียน ม.4–ม.6 ทั่วประเทศ
+            นักเรียน ม.3–ม.6 ทั่วประเทศ
             <Draft />
           </Row>
           <Row light label="รูปแบบ">

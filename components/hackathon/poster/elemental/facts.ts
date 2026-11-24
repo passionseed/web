@@ -13,9 +13,12 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
  *   media and the harms of tech we don't notice (Big, 2026-11-21). It
  *   replaces ธาตุที่ 5 and อีเธอร์.
  * - Prize total: told by Angpao, 2026-11-19. The three prizes: Angpao,
- *   2026-11-21 (company-brain numbers.md).
- * - Who can join: M.4 to M.6, from anywhere in Thailand (Big, 2026-11-22;
- *   company-brain decisions/log.md).
+ *   2026-11-21 (company-brain numbers.md). Changed by Angpao, 2026-11-24:
+ *   the Claude credit drops to 3,000 / 2,500 / 2,000, and the winner of
+ *   each track gets 500 of Claude credit. A track is one of the five
+ *   elements (confirmed by Angpao the same day), so the total stays 20,000.
+ * - Who can join: M.3 to M.6, from anywhere in Thailand (Angpao, 2026-11-24;
+ *   it replaces M.4 to M.6, Big, 2026-11-22; company-brain decisions/log.md).
  * - Online, on Discord; groups of up to 5 (Bunyasit, 2026-11-20).
  * - Sign-up closes Fri 4 Dec 2026 (Angpao, 2026-11-23; it replaces Thu 3 Dec
  *   in hackathon-ops registration.md); a group is 2 or more people (Big's
@@ -33,14 +36,19 @@ export const ELEMENTAL = {
   priceBaht: 199,
   groupPriceBaht: 149,
   prizeTotalBaht: 20000,
-  /** The three prizes: cash and Claude credit, in baht. They add up to prizeTotalBaht. */
+  /**
+   * The three prizes: cash and Claude credit, in baht. With the five element
+   * prizes below they add up to prizeTotalBaht.
+   */
   prizes: [
-    { place: 1, cashBaht: 7000, creditBaht: 4000 },
-    { place: 2, cashBaht: 3000, creditBaht: 3000 },
-    { place: 3, cashBaht: 0, creditBaht: 3000 },
+    { place: 1, cashBaht: 7000, creditBaht: 3000 },
+    { place: 2, cashBaht: 3000, creditBaht: 2500 },
+    { place: 3, cashBaht: 0, creditBaht: 2000 },
   ],
+  /** Claude credit for the winner of each element ("each track"), in baht. */
+  elementPrizeCreditBaht: 500,
   /** Who can join: school years, from anywhere in Thailand. */
-  gradesTh: "ม.4–ม.6",
+  gradesTh: "ม.3–ม.6",
   theme: "Environmental negligence",
   /** The permanent link. /hackathon redirects here while Elemental is current. */
   url: "passionseed.org/hackathon/elemental",

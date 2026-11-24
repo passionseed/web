@@ -36,7 +36,8 @@ const YEAR_TH = Number(ELEMENTAL.startDate.slice(0, 4)) + 543;
 /** 9x9 pixel shapes, one per element. */
 const SHAPES = {
   earth: [".........", ".........", "....#....", "...###...", "..##.##..", ".#######.", "##.###.##", "#########", "#########"],
-  water: ["....#....", "....#....", "...###...", "..#####..", ".#######.", ".##.####.", ".#.#####.", "..#####..", "...###..."],
+  // One column left of centre: flush with the left edge like the others, so it lines up with its name (Angpao, 2026-11-24: "why water position look off").
+  water: ["...#.....", "...#.....", "..###....", ".#####...", "#######..", "##.####..", "#.#####..", ".#####...", "..###...."],
   air: [".........", "..####...", ".#....#..", "......#..", "######...", ".........", "#######..", ".......#.", "..####..."],
   fire: ["....#....", "...##....", "...###.#.", "..####.#.", ".#######.", ".###.###.", "###...###", "###...###", ".#######."],
   aether: ["#.....#..", "...#.....", ".......##", "..#......", "#....#...", ".........", "...#...#.", ".#.......", "......#.."],
@@ -114,10 +115,17 @@ function Tag({ children }: { children: ReactNode }) {
   return <p style={{ margin: 0, fontFamily: EL_FONT.mono, fontSize: 20, color: EL.creamSoft }}>[{children}]</p>;
 }
 
+/**
+ * The link as printed on the slide: the short one, which redirects to the
+ * permanent link. The permanent link is too long for its column: it widens
+ * the column, the other facts wrap, and the schedule runs under the QR code.
+ */
+const SHORT_URL = ELEMENTAL.url.replace(/\/elemental$/, "");
+
 /** One fact: a tag, the big value, one quiet line under it. */
 function Fact({ tag, big, below }: { tag: string; big: ReactNode; below: ReactNode }) {
   return (
-    <div style={{ borderTop: `1px solid rgba(243,239,230,0.28)`, paddingTop: 16 }}>
+    <div style={{ borderTop: `1px solid rgba(243,239,230,0.28)`, paddingTop: 13 }}>
       <Tag>{tag}</Tag>
       <p style={{ margin: "6px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 42, lineHeight: "50px" }}>{big}</p>
       <p style={{ margin: "4px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 23, lineHeight: "32px", color: EL.creamSoft }}>{below}</p>
@@ -170,13 +178,13 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
         </p>
 
         {/* Facts, 3 x 2 */}
-        <div style={{ marginTop: 22, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", columnGap: 36, rowGap: 16 }}>
+        <div style={{ marginTop: 18, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", columnGap: 36, rowGap: 12 }}>
           <Fact tag="วันแข่ง" big={thaiDayRange()} below={`${YEAR_TH} · หยุดยาว ${ELEMENTAL.days} วัน`} />
           <Fact tag="รูปแบบ" big="ออนไลน์" below={`${ELEMENTAL.venueTh.replace("ออนไลน์", "").trim()} อยู่ที่ไหนก็ร่วมได้`} />
           <Fact tag="ใครสมัครได้" big={ELEMENTAL.gradesTh} below="นักเรียนจากทั่วประเทศ" />
           <Fact tag="ทีม" big={`${ELEMENTAL.teamMin}–${ELEMENTAL.teamMax} คน`} below="มาคนเดียวได้ เราหาทีมให้" />
           <Fact tag="ค่าสมัคร" big={`฿${ELEMENTAL.groupPriceBaht} / คน`} below={`มากับเพื่อน · คนเดียว ฿${ELEMENTAL.priceBaht}`} />
-          <Fact tag="ปิดรับสมัคร" big={formatThaiDate(ELEMENTAL.registrationClosesOn, false)} below={ELEMENTAL.url} />
+          <Fact tag="ปิดรับสมัคร" big={formatThaiDate(ELEMENTAL.registrationClosesOn, false)} below={SHORT_URL} />
         </div>
 
         {/* The prize, as on slide 1 (trophy, the number in yellow), then who gets what. */}
@@ -190,18 +198,22 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
               บาท
             </span>
           </div>
-          <div style={{ flex: 1, display: "grid", gridTemplateColumns: "auto 1fr", columnGap: 12, rowGap: 2, fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 22, lineHeight: "31px" }}>
+          <div style={{ flex: 1, display: "grid", gridTemplateColumns: "auto 1fr", columnGap: 12, rowGap: 2, fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 22, lineHeight: "29px" }}>
             {ELEMENTAL.prizes.map((p) => (
               <Fragment key={p.place}>
                 <span style={{ fontWeight: 400, color: HIGHLIGHT, whiteSpace: "nowrap" }}>ที่ {p.place}</span>
                 <span style={{ whiteSpace: "nowrap" }}>{[p.cashBaht ? `เงินสด ${baht(p.cashBaht)}` : null, `เครดิต Claude ${baht(p.creditBaht)}`].filter(Boolean).join(" + ")}</span>
               </Fragment>
             ))}
+            {/* The winner of each element, under "ที่ 3" (Angpao, 2026-11-24: "winner in each track get 500 bath claude credit", a track being an element; "put it under ที่ 3 make space for it"). */}
+            <span style={{ gridColumn: "1 / -1", whiteSpace: "nowrap" }}>
+              <span style={{ fontWeight: 400, color: HIGHLIGHT }}>ผู้ชนะแต่ละธาตุ</span> เครดิต Claude {baht(ELEMENTAL.elementPrizeCreditBaht)}
+            </span>
           </div>
         </div>
 
-        {/* The five elements */}
-        <div style={{ marginTop: 18 }}>
+        {/* The five elements. The whole block, heading and all, sits 10px lower than at first (Angpao, 2026-11-24: "move this element lower abit", "not just element but also the text"). */}
+        <div style={{ marginTop: 24 }}>
           <Head>
             โจทย์ 5 ธาตุ <span style={{ fontWeight: 300, color: EL.creamSoft }}>เลือกปัญหาไหนก็ได้ในธาตุนั้น</span>
           </Head>
@@ -209,7 +221,8 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
             {ELEMENTS.map(({ key, color, line }) => (
               <div key={key}>
                 {key === "aether" ? <AetherPixels rows={SHAPES[key]} size={48} id={`${id}-aether`} /> : <Pixels rows={SHAPES[key]} color={color} size={48} />}
-                <p style={{ margin: "8px 0 0", fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 30, lineHeight: "38px", whiteSpace: "nowrap" }}>{el(key)?.th}</p>
+                {/* The name sits 14px under its icon, 6px more than at first (Angpao, 2026-11-24: "move the text lower abit"). */}
+                <p style={{ margin: "14px 0 0", fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 30, lineHeight: "38px", whiteSpace: "nowrap" }}>{el(key)?.th}</p>
                 <p style={{ margin: "2px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 20, lineHeight: "28px", color: EL.creamSoft }}>{line}</p>
               </div>
             ))}
@@ -217,11 +230,11 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
         </div>
 
         {/* Schedule */}
-        <div style={{ marginTop: 14 }}>
+        <div style={{ marginTop: 10 }}>
           <Head>กำหนดการ</Head>
-          <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: `repeat(${days.length}, 1fr)`, columnGap: 14 }}>
+          <div style={{ marginTop: 9, display: "grid", gridTemplateColumns: `repeat(${days.length}, 1fr)`, columnGap: 14 }}>
             {days.map((d) => (
-              <div key={d} style={{ borderTop: `2px solid ${EL.cream}`, paddingTop: 12 }}>
+              <div key={d} style={{ borderTop: `2px solid ${EL.cream}`, paddingTop: 9 }}>
                 <p style={{ margin: 0, fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 25, lineHeight: "32px" }}>{formatThaiDate(d)}</p>
                 {ELEMENTAL.schedule
                   .filter((s) => s.date === d)

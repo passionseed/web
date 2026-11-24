@@ -6,7 +6,7 @@ import Link from "next/link";
 import { motion, useReducedMotion, useTransform } from "framer-motion";
 
 import { BACKGROUND, EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
-import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
+import { ELEMENTAL, prizeTotal } from "@/components/hackathon/poster/elemental/facts";
 
 import { BeginnerJourneySection } from "./BeginnerJourneySection";
 import styles from "./elemental-cinema.module.css";
@@ -345,6 +345,47 @@ function ElementalExperienceInner({
             </Link>{" "}
             ทั้งหมด ให้ผลงานที่ดีที่สุดได้ไปต่อจนเป็นธุรกิจจริง
           </p>
+
+          {/*
+            Who can join and the prizes (Angpao, 2026-11-24: "update hackathon
+            info include participant education level and also prize"). The
+            same facts as Instagram slide 2, all from facts.ts.
+          */}
+          <div className="mt-12 grid grid-cols-1 border-y border-[#1d211f]/20 md:grid-cols-[1fr_1.5fr]" id="who-and-prizes">
+            <div className="py-8 md:pr-10">
+              <p className="text-sm" style={{ fontFamily: EL_FONT.mono, color: EL.inkSoft }}>
+                [ใครสมัครได้]
+              </p>
+              <p className="mt-2 text-5xl sm:text-6xl" style={{ fontFamily: EL_FONT.display, fontWeight: 200, lineHeight: 1.05 }}>
+                {ELEMENTAL.gradesTh}
+              </p>
+              <p className="mt-3 text-base" style={{ fontFamily: "var(--font-bai-jamjuree), sans-serif", color: EL.inkSoft }}>
+                นักเรียนจากทั่วประเทศ ทีมละ {ELEMENTAL.teamMin}–{ELEMENTAL.teamMax} คน
+              </p>
+            </div>
+            <div className="border-t border-[#1d211f]/20 py-8 md:border-l md:border-t-0 md:pl-10">
+              <p className="text-sm" style={{ fontFamily: EL_FONT.mono, color: EL.inkSoft }}>
+                [รางวัลรวมมูลค่า {prizeTotal()} บาท]
+              </p>
+              <dl
+                className="mt-3 grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 text-base sm:text-lg"
+                style={{ fontFamily: "var(--font-bai-jamjuree), sans-serif" }}
+              >
+                {ELEMENTAL.prizes.map((p) => (
+                  <div key={p.place} className="contents">
+                    <dt className="font-semibold">ที่ {p.place}</dt>
+                    <dd style={{ color: EL.inkSoft }}>
+                      {[p.cashBaht ? `เงินสด ฿${p.cashBaht.toLocaleString("en-US")}` : null, `เครดิต Claude ฿${p.creditBaht.toLocaleString("en-US")}`]
+                        .filter(Boolean)
+                        .join(" + ")}
+                    </dd>
+                  </div>
+                ))}
+                <dt className="font-semibold">ผู้ชนะแต่ละธาตุ</dt>
+                <dd style={{ color: EL.inkSoft }}>เครดิต Claude ฿{ELEMENTAL.elementPrizeCreditBaht.toLocaleString("en-US")}</dd>
+              </dl>
+            </div>
+          </div>
 
           {/* 3-step editorial list */}
           <ol className="mt-14 grid gap-8 sm:grid-cols-3">

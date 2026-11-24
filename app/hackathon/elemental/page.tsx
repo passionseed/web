@@ -7,7 +7,7 @@ import { elementalRegistrationOpen, normalizeSource } from "@/lib/hackathon/elem
 import { CANONICAL_ORIGIN } from "@/lib/seo/canonical-origin";
 
 const TITLE = `${ELEMENTAL.edition} Hackathon | ${ELEMENTAL.series}`;
-const DESCRIPTION = `${ELEMENTAL.edition} Hackathon: ดิน น้ำ ลม ไฟ ${thaiDateLine()} รางวัลรวม ${prizeTotal()} บาท สมัครคนเดียว ฿${ELEMENTAL.priceBaht} มากับเพื่อน ฿${ELEMENTAL.groupPriceBaht} ต่อคน`;
+const DESCRIPTION = `${ELEMENTAL.edition} Hackathon: ดิน น้ำ ลม ไฟ ${thaiDateLine()} สำหรับนักเรียน ${ELEMENTAL.gradesTh} รางวัลรวม ${prizeTotal()} บาท สมัครคนเดียว ฿${ELEMENTAL.priceBaht} มากับเพื่อน ฿${ELEMENTAL.groupPriceBaht} ต่อคน`;
 
 export const metadata: Metadata = {
   title: TITLE,
