@@ -61,7 +61,11 @@
     "radar:cover": "dotenv -e .env.local -o -- tsx scripts/radar-guide/cover.ts",
     "radar:check": "tsx scripts/radar-guide/check.ts",
     "radar:tcas": "tsx scripts/radar-guide/tcas.ts",
-    "radar:art": "tsx scripts/radar-guide/art.ts"
+    "radar:art": "tsx scripts/radar-guide/art.ts",
+    "radar:story": "tsx scripts/radar-guide/story.ts",
+    "radar:story-art": "tsx scripts/radar-guide/story-art.ts",
+    "radar:story-photo": "tsx scripts/radar-guide/story-photo.ts",
+    "radar:voice": "dotenv -e .env.local -o -- tsx scripts/radar-guide/voice.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.38",
@@ -158,7 +162,7 @@
     "marked": "^16.4.2",
     "mime": "^4.1.0",
     "ml-kmeans": "^7.0.0",
-    "next": "16.4.4",
+    "next": "16.4.6",
     "next-themes": "^0.4.6",
     "ogl": "^1.0.11",
     "pdf-lib": "^1.17.1",

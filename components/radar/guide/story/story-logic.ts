@@ -102,6 +102,17 @@ export const HOST_IDLE_LOOP: readonly HostLoopStep[] = [
   { frame: "flick", ms: 420 },
 ];
 
+/** The idle loop's frame `ms` into the loop (it repeats), for a host driven by a clock. */
+export function hostIdleFrameAt(ms: number): HostFrameName {
+  const total = HOST_IDLE_LOOP.reduce((sum, step) => sum + step.ms, 0);
+  let t = ((ms % total) + total) % total;
+  for (const step of HOST_IDLE_LOOP) {
+    if (t < step.ms) return step.frame;
+    t -= step.ms;
+  }
+  return HOST_IDLE_LOOP[0].frame;
+}
+
 /** Moods that hold one frame instead of flapping. */
 export function hostHeldFrame(mood: HostMood | undefined): HostFrameName | null {
   if (mood === "wow") return "cheer";

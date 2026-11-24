@@ -43,136 +43,145 @@ export type PixelPalette = Readonly<Record<string, string>>;
 /** Native host grid size; the webp is this grid scaled 2x (GUIDE_HOST.spriteSize 64x64). */
 export const HOST_GRID = { w: 32, h: 32 } as const;
 
-/** Native avatar grid size (the profile card's player). */
+/** Native avatar grid size (the profile card's player and the story reels' cast). */
 export const AVATAR_GRID = { w: 24, h: 32 } as const;
 
-/*
- * The player avatar (it was the first host).
- * Legend: K outline, H hair, S skin, s skin shade, R blush, W eye light,
- * M mouth, O headset cups, m mic boom (drawn over the face), J hoodie,
- * j hoodie shade, P trousers.
- */
-const HOST_HEAD_TOP: PixelGrid = [
-  "........................",
-  "........KKKKKKKK........",
-  "......KKHHHHHHHHKK......",
-  ".....KHHHHHHHHHHHHK.....",
-  "....KHHHHHHHHHHHHHHK....",
-  "....KHHHHHHHHHHHHHHK....",
-  "...OKHHSSSSSSSSSSHHKO...",
-  "...OKHSSSSSSSSSSSSHKO...",
-];
-
-const HOST_EYES_OPEN: PixelGrid = [
-  "...OKSSKKSSSSSSKKSSKO...",
-  "...OKSSKWSSSSSSKWSSKO...",
-];
-
-/** Happy closed eyes (^ ^) for the cheer frame. */
-const HOST_EYES_HAPPY: PixelGrid = [
-  "...OKSSKKSSSSSSKKSSKO...",
-  "...OKSKSSKSSSSKSSKSKO...",
-];
-
-const HOST_BODY: PixelGrid = [
-  "......KKSSSSSSSSKK......",
-  "........KKSSSSKK........",
-  "......KKJJKSSKJJKK......",
-  "....KKJJJJJKKJJJJJKK....",
-  "...KJJJJJJJJJJJJJJJJK...",
-  "..KJJjJJJJJJJJJJJJjJJK..",
-  "..KJJjJJJJJJJJJJJJjJJK..",
-  "..KJJjKJJJJJJJJJJKjJJK..",
-  "..KSSKKJJJJJJJJJJKKSSK..",
-  "..KSSK.KJJJJJJJJK.KSSK..",
-  "...KK..KJJJJJJJJK..KK...",
-  ".......KjjjjjjjjK.......",
-  ".......KPPPPPPPPK.......",
-  ".......KPPPKKPPPK.......",
-  ".......KPPK..KPPK.......",
-  ".......KPPK..KPPK.......",
-  "......KKKKK..KKKKK......",
-  "......KKKKK..KKKKK......",
-];
-
-const HOST_BODY_CHEER: PixelGrid = [
-  ".KSK..KKSSSSSSSSKK..KSK.",
-  ".KSK....KKSSSSKK....KSK.",
-  "..KJK.KKJJKSSKJJKK.KJK..",
-  "..KJJKKJJJJKKJJJJKKJJK..",
-  "...KJJJJJJJJJJJJJJJJK...",
-  "....KJJJJJJJJJJJJJJK....",
-  "....KJjJJJJJJJJJJjJK....",
-  "....KJjJJJJJJJJJJjJK....",
-  ".....KJJJJJJJJJJJJK.....",
-  ".....KJJJJJJJJJJJJK.....",
-  "......KJJJJJJJJJJK......",
-  ".......KjjjjjjjjK.......",
-  ".......KPPPPPPPPK.......",
-  ".......KPPPKKPPPK.......",
-  ".......KPPK..KPPK.......",
-  ".......KPPK..KPPK.......",
-  "......KKKKK..KKKKK......",
-  "......KKKKK..KKKKK......",
-];
-
-function hostGrid(eyes: PixelGrid, mouthRows: PixelGrid, body: PixelGrid): PixelGrid {
-  return [...HOST_HEAD_TOP, ...eyes, "...OKSSSSSSSSSSSSSSKO...", ...mouthRows, ...body];
+/** Replace the rows of `grid` starting at `at` (a frame that changes only the eyes or the mouth). */
+export function withRows(grid: PixelGrid, at: number, rows: PixelGrid): PixelGrid {
+  return [...grid.slice(0, at), ...rows, ...grid.slice(at + rows.length)];
 }
 
-/** Closed smile, mic boom on the right cheek. */
-const MOUTH_IDLE: PixelGrid = [
-  "....KSRSSSSSSSSSSRSKm...",
-  "....KSSSSSKKKKSmmmSK....",
-  ".....KSSSSSSSSSSSSK.....",
+/*
+ * The player avatar: a Thai high-schooler in a hoodie over the school shirt
+ * (its collar points show), about 2.3 heads tall and slim (a 12-cell head, a 14-cell body with 1-cell arms), lit from the upper right like
+ * P'Seed. Hair, skin, hoodie and trousers each have their own ramp; K is the
+ * outer outline and lines inside the figure use the material's own shade.
+ * Generic and gender-neutral, so any player can be it. The hoodie takes the
+ * career accent (J, j, i).
+ * Legend: K outline, H hair, h hair shade, L hair sheen, S skin, s skin shade,
+ * d mouth line, R blush, W cream (eye lights, collar, drawstrings, cuffs,
+ * socks), f trainers, J hoodie, j hoodie shade, i hoodie light, T trousers,
+ * t trousers shade, u trousers light, M open mouth, m tongue.
+ */
+const AVATAR_IDLE: PixelGrid = [
+  "........................",
+  "........................",
+  "..............K.........",
+  ".........KKKKKK.........",
+  "........KKhHHLHK........",
+  ".......KHhHHHHLHK.......",
+  "......KHhHHHHhHLHK......",
+  "......KHHssHHssHHK......",
+  "......KHSKWSSKWSHK......",
+  "......KhSKKSSKKSHK......",
+  "......KhSRSSSSRSHK......",
+  ".......KSSSddSSSK.......",
+  "........KsSSSSSK........",
+  ".........KSSSSK.........",
+  ".......KKKssssKKK.......",
+  ".......KJjWssWjJK.......",
+  "......KJJjjWWjjJiK......",
+  ".....KjJJJWJJWJJJjK.....",
+  ".....KjJJJWJJWJJJjK.....",
+  ".....KjjJJWJJJJJJjK.....",
+  ".....KjjJJJJJJJJJjK.....",
+  ".....KjKJjjjjjjJKjK.....",
+  ".....KjKjJJJJJJjKjK.....",
+  ".....KSKtttttttTKSK.....",
+  ".....KsKTTTTTTTTKsK.....",
+  ".....KKKTTtKKtTTKKK.....",
+  ".......KTtK..KtuK.......",
+  ".......KTtK..KtuK.......",
+  ".......KTtK..KtTK.......",
+  ".......KWWK..KWWK.......",
+  "......KfffK..KfffK......",
+  ".......KKK....KKK.......",
 ];
-/** Open mouth (second talking frame). */
-const MOUTH_TALK: PixelGrid = [
-  "....KSRSSSSSSSSSSRSKm...",
-  "....KSSSSSKMMKSmmmSK....",
-  ".....KSSSSSKKSSSSSK.....",
-];
-/** Wide open grin. */
-const MOUTH_CHEER: PixelGrid = [
-  "....KSRSSKKKKKKSSRSKm...",
-  "....KSSSSKMMMMKmmmSK....",
-  ".....KSSSSKKKKSSSSK.....",
+
+/** Arms up, happy closed eyes and a grin: the profile card's hero pose. */
+const AVATAR_CHEER: PixelGrid = [
+  "........................",
+  "........................",
+  "..............K.........",
+  ".........KKKKKK.........",
+  "........KKhHHLHK........",
+  ".......KHhHHHHLHK.......",
+  "..KK..KHhHHHHhHLHK..KK..",
+  ".KSSK.KHHSSHHSSHHK.KSSK.",
+  ".KSsK.KHSKKSSKKKHK.KsSK.",
+  ".KWWK.KhSSKSSKSSHK.KWWK.",
+  ".KJjK.KhSRSSSSRSHK.KjJK.",
+  ".KJjK..KSSMWWMSSK..KjJK.",
+  ".KJJjK..KsSMMSSK..KjJJK.",
+  ".KJJJjK..KSSSSK..KjJJJK.",
+  "..KJJJjKKKssssKKKjJJJK..",
+  "...KKJJJJjWssWjJiiJKK...",
+  "......KJJjjWWjjJiK......",
+  ".......KJJWJJWJJK.......",
+  ".......KJJWJJWJJK.......",
+  ".......KjJWJJJJJK.......",
+  ".......KjJJJJJJJK.......",
+  ".......KjjjjjjjJK.......",
+  ".......KjJJJJJJJK.......",
+  "........KttttttK........",
+  "........KTTTTTTK........",
+  "........KTtKKtTK........",
+  ".......KTtK..KtuK.......",
+  ".......KTtK..KtuK.......",
+  ".......KTtK..KtTK.......",
+  ".......KWWK..KWWK.......",
+  "......KfffK..KfffK......",
+  ".......KKK....KKK.......",
 ];
 
 export const AVATAR_GRIDS = {
-  idle: hostGrid(HOST_EYES_OPEN, MOUTH_IDLE, HOST_BODY),
-  talk: hostGrid(HOST_EYES_OPEN, MOUTH_TALK, HOST_BODY),
-  cheer: hostGrid(HOST_EYES_HAPPY, MOUTH_CHEER, HOST_BODY_CHEER),
+  idle: AVATAR_IDLE,
+  /** Open mouth: rows 11 and 12 only. */
+  talk: withRows(AVATAR_IDLE, 11, [".......KSSSMMSSSK.......", "........KsSmmSSK........"]),
+  /** Eyes shut: row 8 only (the lid drops onto the dark lower row). */
+  blink: withRows(AVATAR_IDLE, 8, ["......KHSSSSSSSSHK......"]),
+  cheer: AVATAR_CHEER,
 } as const satisfies Record<string, PixelGrid>;
 
 const AVATAR_BASE_PALETTE: PixelPalette = {
   K: STORY_PALETTE.ink,
-  H: STORY_PALETTE.hair,
-  S: STORY_PALETTE.skin,
-  s: STORY_PALETTE.skinShade,
-  R: STORY_PALETTE.blush,
+  H: "#3a3452",
+  h: "#272238",
+  L: "#5e5a86",
+  S: "#dca27b",
+  s: "#b8705c",
+  d: "#8a4a48",
+  R: "#d9846a",
   W: STORY_PALETTE.cream,
-  M: STORY_PALETTE.mouth,
-  O: STORY_PALETTE.orange,
-  m: STORY_PALETTE.orange,
-  J: STORY_PALETTE.violet,
-  j: STORY_PALETTE.violetDeep,
-  P: STORY_PALETTE.pants,
+  f: "#d9c8c4",
+  T: "#46466e",
+  t: "#302f4c",
+  u: "#6a6a9a",
+  M: "#5c1f2c",
+  m: "#b84a58",
 };
 
+const HEX6 = /^#[0-9a-f]{6}$/i;
+
+/** Mix two #rrggbb colours (t = 0 is `a`, 1 is `b`). Anything else returns `a` unchanged. */
+export function mixHex(a: string, b: string, t: number): string {
+  if (!HEX6.test(a) || !HEX6.test(b)) return a;
+  const channel = (hex: string, i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
+  const mixed = [0, 1, 2].map((i) => Math.round(channel(a, i) + (channel(b, i) - channel(a, i)) * t));
+  return `#${mixed.map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+}
+
 /**
- * Player avatar for the profile card: the first host's body without the headset,
- * a different hair colour, and the hoodie in the career accent. Generic, no
- * name, no face details beyond eyes and smile.
+ * The avatar in a career's colours: the hoodie in the accent, its shade mixed
+ * toward the night plum and its light toward cream, so any accent keeps the
+ * same shading. Hair, skin and trousers never change.
  */
-export function avatarPalette(accent: string, shade?: string): PixelPalette {
+export function avatarPalette(accent: string, shade?: string, light?: string): PixelPalette {
   return {
     ...AVATAR_BASE_PALETTE,
-    H: "#6b3a2a",
-    O: "transparent",
-    m: STORY_PALETTE.skin,
     J: accent,
-    j: shade ?? STORY_PALETTE.violetDeep,
+    j: shade ?? mixHex(accent, STORY_PALETTE.plum, 0.45),
+    i: light ?? mixHex(accent, STORY_PALETTE.cream, 0.4),
   };
 }
 

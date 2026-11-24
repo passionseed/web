@@ -1,0 +1,298 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`marketing-strategist guide matches the Thai copy snapshot (diff this in the Thai review) 1`] = `
+[
+  "dream.titleTh: หมีเนยปัง เบื้องหลังมีคนคิด
+dream.questionTh: แบรนด์ที่ใครๆ ก็พูดถึง มันดังเอง หรือมีคนคิดไว้
+dream.navLabelTh: หมีเนยปังเพราะอะไร
+dream.og.headlineTh: แค่ 12 วัน หมีเนยได้เอนเกจเมนต์ราว 13.6 ล้านครั้ง เบื้องหลังคืองานการตลาด
+dream.og.stat.th: 1 ถึง 12 มิ.ย. 2567 หมีเนยมีเอนเกจเมนต์ราว 13.6 ล้านครั้ง
+dream.blocks[0].lines[0].text.th: เปิดรันสายการตลาด เริ่มจากเรื่องที่เธอน่าจะเคยไถฟีดเจอ
+dream.blocks[0].lines[1].text.th: หมีเต้นหน้าห้าง ที่คนแห่ไปต่อคิวรอเจอตัวจริง
+dream.blocks[1].ask[0].text.th: เธอว่าหมีเนยดังขึ้นมาได้ยังไง
+dream.blocks[1].options[0].labelTh: ดวงล้วนๆ คลิปมันไวรัลไปเอง
+dream.blocks[1].options[0].reply[0].text.th: จังหวะกับโอกาสมีส่วนจริง แต่พอดังปุ๊บ แบรนด์ก็รีบต่อยอดทันทีเลย
+dream.blocks[1].options[1].labelTh: ก็น่ารักอะ ใครเห็นก็โดนตก
+dream.blocks[1].options[1].reply[0].text.th: น่ารักอย่างเดียวไม่พอหรอก ต้องรู้ด้วยว่าน่ารักให้ใครดู
+dream.blocks[1].options[2].labelTh: ไม่เคยสงสัยเลยอะ
+dream.blocks[1].options[2].reply[0].text.th: ไม่แปลกเลย ปกติเราเห็นแต่ตอนมันดังแล้ว ไม่เคยเห็นงานเบื้องหลัง
+dream.blocks[1].options[2].reply[1].text.th: งั้นไปแอบส่องเบื้องหลังกัน
+dream.blocks[2].text.th: หมีเนยคือมาสคอตของ Butterbear ร้านขนมเล็กๆ ในห้าง EmSphere ร้านสร้างหมีตัวนี้ขึ้นมาให้เป็นภาพจำของแบรนด์
+dream.blocks[2].titleTh: แฟ้มจากข่าว: หมีเนย
+dream.blocks[3].unlockLabelTh: ลองทายดู
+dream.blocks[3].blocks[0].lines[0].text.th: กลางปี 2567 มีบริษัทนั่งนับเลยว่าคนเอนเกจกับหมีเนยบนโซเชียลแค่ไหน
+dream.blocks[3].blocks[0].lines[1].text.th: ลองทายดู 12 วันแรกของ มิ.ย. ทั้งดู ไลก์ แชร์ คอมเมนต์ รวมกันกี่ครั้ง
+dream.blocks[3].blocks[1].game.data.promptTh: 1 ถึง 12 มิ.ย. 2567 คนเอนเกจกับหมีเนยรวมกี่ครั้ง
+dream.blocks[3].blocks[1].game.data.chart.bars[0].labelTh: เอนเกจเมนต์เรื่องหมีเนย (1 ถึง 12 มิ.ย. 2567)
+dream.blocks[3].blocks[1].game.data.nearTh: เกือบเป๊ะ
+dream.blocks[3].blocks[1].game.data.overTh: เธอเดาสูงไป {d} ครั้ง
+dream.blocks[3].blocks[1].game.data.underTh: เธอเดาต่ำไป {d} ครั้ง
+dream.blocks[3].blocks[1].game.data.revealTh: เธอเดา {g} ของจริงคือราว 13.6 ล้านครั้ง
+dream.blocks[3].blocks[1].answersTh[0]: 1 ถึง 12 มิ.ย. 2567 หมีเนยมีเอนเกจเมนต์บนโซเชียลราว 13.6 ล้านครั้ง (นับโดย Zanroo)
+dream.blocks[3].blocks[1].answersTh[1]: ราว 73.3% มาจาก TikTok
+dream.blocks[3].blocks[2].text.th: ราว 13.6 ล้านเอนเกจเมนต์ใน 12 วัน ราว 73.3% มาจาก TikTok
+dream.blocks[3].blocks[2].titleTh: ตัวเลขจาก Zanroo
+dream.blocks[3].blocks[2].metaTh: 1 ถึง 12 มิ.ย. 2567
+dream.blocks[3].blocks[3].lines[0].text.th: คนที่นั่งนับตัวเลขพวกนี้ ก็ทำงานสายการตลาดเหมือนกันนะ
+dream.blocks[3].blocks[3].lines[1].text.th: แต่ดังขนาดนี้ มันคิดไว้ก่อน หรือฟลุกกันแน่
+dream.blocks[3].blocks[3].lines[2].text.th: ไปแกะดูด้วยกันเลย
+dream.blocks[4].unlockLabelTh: แกะเบาะแส
+dream.blocks[4].blocks[0].lines[0].text.th: นักการตลาดมักถามก่อนเลย: ใครคือคนดู เขารู้สึกอะไร แล้วเห็นจากที่ไหน
+dream.blocks[4].blocks[0].lines[1].text.th: ลองจับเบาะแสจากข่าวพวกนี้แยกใส่ช่องดูนะ
+dream.blocks[4].blocks[1].game.data.tagTh: แกะเบาะแสหมีเนย
+dream.blocks[4].blocks[1].game.data.goalTh: แยกเบาะแส: ใคร รู้สึกอะไร เห็นที่ไหน
+dream.blocks[4].blocks[1].game.data.bins[0].labelTh: ใครคือแฟน
+dream.blocks[4].blocks[1].game.data.bins[1].labelTh: เขารู้สึกอะไร
+dream.blocks[4].blocks[1].game.data.bins[2].labelTh: เห็นจากที่ไหน
+dream.blocks[4].blocks[1].game.data.items[0].labelTh: แฟนส่วนใหญ่ไม่ใช่เด็กเล็ก แต่เป็นผู้ใหญ่วัยทำงาน
+dream.blocks[4].blocks[1].game.data.items[0].revealTh: หมีหน้าตาเหมือนของเด็ก แต่แฟนส่วนใหญ่คือผู้ใหญ่ ที่เรียกตัวเองว่ามัมหมี
+dream.blocks[4].blocks[1].game.data.items[1].labelTh: อยากพักใจจากความเครียดเรื่องงาน
+dream.blocks[4].blocks[1].game.data.items[1].revealTh: ดูหมีเต้นแล้วได้พัก แฟนๆ เลยเรียกว่าฮีลใจ
+dream.blocks[4].blocks[1].game.data.items[2].labelTh: ไถ TikTok ทีไรก็เจอ
+dream.blocks[4].blocks[1].game.data.items[2].revealTh: เอนเกจเมนต์ราว 73.3% มาจาก TikTok นักการตลาดเลยต้องรู้ว่าคนดูอยู่แอปไหน
+dream.blocks[4].blocks[1].game.data.items[3].labelTh: นึกถึงตุ๊กตาหมีตอนเด็ก
+dream.blocks[4].blocks[1].game.data.items[3].revealTh: ความคิดถึงวัยเด็ก เป็นความรู้สึกที่แบรนด์ไม่ต้องอธิบายเลย
+dream.blocks[4].blocks[1].game.data.items[4].labelTh: นักท่องเที่ยวจีนที่แวะมาหาถึงห้าง
+dream.blocks[4].blocks[1].game.data.items[4].revealTh: แฟนไม่ได้มีแค่คนไทย บางคนตั้งใจมาหาถึงห้างเลย
+dream.blocks[4].blocks[1].game.data.items[5].labelTh: คลิปเต้นที่นักท่องเที่ยวจีนถ่าย แล้วไปดังในจีน
+dream.blocks[4].blocks[1].game.data.items[5].nearTh.who: ใช่ แฟนจีนก็เป็นคนดู แต่เบาะแสข้อนี้บอกว่าคนเห็นหมีจากที่ไหน
+dream.blocks[4].blocks[1].game.data.items[5].revealTh: คลิปที่พาหมีดังไปถึงจีน แบรนด์ไม่ได้ถ่ายเอง นักท่องเที่ยวเป็นคนถ่าย
+dream.blocks[4].blocks[1].game.data.resultTh: แยกถูก {score}/{total}
+dream.blocks[4].blocks[1].answersTh[0]: ใครคือแฟน: ผู้ใหญ่วัยทำงาน (มัมหมี), นักท่องเที่ยวจีน
+dream.blocks[4].blocks[1].answersTh[1]: เขารู้สึกอะไร: อยากพักใจจากงาน, คิดถึงตุ๊กตาหมีตอนเด็ก
+dream.blocks[4].blocks[1].answersTh[2]: เห็นจากที่ไหน: TikTok, คลิปที่นักท่องเที่ยวจีนถ่ายแล้วไปดังในจีน
+dream.blocks[4].blocks[2].lines[0].text.th: ช่วงนั้นมีงานให้เจอตัวจริงทุกสัปดาห์ บางคนมาต่อคิวตั้งแต่ตี 4 กว่าๆ
+dream.blocks[4].blocks[3].text.th: ไม่มีใครสั่งให้ไวรัลได้ อาจารย์การตลาดจุฬาฯ บอกว่าบางทีลงทุนเยอะก็ไม่ปัง ขึ้นกับจังหวะ เวลา และโอกาส แบรนด์เลยต้องทำต่อเนื่อง เรื่องนี้เล่าจากข่าว เราไม่ได้ทำงานกับแบรนด์นี้
+dream.blocks[4].blocks[3].titleTh: พูดตรงๆ
+dream.blocks[4].blocks[4].lines[0].text.th: หมีน่ารักมีเต็มไปหมด แต่ตัวนี้โดนใจผู้ใหญ่ที่เหนื่อยจากงานเต็มๆ
+dream.blocks[4].blocks[4].lines[1].text.th: ด่านต่อไป: ถึงตาเธอลองวางแผนให้ร้านบ้างแล้ว
+dream.reel.hook.th: แค่ 12 วัน หมีเนยได้เอนเกจเมนต์ราว 13.6 ล้านครั้ง เบื้องหลังคืองานการตลาด
+dream.reel.variantsTh[0]: แฟนหมีเนยส่วนใหญ่ ไม่ใช่เด็กเล็กนะ
+dream.reel.variantsTh[1]: หมีน่ารักมีเต็มไปหมด ทำไมตัวนี้ถึงปัง
+dream.reel.sendToFriendTh: ส่งให้เพื่อนที่เป็นมัมหมีดูเลย
+dream.reel.visual[0]: หมีพิกเซลเต้นหน้าห้างตอนเย็น ฟองไลก์กับคอมเมนต์ลอยขึ้นเต็มจอ
+dream.reel.visual[1]: ตัวนับวิ่งถึงราว 13.6 ล้าน แถบ TikTok ยาวกว่าแถบอื่นเยอะ
+dream.reel.visual[2]: ป้าย ใคร รู้สึกอะไร เห็นที่ไหน ขึ้นมาทีละป้าย แล้วเบาะแสบินเข้าแต่ละป้าย",
+  "work.titleTh: งานจริง คือรู้ว่าพูดกับใคร แล้วนับผล
+work.questionTh: นักการตลาดแค่คิดโฆษณาเจ๋งๆ หรือเปล่า แล้วทั้งวันทำอะไรกันแน่
+work.navLabelTh: ร้านปังหน้าโรงเรียน
+work.og.headlineTh: ไอเดียเจ๋งใครก็คิดได้ แต่รู้ว่ามันได้ผลจริงไหม นั่นแหละงานนักการตลาด
+work.blocks[0].lines[0].text.th: สมมติว่าเธอได้ลูกค้าเจ้าแรกแล้วนะ
+work.blocks[0].lines[1].text.th: ร้านปังปิ้งหน้าโรงเรียน อยากให้นักเรียนแวะหลังเลิกเรียนเยอะขึ้น
+work.blocks[1].ask[0].text.th: ถ้าเป็นเธอ จะเริ่มจากตรงไหนดี
+work.blocks[1].options[0].labelTh: คิดโฆษณาเจ๋งๆ ก่อนเลย
+work.blocks[1].options[0].reply[0].text.th: ไอเดียเจ๋งช่วยได้จริง แต่ถ้ายิงผิดคน ก็เสียของนะ
+work.blocks[1].options[0].reply[1].text.th: นักการตลาดมักเริ่มจากดูคนก่อน
+work.blocks[1].options[1].labelTh: ไปส่องก่อนว่าใครเดินผ่านร้านบ้าง
+work.blocks[1].options[1].reply[0].text.th: เป๊ะเลย เริ่มจากคน ไม่ได้เริ่มจากโฆษณา
+work.blocks[1].options[2].labelTh: ลดราคาเลย ง่ายสุดละ
+work.blocks[1].options[2].reply[0].text.th: เรียกคนได้ไวจริง แต่ร้านก็ได้เงินน้อยลงทุกชิ้นนะ
+work.blocks[1].options[2].reply[1].text.th: ลองหาทางที่ไม่ต้องลดราคาก่อนดีกว่า
+work.blocks[2].lines[0].text.th: ทำเป็นขั้นๆ: เลือกไอเดียให้ตรงคน ลองจริง แล้วค่อยนับผล
+work.blocks[3].unlockLabelTh: ขั้นแรก: เลือกไอเดีย
+work.blocks[3].blocks[0].lines[0].text.th: ไปยืนส่องหน้าร้านมาแล้ว นักเรียนเดินออกประตูหลังไปรอรถกัน
+work.blocks[3].blocks[0].lines[1].text.th: บางกลุ่มนั่งติวต่อ บางคนนั่งรอผู้ปกครองนานจนแบตใกล้หมด
+work.blocks[3].blocks[0].lines[2].text.th: ไอเดียไหนตรงคน ตรงที่ อันไหนพลาด ลองแยกดูเลย
+work.blocks[3].blocks[1].game.data.tagTh: เลือกไอเดียให้ร้าน
+work.blocks[3].blocks[1].game.data.goalTh: ไอเดียไหนตรงคน ตรงที่ ไอเดียไหนพลาด
+work.blocks[3].blocks[1].game.data.bins[0].labelTh: ใช่เลย
+work.blocks[3].blocks[1].game.data.bins[1].labelTh: ผิดคน
+work.blocks[3].blocks[1].game.data.bins[2].labelTh: ผิดที่ผิดเวลา
+work.blocks[3].blocks[1].game.data.simulated.watermarkTh: ตัวอย่างจำลอง
+work.blocks[3].blocks[1].game.data.items[0].labelTh: ป้ายเล็กๆ ที่ประตูหลังโรงเรียน ทางที่นักเรียนเดินไปรอรถ
+work.blocks[3].blocks[1].game.data.items[0].revealTh: ตรงคน ตรงที่ เห็นทุกวันตอนท้องเริ่มร้องพอดี
+work.blocks[3].blocks[1].game.data.items[1].labelTh: แจกใบปลิวที่ตลาดเช้า
+work.blocks[3].blocks[1].game.data.items[1].nearTh.where: ตลาดเช้าก็ผิดที่จริง แต่ต้นเหตุคือคนแถวนั้นไม่ใช่นักเรียน
+work.blocks[3].blocks[1].game.data.items[1].revealTh: ตลาดเช้าส่วนใหญ่เป็นผู้ใหญ่ ไม่ใช่นักเรียนที่ร้านอยากได้
+work.blocks[3].blocks[1].game.data.items[2].labelTh: ชุดแชร์สำหรับกลุ่มที่นั่งติวหลังเลิกเรียน
+work.blocks[3].blocks[1].game.data.items[2].revealTh: ตรงความรู้สึก: หิว อยากนั่งกับเพื่อน แชร์กันได้ทั้งกลุ่ม
+work.blocks[3].blocks[1].game.data.items[3].labelTh: โพสต์ในเพจร้านตอน 10 โมงเช้าวันจันทร์
+work.blocks[3].blocks[1].game.data.items[3].nearTh.who: คนดูเพจอาจใช่ แต่ตอนนั้นนักเรียนนั่งเรียนอยู่ กว่าจะได้ไถ โพสต์ก็จมไปแล้ว
+work.blocks[3].blocks[1].game.data.items[3].revealTh: ถูกคน แต่ผิดเวลา ตอนนั้นนักเรียนอยู่ในห้องเรียน กว่าจะได้ไถ โพสต์ก็จมฟีดไปแล้ว
+work.blocks[3].blocks[1].game.data.items[4].labelTh: มุมนั่งรอผู้ปกครองมารับ มีที่ชาร์จมือถือ
+work.blocks[3].blocks[1].game.data.items[4].revealTh: ตรงความรู้สึก: รอนาน เบื่อ แบตใกล้หมด
+work.blocks[3].blocks[1].game.data.items[5].labelTh: ป้ายเขียนว่า ปังนุ่ม เคี้ยวง่าย เหมาะกับผู้สูงอายุ
+work.blocks[3].blocks[1].game.data.items[5].revealTh: ข้อความนี้พูดกับคนอื่น นักเรียนอ่านแล้วไม่รู้สึกว่าเกี่ยวกับตัวเอง
+work.blocks[3].blocks[1].game.data.resultTh: เลือกถูก {score}/{total}
+work.blocks[3].blocks[1].answersTh[0]: ใช่เลย: ป้ายที่ประตูหลัง, ชุดแชร์สำหรับกลุ่มติว, มุมนั่งรอผู้ปกครองมีที่ชาร์จ
+work.blocks[3].blocks[1].answersTh[1]: ผิดคน: ใบปลิวที่ตลาดเช้า, ป้ายที่พูดกับผู้สูงอายุ
+work.blocks[3].blocks[1].answersTh[2]: ผิดที่ผิดเวลา: โพสต์ตอน 10 โมงเช้าวันจันทร์ ที่นักเรียนยังเรียนอยู่
+work.blocks[3].blocks[2].lines[0].text.th: ไอเดียเดียวกันเลยนะ แต่ถ้าผิดคนหรือผิดที่ ก็เหมือนไม่ได้ทำ
+work.blocks[3].blocks[2].lines[1].text.th: เลือกเสร็จแล้ว ลองลุยจริงสักสัปดาห์ แล้วไปนับผลกัน
+work.blocks[4].unlockLabelTh: ขั้นสอง: นับผล
+work.blocks[4].blocks[0].lines[0].text.th: ครบสัปดาห์แล้ว ผลออกแล้วนะ
+work.blocks[4].blocks[0].lines[1].text.th: แต่ละไอเดีย จะทำต่อ ปรับ หรือเลิก เธอฟันธงเลย
+work.blocks[4].blocks[1].game.data.tagTh: นับผล แล้วตัดสิน
+work.blocks[4].blocks[1].game.data.goalTh: ดูผลสัปดาห์แรก แล้วตัดสินทีละไอเดีย
+work.blocks[4].blocks[1].game.data.bins[0].labelTh: ทำต่อ
+work.blocks[4].blocks[1].game.data.bins[1].labelTh: ปรับแล้วลองใหม่
+work.blocks[4].blocks[1].game.data.bins[2].labelTh: เลิก
+work.blocks[4].blocks[1].game.data.simulated.watermarkTh: ตัวอย่างจำลอง
+work.blocks[4].blocks[1].game.data.items[0].labelTh: ป้ายที่ประตูหลังโรงเรียน
+work.blocks[4].blocks[1].game.data.items[0].meta.sender: ผลสัปดาห์แรก
+work.blocks[4].blocks[1].game.data.items[0].detailTh: ก่อนติดป้าย: นักเรียนแวะวันละ 8 คน · หลังติด: วันละ 13 คน
+work.blocks[4].blocks[1].game.data.items[0].revealTh: คนมาเพิ่มจริง แถมนับได้ด้วย ทำต่อ แล้วนับต่อไปเรื่อยๆ
+work.blocks[4].blocks[1].game.data.items[1].labelTh: คลิปแมวประจำร้าน ลง TikTok
+work.blocks[4].blocks[1].game.data.items[1].meta.sender: ผลสัปดาห์แรก
+work.blocks[4].blocks[1].game.data.items[1].detailTh: ไลก์ 2,400 · นักเรียนที่แวะร้าน: ไม่เพิ่มเลย · คอมเมนต์ถามว่าร้านอยู่ไหน
+work.blocks[4].blocks[1].game.data.items[1].nearTh.stop: อย่าเพิ่งทิ้ง คนสนใจแล้ว แค่ยังไม่รู้ว่าร้านอยู่ตรงไหน
+work.blocks[4].blocks[1].game.data.items[1].flags[0]: ไลก์เยอะ แต่คนไม่มา
+work.blocks[4].blocks[1].game.data.items[1].revealTh: ไลก์เยอะไม่ได้แปลว่าคนมาร้าน ลองบอกในคลิปด้วยว่าร้านอยู่ตรงไหน
+work.blocks[4].blocks[1].game.data.items[2].labelTh: ใบปลิวที่ตลาดเช้า
+work.blocks[4].blocks[1].game.data.items[2].meta.sender: ผลสัปดาห์แรก
+work.blocks[4].blocks[1].game.data.items[2].detailTh: แจกไป 200 ใบ · มีคนถือใบปลิวมาร้าน 1 คน
+work.blocks[4].blocks[1].game.data.items[2].nearTh.tweak: ปรับยังไงก็ยังผิดคนอยู่ดี เอาแรงไปทำอย่างอื่นดีกว่า
+work.blocks[4].blocks[1].game.data.items[2].revealTh: ผิดคนตั้งแต่แรก เลิกได้เลย ไม่ต้องเสียดาย
+work.blocks[4].blocks[1].game.data.items[3].labelTh: ชุดแชร์สำหรับกลุ่มติว
+work.blocks[4].blocks[1].game.data.items[3].meta.sender: ผลสัปดาห์แรก
+work.blocks[4].blocks[1].game.data.items[3].detailTh: ขายได้ 25 ชุด · ส่วนใหญ่มากันเป็นกลุ่ม
+work.blocks[4].blocks[1].game.data.items[3].revealTh: ตรงความรู้สึกจริง แถมพาเพื่อนมาด้วย
+work.blocks[4].blocks[1].game.data.items[4].labelTh: ของแถมวันเกิด
+work.blocks[4].blocks[1].game.data.items[4].meta.sender: ผลสัปดาห์แรก
+work.blocks[4].blocks[1].game.data.items[4].detailTh: ไม่มีใครมาใช้เลย · ถามนักเรียนแล้ว ไม่มีใครรู้ว่ามีด้วย
+work.blocks[4].blocks[1].game.data.items[4].nearTh.stop: ไอเดียไม่ได้แย่ แค่ยังไม่มีใครเห็น
+work.blocks[4].blocks[1].game.data.items[4].flags[0]: ไม่มีใครเห็น
+work.blocks[4].blocks[1].game.data.items[4].revealTh: ปัญหาคือเห็นจากที่ไหน ลองเขียนไว้ที่ป้ายประตูหลังด้วย
+work.blocks[4].blocks[1].game.data.resultTh: ตัดสินถูก {score}/{total}
+work.blocks[4].blocks[1].answersTh[0]: ทำต่อ: ป้ายประตูหลัง (คนแวะเพิ่ม), ชุดแชร์สำหรับกลุ่มติว
+work.blocks[4].blocks[1].answersTh[1]: ปรับแล้วลองใหม่: คลิปแมว (ไลก์เยอะแต่คนไม่มา), ของแถมวันเกิด (ไม่มีใครเห็น)
+work.blocks[4].blocks[1].answersTh[2]: เลิก: ใบปลิวที่ตลาดเช้า (ผิดคน)
+work.blocks[4].blocks[2].lines[0].text.th: ที่เธอเพิ่งทำไปเมื่อกี้ คืองานจริงของนักการตลาดเลยนะ
+work.blocks[4].blocks[2].lines[1].text.th: ดูคน เลือกไอเดีย ลองจริง นับผล แล้ววนมาปรับต่อ
+work.blocks[4].blocks[2].lines[2].text.th: วัดผลคือเอาผลจริงมาเทียบเป้าที่ตั้งไว้ ไม่ใช่ดูแค่ยอดไลก์
+work.blocks[5].unlockLabelTh: สายนี้มีกี่แบบ
+work.blocks[5].blocks[0].lines[0].text.th: จริงๆ นักการตลาด เป็นชื่อเรียกกว้างๆ นะ ข้างในแยกได้อีกหลายสาย
+work.blocks[5].blocks[1].headTh: นักการตลาด มีสายไหนบ้าง
+work.blocks[5].blocks[1].tiles[0].titleTh: ดูแลแบรนด์
+work.blocks[5].blocks[1].tiles[0].lineTh: คิดว่าแบรนด์ควรพูดอะไร กับใคร แบบที่เธอเพิ่งทำให้ร้าน
+work.blocks[5].blocks[1].tiles[1].titleTh: ยิงแอดออนไลน์
+work.blocks[5].blocks[1].tiles[1].lineTh: ลงโฆษณาออนไลน์ แล้วเช็กตัวเลขทุกวันว่าได้ลูกค้าจริงไหม
+work.blocks[5].blocks[1].tiles[2].titleTh: เจาะอินไซต์
+work.blocks[5].blocks[1].tiles[2].lineTh: คอยฟังว่าคนพูดถึงแบรนด์ยังไง แบบที่มีคนนับเรื่องหมีเนย
+work.blocks[5].blocks[1].tiles[3].titleTh: การตลาดสินค้า
+work.blocks[5].blocks[1].tiles[3].lineTh: ช่วยทีมปั้นของใหม่ ขายใครดี เปิดตัวยังไงให้คนอยากลอง
+work.blocks[5].blocks[1].tiles[4].titleTh: ดูแลโซเชียล
+work.blocks[5].blocks[1].tiles[4].lineTh: ทำคลิป ปั้นเพจ ตอบคอมเมนต์ ให้คนอยากกดตามแบรนด์
+work.blocks[5].blocks[2].lines[0].text.th: ยังไม่ต้องรีบเลือกนะ ค่อยๆ ลองไปทีละสายก็ได้
+work.blocks[6].lines[0].text.th: ด่านต่อไป: คืนนี้ลองวางแผนให้ร้านจริงใกล้โรงเรียนเธอ
+work.reel.hook.th: ไอเดียเจ๋งใครก็คิดได้ แต่รู้ว่ามันได้ผลจริงไหม นั่นแหละงานนักการตลาด
+work.reel.variantsTh[0]: ไลก์เยอะ ไม่ได้แปลว่าขายได้
+work.reel.variantsTh[1]: ใบปลิวแจกผิดคน ต่อให้สวยแค่ไหนก็แทบไม่มีใครมา
+work.reel.sendToFriendTh: ส่งให้เพื่อนที่ชอบคิดแคมเปญ
+work.reel.visual[0]: ร้านปังปิ้งพิกเซลหน้าประตูโรงเรียนตอนเย็น การ์ดไอเดียบินลงช่อง ใช่เลย ผิดคน ผิดที่ผิดเวลา
+work.reel.visual[1]: หัวใจไลก์พุ่งขึ้นเต็มจอ แต่ตัวนับคนเข้าร้านไม่ขยับ
+work.reel.visual[2]: วงกลมหมุน ดูคน เลือกไอเดีย ลองจริง นับผล วนกลับมาที่เดิม",
+  "tonight.titleTh: คืนนี้ วางแผนให้ร้านหน้าโรงเรียน
+tonight.questionTh: คืนนี้ทำอะไรได้บ้าง ที่จบแล้วได้ผลงานการตลาดชิ้นแรกใส่พอร์ตเลย
+tonight.navLabelTh: ภารกิจคืนนี้
+tonight.og.headlineTh: คืนนี้เขียนแผนหน้าเดียว ตั้งเป้าชวนนักเรียนแวะร้านหน้าโรงเรียนเพิ่ม 10 คน โดยไม่ใช้เงินเลย
+tonight.blocks[0].lines[0].text.th: ด่านนี้ไม่ได้เล่นแค่ในจอนะ เป็นภารกิจจริงคืนนี้
+tonight.blocks[0].lines[1].text.th: เลือกร้านจริงแถวโรงเรียน แล้ววางแผนดึงนักเรียนมาแวะเพิ่ม 10 คน
+tonight.blocks[0].lines[2].text.th: กติกาสำคัญ: ไอเดียต้องไม่ใช้เงินเลย ทั้งเงินเธอและเงินร้าน
+tonight.blocks[1].text.th: แผนการตลาดต้องตอบได้ว่า เป้าคืออะไร ลูกค้าคือใคร จะทำยังไง ใช้งบเท่าไหร่ และหวังผลแค่ไหน ส่วนวัดผลคือเอาผลจริงมาเทียบกับเป้า
+tonight.blocks[1].titleTh: แผนการตลาดมีอะไรบ้าง
+tonight.blocks[2].lineTh: ไม่ต้องทักแชตร้าน หรือคุยกับคนที่ไม่รู้จักนะ แผนนี้ใช้แค่สิ่งที่เธอเห็นเองกับที่เพื่อนเล่า ถ้าอยากเอาแผนไปให้ร้านดูจริง ชวนครูหรือผู้ปกครองไปด้วย
+tonight.blocks[3].game.data.room.titleTh: Marketeer · กลยุทธ์การตลาดต่างจากแผนการตลาดอย่างไร
+tonight.blocks[3].game.data.room.badgeTh: อ่านฟรี ไม่ต้องสมัคร ณ 20 พ.ย. 2569
+tonight.blocks[3].game.data.room.subTh: บทความภาษาไทยสั้นๆ อ่านก่อนเขียนแผน แล้วค่อยลงมือ
+tonight.blocks[3].game.data.checklistTh[0]: เลือกร้านจริงแถวโรงเรียน ที่เธอเดินผ่านทุกวัน
+tonight.blocks[3].game.data.checklistTh[1]: ถามเพื่อน 3 คน ว่าทำไมแวะ หรือทำไมไม่แวะ ไม่ต้องจดชื่อ
+tonight.blocks[3].game.data.checklistTh[2]: เขียนแผนหน้าเดียวจากช่องข้างล่าง
+tonight.blocks[3].game.data.checklistTh[3]: ใส่วิธีนับผลด้วย ว่าได้เพิ่ม 10 คนจริงไหม
+tonight.blocks[3].game.data.checklistTh[4]: พรุ่งนี้หลังเลิกเรียน ชวนเพื่อนไปนับว่ามีนักเรียนแวะกี่คน นับแค่จำนวน ไม่ถ่ายรูปใคร
+tonight.blocks[3].game.data.fields[0].placeholderTh: ร้านแบบไหน ขายอะไร
+tonight.blocks[3].game.data.fields[1].placeholderTh: อยากให้ใครแวะ
+tonight.blocks[3].game.data.fields[2].placeholderTh: ตอนนั้นเขารู้สึกอะไร อยากได้อะไร
+tonight.blocks[3].game.data.fields[3].placeholderTh: เขาจะเห็นไอเดียนี้ที่ไหน ตอนไหน
+tonight.blocks[3].game.data.fields[4].placeholderTh: ไอเดียที่ไม่ต้องใช้เงิน
+tonight.blocks[3].game.data.fields[5].placeholderTh: จะนับยังไงว่าได้เพิ่ม 10 คน
+tonight.blocks[3].game.data.fixedLinesTh[0]: ทุกไอเดียในแผนนี้ไม่ต้องใช้เงิน
+tonight.blocks[3].game.data.privacyTh: เก็บไว้ในเครื่องนี้เท่านั้น ไม่ส่งไปที่ไหน
+tonight.blocks[3].answersTh[0]: เลือกร้านจริงแถวโรงเรียน แล้วถามเพื่อน 3 คนว่าทำไมแวะหรือไม่แวะ
+tonight.blocks[3].answersTh[1]: เขียนแผนหน้าเดียว: ใคร รู้สึกอะไร เห็นที่ไหน ไอเดียที่ไม่ใช้เงิน และจะนับยังไงว่าได้เพิ่ม 10 คน
+tonight.blocks[3].answersTh[2]: พรุ่งนี้หลังเลิกเรียน ชวนเพื่อนไปนับว่ามีนักเรียนแวะร้านกี่คน
+tonight.blocks[3].demoScript[1].text: เด็ก ม.ปลาย ที่รอรถตู้หลังเลิกเรียน
+tonight.blocks[3].demoScript[2].text: ป้ายเล็กๆ ตรงที่รอรถ บอกว่าร้านมีที่นั่งรอ
+tonight.blocks[4].lines[0].text.th: ช่องที่สำคัญสุดคือช่องสุดท้าย: จะนับผลยังไง
+tonight.blocks[4].lines[1].text.th: แผนที่วัดผลไม่ได้ ก็ไม่มีทางรู้ว่าเวิร์กจริงไหม
+tonight.blocks[4].lines[2].text.th: ถ้าได้ลองจริงแล้วไม่ถึง 10 คนก็ไม่เป็นไร จดไว้ว่าทำไม นั่นแหละของมีค่า
+tonight.blocks[5].lines[0].text.th: แผนหน้าเดียวกับตัวเลขที่เธอนับเอง นี่แหละผลงานชิ้นแรกในแฟ้มของเธอ
+tonight.blocks[6].text.th: TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอลงมือทำ งานแบบคืนนี้ เริ่มเป็นชิ้นแรกในแฟ้มได้เลย
+tonight.blocks[6].titleTh: รู้ไหม รอบ 1 ใช้ผลงานยื่นได้นะ
+tonight.blocks[7].ask[0].text.th: ว่าแต่เธอจะลองเมื่อไหร่ดี
+tonight.blocks[7].options[0].labelTh: คืนนี้เลยดิ
+tonight.blocks[7].options[0].reply[0].text.th: ชอบความไวนี้แฮะ
+tonight.blocks[7].options[0].reply[1].text.th: คืนนี้ร่างแผน พรุ่งนี้หลังเลิกเรียนค่อยชวนเพื่อนไปนับหน้าร้าน
+tonight.blocks[7].options[1].labelTh: ขอเป็นวันหยุดแล้วกัน
+tonight.blocks[7].options[1].reply[0].text.th: ดีลเลย ปักลงปฏิทินไว้เลย จะได้ไม่ลืม
+tonight.blocks[7].options[2].labelTh: ยังไม่ชัวร์เลยว่าจะชอบไหม
+tonight.blocks[7].options[2].reply[0].text.th: ไม่ชัวร์ก็ลองดูก่อนได้นะ
+tonight.blocks[7].options[2].reply[1].text.th: ลองแล้วไม่สนุก ก็รู้ก่อนเลือกคณะ ไม่เสียอะไรเลย",
+  "next.titleTh: แล้วเธอล่ะ
+next.questionTh: สายการตลาดใช่เธอไหม แล้วจะไปต่อทางไหน
+next.navLabelTh: แล้วเธอล่ะ
+next.og.headlineTh: สายการตลาดใช่เธอไหม เล่นจนจบแล้วค่อยตัดสินใจ
+next.blocks[0].lines[0].text.th: มาถึงด่านสุดท้ายของ Level 1 แล้ว
+next.blocks[0].lines[1].text.th: เล่นมาทั้งหมด เธอชอบส่วนไหนที่สุด
+next.blocks[1].game.data.lines.dream: ทายเอนเกจเมนต์หมีเนยไว้ {buzz} ครั้ง || แกะเบื้องหลังหมีเนยมาแล้ว
+next.blocks[1].game.data.lines.work: วางแผนให้ร้านปังปิ้ง ทำถูก {score}/{total} || วางแผนให้ร้านปังปิ้งจนนับผลได้
+next.blocks[1].game.data.lines.tonight: เตรียมแผนหน้าเดียวให้ร้านจริงแล้ว
+next.blocks[1].game.data.favourites.dream: สายที่เธอเลือกเอง: สายแบรนด์กับอินไซต์ งานจริงคืออ่านใจคน แล้วทำให้แบรนด์เป็นที่รัก
+next.blocks[1].game.data.favourites.work: สายที่เธอเลือกเอง: สายวางแคมเปญ งานจริงคือเลือกไอเดียให้ตรงคน ลองจริง แล้วนับผล
+next.blocks[1].game.data.cardLineTh: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
+next.blocks[1].answersTh[0]: เลือกด่านที่สนุกที่สุด แล้วดูว่ามันตรงกับงานจริงสายไหน
+next.blocks[1].answersTh[1]: สายแบรนด์กับอินไซต์ หรือสายวางแคมเปญ
+next.blocks[1].answersTh[2]: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
+next.blocks[2].lines[0].text.th: กดบอกเราหน่อยว่าสายนี้ใช่เธอไหม เราจะได้รู้ว่าควรเจาะลึกต่อหรือเปล่า
+next.blocks[2].lines[1].text.th: ไม่ว่าจะกดอันไหน ถือว่าได้ข้อมูล
+next.blocks[2].lines[2].text.th: ลองแล้วรู้ว่าไม่ใช่ ก็ยังได้คำตอบไวกว่าคนที่ไม่เคยลอง
+next.blocks[4].lines[0].text.th: ถ้าเธอสนใจสายนี้ ก้าวต่อไปไม่ยากเลย
+next.blocks[4].lines[1].text.th: นับหน้าร้านต่ออีกหลายวัน จนรู้ว่าวันปกติมีคนแวะเท่าไหร่
+next.blocks[4].lines[2].text.th: ถ้าร้านอยากลองแผนของเธอ ชวนครูหรือผู้ปกครองไปคุยด้วยนะ
+next.blocks[5].text.th: ไม่ชอบสังเกตคน ไม่ชอบนับผลแล้วจดตัวเลข หรือทำใจยากเวลาไอเดียที่ชอบไม่เวิร์ก เพราะงานจริงคือลอง นับ แล้วทิ้งไอเดียที่ไม่ได้ผลอยู่บ่อยๆ
+next.blocks[5].titleTh: สายนี้อาจไม่เหมาะ ถ้า...",
+  "round1.titleTh: รอบ 1 มีที่ให้ผลงานของเธอ
+round1.questionTh: เข้ามหาลัยด้วยสิ่งที่ทำเอง ไม่ใช่แค่คะแนนสอบ จริงเหรอ
+round1.navLabelTh: รอบ 1
+round1.og.headlineTh: TCAS รอบ 1 ใช้ผลงานของเธอยื่นได้ เริ่มเก็บตั้งแต่ตอนนี้เลย
+round1.og.stat.th: TCAS70 มี 4 รอบ รอบแรกคือ Portfolio
+round1.blocks[0].lines[0].text.th: ก่อนไปต่อ มีเรื่องหนึ่งที่แทบไม่มีใครเคยบอก
+round1.blocks[0].lines[1].text.th: เข้ามหาลัยไม่ได้มีแค่ทางสอบอย่างเดียวนะ
+round1.blocks[1].text.th: TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอทำมา
+round1.blocks[2].lines[0].text.th: ถ้าเธอเคยลองทำอะไรในสายการตลาด ด้วยตัวเอง นั่นแหละ เอาไปใส่ได้เลย
+round1.blocks[2].lines[1].text.th: ปีนี้ ทปอ. มีระบบ TCASfolio ให้ทำแฟ้มผลงานได้สูงสุด 40 รายการ
+round1.blocks[3].unlockLabelTh: ลองจัดแฟ้มดู
+round1.blocks[3].blocks[0].lines[0].text.th: ลองดูสิ ของพวกนี้ควรไปอยู่ช่องไหนในแฟ้ม
+round1.blocks[3].blocks[1].game.data.tagTh: จัดแฟ้มผลงาน
+round1.blocks[3].blocks[1].game.data.goalTh: จัดของใส่แฟ้ม TCASfolio
+round1.blocks[3].blocks[1].game.data.bins[0].labelTh: โครงงาน
+round1.blocks[3].blocks[1].game.data.bins[1].labelTh: กิจกรรม
+round1.blocks[3].blocks[1].game.data.bins[2].labelTh: เกียรติบัตร รางวัล
+round1.blocks[3].blocks[1].game.data.items[0].labelTh: วางแผนช่วยร้านหน้าโรงเรียน แล้วนับว่านักเรียนแวะเพิ่มจริงไหม
+round1.blocks[3].blocks[1].game.data.items[0].revealTh: โครงงาน: มีแผน มีตัวเลขก่อนกับหลัง คนอ่านเห็นเลยว่าเธอคิดยังไง
+round1.blocks[3].blocks[1].game.data.items[1].labelTh: ถามเพื่อนทั้งชั้นว่าเลือกร้านน้ำจากอะไร แล้วสรุปเป็นอินไซต์
+round1.blocks[3].blocks[1].game.data.items[1].revealTh: โครงงาน: นี่คืองานวิจัยผู้บริโภคย่อมๆ ที่เธอทำเอง
+round1.blocks[3].blocks[1].game.data.items[2].labelTh: ดูแลบูธขายของในงานโรงเรียน ทำป้ายกับโพสต์ชวนคนมาเอง
+round1.blocks[3].blocks[1].game.data.items[2].revealTh: กิจกรรม: เล่าด้วยว่าเธอทำอะไร แล้วขายได้ดีขึ้นไหม
+round1.blocks[3].blocks[1].game.data.items[3].labelTh: ดูแลเพจชุมนุม ทำโพสต์ชวนเพื่อนมาสมัคร
+round1.blocks[3].blocks[1].game.data.items[3].revealTh: กิจกรรม: จดไว้ด้วยว่าโพสต์แบบไหนมีคนสมัครเยอะสุด
+round1.blocks[3].blocks[1].game.data.items[4].labelTh: เกียรติบัตรจากเวทีประกวดแผนการตลาดหรือคลิปโฆษณา
+round1.blocks[3].blocks[1].game.data.items[4].revealTh: เกียรติบัตร รางวัล: ใส่ได้นะ เก็บแผนที่ส่งประกวดไว้ด้วย มันเล่าได้ว่าเธอคิดยังไง
+round1.blocks[3].blocks[1].game.data.resultTh: จัดถูก {score}/{total}
+round1.blocks[3].blocks[1].answersTh[0]: โครงงาน: วางแผนช่วยร้านหน้าโรงเรียน แล้วนับว่านักเรียนแวะเพิ่มจริงไหม, ถามเพื่อนทั้งชั้นว่าเลือกร้านน้ำจากอะไร แล้วสรุปเป็นอินไซต์
+round1.blocks[3].blocks[1].answersTh[1]: กิจกรรม: ดูแลบูธขายของในงานโรงเรียน ทำป้ายกับโพสต์ชวนคนมาเอง, ดูแลเพจชุมนุม ทำโพสต์ชวนเพื่อนมาสมัคร
+round1.blocks[3].blocks[1].answersTh[2]: เกียรติบัตร รางวัล: เกียรติบัตรจากเวทีประกวดแผนการตลาดหรือคลิปโฆษณา
+round1.blocks[3].blocks[2].lines[0].text.th: เห็นไหม ของที่เธอลงมือทำเองนับได้จริง
+round1.blocks[3].blocks[2].lines[1].text.th: ไม่ต้องรอใครมาจัดค่าย หรือออกใบเกียรติบัตรให้ก่อนเลย
+round1.blocks[4].unlockLabelTh: แล้วตอนนี้ฉันอยู่ ม.ไหนล่ะ
+round1.blocks[4].blocks[0].lines[0].text.th: ถ้าอยู่ ม.6 รอบ 1 ปีนี้บางคณะยังเปิดรับอยู่ แต่ละคณะปิดไม่พร้อมกันนะ
+round1.blocks[4].blocks[0].lines[1].text.th: ถ้าอยู่ ม.5 เธอยังมีเวลาอีกเกือบปี ลองทำชิ้นแรกให้เสร็จก่อนเลย
+round1.blocks[4].blocks[0].lines[2].text.th: ถ้าอยู่ ม.4 เวลาเยอะสุด ลองได้หลายอย่างเลย ไม่ต้องรีบเลือก
+round1.blocks[4].blocks[1].text.th: รอบ 1 ไม่ได้ง่ายกว่ารอบอื่น แต่ละคณะมีเกณฑ์ เช่น เกรดขั้นต่ำ เช็กประกาศของคณะที่สนใจทุกครั้งนะ
+round1.blocks[4].blocks[1].titleTh: พูดตรงๆ
+round1.blocks[4].blocks[2].labelTh: ดูหลักสูตร บริหารธุรกิจ สาขาการตลาด และนิเทศศาสตร์ สาขาโฆษณา ใน mytcas
+round1.blocks[5].lines[0].text.th: ผลงานชิ้นแรกไม่ต้องใหญ่โตเลย
+round1.blocks[5].lines[1].text.th: อยากรู้เรื่องที่เรียนต่อกับงานจริงของสายนี้อีกใช่ไหม
+round1.blocks[5].lines[2].text.th: กด แผนที่ด่าน ข้างล่าง ไปดูข้อมูลเต็มของสายนี้ได้เลย",
+]
+`;

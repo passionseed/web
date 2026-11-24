@@ -1,0 +1,295 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`content-creator guide matches the Thai copy snapshot (diff this in the Thai review) 1`] = `
+[
+  "dream.titleTh: หมูเด้งไม่ได้ดังแค่เพราะดวง
+dream.questionTh: หมูเด้งดังไปทั้งโลกได้ยังไง แล้วใครอยู่หลังคลิปพวกนั้น
+dream.navLabelTh: หมูเด้ง
+dream.og.headlineTh: หมูเด้งไม่ได้ดังแค่เพราะดวง คนเลี้ยงถ่ายคลิปมาก่อนตั้งนานแล้ว
+dream.og.stat.th: พอหมูเด้งดัง วันธรรมดามีคนมาสวนสัตว์จากราว 800 เป็นกว่า 4,000
+dream.blocks[0].lines[0].text.th: ลุยรันสายคอนเทนต์กันเลย เปิดด้วยฮิปโปที่ทั้งโลกรู้จัก
+dream.blocks[1].ask[0].text.th: หมูเด้งดังไปทั่วโลกเลย เธอว่าเพราะอะไร
+dream.blocks[1].options[0].labelTh: น่าจะดวงล้วนๆ อะ
+dream.blocks[1].options[0].reply[0].text.th: ดวงก็มีส่วนจริง แต่ก่อนดวงจะมา ต้องมีคนถ่ายไว้ก่อนนะ
+dream.blocks[1].options[1].labelTh: ก็น่ารักซะขนาดนั้นอะ
+dream.blocks[1].options[1].reply[0].text.th: จริงไม่เถียง แต่ฮิปโปน่ารักมีเยอะแยะ ตัวนี้มีคนถ่ายให้โลกเห็นไง
+dream.blocks[1].options[2].labelTh: ต้องมีคนตั้งใจถ่ายไว้แน่ๆ เลย
+dream.blocks[1].options[2].reply[0].text.th: ตาถึงนะเธอ คนเลี้ยงถ่ายคลิปสัตว์มาหลายปี ก่อนหมูเด้งจะดังซะอีก
+dream.blocks[2].text.th: พี่เบนซ์ คนเลี้ยงฮิปโปที่สวนสัตว์เปิดเขาเขียว ถ่ายคลิปสัตว์ที่ตัวเองดูแลลงโซเชียลมาราว 5 ปี ก่อนหมูเด้งจะดัง เป็นแอดมินเพจ ขาหมู แอนด์ เดอะแก๊ง
+dream.blocks[2].titleTh: แฟ้ม: คนเลี้ยงที่ถือกล้อง
+dream.blocks[3].lines[0].text.th: ตอนลูกฮิปโปแคระยังไม่คลอด เขาบอกไว้เลยว่าจะปั้นให้ดัง
+dream.blocks[3].lines[1].text.th: ไม่ได้นั่งรอดวงลอยมานะ เขาคิดแผนไว้ก่อนแล้ว
+dream.blocks[4].unlockLabelTh: ลองทายดู
+dream.blocks[4].blocks[0].lines[0].text.th: ผอ.สวนสัตว์เล่าว่า ก่อนหมูเด้งดัง วันธรรมดามีคนมาราว 800 คน
+dream.blocks[4].blocks[0].lines[1].text.th: พอหมูเด้งไวรัล วันธรรมดามีคนมากี่คน ลองทายดูสิ
+dream.blocks[4].blocks[1].game.data.promptTh: หลังหมูเด้งดัง วันธรรมดามีคนมาสวนสัตว์กี่คน
+dream.blocks[4].blocks[1].game.data.chart.bars[0].labelTh: ก่อนดัง (วันธรรมดา)
+dream.blocks[4].blocks[1].game.data.chart.bars[1].labelTh: หลังดัง ก.ย. 2567 (วันธรรมดา)
+dream.blocks[4].blocks[1].game.data.nearTh: เกือบเป๊ะ
+dream.blocks[4].blocks[1].game.data.overTh: เธอเดาสูงไป {d} คน
+dream.blocks[4].blocks[1].game.data.underTh: เธอเดาต่ำไป {d} คน
+dream.blocks[4].blocks[1].game.data.revealTh: เธอเดา {g} คน ของจริงคือกว่า 4,000 คน
+dream.blocks[4].blocks[1].answersTh[0]: ก่อนหมูเด้งดัง วันธรรมดามีคนมาราว 800 คน หลังดังมีกว่า 4,000 คน
+dream.blocks[4].blocks[1].answersTh[1]: เสาร์อาทิตย์จากราว 3,000 เป็นกว่า 10,000 คน (ตัวเลขของ ผอ.สวนสัตว์ ที่ AP รายงาน ก.ย. 2567)
+dream.blocks[4].blocks[2].text.th: วันธรรมดา จากราว 800 เป็นกว่า 4,000 คน เสาร์อาทิตย์ จากราว 3,000 เป็นกว่า 10,000 คน
+dream.blocks[4].blocks[2].titleTh: คนมาสวนสัตว์ ก.ย. 2567
+dream.blocks[4].blocks[2].metaTh: ตัวเลขของ ผอ.สวนสัตว์ ที่ AP รายงาน
+dream.blocks[4].blocks[3].lines[0].text.th: พอหมูเด้งดังในโซเชียล คนจริงๆ ก็แห่มาหน้าบ่อกันเต็มเลยนะ
+dream.blocks[4].blocks[3].lines[1].text.th: งั้นคลิปที่ฉันถ่ายเอง ก็ทำได้แบบนี้เหรอ
+dream.blocks[4].blocks[3].lines[2].text.th: บอกตรงๆ ไม่มีใครรู้ว่าคลิปไหนจะปัง แต่สกิลเล่าเรื่องฝึกได้ ลองรันนี้เลย
+dream.blocks[5].unlockLabelTh: แล้วหลังจากนั้นล่ะ
+dream.blocks[5].blocks[0].lines[0].text.th: คลิปดังแล้วงานจบเลยไหม บอกเลยว่าไม่ ของจริงเพิ่งเริ่ม
+dream.blocks[5].blocks[0].lines[1].text.th: ลองพลิกการ์ดดูสิ หลังคลิปดังมีอะไรตามมาบ้าง
+dream.blocks[5].blocks[1].game.data.highlightTh: มีคนทำงานอยู่เบื้องหลัง
+dream.blocks[5].blocks[1].game.data.cards[0].frontTh: สวนสัตว์เริ่มจดชื่อ หมูเด้ง
+dream.blocks[5].blocks[1].game.data.cards[0].backTh: เริ่มจดเครื่องหมายการค้า และดูแลลิขสิทธิ์ภาพหมูเด้ง กันคนอื่นเอาไปหาประโยชน์ งานดูแลแบรนด์แบบนี้ มีคนทำงานอยู่เบื้องหลัง
+dream.blocks[5].blocks[1].game.data.cards[0].dateTh: ก.ย. 2567
+dream.blocks[5].blocks[1].game.data.cards[1].frontTh: เปิดไลฟ์ให้ดูหมูเด้งได้ 24 ชั่วโมง
+dream.blocks[5].blocks[1].game.data.cards[1].backTh: ให้แฟนคลับที่มาไม่ได้ ดูออนไลน์ได้ทั้งวันทั้งคืน กล้องไม่ได้เปิดเอง มีคนทำงานอยู่เบื้องหลัง
+dream.blocks[5].blocks[1].game.data.cards[1].dateTh: ก.ย. 2567
+dream.blocks[5].blocks[1].game.data.cards[2].frontTh: คลิปหมูเด้งคว้ารางวัลวิดีโอแห่งปี
+dream.blocks[5].blocks[1].game.data.cards[2].backTh: TikTok Awards สาขา Video of the year ตกเป็นของพี่เบนซ์ คนเลี้ยงที่ถ่ายเองโพสต์เอง มีคนทำงานอยู่เบื้องหลัง
+dream.blocks[5].blocks[1].game.data.cards[2].dateTh: 2 พ.ย. 2567
+dream.blocks[5].blocks[1].game.data.cards[3].frontTh: ปาร์ตี้วันเกิดครบ 2 ขวบ
+dream.blocks[5].blocks[1].game.data.cards[3].backTh: งาน หมูเด้ง HAPPY เด้ง DAY วันที่ 10 ถึง 12 ก.ค. 2569 ผ่านมาสองปีตั้งแต่หมูเด้งเกิด ก็ยังมีคนทำงานอยู่เบื้องหลัง
+dream.blocks[5].blocks[1].game.data.cards[3].dateTh: ก.ค. 2569
+dream.blocks[5].blocks[1].answersTh[0]: สวนสัตว์เริ่มจดเครื่องหมายการค้า และดูแลลิขสิทธิ์ภาพหมูเด้ง (ก.ย. 2567)
+dream.blocks[5].blocks[1].answersTh[1]: เปิดไลฟ์ให้ดูได้ 24 ชั่วโมง สำหรับคนที่มาไม่ได้ (ก.ย. 2567)
+dream.blocks[5].blocks[1].answersTh[2]: คลิปของพี่เบนซ์ได้รางวัล TikTok Awards สาขา Video of the year (2 พ.ย. 2567)
+dream.blocks[5].blocks[1].answersTh[3]: ฉลองวันเกิดครบ 2 ขวบ 10 ถึง 12 ก.ค. 2569
+dream.blocks[5].blocks[1].answersTh[4]: ทุกอย่างมีคนทำงานอยู่เบื้องหลัง
+dream.blocks[5].blocks[2].text.th: กระแสมีขึ้นมีลง กลางปี 2568 ผอ.สวนสัตว์บอกว่าวันธรรมดาเหลือราว 2,000 คน ส่วนพี่เบนซ์บอกไว้ตั้งแต่ตอนที่หมูเด้งเพิ่งดังว่า ยังมีลูกสัตว์ตัวอื่นที่เขาเตรียมเล่าเรื่องต่อ
+dream.blocks[5].blocks[2].titleTh: พูดตรงๆ
+dream.blocks[5].blocks[3].lines[0].text.th: ตัวเลขขึ้นลงได้เสมอ แต่สกิลเล่าเรื่องติดตัวเธอไปตลอด
+dream.blocks[5].blocks[3].lines[1].text.th: ด่านต่อไป: งานจริงของครีเอเตอร์ ไม่ได้จบแค่กดถ่าย
+dream.reel.hook.th: หมูเด้งไม่ได้ดังแค่เพราะดวง คนเลี้ยงถ่ายคลิปมาราว 5 ปีก่อนหน้านั้น
+dream.reel.variantsTh[0]: คนเลี้ยงบอกไว้ก่อนคลอด ว่าจะปั้นฮิปโปตัวนี้ให้ดัง
+dream.reel.variantsTh[1]: คลิปไม่กี่วิ พาคนมายืนถึงขอบบ่อหมูเด้ง
+dream.reel.sendToFriendTh: ส่งให้เพื่อนที่ชอบถ่ายคลิปดูเลย
+dream.reel.visual[0]: บ่อฮิปโปยามค่ำ แสงจอมือถือส่องจากขอบบ่อ
+dream.reel.visual[1]: ตัวนับวิ่งจาก 800 ไปเกิน 4,000 แล้วแถวคนยืดยาว
+dream.reel.visual[2]: การ์ดสี่ใบพลิกทีละใบ คำว่า มีคนทำงานอยู่เบื้องหลัง สว่างขึ้นทุกใบ",
+  "work.titleTh: งานจริง คือวางแผน ตัด แล้วอ่านผล
+work.questionTh: ครีเอเตอร์แค่ถ่ายแล้วโพสต์จริงเหรอ แล้วทั้งวันทำอะไรบ้าง
+work.navLabelTh: คลิปร้านโรตี
+work.og.headlineTh: คลิปสั้นแค่ไม่กี่วิ แต่งานจริงอยู่ก่อนกับหลังกดถ่าย
+work.blocks[0].lines[0].text.th: ด่านนี้เธอได้โจทย์แรกแล้วนะ ลุยเลย
+work.blocks[0].lines[1].text.th: ร้านโรตีเจ้าประจำของเธอ อยากได้คลิป 15 วิ เอาไว้ลงเพจร้าน
+work.blocks[1].ask[0].text.th: ก่อนกดถ่าย ลองคิดดูก่อน คลิปนี้เปิดด้วยอะไรดี
+work.blocks[1].options[0].labelTh: เปิดป้ายชื่อร้านใหญ่ๆ เลย
+work.blocks[1].options[0].reply[0].text.th: ชื่อร้านต้องมีแหละ แต่เปิดมาเจอป้าย คนอาจไถหนีก่อนเห็นโรตีนะ
+work.blocks[1].options[0].reply[1].text.th: เปิดด้วยช็อตที่ทำให้คนหยุดนิ้วดูก่อนดีกว่า
+work.blocks[1].options[1].labelTh: ช็อตโรตีราดนมข้นเยิ้มๆ ไปเลย
+work.blocks[1].options[1].reply[0].text.th: เป๊ะเลย เปิดด้วยของน่ากินสุดๆ ก่อน นิ้วคนดูจะได้หยุดกึก
+work.blocks[1].options[2].labelTh: เปิดมาเล่าประวัติร้านก่อนเลย
+work.blocks[1].options[2].reply[0].text.th: เล่าเรื่องก็ดีนะ แต่ 15 วิมันสั้นนิดเดียวเอง
+work.blocks[1].options[2].reply[1].text.th: เก็บประวัติไว้เล่าคลิปยาวดีกว่า คลิปนี้เปิดด้วยของน่ากินก่อนเลย
+work.blocks[2].lines[0].text.th: งานจริงทำเป็นสเต็ปเลย: วางแผน ถ่าย ตัด โพสต์ แล้วอ่านผล
+work.blocks[3].unlockLabelTh: ขั้นแรก: คัดช็อต
+work.blocks[3].blocks[0].lines[0].text.th: เธอถ่ายมา 6 ช็อต แต่คลิปยาวได้แค่ 15 วิเองนะ
+work.blocks[3].blocks[0].lines[1].text.th: คัดช็อตที่จะใช้ให้ดี บางช็อตห้ามเอาลงเด็ดขาดเลยนะ
+work.blocks[3].blocks[1].game.data.tagTh: คัดช็อตลงคลิป
+work.blocks[3].blocks[1].game.data.goalTh: เลือกช็อตที่จะใส่คลิปร้านโรตี
+work.blocks[3].blocks[1].game.data.bins[0].labelTh: ใส่คลิป
+work.blocks[3].blocks[1].game.data.bins[1].labelTh: ตัดทิ้ง
+work.blocks[3].blocks[1].game.data.simulated.watermarkTh: ตัวอย่างจำลอง
+work.blocks[3].blocks[1].game.data.items[0].labelTh: โรตีราดนมข้นเยิ้มๆ ถ่ายใกล้ๆ
+work.blocks[3].blocks[1].game.data.items[0].revealTh: ช็อตเปิดเลย ของน่ากินต้องมาก่อน คนถึงจะหยุดดู
+work.blocks[3].blocks[1].game.data.items[1].labelTh: ป้ายหน้าร้าน ให้รู้ว่าร้านอยู่ตรงไหน
+work.blocks[3].blocks[1].game.data.items[1].revealTh: ดูจบแล้วอยากไปกิน ก็ต้องรู้ว่าร้านอยู่ไหน
+work.blocks[3].blocks[1].game.data.items[2].labelTh: เพื่อนกัดคำแรกแล้วทำหน้าฟิน (เพื่อนอนุญาตแล้ว)
+work.blocks[3].blocks[1].game.data.items[2].revealTh: เพื่อนอนุญาตแล้ว ใช้ได้ หน้าฟินของคนกินจริงเล่าได้ดีกว่าคำบรรยาย แค่เช็กว่าไม่ติดชื่อโรงเรียนบนเสื้อ
+work.blocks[3].blocks[1].game.data.items[3].labelTh: ลูกค้าโต๊ะข้างๆ ติดมาเต็มหน้า
+work.blocks[3].blocks[1].game.data.items[3].revealTh: เขาไม่ได้อนุญาต ต้องตัดทิ้ง หรือถ่ายใหม่ให้ไม่ติดหน้าคนอื่น
+work.blocks[3].blocks[1].game.data.items[4].labelTh: ภาพเบลอ มือสั่น
+work.blocks[3].blocks[1].game.data.items[4].revealTh: ภาพไม่ชัด คนดูไถผ่านทันที ถ่ายใหม่ดีกว่า
+work.blocks[3].blocks[1].game.data.items[5].labelTh: เดินจากโรงเรียนมาร้าน ยาว 10 วิ
+work.blocks[3].blocks[1].game.data.items[5].revealTh: ทั้งคลิปมีแค่ 15 วิ เดินอย่างเดียวก็กินไป 10 วิ แถมยังบอกคนดูว่าเธอเรียนที่ไหนด้วย
+work.blocks[3].blocks[1].game.data.resultTh: คัดถูก {score}/{total}
+work.blocks[3].blocks[1].answersTh[0]: ใส่คลิป: โรตีราดนมถ่ายใกล้ๆ, ป้ายหน้าร้าน, เพื่อนกัดคำแรก (เพื่อนอนุญาตแล้ว)
+work.blocks[3].blocks[1].answersTh[1]: ตัดทิ้ง: หน้าลูกค้าที่เราไม่ได้ขออนุญาต, ภาพเบลอ, เดินยาว 10 วิ
+work.blocks[3].blocks[2].lines[0].text.th: คนตัดเก่ง ไม่ใช่คนที่ยัดทุกช็อตลงไปหมดนะ
+work.blocks[3].blocks[2].lines[1].text.th: ลงคลิปแล้ว ทีนี้มาเช็กกันว่าคนดูว่าไงบ้าง
+work.blocks[4].unlockLabelTh: ขั้นสอง: อ่านผล
+work.blocks[4].blocks[0].lines[0].text.th: กดโพสต์แล้วงานยังไม่จบนะ ต้องตามอ่านตัวเลขกับคอมเมนต์ต่อ
+work.blocks[4].blocks[0].lines[1].text.th: หน้าสถิติหลังบ้านบอกได้เลยนะ ว่าคนดูข้ามหรือกดออกตรงช่วงไหน
+work.blocks[4].blocks[1].game.data.tagTh: อ่านผล แล้วตัดสินใจ
+work.blocks[4].blocks[1].game.data.goalTh: อ่านผลคลิปร้านโรตี แล้วเลือกทีละข้อว่าจะทำอะไร
+work.blocks[4].blocks[1].game.data.bins[0].labelTh: แก้คลิปหน้า
+work.blocks[4].blocks[1].game.data.bins[1].labelTh: ตอบกลับ
+work.blocks[4].blocks[1].game.data.bins[2].labelTh: ไม่ตอบ
+work.blocks[4].blocks[1].game.data.simulated.watermarkTh: ตัวอย่างจำลอง
+work.blocks[4].blocks[1].game.data.items[0].labelTh: คนดูกดออกเยอะสุดตรงวินาทีที่ 9
+work.blocks[4].blocks[1].game.data.items[0].meta.sender: หลังบ้าน
+work.blocks[4].blocks[1].game.data.items[0].detailTh: วินาทีที่ 9: ช็อตป้ายร้านค้างนิ่งนานไป ไม่มีอะไรขยับ
+work.blocks[4].blocks[1].game.data.items[0].revealTh: ตัวเลขชี้จุดที่คนหลุดให้แล้ว คลิปหน้าตัดช็อตป้ายให้สั้นลง แล้วดูว่าคนอยู่นานขึ้นไหม
+work.blocks[4].blocks[1].game.data.items[1].labelTh: ร้านอยู่ตรงไหนอะ อยากไปกิน
+work.blocks[4].blocks[1].game.data.items[1].meta.sender: คอมเมนต์
+work.blocks[4].blocks[1].game.data.items[1].revealTh: คนอยากไปจริง ตอบพิกัดร้านให้ชัดเลย คอมเมนต์แบบนี้ร้านอยากได้ที่สุด
+work.blocks[4].blocks[1].game.data.items[2].labelTh: ซับตัวเล็กไป อ่านไม่ทัน
+work.blocks[4].blocks[1].game.data.items[2].meta.sender: คอมเมนต์
+work.blocks[4].blocks[1].game.data.items[2].nearTh.reply: ตอบขอบคุณก็ดี แต่ที่สำคัญกว่าคือแก้ในคลิปหน้า
+work.blocks[4].blocks[1].game.data.items[2].revealTh: คนดูบอกจุดพังให้ฟรีๆ คลิปหน้าใช้ตัวใหญ่ขึ้น ขึ้นจอนานขึ้น
+work.blocks[4].blocks[1].game.data.items[3].labelTh: คลิปห่วยมาก
+work.blocks[4].blocks[1].game.data.items[3].meta.sender: คอมเมนต์
+work.blocks[4].blocks[1].game.data.items[3].nearTh.reply: ตอบไปก็ไม่ได้อะไร เปลืองแรงเปล่าๆ
+work.blocks[4].blocks[1].game.data.items[3].revealTh: ด่าเฉยๆ ไม่บอกเหตุผล ไม่ต้องตอบ ไปดูตัวเลขหลังบ้านดีกว่า
+work.blocks[4].blocks[1].game.data.items[4].labelTh: อยู่โรงเรียนไหนอะ ขอเบอร์หน่อย
+work.blocks[4].blocks[1].game.data.items[4].meta.sender: บัญชีที่ไม่รู้จัก
+work.blocks[4].blocks[1].game.data.items[4].flags[0]: ถามข้อมูลส่วนตัว
+work.blocks[4].blocks[1].game.data.items[4].revealTh: ไม่ตอบ ไม่บอกโรงเรียนหรือเบอร์ บล็อกได้เลย แล้วเล่าให้ผู้ใหญ่ที่ไว้ใจฟัง
+work.blocks[4].blocks[1].game.data.items[5].labelTh: ทำคลิปร้านน้ำปั่นข้างๆ ต่อได้ไหม
+work.blocks[4].blocks[1].game.data.items[5].meta.sender: คอมเมนต์
+work.blocks[4].blocks[1].game.data.items[5].revealTh: คนดูส่งไอเดียคลิปหน้ามาให้แล้ว ตอบขอบคุณแล้วจดไว้เลย
+work.blocks[4].blocks[1].game.data.items[6].labelTh: เขียนว่าอร่อยที่สุดในประเทศได้ไหม
+work.blocks[4].blocks[1].game.data.items[6].meta.sender: เจ้าของร้าน
+work.blocks[4].blocks[1].game.data.items[6].nearTh.fix: ไม่ต้องแก้ตามทันที คุยกับเจ้าของร้านก่อนดีกว่า
+work.blocks[4].blocks[1].game.data.items[6].flags[0]: พูดเกินจริง
+work.blocks[4].blocks[1].game.data.items[6].revealTh: ตอบดีๆ ว่าคำเกินจริงใช้ไม่ได้ แล้วเสนอข้อมูลจริงแทน เช่น เปิดร้านมากี่ปีแล้ว
+work.blocks[4].blocks[1].game.data.resultTh: เลือกถูก {score}/{total}
+work.blocks[4].blocks[1].answersTh[0]: แก้คลิปหน้า: ช็อตป้ายที่ค้างนานจนคนกดออก, ซับตัวเล็ก
+work.blocks[4].blocks[1].answersTh[1]: ตอบกลับ: ร้านอยู่ไหน, ไอเดียคลิปหน้า, เจ้าของร้านขอคำเกินจริง (ตอบดีๆ ว่าใช้ไม่ได้)
+work.blocks[4].blocks[1].answersTh[2]: ไม่ตอบ: คอมเมนต์ด่าเฉยๆ, คนแปลกหน้าถามชื่อโรงเรียนกับขอเบอร์ (บล็อก แล้วเล่าให้ผู้ใหญ่ที่ไว้ใจฟัง)
+work.blocks[4].blocks[2].lines[0].text.th: ที่เธอเพิ่งทำไปเมื่อกี้ นั่นแหละงานจริงของครีเอเตอร์เลย
+work.blocks[4].blocks[2].lines[1].text.th: วางแผน ถ่าย ตัด โพสต์ อ่านผล แล้วก็วนลูปไปทำคลิปใหม่
+work.blocks[4].blocks[2].lines[2].text.th: คนดูเห็นแค่ตัวคลิป ไม่เห็นงานก่อนกับหลังกดถ่ายหรอกนะ
+work.blocks[4].blocks[2].lines[3].text.th: คนแปลกหน้าถามเรื่องส่วนตัว ไม่ต้องตอบ บล็อกเลย แล้วบอกผู้ใหญ่ที่ไว้ใจนะ
+work.blocks[5].unlockLabelTh: สายนี้มีกี่แบบ
+work.blocks[5].blocks[0].lines[0].text.th: จริงๆ สายคอนเทนต์ เป็นชื่อเรียกกว้างๆ นะ ข้างในแยกได้อีกหลายสาย
+work.blocks[5].blocks[1].headTh: สายคอนเทนต์ มีสายไหนบ้าง
+work.blocks[5].blocks[1].tiles[0].titleTh: ดูแลเพจแบรนด์
+work.blocks[5].blocks[1].tiles[0].lineTh: ทำคลิปให้ร้านหรือบริษัท วางแผนจนถึงอ่านผล แบบร้านโรตี
+work.blocks[5].blocks[1].tiles[1].titleTh: ช่องตัวเอง
+work.blocks[5].blocks[1].tiles[1].lineTh: เล่าเรื่องที่รู้ดีที่สุด ลงช่องตัวเองแบบสม่ำเสมอ
+work.blocks[5].blocks[1].tiles[2].titleTh: เขียนบท
+work.blocks[5].blocks[1].tiles[2].lineTh: คิดเรื่อง เขียนสคริปต์ วางลำดับช็อตให้ทีมถ่ายตาม
+work.blocks[5].blocks[1].tiles[3].titleTh: ตัดต่อ
+work.blocks[5].blocks[1].tiles[3].lineTh: ตัดฟุตเทจยาวๆ ให้เหลือคลิปสั้นที่คนอยากดูจนจบ
+work.blocks[5].blocks[1].tiles[4].titleTh: พิธีกรไลฟ์
+work.blocks[5].blocks[1].tiles[4].lineTh: ไลฟ์แนะนำสินค้า ตอบคำถามสดๆ แล้วเอาผลมาปรับรอบหน้า
+work.blocks[5].blocks[2].lines[0].text.th: ยังไม่ต้องรีบเลือกนะ ค่อยๆ ลองไปทีละสายก็ได้
+work.blocks[6].lines[0].text.th: ด่านต่อไป: คืนนี้ ลุยถ่ายคลิปแรกของเธอเอง
+work.reel.hook.th: ครีเอเตอร์ไม่ได้แค่กดถ่าย งานจริงอยู่ก่อนกับหลังกดถ่าย
+work.reel.variantsTh[0]: คลิปร้านโรตี ช็อตไหนใส่ ช็อตไหนห้ามใช้
+work.reel.variantsTh[1]: คนแปลกหน้าถามโรงเรียนกับขอเบอร์ใต้คลิป ไม่ตอบ บล็อก แล้วบอกผู้ใหญ่
+work.reel.sendToFriendTh: ส่งให้เพื่อนที่อยากเป็นครีเอเตอร์
+work.reel.visual[0]: การ์ดช็อตบินเข้าไทม์ไลน์ ช็อตหน้าคนแปลกหน้าถูกเด้งออก
+work.reel.visual[1]: กราฟคนดูไหลลงตรงช็อตป้ายร้าน แล้วมีตราประทับ แก้คลิปหน้า ทับลงมา
+work.reel.visual[2]: วงกลมหมุน วางแผน ถ่าย ตัด โพสต์ อ่านผล วนกลับมาที่เดิม",
+  "tonight.titleTh: คืนนี้ ถ่ายคลิปสั้นเรื่องที่เธอรู้ดี
+tonight.questionTh: คืนนี้ทำอะไรได้บ้าง ที่จบแล้วได้ผลงานชิ้นแรกใส่พอร์ตเลย
+tonight.navLabelTh: ภารกิจคืนนี้
+tonight.og.headlineTh: คืนนี้ วางแผนแล้วถ่ายคลิปสั้นเรื่องที่เธอรู้ดี ใช้แค่มือถือ ไม่ต้องโพสต์
+tonight.blocks[0].lines[0].text.th: ด่านนี้ไม่เล่นในจอนะ แต่เป็นภารกิจของจริงคืนนี้เลย
+tonight.blocks[0].lines[1].text.th: ถ่ายคลิป 15 วิ เรื่องที่เธอรู้ดีที่สุด แบบพี่เบนซ์ถ่ายสัตว์ที่ตัวเองดูแล
+tonight.blocks[1].text.th: ขนมที่ทำเป็น ต้นไม้หรือสัตว์ที่เลี้ยง เกมที่เล่นเก่ง วิธีจัดโต๊ะอ่านหนังสือ หรือสูตรที่เพื่อนถามบ่อย
+tonight.blocks[1].titleTh: ไอเดียตั้งต้น
+tonight.blocks[2].text.th: ถ่ายด้วยกล้องมือถือ แล้วตัดให้สั้นในแอปรูปภาพของเครื่องได้เลย ไอโฟนใช้แอป Photos แอนดรอยด์ใช้ Google Photos (ถ้าเครื่องไม่รองรับ ลองแอปแกลเลอรีของเครื่อง) แตะไม่กี่ทีก็ลากตัดหัวท้ายได้
+tonight.blocks[2].titleTh: เครื่องมือ: มือถือเครื่องเดียว
+tonight.blocks[3].lineTh: ถ่ายสิ่งของ มือ หรือมุมในบ้านก็พอ ถ้าจะมีหน้าใครต้องขอเขาก่อน และอย่าให้ติดชื่อโรงเรียน ป้ายชื่อบนเสื้อ บ้านเลขที่ หรืออะไรที่บอกว่าเธออยู่ตรงไหน
+tonight.blocks[4].lines[0].text.th: ไม่ต้องโพสต์ที่ไหนเลยนะ เก็บไว้ในเครื่องก็นับเป็นผลงานแล้ว
+tonight.blocks[4].lines[1].text.th: ถ้าวันไหนอยากโพสต์ คุยกับที่บ้านก่อนนะ แล้วอย่าให้ติดข้อมูลส่วนตัว
+tonight.blocks[5].game.data.room.titleTh: Google Photos · ตัดวิดีโอให้สั้นลง
+tonight.blocks[5].game.data.room.badgeTh: ตัดคลิปได้ในแอปรูปภาพ ตามคู่มือ Google และ Apple ณ 20 พ.ย. 2569
+tonight.blocks[5].game.data.room.subTh: คลิปกับแผนอยู่ในเครื่องเธอ ไม่ต้องอัปโหลดไปไหน
+tonight.blocks[5].game.data.checklistTh[0]: เลือกเรื่องที่เธอรู้ดีที่สุด เรื่องเดียวพอ
+tonight.blocks[5].game.data.checklistTh[1]: เขียนแผนสั้นๆ: ช็อตเปิด ช็อตกลาง ช็อตปิด
+tonight.blocks[5].game.data.checklistTh[2]: ช็อตเปิดโชว์ของเด็ดที่สุดก่อน แบบโรตีราดนม
+tonight.blocks[5].game.data.checklistTh[3]: ถ่ายด้วยกล้องมือถือ แล้วตัดให้สั้นในแอปรูปภาพ
+tonight.blocks[5].game.data.checklistTh[4]: ให้คนที่บ้านหรือเพื่อนดู แล้วจดว่าเขาดูจบไหม หลุดตรงไหน
+tonight.blocks[5].game.data.fields[0].placeholderTh: เรื่องที่ฉันรู้ดี
+tonight.blocks[5].game.data.fields[1].placeholderTh: ช็อตเปิด จะโชว์อะไรให้คนหยุดดู
+tonight.blocks[5].game.data.fields[2].placeholderTh: ช็อตกลางกับช็อตปิด
+tonight.blocks[5].game.data.fields[3].placeholderTh: ให้ใครดู เขาดูจบไหม หลุดตรงไหน
+tonight.blocks[5].game.data.fields[4].placeholderTh: คลิปหน้าจะแก้อะไรก่อน เพราะอะไร
+tonight.blocks[5].game.data.fixedLinesTh[0]: ไม่มีหน้าใครที่ยังไม่ได้ขออนุญาต ไม่มีชื่อโรงเรียนหรือที่อยู่
+tonight.blocks[5].game.data.privacyTh: เก็บไว้ในเครื่องนี้เท่านั้น ไม่ส่งไปที่ไหน
+tonight.blocks[5].answersTh[0]: เลือกเรื่องที่รู้ดีที่สุด แล้วเขียนแผน: ช็อตเปิด ช็อตกลาง ช็อตปิด
+tonight.blocks[5].answersTh[1]: ถ่ายด้วยกล้องมือถือ ตัดให้สั้นในแอปรูปภาพ (ไอโฟนใช้ Photos แอนดรอยด์ใช้ Google Photos หรือแอปแกลเลอรี)
+tonight.blocks[5].answersTh[2]: ให้คนที่บ้านหรือเพื่อนดู แล้วจด: เรื่องอะไร เปิดด้วยอะไร ดูจบไหม หลุดตรงไหน คลิปหน้าจะแก้อะไร
+tonight.blocks[5].answersTh[3]: ไม่ต้องโพสต์ ไม่มีหน้าใครที่ยังไม่ได้ขออนุญาต ไม่มีชื่อโรงเรียนหรือที่อยู่
+tonight.blocks[5].demoScript[1].text: วิธีชงชาไทยแบบที่ยายสอน
+tonight.blocks[5].demoScript[2].text: แม่ดูจบ แต่พี่ชายกดออกตอนเทน้ำร้อน บอกว่ายาวไป
+tonight.blocks[6].labelTh: ใช้ไอโฟน ดูวิธีตัดคลิปในแอป Photos (คู่มือภาษาไทยของ Apple)
+tonight.blocks[7].lines[0].text.th: ของมีค่าสุดคืนนี้ไม่ใช่ยอดวิว แต่คือแผนกับโน้ตว่าคนดูหลุดตรงไหน
+tonight.blocks[7].lines[1].text.th: นั่นแหละ วางแผนกับอ่านผล แบบตอนทำคลิปร้านโรตีเป๊ะ
+tonight.blocks[7].lines[2].text.th: ทีมเราว่าช่องสุดท้าย รอบหน้าจะแก้อะไร สำคัญสุดเลย อย่าข้ามนะ
+tonight.blocks[8].lines[0].text.th: แผน คลิป กับโน้ตนี้ เป็นผลงานชิ้นแรกในแฟ้มของเธอได้เลย
+tonight.blocks[9].text.th: TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอลงมือทำ งานแบบคืนนี้ เริ่มเป็นชิ้นแรกในแฟ้มได้เลย
+tonight.blocks[9].titleTh: รู้ไหม รอบ 1 ใช้ผลงานยื่นได้นะ
+tonight.blocks[10].ask[0].text.th: ว่าแต่เธอจะลองเมื่อไหร่ดี
+tonight.blocks[10].options[0].labelTh: คืนนี้เลยดิ
+tonight.blocks[10].options[0].reply[0].text.th: ชอบความไวนี้แฮะ
+tonight.blocks[10].options[0].reply[1].text.th: ทำเสร็จแล้ว พรุ่งนี้ลองแก้ตรงที่คนดูหลุด แล้วถ่ายใหม่อีกรอบดูสิ
+tonight.blocks[10].options[1].labelTh: ขอเป็นวันหยุดแล้วกัน
+tonight.blocks[10].options[1].reply[0].text.th: ดีลเลย ปักลงปฏิทินไว้เลย จะได้ไม่ลืม
+tonight.blocks[10].options[2].labelTh: ยังไม่ชัวร์เลยว่าจะชอบไหม
+tonight.blocks[10].options[2].reply[0].text.th: ไม่ชัวร์ก็ลองดูก่อนได้นะ
+tonight.blocks[10].options[2].reply[1].text.th: ลองแล้วไม่สนุก ก็รู้ก่อนเลือกคณะ ไม่เสียอะไรเลย",
+  "next.titleTh: แล้วเธอล่ะ
+next.questionTh: สายคอนเทนต์ใช่เธอไหม แล้วจะไปต่อทางไหน
+next.navLabelTh: แล้วเธอล่ะ
+next.og.headlineTh: สายคอนเทนต์ใช่ทางเธอไหม เล่นจนจบแล้วค่อยตัดสินใจ
+next.blocks[0].lines[0].text.th: มาถึงด่านสุดท้ายของ Level 1 แล้ว
+next.blocks[0].lines[1].text.th: เล่นมาทั้งหมด เธอชอบส่วนไหนที่สุด
+next.blocks[1].game.data.lines.dream: เดาคนมาสวนสัตว์ไว้ {visitors} คน || รู้แล้วว่าหมูเด้งไม่ได้ดังแค่เพราะดวง
+next.blocks[1].game.data.lines.work: ทำคลิปร้านโรตี เลือกถูก {score}/{total} || ทำคลิปร้านโรตีจนโพสต์ได้
+next.blocks[1].game.data.lines.tonight: วางแผนคลิปแรกของตัวเองแล้ว
+next.blocks[1].game.data.favourites.dream: สายที่เธอเลือกเอง: สายทำช่องของตัวเอง งานจริงคือหยิบเรื่องที่รู้ดี มาเล่าจนคนอยากดูต่อ
+next.blocks[1].game.data.favourites.work: สายที่เธอเลือกเอง: สายดูแลเพจแบรนด์ งานจริงคือวางแผน ตัด แล้วอ่านผลจนคลิปดีขึ้นเรื่อยๆ
+next.blocks[1].game.data.cardLineTh: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
+next.blocks[1].answersTh[0]: เลือกด่านที่สนุกที่สุด แล้วดูว่ามันตรงกับงานจริงสายไหน
+next.blocks[1].answersTh[1]: สายทำช่องของตัวเอง หรือสายดูแลเพจแบรนด์
+next.blocks[1].answersTh[2]: นี่ไม่ใช่คำทำนาย มันคือจุดเริ่ม เธอตัดสินใจเอง
+next.blocks[2].lines[0].text.th: กดบอกเราหน่อยว่าสายนี้ใช่เธอไหม เราจะได้รู้ว่าควรเจาะลึกต่อหรือเปล่า
+next.blocks[2].lines[1].text.th: ไม่ว่าจะกดอันไหน ถือว่าได้ข้อมูล
+next.blocks[2].lines[2].text.th: ลองแล้วรู้ว่าไม่ใช่ ก็ยังได้คำตอบไวกว่าคนที่ไม่เคยลอง
+next.blocks[4].lines[0].text.th: ถ้าเริ่มอินกับสายนี้ สิ่งเดียวที่ต้องทำต่อ
+next.blocks[4].lines[1].text.th: คือพรุ่งนี้ถ่ายอีกคลิป แล้วจดไว้เลยว่าคนดูหลุดตรงไหน
+next.blocks[5].text.th: ไม่ชอบแก้คลิปเดิมซ้ำๆ หรือไม่อยากดูตัวเลขกับอ่านคอมเมนต์ทุกวัน แม้วันที่คลิปแป้ก เพราะงานจริงคือวางแผน ถ่าย อ่านผล แก้ แล้ววนใหม่
+next.blocks[5].titleTh: สายนี้อาจไม่เหมาะ ถ้า...",
+  "round1.titleTh: รอบ 1 มีที่ให้ผลงานของเธอ
+round1.questionTh: เข้ามหาลัยด้วยสิ่งที่ทำเอง ไม่ใช่แค่คะแนนสอบ จริงเหรอ
+round1.navLabelTh: รอบ 1
+round1.og.headlineTh: TCAS รอบ 1 ใช้ผลงานของเธอยื่นได้ เริ่มเก็บตั้งแต่ตอนนี้เลย
+round1.og.stat.th: TCAS70 มี 4 รอบ รอบแรกคือ Portfolio
+round1.blocks[0].lines[0].text.th: ก่อนไปต่อ มีเรื่องหนึ่งที่แทบไม่มีใครเคยบอก
+round1.blocks[0].lines[1].text.th: เข้ามหาลัยไม่ได้มีแค่ทางสอบอย่างเดียวนะ
+round1.blocks[1].text.th: TCAS70 มี 4 รอบ รอบแรกชื่อ Portfolio มหาลัยดูจากสิ่งที่เธอทำมา
+round1.blocks[2].lines[0].text.th: ถ้าเธอเคยลองทำอะไรในสายคอนเทนต์ ด้วยตัวเอง นั่นแหละ เอาไปใส่ได้เลย
+round1.blocks[2].lines[1].text.th: ปีนี้ ทปอ. มีระบบ TCASfolio ให้ทำแฟ้มผลงานได้สูงสุด 40 รายการ
+round1.blocks[3].unlockLabelTh: ลองจัดแฟ้มดู
+round1.blocks[3].blocks[0].lines[0].text.th: ลองดูสิ ของพวกนี้ควรไปอยู่ช่องไหนในแฟ้ม
+round1.blocks[3].blocks[1].game.data.tagTh: จัดแฟ้มผลงาน
+round1.blocks[3].blocks[1].game.data.goalTh: จัดของใส่แฟ้ม TCASfolio
+round1.blocks[3].blocks[1].game.data.bins[0].labelTh: โครงงาน
+round1.blocks[3].blocks[1].game.data.bins[1].labelTh: กิจกรรม
+round1.blocks[3].blocks[1].game.data.bins[2].labelTh: เกียรติบัตร รางวัล
+round1.blocks[3].blocks[1].game.data.items[0].labelTh: ทำคลิปสั้นชุดหนึ่ง เรื่องที่รู้ดี แล้วจดว่าแต่ละคลิปคนดูหลุดตรงไหน แก้ยังไง
+round1.blocks[3].blocks[1].game.data.items[0].revealTh: โครงงาน: เธอวางแผน ถ่าย อ่านผล แล้วแก้เอง ครบทั้งวงจรงานจริง
+round1.blocks[3].blocks[1].game.data.items[1].labelTh: วางแผนโพสต์เพจงานโรงเรียนเองหนึ่งเดือน แล้วสรุปว่าโพสต์ไหนคนสนใจ เพราะอะไร
+round1.blocks[3].blocks[1].game.data.items[1].revealTh: โครงงาน: เธอวางแผนเอง มีคนดูจริง มีผลจริง เขียนสรุปว่าได้เรียนรู้อะไรด้วยนะ
+round1.blocks[3].blocks[1].game.data.items[2].labelTh: เข้าชุมนุมสื่อหรือชมรมถ่ายภาพของโรงเรียน
+round1.blocks[3].blocks[1].game.data.items[2].revealTh: กิจกรรม: เล่าด้วยว่าในชุมนุมเธอลงมือทำอะไร ไม่ใช่แค่ไปนั่งฟังเฉยๆ
+round1.blocks[3].blocks[1].game.data.items[3].labelTh: เป็นทีมถ่ายคลิปงานกีฬาสีหรืองานวันเปิดบ้านของโรงเรียน
+round1.blocks[3].blocks[1].game.data.items[3].revealTh: กิจกรรม: ทำงานกับทีม ทำตามบรีฟ ส่งงานทันเวลา นี่แหละสิ่งที่งานจริงต้องการ
+round1.blocks[3].blocks[1].game.data.items[4].labelTh: เกียรติบัตรจากเวทีประกวดหนังสั้นหรือคลิปสั้น
+round1.blocks[3].blocks[1].game.data.items[4].revealTh: เกียรติบัตร รางวัล: ใส่ได้เลย แนบคลิปที่ส่งประกวดไปด้วย จะได้เห็นฝีมือเธอชัดๆ
+round1.blocks[3].blocks[1].game.data.resultTh: จัดถูก {score}/{total}
+round1.blocks[3].blocks[1].answersTh[0]: โครงงาน: ทำคลิปสั้นชุดหนึ่ง เรื่องที่รู้ดี แล้วจดว่าแต่ละคลิปคนดูหลุดตรงไหน แก้ยังไง, วางแผนโพสต์เพจงานโรงเรียนเองหนึ่งเดือน แล้วสรุปว่าโพสต์ไหนคนสนใจ เพราะอะไร
+round1.blocks[3].blocks[1].answersTh[1]: กิจกรรม: เข้าชุมนุมสื่อหรือชมรมถ่ายภาพของโรงเรียน, เป็นทีมถ่ายคลิปงานกีฬาสีหรืองานวันเปิดบ้านของโรงเรียน
+round1.blocks[3].blocks[1].answersTh[2]: เกียรติบัตร รางวัล: เกียรติบัตรจากเวทีประกวดหนังสั้นหรือคลิปสั้น
+round1.blocks[3].blocks[2].lines[0].text.th: เห็นไหม ของที่เธอลงมือทำเองนับได้จริง
+round1.blocks[3].blocks[2].lines[1].text.th: ไม่ต้องรอใครมาจัดค่าย หรือออกใบเกียรติบัตรให้ก่อนเลย
+round1.blocks[4].unlockLabelTh: แล้วตอนนี้ฉันอยู่ ม.ไหนล่ะ
+round1.blocks[4].blocks[0].lines[0].text.th: ถ้าอยู่ ม.6 รอบ 1 ปีนี้บางคณะยังเปิดรับอยู่ แต่ละคณะปิดไม่พร้อมกันนะ
+round1.blocks[4].blocks[0].lines[1].text.th: ถ้าอยู่ ม.5 เธอยังมีเวลาอีกเกือบปี ลองทำชิ้นแรกให้เสร็จก่อนเลย
+round1.blocks[4].blocks[0].lines[2].text.th: ถ้าอยู่ ม.4 เวลาเยอะสุด ลองได้หลายอย่างเลย ไม่ต้องรีบเลือก
+round1.blocks[4].blocks[1].text.th: รอบ 1 ไม่ได้ง่ายกว่ารอบอื่น แต่ละคณะมีเกณฑ์ เช่น เกรดขั้นต่ำ เช็กประกาศของคณะที่สนใจทุกครั้งนะ
+round1.blocks[4].blocks[1].titleTh: พูดตรงๆ
+round1.blocks[4].blocks[2].labelTh: ดูหลักสูตร นิเทศศาสตร์ วารสารศาสตร์ สื่อสารมวลชน ใน mytcas
+round1.blocks[5].lines[0].text.th: ผลงานชิ้นแรกไม่ต้องใหญ่โตเลย
+round1.blocks[5].lines[1].text.th: อยากรู้เรื่องที่เรียนต่อกับงานจริงของสายนี้อีกใช่ไหม
+round1.blocks[5].lines[2].text.th: กด แผนที่ด่าน ข้างล่าง ไปดูข้อมูลเต็มของสายนี้ได้เลย",
+]
+`;

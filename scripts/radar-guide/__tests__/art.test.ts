@@ -9,7 +9,7 @@ import sharp from "sharp";
 import { GUIDE_INDEX } from "../../../lib/radar-guides/index";
 import { GUIDE_HOST } from "../../../lib/radar-guide/story";
 import { FRAME_SIZE, MAP_SIZE, renderFrame, renderHost, renderMap, renderScene, SCENE_SIZE, SCENES } from "../art-pixel";
-import { AGY_SCALE, agyImageArgs, fullPrompt, loadPrompts, MAX_ART_BYTES, outputSize, parseImagePath, sourceFor, type ArtPrompts } from "../art";
+import { AGY_SCALE, agyImageArgs, codexImageArgs, fullPrompt, loadPrompts, MAX_ART_BYTES, outputSize, parseImagePath, sourceFor, type ArtPrompts } from "../art";
 import { mentionsPeople } from "../lib/art";
 
 const ROOT = join(__dirname, "../../..");
@@ -72,7 +72,7 @@ describe.each(SLUGS)("art for %s", (slug) => {
   it("committed every asset as a webp within the size budget", () => {
     for (const asset of prompts.assets) {
       const file = join(PUBLIC, asset.out);
-      if (asset.source === "agy") expect(["scene", "map"]).toContain(asset.kind);
+      if (asset.source === "agy" || asset.source === "codex") expect(["scene", "map"]).toContain(asset.kind);
       expect(existsSync(file)).toBe(true);
       expect(statSync(file).size).toBeLessThanOrEqual(MAX_ART_BYTES);
       const head = readFileSync(file).subarray(0, 12).toString("latin1");
@@ -100,6 +100,15 @@ describe("agy invocation", () => {
     expect(args.join(" ")).not.toMatch(/dangerously|skip-permissions/);
     expect(args.join(" ")).not.toContain("'quoted'");
     expect(args).toContain("300s");
+  });
+
+  it("asks codex for one image at a given path, without skipping its sandbox", () => {
+    const args = codexImageArgs("/tmp/x/a.png", 'a "quoted" prompt');
+    expect(args.slice(0, 2)).toEqual(["exec", "--skip-git-repo-check"]);
+    expect(args[2]).toContain("/tmp/x/a.png");
+    expect(args[2]).not.toContain('"quoted"');
+    expect(args.join(" ")).not.toMatch(/dangerously|bypass|full-auto/);
+    expect(outputSize({ size: [160, 100] }, "codex")).toEqual([160 * AGY_SCALE, 100 * AGY_SCALE]);
   });
 
   it("finds the saved image path in agy's reply (png or jpg)", () => {

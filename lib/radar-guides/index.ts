@@ -7,16 +7,28 @@
  * (registry.server guideIndexFor); this index leaves them unset.
  */
 import type { GuideIndexEntry, GuideIndexPage } from "@/lib/radar-guide/guide-types";
+import { ACCOUNTANT_META } from "./accountant/meta";
 import { AI_ENGINEER_META } from "./ai-engineer/meta";
+import { CONTENT_CREATOR_META } from "./content-creator/meta";
 import { CYBERSECURITY_META } from "./cybersecurity/meta";
 import { DATA_SCIENTIST_META } from "./data-scientist/meta";
+import { MEDICAL_TECHNOLOGIST_META } from "./medical-technologist/meta";
+import { MECHANICAL_ENGINEER_META } from "./mechanical-engineer/meta";
+import { MARKETING_STRATEGIST_META } from "./marketing-strategist/meta";
 import { SOFTWARE_ENGINEER_META } from "./software-engineer/meta";
+import { UX_DESIGN_META } from "./ux-design/meta";
 
 export const GUIDE_INDEX: Readonly<Record<string, GuideIndexEntry>> = {
   cybersecurity: CYBERSECURITY_META,
   "ai-engineer": AI_ENGINEER_META,
   "data-scientist": DATA_SCIENTIST_META,
   "software-engineer": SOFTWARE_ENGINEER_META,
+  "medical-technologist": MEDICAL_TECHNOLOGIST_META,
+  "ux-design": UX_DESIGN_META,
+  "mechanical-engineer": MECHANICAL_ENGINEER_META,
+  "marketing-strategist": MARKETING_STRATEGIST_META,
+  accountant: ACCOUNTANT_META,
+  "content-creator": CONTENT_CREATOR_META,
 };
 
 /** Every slug with a code guide, any status. */
@@ -83,4 +95,10 @@ export const KNOWN_PUBLISHED_RADAR_SLUGS: readonly string[] = [
   "ai-engineer",
   "software-engineer",
   "data-scientist",
+  "medical-technologist",
+  "ux-design",
+  "mechanical-engineer",
+  "marketing-strategist",
+  "accountant",
+  "content-creator",
 ];

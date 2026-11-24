@@ -68,6 +68,7 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
   // Optimize bundle splitting
   experimental: {
+    agentUpgrade: "security",
     optimizePackageImports: ["lucide-react"],
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
@@ -153,6 +154,21 @@ const nextConfig = {
           {
             key: "Referrer-Policy",
             value: "origin-when-cross-origin",
+          },
+        ],
+      },
+      {
+        // Phone voice-over studio requires microphone capture on its own origin.
+        source: "/studio/radar-voice/:path*",
+        headers: [
+          {
+            key: "Permissions-Policy",
+            value:
+              "camera=(), microphone=(self), geolocation=(), payment=(), usb=(), interest-cohort=()",
+          },
+          {
+            key: "Cache-Control",
+            value: "private, no-store",
           },
         ],
       },

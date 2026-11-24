@@ -1,0 +1,136 @@
+/*
+ * Story reels (components/radar/reel/story). Everything here is drawn from the
+ * frame number (no CSS animation of our own), so frame N is the same on every
+ * run; P'Seed (GuideNPC) keeps its own animations, which Chrome's virtual time
+ * makes deterministic when radar:story films. Sizes are CSS px on the 432x768
+ * frame, chosen so borders land on whole device pixels at 2.5x.
+ */
+
+.sr-frame {
+  --sr-ink: #1a0e14;
+  --sr-night: #120a14;
+  --sr-plum: #2a1630;
+  --sr-cream: #fff1e6;
+  --sr-orange: #ff8a4c;
+  --sr-gold: #ffd08a;
+  --sr-magenta: #ff3fb4;
+  --sr-thai: var(--font-kodchasan), var(--font-noto-sans-thai), sans-serif;
+  /* The Elemental hackathon's face: Trirong for every word on the reel. */
+  --sr-serif: var(--font-trirong), "Noto Serif Thai", serif;
+  --sr-pixel: var(--font-tiny5), var(--font-space-mono), monospace;
+  --sr-mono: var(--font-space-mono), ui-monospace, monospace;
+  position: relative;
+  overflow: hidden;
+  background: var(--sr-night);
+  font-family: var(--sr-serif);
+  color: var(--sr-cream);
+}
+
+.sr-pixelated {
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+/* A box with a 4px pixel border and notched corners (like .rgs-pixel-box). */
+.sr-box {
+  --sr-border: var(--sr-cream);
+  background: var(--sr-ink);
+  box-shadow:
+    0 -4px 0 0 var(--sr-border),
+    0 4px 0 0 var(--sr-border),
+    -4px 0 0 0 var(--sr-border),
+    4px 0 0 0 var(--sr-border),
+    inset 0 4px 0 0 rgb(255 255 255 / 8%),
+    inset 0 -4px 0 0 rgb(0 0 0 / 35%);
+}
+
+.sr-tag {
+  position: absolute;
+  top: -20px;
+  padding: 2px 10px 3px;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+  box-shadow:
+    0 -2px 0 0 var(--sr-ink),
+    0 2px 0 0 var(--sr-ink),
+    -2px 0 0 0 var(--sr-ink),
+    2px 0 0 0 var(--sr-ink);
+}
+
+.sr-line {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.5;
+  /* Even lines, so no word sits alone on the last one ("เลย", "นะ"). */
+  text-wrap: balance;
+}
+
+.sr-ghost {
+  color: transparent;
+}
+
+/* A phrase never breaks inside (a Thai word is never cut): lines break
+   between phrases only, and a phrase wider than its box makes the whole text
+   smaller instead (fit.ts). */
+.sr-phrase {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* Huge type: the poster's ExtraLight title, cream on the dimmed photo. */
+.sr-big {
+  font-family: var(--sr-serif);
+  font-weight: 200;
+  line-height: 1.32;
+  letter-spacing: -0.005em;
+  color: var(--sr-cream);
+  text-wrap: balance;
+  text-shadow: 0 2px 18px rgb(10 8 8 / 45%);
+}
+
+/* A spoken line in its bubble: Trirong Medium, tall lines so Thai marks never touch. */
+.sr-say {
+  font-family: var(--sr-serif);
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 1.5;
+  text-wrap: balance;
+}
+
+/* Narration straight on the photo, like the poster's facts. */
+.sr-narrate {
+  font-family: var(--sr-serif);
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: center;
+  text-wrap: balance;
+  color: var(--sr-cream);
+  text-shadow: 0 1px 2px rgb(10 8 8 / 55%), 0 2px 16px rgb(10 8 8 / 50%);
+}
+
+/* A soft dark pool behind narration so it reads on a bright sky too. */
+.sr-scrim::before {
+  content: "";
+  position: absolute;
+  inset: -22px -34px;
+  background: radial-gradient(closest-side, rgb(12 10 10 / 52%), rgb(12 10 10 / 0%));
+  z-index: -1;
+}
+.sr-scrim {
+  isolation: isolate;
+  padding: 4px 10px;
+}
+
+/* Film grain over the whole frame, shifted every frame (StoryScene FilmGrain). */
+.sr-grain {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background-image: url("/radar/stories/grain.png");
+  background-size: 102.4px 102.4px;
+  mix-blend-mode: overlay;
+  opacity: 0.55;
+}
