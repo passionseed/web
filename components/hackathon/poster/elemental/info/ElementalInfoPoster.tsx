@@ -216,7 +216,8 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
           <Head>
             โจทย์ 5 ธาตุ <span style={{ fontWeight: 300, color: EL.creamSoft }}>เลือกปัญหาไหนก็ได้ในธาตุนั้น</span>
           </Head>
-          <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "repeat(4, 1fr) 1.55fr", columnGap: 18 }}>
+          {/* 10px lower than at first, away from the heading (Angpao, 2026-11-24: "move this element lower abit"). */}
+          <div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "repeat(4, 1fr) 1.55fr", columnGap: 18 }}>
             {ELEMENTS.map(({ key, color, line }) => (
               <div key={key}>
                 {key === "aether" ? <AetherPixels rows={SHAPES[key]} size={48} id={`${id}-aether`} /> : <Pixels rows={SHAPES[key]} color={color} size={48} />}
@@ -230,9 +231,9 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
         {/* Schedule */}
         <div style={{ marginTop: 10 }}>
           <Head>กำหนดการ</Head>
-          <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: `repeat(${days.length}, 1fr)`, columnGap: 14 }}>
+          <div style={{ marginTop: 9, display: "grid", gridTemplateColumns: `repeat(${days.length}, 1fr)`, columnGap: 14 }}>
             {days.map((d) => (
-              <div key={d} style={{ borderTop: `2px solid ${EL.cream}`, paddingTop: 12 }}>
+              <div key={d} style={{ borderTop: `2px solid ${EL.cream}`, paddingTop: 9 }}>
                 <p style={{ margin: 0, fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 25, lineHeight: "32px" }}>{formatThaiDate(d)}</p>
                 {ELEMENTAL.schedule
                   .filter((s) => s.date === d)
