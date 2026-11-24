@@ -1,0 +1,148 @@
+/* Elemental sign-up: one step at a time. Motion is short and directional,
+   and goes away for people who ask for reduced motion. */
+
+.stepForward {
+  animation: inFromRight 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.stepBack {
+  animation: inFromLeft 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes inFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes inFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.progress {
+  transition: width 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.shake {
+  animation: shake 320ms ease-in-out;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: none;
+  }
+  25% {
+    transform: translateX(-6px);
+  }
+  75% {
+    transform: translateX(6px);
+  }
+}
+
+.input {
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.input:focus {
+  border-color: #ec6424;
+  box-shadow: 0 0 0 3px rgba(236, 100, 36, 0.18);
+}
+
+.choice {
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 120ms ease;
+}
+
+.choice:active {
+  transform: scale(0.985);
+}
+
+.pop {
+  animation: pop 420ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.drop {
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+/* The paid ticket: it rises in, the photo settles like an opening shot, then the title fades up. */
+.ticketIn {
+  animation: ticketIn 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes ticketIn {
+  from {
+    opacity: 0;
+    transform: translateY(28px) rotate(-1.2deg) scale(0.97);
+  }
+}
+
+.kenBurns {
+  animation: kenBurns 9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes kenBurns {
+  from {
+    transform: scale(1.14);
+    filter: saturate(0.4) brightness(0.8);
+  }
+}
+
+.titleIn {
+  animation: titleIn 1100ms 500ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes titleIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stepForward,
+  .stepBack,
+  .shake,
+  .pop,
+  .ticketIn,
+  .kenBurns,
+  .titleIn {
+    animation: none;
+  }
+  .progress,
+  .input,
+  .choice,
+  .drop {
+    transition: none;
+  }
+}

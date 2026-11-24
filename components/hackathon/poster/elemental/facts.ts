@@ -50,6 +50,8 @@ export const ELEMENTAL = {
   registrationClosesOn: "2026-12-04",
   /** Where it happens. */
   venueTh: "ออนไลน์ทาง Discord",
+  /** The same, short enough for a ticket stub. */
+  venueShort: "Discord",
   /** Largest group on one sign-up. */
   maxGroupSize: 5,
   /**
@@ -95,6 +97,11 @@ export function thaiDayRange(): string {
 /** "20,000". */
 export function prizeTotal(): string {
   return ELEMENTAL.prizeTotalBaht.toLocaleString("en-US");
+}
+
+/** "5 ถึง 7 ธ.ค.": the date line without the year, for tight spots like the ticket stub. */
+export function thaiDateShort(): string {
+  return `${parts(ELEMENTAL.startDate).day} ถึง ${formatThaiDate(ELEMENTAL.endDate, false)}`;
 }
 
 /** "5 ถึง 8 ธ.ค. 2569": month once, Buddhist-era year. */

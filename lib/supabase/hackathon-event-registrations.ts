@@ -20,6 +20,10 @@ export type PublicRegistration = {
   amountBaht: number;
   memberNicknames: string[];
   team: PublicTeam | null;
+  /** Whether this sign-up started its team (the first one on it), so it may rename the team. */
+  isTeamStarter: boolean;
+  /** 0 for the person who started the team, 1 for the next to sign up, and so on. Null when alone. */
+  teamPosition: number | null;
   createdAt: string;
 };
 
@@ -197,6 +201,7 @@ export async function getRegistrationByToken(
   const members = [...(data.hackathon_event_registration_members ?? [])].sort(
     (a, b) => a.position - b.position,
   );
+  const teamPosition = data.team_id ? await positionInTeam(data.team_id, data.id) : null;
   return {
     id: data.id,
     status: data.status as RegistrationStatus,
@@ -205,8 +210,34 @@ export async function getRegistrationByToken(
     amountBaht: data.amount_baht,
     memberNicknames: members.map(firstName),
     team: data.team_id ? await loadTeam({ id: data.team_id }, maxTeamSize) : null,
+    isTeamStarter: teamPosition === 0,
+    teamPosition,
     createdAt: data.created_at,
   };
+}
+
+/** Where a sign-up falls in its team's sign-up order (0 = started the team). */
+async function positionInTeam(teamId: string, registrationId: string): Promise<number | null> {
+  const { data, error } = await createAdminClient()
+    .from("hackathon_event_registrations")
+    .select("id")
+    .eq("team_id", teamId)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  const i = (data ?? []).findIndex((r) => r.id === registrationId);
+  return i === -1 ? null : i;
+}
+
+/** Rename a team, and the copy of its name on each of its sign-ups. */
+export async function renameTeam(teamId: string, name: string): Promise<void> {
+  const db = createAdminClient();
+  const { error } = await db.from("hackathon_event_teams").update({ name }).eq("id", teamId);
+  if (error) throw error;
+  const { error: regError } = await db
+    .from("hackathon_event_registrations")
+    .update({ team_name: name })
+    .eq("team_id", teamId);
+  if (regError) throw regError;
 }
 
 export async function uploadSlip(file: File, path: string): Promise<void> {

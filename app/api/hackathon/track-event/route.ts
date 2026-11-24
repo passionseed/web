@@ -3,6 +3,8 @@ import { extractHackathonToken } from "@/lib/hackathon/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { createHash } from "crypto";
+import { cleanFunnelEvent, FUNNEL_EVENT_TYPE } from "@/lib/hackathon/elemental/funnel";
+import { isTrustedAdminRequest } from "@/lib/security/request-origin";
 
 /**
  * Track hackathon user events for analytics
@@ -13,17 +15,24 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
     const body = await request.json();
 
-    const {
-      event_type,
-      event_data = {},
-      page_path = "/hackathon",
-    } = body;
+    const { event_type, page_path = "/hackathon" } = body;
+    let { event_data = {} } = body;
 
     if (!event_type) {
       return NextResponse.json(
         { success: false, error: "event_type is required" },
         { status: 400 }
       );
+    }
+
+    // Elemental funnel events feed the admin funnel: only well-formed events
+    // from our own pages, with the host taken from the request.
+    if (event_type === FUNNEL_EVENT_TYPE) {
+      const clean = isTrustedAdminRequest(request) ? cleanFunnelEvent(event_data, request.headers.get("host")) : null;
+      if (!clean) {
+        return NextResponse.json({ success: false, error: "invalid event" }, { status: 400 });
+      }
+      event_data = clean;
     }
 
     const token = extractHackathonToken(request);

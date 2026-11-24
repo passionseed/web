@@ -1,69 +1,23 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Download, Loader2, Upload } from "lucide-react";
+import { CheckCircle2, Download, ImageUp, Loader2, RotateCcw } from "lucide-react";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { SHIFT_PAYMENT } from "@/lib/content/shift-cohort";
 import { prepareSlip } from "@/lib/hackathon/elemental/slip-image";
 
-/**
- * Pay for a sign-up: transfer the exact amount by PromptPay, then upload
- * the slip. The server checks it (RDCW or SlipOK) and answers right away.
- */
+import styles from "./join/join.module.css";
+import { trackElemental } from "./track";
 
 /**
- * Save the QR to the phone's photos so a bank app can scan it. A plain
- * download link lands in Files on iOS browsers (Arc, Safari), where bank apps
- * can't see it; the share sheet has "Save Image", which goes to Photos.
+ * Pay for a sign-up in two moves: scan the QR (the amount is already in it
+ * when PROMPTPAY_ID is set), then hand over the slip: tap to pick it, drop
+ * it, or paste it. The server checks it (RDCW or SlipOK) and answers right
+ * away, and the page turns into the seat.
  */
-function SaveQrButton() {
-  // Loaded ahead, so the share sheet opens straight from the tap (iOS refuses
-  // a share that starts after an await).
-  const qrFile = useRef<File | null>(null);
-  useEffect(() => {
-    fetch(SHIFT_PAYMENT.qrSrc)
-      .then((res) => res.blob())
-      .then((blob) => {
-        qrFile.current = new File([blob], "passionseed-promptpay.jpg", { type: blob.type || "image/jpeg" });
-      })
-      .catch(() => {});
-  }, []);
-
-  const save = async () => {
-    const file = qrFile.current;
-    if (file && navigator.canShare?.({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file] });
-        return;
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") return; // closed the share sheet
-      }
-    }
-    const a = document.createElement("a");
-    a.href = SHIFT_PAYMENT.qrSrc;
-    a.download = "passionseed-promptpay.jpg";
-    a.click();
-  };
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={save}
-        className="mt-3 inline-flex w-full items-center justify-center gap-2 text-sm underline underline-offset-4"
-        style={{ color: EL.inkSoft }}
-      >
-        <Download className="h-4 w-4" /> บันทึก QR ลงรูปภาพ
-      </button>
-      <p className="mt-1 text-center text-xs" style={{ color: EL.inkSoft }}>
-        บนมือถือ กดแล้วเลือก &quot;Save Image&quot; หรือแคปหน้าจอนี้ แล้วเปิดสแกนจากรูปในแอปธนาคาร
-      </p>
-    </>
-  );
-}
 
 type Result =
   | { result: "paid" }
@@ -91,69 +45,182 @@ function message(r: Result, amount: string): string | null {
   }
 }
 
-export function PayWithSlip({ token, amountBaht }: { token: string; amountBaht: number }) {
-  const router = useRouter();
-  const input = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const amount = `฿${amountBaht.toLocaleString("en-US")}`;
+/**
+ * Save the QR to the phone's photos so a bank app can scan it. A plain
+ * download link lands in Files on iOS browsers (Arc, Safari), where bank apps
+ * can't see it; the share sheet has "Save Image", which goes to Photos.
+ */
+function SaveQrButton({ src }: { src: string }) {
+  const qrFile = useRef<File | null>(null);
+  useEffect(() => {
+    fetch(src)
+      .then((res) => res.blob())
+      .then((blob) => {
+        const ext = blob.type === "image/png" ? "png" : "jpg";
+        qrFile.current = new File([blob], `passionseed-promptpay.${ext}`, { type: blob.type || "image/jpeg" });
+      })
+      .catch(() => {});
+  }, [src]);
 
-  const upload = async (picked: File | undefined) => {
-    if (!picked) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const file = await prepareSlip(picked);
-      if (!file) {
-        setError("เปิดรูปนี้ไม่ได้ ใช้รูปสลิปแบบ JPG หรือ PNG จากแอปธนาคาร");
+  const save = async () => {
+    trackElemental({ step: "qr_saved" });
+    const file = qrFile.current;
+    if (file && navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file] });
         return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return; // closed the share sheet
       }
-      const form = new FormData();
-      form.append("slip", file);
-      const res = await fetch(`/api/hackathon/elemental/${token}/slip`, { method: "POST", body: form });
-      const data = (await res.json().catch(() => ({}))) as Partial<Result> & { error?: string };
-      if (!res.ok || !data.result) {
-        setError("อัปโหลดไม่สำเร็จ ลองใหม่อีกครั้ง");
-        return;
-      }
-      const text = message(data as Result, amount);
-      if (text) setError(text);
-      else router.refresh();
-    } catch {
-      setError("เชื่อมต่อไม่ได้ ลองใหม่อีกครั้ง");
-    } finally {
-      setBusy(false);
-      if (input.current) input.current.value = "";
     }
+    const a = document.createElement("a");
+    a.href = src;
+    a.download = file?.name ?? "passionseed-promptpay.jpg";
+    a.click();
   };
 
   return (
-    <div className="grid gap-8 sm:grid-cols-[240px_1fr] sm:items-start">
-      <div className="mx-auto w-full max-w-[240px]">
-        <div className="overflow-hidden rounded-2xl bg-white p-2 shadow-sm">
-          <Image
-            src={SHIFT_PAYMENT.qrCardSrc}
-            alt="QR พร้อมเพย์ PassionSeed สำหรับโอนค่าสมัคร"
-            width={800}
-            height={760}
-            className="h-auto w-full"
-          />
-        </div>
-        <SaveQrButton />
-      </div>
+    <button
+      type="button"
+      onClick={save}
+      className={`${styles.choice} flex w-full items-center justify-center gap-3 rounded-full px-6 py-3 text-left`}
+      style={{ backgroundColor: EL.ink, color: EL.cream }}
+    >
+      <Download className="h-5 w-5 shrink-0" />
+      <span>
+        <span className="block text-base font-semibold">บันทึก QR ลงรูปภาพ</span>
+        <span className="block text-sm" style={{ color: EL.creamSoft }}>แล้วเปิดสแกนจากรูปในแอปธนาคาร</span>
+      </span>
+    </button>
+  );
+}
 
-      <div>
-        <ol className="space-y-4">
-          <li>
-            <p className="text-xs" style={{ fontFamily: EL_FONT.mono, color: EL.flame }}>01</p>
-            <p>สแกน QR แล้วโอนยอดนี้ <strong>ให้ตรงทุกบาท</strong></p>
-            <p className="mt-1 text-5xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>{amount}</p>
-          </li>
-          <li>
-            <p className="text-xs" style={{ fontFamily: EL_FONT.mono, color: EL.flame }}>02</p>
-            <p>อัปโหลดรูปสลิปจากแอปธนาคาร ระบบจะตรวจให้ทันที</p>
-          </li>
-        </ol>
+type Props = {
+  token: string;
+  amountBaht: number;
+  /** A QR with the amount in it (data URL), or null to show the printed QR. */
+  qrSrc: string | null;
+  /** Dev only: pretend the slip passed. */
+  demo?: boolean;
+};
+
+export function PayWithSlip({ token, amountBaht, qrSrc, demo }: Props) {
+  const router = useRouter();
+  const input = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [passed, setPassed] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const amount = `฿${amountBaht.toLocaleString("en-US")}`;
+  const filled = qrSrc !== null;
+
+  const upload = useCallback(
+    async (picked: File | undefined) => {
+      if (!picked || busy) return;
+      trackElemental({ step: "slip" });
+      setBusy(true);
+      setError(null);
+      try {
+        const file = await prepareSlip(picked);
+        if (!file) {
+          setError("เปิดรูปนี้ไม่ได้ ใช้รูปสลิปแบบ JPG หรือ PNG จากแอปธนาคาร");
+          return;
+        }
+        let data: Partial<Result> & { error?: string };
+        let ok: boolean;
+        if (demo) {
+          await new Promise((r) => setTimeout(r, 1400));
+          ok = true;
+          data = { result: "paid" };
+        } else {
+          const form = new FormData();
+          form.append("slip", file);
+          const res = await fetch(`/api/hackathon/elemental/${token}/slip`, { method: "POST", body: form });
+          ok = res.ok;
+          data = (await res.json().catch(() => ({}))) as Partial<Result> & { error?: string };
+        }
+        if (!ok || !data.result) {
+          setError("อัปโหลดไม่สำเร็จ ลองใหม่อีกครั้ง");
+          return;
+        }
+        const r = data as Result;
+        trackElemental({ step: "slip_result", detail: r.result === "rejected" ? `rejected:${r.reason}` : r.result }, { once: false });
+        const text = message(r, amount);
+        if (text) {
+          setError(text);
+          return;
+        }
+        setPassed(true);
+        // Let the tick land before the page turns into the seat.
+        window.setTimeout(() => (demo ? router.push("/hackathon/join/demo?state=paid") : router.refresh()), 900);
+      } catch {
+        setError("เชื่อมต่อไม่ได้ เช็กอินเทอร์เน็ตแล้วลองอีกครั้ง");
+      } finally {
+        setBusy(false);
+        if (input.current) input.current.value = "";
+      }
+    },
+    [amount, busy, demo, router, token],
+  );
+
+  // Paste a slip straight from the clipboard (Cmd+V on a laptop).
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      const file = [...(e.clipboardData?.files ?? [])].find((f) => f.type.startsWith("image/"));
+      if (file) void upload(file);
+    };
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  }, [upload]);
+
+  const onDrop = (e: DragEvent) => {
+    e.preventDefault();
+    setDragging(false);
+    void upload(e.dataTransfer.files?.[0]);
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* 1. Pay */}
+      <section className="rounded-3xl bg-white p-5 shadow-[0_1px_0_rgba(29,33,31,0.06)] sm:p-7">
+        <p className="text-sm font-medium" style={{ color: EL.flame }}>1 · โอน</p>
+        <p className="mt-1 text-6xl tabular-nums" style={{ fontFamily: EL_FONT.display, fontWeight: 200, lineHeight: 1 }}>
+          {amount}
+        </p>
+        <p className="mt-2 text-sm" style={{ color: EL.inkSoft }}>
+          {filled ? "สแกนแล้วยอดขึ้นเอง" : "สแกนแล้วใส่ยอดนี้ให้ตรงทุกบาท"}
+        </p>
+        {/* On a phone the QR is on the same screen as the bank app, so saving it comes first. */}
+        <div className="mt-5 sm:hidden">
+          <SaveQrButton src={qrSrc ?? SHIFT_PAYMENT.qrSrc} />
+        </div>
+        <div className="mx-auto mt-5 w-full max-w-[180px] sm:max-w-[260px]">
+          {filled ? (
+            // eslint-disable-next-line @next/next/no-img-element -- a generated data URL, nothing to optimise
+            <img src={qrSrc} alt={`QR พร้อมเพย์ PassionSeed ยอด ${amount}`} width={720} height={720} className="h-auto w-full" />
+          ) : (
+            <Image src={SHIFT_PAYMENT.qrCardSrc} alt="QR พร้อมเพย์ PassionSeed สำหรับโอนค่าสมัคร" width={800} height={760} className="h-auto w-full" />
+          )}
+        </div>
+        <p className="mt-2 text-center text-xs" style={{ color: EL.inkSoft }}>บริษัท แพชชั่นซี้ด · พร้อมเพย์</p>
+      </section>
+
+      {/* 2. Slip */}
+      <section
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={onDrop}
+        className={`${styles.drop} rounded-3xl border-2 border-dashed p-5 sm:p-7`}
+        style={{
+          borderColor: passed ? EL.toxicGreen : dragging ? EL.flame : "rgba(29,33,31,0.18)",
+          backgroundColor: dragging ? "rgba(236,100,36,0.06)" : "transparent",
+        }}
+      >
+        <p className="text-sm font-medium" style={{ color: EL.flame }}>2 · ส่งสลิป</p>
+        <p className="mt-1 text-lg">อัปโหลดรูปสลิปจากแอปธนาคาร ระบบตรวจให้ทันที</p>
 
         <input
           ref={input}
@@ -162,29 +229,38 @@ export function PayWithSlip({ token, amountBaht }: { token: string; amountBaht: 
           className="hidden"
           onChange={(e) => upload(e.target.files?.[0])}
         />
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => input.current?.click()}
-          className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full px-7 py-3.5 text-base font-semibold disabled:opacity-60 sm:w-auto"
-          style={{ backgroundColor: EL.flame, color: EL.flameWhite }}
-        >
-          {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
-          {busy ? "กำลังตรวจสลิป" : "อัปโหลดสลิป"}
-        </button>
+        {passed ? (
+          <p className={`${styles.pop} mt-5 inline-flex items-center gap-2 text-lg font-semibold`} role="status">
+            <CheckCircle2 className="h-6 w-6" style={{ color: EL.toxicGreen }} /> สลิปผ่านแล้ว
+          </p>
+        ) : (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => input.current?.click()}
+            className={`${styles.choice} mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full px-7 py-4 text-lg font-semibold disabled:opacity-80`}
+            style={{ backgroundColor: EL.flame, color: EL.flameWhite }}
+          >
+            {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : error ? <RotateCcw className="h-5 w-5" /> : <ImageUp className="h-5 w-5" />}
+            {busy ? "กำลังตรวจสลิป" : error ? "เลือกสลิปใหม่" : "เลือกรูปสลิป"}
+          </button>
+        )}
+        <p className="mt-3 hidden text-center text-sm sm:block" style={{ color: EL.inkSoft }}>
+          หรือลากรูปมาวาง หรือกด ⌘V
+        </p>
         {error && (
-          <p role="alert" className="mt-4 text-sm leading-relaxed" style={{ color: EL.ember }}>
+          <p role="alert" className="mt-4 rounded-xl p-4 text-sm leading-relaxed" style={{ backgroundColor: "rgba(184,48,26,0.08)", color: EL.ember }}>
             {error}
           </p>
         )}
-        <p className="mt-6 text-xs" style={{ color: EL.inkSoft }}>
-          เก็บลิงก์หน้านี้ไว้ กลับมาอัปโหลดสลิปทีหลังได้ · ชำระแล้วไม่มีการคืนเงิน
-        </p>
-      </div>
+      </section>
+
+      <p className="px-1 text-xs leading-relaxed" style={{ color: EL.inkSoft }}>
+        เก็บลิงก์หน้านี้ไว้ กลับมาอัปโหลดสลิปทีหลังได้ เราส่งลิงก์ไปที่อีเมลแล้ว · ชำระแล้วไม่มีการคืนเงิน · มีปัญหาทักไลน์{" "}
+        <a href={SHIFT_PAYMENT.lineUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+          {SHIFT_PAYMENT.lineId}
+        </a>
+      </p>
     </div>
   );
-}
-
-export function PaidBadge() {
-  return <CheckCircle2 className="h-10 w-10" style={{ color: EL.toxicGreen }} aria-hidden="true" />;
 }
