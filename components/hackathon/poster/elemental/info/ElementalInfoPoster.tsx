@@ -221,7 +221,8 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
             {ELEMENTS.map(({ key, color, line }) => (
               <div key={key}>
                 {key === "aether" ? <AetherPixels rows={SHAPES[key]} size={48} id={`${id}-aether`} /> : <Pixels rows={SHAPES[key]} color={color} size={48} />}
-                <p style={{ margin: "8px 0 0", fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 30, lineHeight: "38px", whiteSpace: "nowrap" }}>{el(key)?.th}</p>
+                {/* The name sits 14px under its icon, 6px more than at first (Angpao, 2026-11-24: "move the text lower abit"). */}
+                <p style={{ margin: "14px 0 0", fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 30, lineHeight: "38px", whiteSpace: "nowrap" }}>{el(key)?.th}</p>
                 <p style={{ margin: "2px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 20, lineHeight: "28px", color: EL.creamSoft }}>{line}</p>
               </div>
             ))}
