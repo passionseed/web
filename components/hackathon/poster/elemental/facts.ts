@@ -9,9 +9,9 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
  *   ฿149 a person with others (company-brain numbers.md).
  * - Elements and theme: private/hackathon-december-2026.md (PR #87) and
  *   Angpao, 2026-11-19 (Aether is the fifth element).
- * - Aether's Thai name and scope: ธาตุที่มองไม่เห็น, covering AI, social
- *   media and the harms of tech we don't notice (Big, 2026-11-21). It
- *   replaces ธาตุที่ 5 and อีเธอร์.
+ * - Aether's Thai name: อีเธอร์, always (Angpao, 2026-11-24; it replaces
+ *   ธาตุที่มองไม่เห็น, Big, 2026-11-21). Its scope is unchanged: AI, social
+ *   media and the harms of tech we don't notice (Big, 2026-11-21).
  * - Prize total: told by Angpao, 2026-11-19. The three prizes: Angpao,
  *   2026-11-21 (company-brain numbers.md). Changed by Angpao, 2026-11-24:
  *   the Claude credit drops to 3,000 / 2,500 / 2,000, and the winner of
@@ -49,7 +49,12 @@ export const ELEMENTAL = {
   elementPrizeCreditBaht: 500,
   /** Who can join: school years, from anywhere in Thailand. */
   gradesTh: "ม.3–ม.6",
-  theme: "Environmental negligence",
+  /**
+   * The theme, as printed. The hackathon is about fixing the environment,
+   * not about who made it worse (Angpao, 2026-11-24; it replaces
+   * "Environmental negligence").
+   */
+  theme: "แก้ปัญหาสิ่งแวดล้อม",
   /** The permanent link. /hackathon redirects here while Elemental is current. */
   url: "passionseed.org/hackathon/elemental",
   /** Database key for registrations. */
@@ -87,7 +92,7 @@ export const ELEMENTAL = {
     { key: "earth", en: "Earth", th: "ดิน" },
     { key: "air", en: "Air", th: "ลม" },
     { key: "fire", en: "Fire", th: "ไฟ" },
-    { key: "aether", en: "Aether", th: "ธาตุที่มองไม่เห็น" },
+    { key: "aether", en: "Aether", th: "อีเธอร์" },
   ],
 } as const;
 

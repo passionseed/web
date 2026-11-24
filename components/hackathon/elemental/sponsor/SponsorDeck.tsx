@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL, prizeTotal, thaiDayRange } from "@/components/hackathon/poster/elemental/facts";
 
-import { PixelArrow, PixelIcon, type IconName } from "./DeckArt";
+import { BenefitsArt, PixelArrow, PixelIcon, type IconName } from "./DeckArt";
 import { DeckEditor } from "./DeckEditor";
 import { PrintButton } from "./PrintButton";
 
@@ -163,11 +163,14 @@ function BenefitLabel({ icon, children }: { icon: IconName; children: ReactNode 
  * list: teams pick any problem of that kind (Angpao, 2026-11-20: e.g. fire
  * covers fire hazards in a factory or a bar). Kinds of harm and most examples:
  * private/hackathon-elemental-theme-and-rules.md.
+ * The examples name the problem, not who caused it: the hackathon is about
+ * fixing the environment, not about people or companies making it worse
+ * (Angpao, 2026-11-24).
  */
 const ELEMENTS: { key: "water" | "earth" | "air" | "fire" | "aether"; kind: string; examples: string }[] = [
-  { key: "earth", kind: "ภัยจากขยะ ดิน และสารพิษ", examples: "เช่น ขยะอิเล็กทรอนิกส์ การลักลอบทิ้งหรือฝังกลบขยะ สารเคมีตกค้างในพื้นที่เกษตร ขยะที่ไม่ได้คัดแยก" },
-  { key: "water", kind: "ภัยในแหล่งน้ำ", examples: "เช่น น้ำเสียจากโรงงาน สารปนเปื้อนในแม่น้ำ ไมโครพลาสติก น้ำที่คนใช้ดื่มและทำเกษตร" },
-  { key: "air", kind: "ภัยในอากาศที่เราหายใจ", examples: "เช่น ฝุ่น PM2.5 ควันจากการเผาในที่โล่ง ไอเสียจากโรงงานใกล้บ้าน การปล่อยคาร์บอน" },
+  { key: "earth", kind: "ภัยจากขยะ ดิน และสารพิษ", examples: "เช่น ขยะอิเล็กทรอนิกส์ สารเคมีตกค้างในพื้นที่เกษตร ขยะที่ไม่ได้คัดแยก" },
+  { key: "water", kind: "ภัยในแหล่งน้ำ", examples: "เช่น น้ำเสีย สารปนเปื้อนในแม่น้ำ ไมโครพลาสติก น้ำที่คนใช้ดื่มและทำเกษตร" },
+  { key: "air", kind: "ภัยในอากาศที่เราหายใจ", examples: "เช่น ฝุ่น PM2.5 ควันจากการเผาในที่โล่ง ไอเสีย การปล่อยคาร์บอน" },
   { key: "fire", kind: "ภัยจากไฟและความร้อน", examples: "เช่น อัคคีภัยในโรงงาน ผับบาร์ หรืออาคาร โกดังเก็บสารเคมี การเผาไร่และป่า" },
   { key: "aether", kind: "ภัยจาก AI โซเชียล และเทคโนโลยี", examples: "เช่น แอปที่ออกแบบให้เลื่อนไม่หยุด ข่าวปลอมและคลิป AI ดีปเฟก พลังงานที่ AI ใช้" },
 ];
@@ -350,7 +353,7 @@ export function SponsorDeck() {
               </span>
             </h1>
             <p className="m-0 mt-2 text-[24px] sm:text-[32px]" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
-              ดิน · น้ำ · ลม · ไฟ · ธาตุที่มองไม่เห็น
+              ดิน · น้ำ · ลม · ไฟ · อีเธอร์
             </p>
           </div>
 
@@ -432,7 +435,7 @@ export function SponsorDeck() {
         <Tag n="02 TRACKS" />
         <H2>หัวข้อการแข่งขัน: 5 ธาตุ</H2>
         <Body>
-          หัวข้อหลักคือ Environmental negligence: ธุรกิจที่ละเลยจนทำร้ายสิ่งแวดล้อมและผู้คน เราแบ่งปัญหาออกเป็น 5 ธาตุ ตัวอย่างด้านล่างเป็นแค่จุดเริ่มต้น
+          หัวข้อหลักคือการแก้ปัญหาสิ่งแวดล้อม เราแบ่งปัญหาออกเป็น 5 ธาตุ ตัวอย่างด้านล่างเป็นแค่จุดเริ่มต้น
           ทีมเลือกปัญหาใดก็ได้ในธาตุนั้น หรือรวมหลายธาตุ แล้วพัฒนาผลงานที่ช่วยคนจริงอย่างน้อย 1 คน
         </Body>
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-5">
@@ -772,7 +775,13 @@ export function SponsorDeck() {
       {/* 09 Benefits */}
       <Section id="benefits" tone="paper">
         <Tag n="09 BENEFITS" light />
-        <H2>สิทธิประโยชน์ของผู้สนับสนุน</H2>
+        <div className="relative">
+          <H2>สิทธิประโยชน์ของผู้สนับสนุน</H2>
+          {/* Where a sponsor's logo shows up: poster, slides, report (Angpao, 2026-11-24: "add vector to page 10"). */}
+          <div className="absolute bottom-0 right-0 hidden sm:block">
+            <BenefitsArt />
+          </div>
+        </div>
         <div className="mt-8 grid grid-cols-2 gap-6 md:grid-cols-4">
           <Stat light big={IG.followers} label="ผู้ติดตาม Instagram ของ PassionSeed" icon={<PixelIcon name="people" color={EL.ink} size={30} />} />
           <Stat light big={IG.reach} label="บัญชีที่เห็นโพสต์ของเราใน 30 วัน" icon={<PixelIcon name="eye" color={EL.ink} size={30} />} />
