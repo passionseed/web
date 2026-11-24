@@ -67,9 +67,10 @@ export function FunnelSection({ summary, days }: { summary: FunnelSummary | null
               </li>
             ))}
           </ol>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <MiniList title="Got stuck on" rows={summary.invalidFields.map((f) => [FIELD_LABELS[f.field] ?? f.field, f.count])} empty="No field errors yet" />
             <MiniList title="Slip results" rows={summary.slipResults.map((r) => [r.result, r.count])} empty="No slips yet" />
+            <MiniList title="Team invites sent" rows={summary.invitesShared.map((r) => [r.how, r.count])} empty="No invites sent yet" />
             <MiniList title="Opened sign-up from" rows={summary.sources.map((s) => [s.source, s.people])} empty="No sign-ups opened yet" />
           </div>
         </div>

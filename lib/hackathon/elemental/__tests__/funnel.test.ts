@@ -53,6 +53,22 @@ describe("summarizeFunnel", () => {
       { field: "email", count: 1 },
     ]);
     expect(s.slipResults[0]).toEqual({ result: "paid", count: 2 });
+    expect(s.invitesShared).toEqual([]);
+    expect(s.stages.every((st) => st.people === 0)).toBe(true);
+  });
+});
+
+describe("invite sharing", () => {
+  it("counts invite links sent by how, apart from the steps", () => {
+    const s = summarizeFunnel([
+      row("a", "invite_shared", { detail: "line" }),
+      row("a", "invite_shared", { detail: "copy" }),
+      row("b", "invite_shared", { detail: "line" }),
+    ]);
+    expect(s.invitesShared).toEqual([
+      { how: "line", count: 2 },
+      { how: "copy", count: 1 },
+    ]);
     expect(s.stages.every((st) => st.people === 0)).toBe(true);
   });
 });

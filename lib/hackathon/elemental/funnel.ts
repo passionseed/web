@@ -30,7 +30,8 @@ export const FUNNEL_STEPS = [
 export type FunnelStep = (typeof FUNNEL_STEPS)[number]["key"];
 
 /** Things that happen inside a step: a field that failed, a slip result. Not stages. */
-export type FunnelDetailEvent = "invalid" | "submit_failed" | "slip_result" | "qr_saved";
+/** invite_shared: someone sent their team link (detail: copy, share or line). */
+export type FunnelDetailEvent = "invalid" | "submit_failed" | "slip_result" | "qr_saved" | "invite_shared";
 
 export type FunnelEventData = {
   sid: string;
@@ -51,6 +52,7 @@ const STEP_KEYS: [string, ...string[]] = [
   "submit_failed",
   "slip_result",
   "qr_saved",
+  "invite_shared",
   ...FUNNEL_STEPS.map((s) => s.key),
 ];
 
@@ -100,7 +102,9 @@ export type FunnelSummary = {
   invalidFields: { field: string; count: number }[];
   /** Slip results (paid, review, retry, rejected:amount, ...), most common first. */
   slipResults: { result: string; count: number }[];
-  /** People by source (ig, line, ...) who opened sign-up. */
+  /** Team invite links sent, by how (copy, share, line), most common first. */
+  invitesShared: { how: string; count: number }[];
+  /** People by source (ig, line, team = a friend's invite link, ...) who opened sign-up. */
   sources: { source: string; people: number }[];
 };
 
@@ -124,6 +128,7 @@ export function summarizeFunnel(rows: FunnelRow[]): FunnelSummary {
   const people = new Map<string, Set<string>>();
   const invalid = new Map<string, number>();
   const slip = new Map<string, number>();
+  const invites = new Map<string, number>();
   const bySource = new Map<string, Set<string>>();
 
   for (const row of rows) {
@@ -133,8 +138,9 @@ export function summarizeFunnel(rows: FunnelRow[]): FunnelSummary {
       for (const f of (e.detail ?? "").split(",").filter(Boolean)) invalid.set(f, (invalid.get(f) ?? 0) + 1);
       continue;
     }
-    if (e.step === "slip_result") {
-      if (e.detail) slip.set(e.detail, (slip.get(e.detail) ?? 0) + 1);
+    if (e.step === "slip_result" || e.step === "invite_shared") {
+      const tally = e.step === "slip_result" ? slip : invites;
+      if (e.detail) tally.set(e.detail, (tally.get(e.detail) ?? 0) + 1);
       continue;
     }
     if (!people.has(e.step)) people.set(e.step, new Set());
@@ -165,6 +171,7 @@ export function summarizeFunnel(rows: FunnelRow[]): FunnelSummary {
     stages,
     invalidFields: ranked(invalid).map(([field, count]) => ({ field, count })),
     slipResults: ranked(slip).map(([result, count]) => ({ result, count })),
+    invitesShared: ranked(invites).map(([how, count]) => ({ how, count })),
     sources: [...bySource.entries()]
       .map(([source, ids]) => ({ source, people: ids.size }))
       .sort((a, b) => b.people - a.people || a.source.localeCompare(b.source)),

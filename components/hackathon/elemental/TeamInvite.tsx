@@ -10,6 +10,7 @@ import { isRudeTeamName, teamLabel } from "@/lib/hackathon/elemental/team-name";
 import type { PublicTeam } from "@/lib/supabase/hackathon-event-registrations";
 
 import { TEAM_NAME_RUDE } from "./join/draft";
+import { trackElemental } from "./track";
 import { TextInput } from "./join/fields";
 
 /**
@@ -27,11 +28,13 @@ export function TeamInvite({ team, renameToken, demo }: { team: PublicTeam; rena
     setCanShare(typeof navigator.share === "function");
   }, []);
 
-  const url = `${origin}/hackathon/join?team=${team.inviteCode}`;
+  // src=team marks friends who arrive from an invite link in the funnel's sources.
+  const url = `${origin}/hackathon/join?team=${team.inviteCode}&src=team`;
   const message = `มาเข้า${teamLabel(name)} ลง ${ELEMENTAL.edition} Hackathon ด้วยกัน สมัครที่ลิงก์นี้: ${url}`;
   const full = team.spotsLeft === 0;
 
   const copy = async () => {
+    trackElemental({ step: "invite_shared", detail: "copy" }, { once: false });
     await navigator.clipboard.writeText(url).catch(() => undefined);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -69,7 +72,10 @@ export function TeamInvite({ team, renameToken, demo }: { team: PublicTeam; rena
             {canShare ? (
               <button
                 type="button"
-                onClick={() => navigator.share({ text: message }).catch(() => undefined)}
+                onClick={() => {
+                  trackElemental({ step: "invite_shared", detail: "share" }, { once: false });
+                  navigator.share({ text: message }).catch(() => undefined);
+                }}
                 className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold"
                 style={outline}
               >
@@ -78,6 +84,7 @@ export function TeamInvite({ team, renameToken, demo }: { team: PublicTeam; rena
             ) : (
               <a
                 href={`https://line.me/R/share?text=${encodeURIComponent(message)}`}
+                onClick={() => trackElemental({ step: "invite_shared", detail: "line" }, { once: false })}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold"
