@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
+import { notifyElementalPaid } from "@/lib/hackathon/elemental/notify";
 import { requireAdmin, safeServerError } from "@/lib/security/route-guards";
 import { setRegistrationStatus } from "@/lib/supabase/hackathon-event-registrations";
 
@@ -22,7 +23,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!parsed.success) return NextResponse.json({ error: "Invalid request" }, { status: 400 });
 
   try {
-    await setRegistrationStatus(id, parsed.data.status, admin.value.userId, parsed.data.note);
+    const becamePaid = await setRegistrationStatus(id, parsed.data.status, admin.value.userId, parsed.data.note);
+    if (becamePaid) after(() => notifyElementalPaid(id, "admin"));
     return NextResponse.json({ ok: true });
   } catch (error) {
     return safeServerError("Failed to update registration", error);

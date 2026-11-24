@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import {
@@ -7,6 +7,7 @@ import {
   normalizeSource,
   registrationSchema,
 } from "@/lib/hackathon/elemental/registration";
+import { notifyElementalSignup } from "@/lib/hackathon/elemental/notify";
 import { sendRegistrationEmail } from "@/lib/hackathon/elemental/registration-email";
 import { safeServerError } from "@/lib/security/route-guards";
 import {
@@ -54,6 +55,7 @@ export async function POST(request: NextRequest) {
 
     const amount = elementalPriceBaht(input.members.length, team !== null);
     const { payToken } = await createRegistration(ELEMENTAL.slug, input, amount, team);
+    after(() => notifyElementalSignup(input, team, amount));
     await sendRegistrationEmail({
       to: input.contactEmail,
       payToken,
