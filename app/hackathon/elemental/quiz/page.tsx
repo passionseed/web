@@ -24,7 +24,7 @@ export default async function ElementalQuizPage({ searchParams }: { searchParams
   const params = await searchParams;
   const source = normalizeSource(first(params.src) ?? first(params.utm_source));
   return (
-    <main className={trirong.variable} style={{ backgroundColor: EL.cream, color: EL.ink }}>
+    <main className={trirong.variable} style={{ backgroundColor: EL.char, color: EL.cream }}>
       <ElementalQuiz source={source} />
     </main>
   );

@@ -62,28 +62,28 @@ export function QuizShare({ element, shareText }: { element: ElementKey; shareTe
         type="button"
         onClick={shareImage}
         className={`${styles.choice} inline-flex items-center justify-center gap-2 rounded-full px-7 py-4 text-lg font-semibold`}
-        style={{ backgroundColor: EL.ink, color: EL.cream }}
+        style={{ backgroundColor: EL.flame, color: EL.char }}
       >
         <Share2 className="h-5 w-5" /> ลงสตอรี่ แล้วแท็กเพื่อน
       </button>
       <div className="grid grid-cols-3 gap-2 text-sm">
-        <button type="button" onClick={line} className={`${styles.choice} rounded-full border px-3 py-3`} style={{ borderColor: "rgba(29,33,31,0.2)" }}>
+        <button type="button" onClick={line} className={`${styles.choice} rounded-full border px-3 py-3`} style={{ borderColor: "rgba(243,239,230,0.25)" }}>
           ส่งใน LINE
         </button>
         <button
           type="button"
           onClick={copyLink}
           className={`${styles.choice} inline-flex items-center justify-center gap-1 rounded-full border px-3 py-3`}
-          style={{ borderColor: "rgba(29,33,31,0.2)" }}
+          style={{ borderColor: "rgba(243,239,230,0.25)" }}
         >
-          <Link2 className="h-4 w-4" /> {copied ? "คัดลอกแล้ว" : "คัดลอกลิงก์"}
+          <Link2 className="h-4 w-4" /> {copied ? "คัดลอกแล้ว" : "ลิงก์"}
         </button>
         <a
           href={imageUrl}
           download={`elemental-${element}.png`}
           onClick={() => trackElemental({ step: "quiz_shared", detail: "download" }, { once: false })}
           className={`${styles.choice} inline-flex items-center justify-center gap-1 rounded-full border px-3 py-3`}
-          style={{ borderColor: "rgba(29,33,31,0.2)" }}
+          style={{ borderColor: "rgba(243,239,230,0.25)" }}
         >
           <Download className="h-4 w-4" /> เซฟรูป
         </a>

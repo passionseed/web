@@ -3,7 +3,8 @@ import { createCanvas, GlobalFonts, type SKRSContext2D } from "@napi-rs/canvas";
 
 import type { ElementKey } from "@/components/hackathon/elemental/media";
 import { EL } from "@/components/hackathon/poster/elemental/brand";
-import { QUIZ_RESULTS } from "@/lib/hackathon/elemental/quiz";
+import { ELEMENT_ICON_COLOR, iconCells } from "@/components/hackathon/poster/elemental/element-icons";
+import { QUIZ_PALETTE, QUIZ_RESULTS, pixelBandCells } from "@/lib/hackathon/elemental/quiz";
 import { wrapText } from "@/lib/shift-round/certificate/render";
 
 /**
@@ -19,16 +20,6 @@ import { wrapText } from "@/lib/shift-round/certificate/render";
 const STORY_SIZE = { width: 1080, height: 1920 };
 export const QUIZ_OG_SIZE = { width: 1200, height: 630 };
 export const QUIZ_SHORT_URL = "passionseed.org/hackathon/elemental/quiz";
-
-type Palette = { bg: string; ink: string; soft: string; pixels: readonly string[] };
-
-const QUIZ_PALETTE: Record<ElementKey, Palette> = {
-  fire: { bg: EL.char, ink: EL.cream, soft: EL.creamSoft, pixels: [EL.ember, EL.flame, EL.flameLight, EL.flameCore] },
-  water: { bg: EL.cream, ink: EL.ink, soft: EL.inkSoft, pixels: [EL.toxicCyan, EL.toxicGreen, EL.oil, EL.toxicCyan] },
-  earth: { bg: EL.burnt, ink: EL.cream, soft: EL.creamSoft, pixels: [EL.char, EL.toxicRust, EL.toxicYellow, EL.char] },
-  air: { bg: EL.ash, ink: EL.ink, soft: EL.inkSoft, pixels: [EL.smokeDark, EL.smoke, EL.toxicYellow, EL.smoke] },
-  aether: { bg: EL.ink, ink: EL.cream, soft: EL.creamSoft, pixels: [EL.aetherViolet, EL.aetherLilac, EL.aetherGrey, EL.aetherViolet] },
-};
 
 const LIGHT = "QZ Trirong Light";
 const REGULAR = "QZ Trirong";
@@ -50,23 +41,33 @@ function ensureFonts(): void {
 
 type Ctx = SKRSContext2D;
 
-/**
- * Pixel blocks that eat in from the top edge and thin out downwards: the
- * campaign's "pixels corrupt a calm place". Seeded, so a card never changes.
- */
 function drawPixels(ctx: Ctx, key: ElementKey, width: number, rows: number, cell: number) {
-  const colors = QUIZ_PALETTE[key].pixels;
-  let seed = [...key].reduce((s, c) => s * 31 + c.charCodeAt(0), 7) >>> 0;
-  const rand = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32;
-  const cols = Math.ceil(width / cell);
-  for (let r = 0; r < rows; r++) {
-    const density = 0.75 * (1 - r / rows) ** 1.6;
-    for (let c = 0; c < cols; c++) {
-      if (rand() > density) continue;
-      ctx.fillStyle = colors[Math.floor(rand() * colors.length)];
-      ctx.fillRect(c * cell, r * cell, cell, cell);
-    }
+  for (const [c, r, color] of pixelBandCells(key, Math.ceil(width / cell), rows)) {
+    ctx.fillStyle = color;
+    ctx.fillRect(c * cell, r * cell, cell, cell);
   }
+}
+
+/**
+ * One element's 9x9 icon from slide 2 at (x, y), `cell` px per pixel. Aether
+ * gets its glow: a violet blur behind lilac and violet cells at uneven strengths.
+ */
+function drawIcon(ctx: Ctx, key: ElementKey, x: number, y: number, cell: number) {
+  const cells = iconCells(key);
+  ctx.save();
+  if (key === "aether") {
+    ctx.shadowColor = EL.aetherViolet;
+    ctx.shadowBlur = cell * 2.5;
+    cells.forEach(([cx, cy], i) => {
+      ctx.globalAlpha = [1, 0.55, 0.8, 0.4][i % 4];
+      ctx.fillStyle = i % 3 === 0 ? EL.aetherLilac : EL.aetherViolet;
+      ctx.fillRect(x + cx * cell, y + cy * cell, cell, cell);
+    });
+  } else {
+    ctx.fillStyle = ELEMENT_ICON_COLOR[key];
+    for (const [cx, cy] of cells) ctx.fillRect(x + cx * cell, y + cy * cell, cell, cell);
+  }
+  ctx.restore();
 }
 
 /** Draws text lines with the first baseline at `y`; returns the last baseline. */
@@ -121,6 +122,8 @@ export function renderQuizStory(key: ElementKey): Buffer {
   ctx.font = `60px "${REGULAR}"`;
   ctx.fillStyle = p.ink;
   ctx.fillText("ฉันคือ", x, y);
+  // The element's icon, big, top right: the first thing a friend sees in the Story.
+  drawIcon(ctx, key, W - x - 9 * 26, 330, 26);
 
   const size = nameFont(ctx, r.th, 340, maxW);
   ctx.fillStyle = p.ink;
@@ -136,7 +139,7 @@ export function renderQuizStory(key: ElementKey): Buffer {
   // The tag box: an empty space to drop an IG mention sticker into.
   const boxTop = Math.max(y + 80, 1180);
   const boxH = 300;
-  ctx.strokeStyle = p.ink;
+  ctx.strokeStyle = p.accent;
   ctx.lineWidth = 3;
   ctx.strokeRect(x, boxTop, maxW, boxH);
   ctx.font = `56px "${REGULAR}"`;
@@ -145,6 +148,7 @@ export function renderQuizStory(key: ElementKey): Buffer {
   ctx.font = `40px "${REGULAR}"`;
   ctx.fillStyle = p.soft;
   ctx.fillText(`แท็ก${need.th}ของเธอตรงนี้`, x + 44, boxTop + 170);
+  drawIcon(ctx, r.needs, x + maxW - 44 - 9 * 12, boxTop + 40, 12);
 
   const footY = boxTop + boxH + 70;
   ctx.font = `34px "${REGULAR}"`;
@@ -176,10 +180,11 @@ export function renderQuizOg(key: ElementKey): Buffer {
   ctx.font = `26px "${REGULAR}"`;
   ctx.fillText("เธอคือธาตุอะไร?", x + 270, 186);
 
-  const size = nameFont(ctx, r.th, 200, W - x * 2);
+  drawIcon(ctx, key, W - x - 9 * 30, 190, 30);
+  const size = nameFont(ctx, r.th, 200, W - x * 2 - 9 * 30 - 40);
   ctx.fillStyle = p.ink;
   const baseline = drawName(ctx, r.th, x, 216, size);
-  lines(ctx, `“${r.roastTh}”`, `44px "${REGULAR}"`, p.ink, x, baseline + 90, W - x * 2, 60, 1);
+  lines(ctx, `“${r.roastTh}”`, `40px "${REGULAR}"`, p.ink, x, baseline + 80, W - x * 2 - 9 * 30 - 40, 54, 2);
 
   ctx.font = `24px "${REGULAR}"`;
   ctx.fillStyle = p.soft;
