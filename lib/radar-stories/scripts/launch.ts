@@ -184,11 +184,17 @@ const launch: readonly StoryScript[] = [
     ],
     "beats": [
       {
+        "who": "friend",
+        "lineTh": "ทำเทสต์อาชีพ ห้ารอบแล้ว รอบนี้ได้อะไรอะ?",
+        "stressTh": "ห้ารอบแล้ว",
+        "scene": "phone-feed",
+        "ms": 2600
+      },
+      {
         "who": "student",
-        "lineTh": "ผลบอกว่าเหมาะ กับสายวิเคราะห์ แต่คืองานอะไรอะ",
-        "stressTh": "งานอะไร",
-        "scene": "bedroom-night",
-        "ms": 3400
+        "lineTh": "ได้สายวิเคราะห์ แต่มัน ทำงานอะไรได้บ้างอะ?",
+        "stressTh": "ทำงานอะไร",
+        "scene": "bedroom-night"
       },
       {
         "who": "text",
@@ -348,11 +354,16 @@ const launch: readonly StoryScript[] = [
     ],
     "beats": [
       {
+        "who": "friend",
+        "lineTh": "ยื่นรอบ 1 ปะ? มีผลงาน อะไรใส่พอร์ตแล้วบ้าง",
+        "stressTh": "ผลงาน",
+        "scene": "classroom"
+      },
+      {
         "who": "student",
         "lineTh": "เพื่อนไปค่าย กันเต็มฟีด แต่แฟ้มเรา ยังว่างเปล่า",
         "stressTh": "ยังว่างเปล่า",
-        "scene": "phone-feed",
-        "ms": 3200
+        "scene": "phone-feed"
       },
       {
         "who": "student",
@@ -438,10 +449,9 @@ const launch: readonly StoryScript[] = [
     "beats": [
       {
         "who": "student",
-        "lineTh": "โอ๊ย ปุ่มยกเลิก ซ่อนไว้ไหนเนี่ย กดพลาดอีกแล้ว",
-        "stressTh": "กดพลาด",
-        "scene": "phone-feed",
-        "ms": 3100
+        "lineTh": "ปุ่มยกเลิกอยู่ไหนเนี่ย โดนตัดเงิน อีกเดือนแล้ว!",
+        "stressTh": "โดนตัดเงิน",
+        "scene": "bedroom-night"
       },
       {
         "who": "friend",
@@ -633,11 +643,18 @@ const launch: readonly StoryScript[] = [
     ],
     "beats": [
       {
+        "who": "parent",
+        "lineTh": "ไม่อยากเป็นหมอ แล้วจะเรียนชีวะ ไปทำไม?",
+        "stressTh": "เรียนชีวะ",
+        "scene": "dinner-table",
+        "ms": 2600
+      },
+      {
         "who": "student",
-        "lineTh": "ชอบชีวะ อยากช่วยคนไข้ แต่ไม่อยากเป็นหมอ",
-        "stressTh": "ไม่อยากเป็นหมอ",
-        "scene": "classroom",
-        "ms": 3000
+        "lineTh": "ก็อยากช่วยคนไข้ไง แม่",
+        "stressTh": "ช่วยคนไข้",
+        "scene": "dinner-table",
+        "ms": 2000
       },
       {
         "who": "friend",
@@ -752,18 +769,17 @@ const launch: readonly StoryScript[] = [
     ],
     "beats": [
       {
-        "who": "student",
-        "lineTh": "ชอบรื้อของ อยากเข้า วิศวะเครื่องกล",
-        "stressTh": "ชอบรื้อของ",
+        "who": "friend",
+        "lineTh": "วิศวะเครื่องกล? จบไปซ่อมแอร์เหรอ",
+        "stressTh": "ซ่อมแอร์",
         "scene": "classroom",
-        "ms": 2600
+        "ms": 2400
       },
       {
-        "who": "friend",
-        "lineTh": "เท่เลย นั่งออกแบบหุ่นยนต์ ในห้องแอร์ทั้งวันปะ",
-        "stressTh": "หุ่นยนต์",
-        "scene": "career:mechanical-engineer/dream",
-        "ms": 3100
+        "who": "student",
+        "lineTh": "ไม่ใช่ดิ ออกแบบหุ่นยนต์ ในห้องแอร์ทั้งวันต่างหาก",
+        "stressTh": "ออกแบบหุ่นยนต์",
+        "scene": "career:mechanical-engineer/dream"
       },
       {
         "who": "text",
@@ -946,18 +962,17 @@ const launch: readonly StoryScript[] = [
     ],
     "beats": [
       {
-        "who": "student",
-        "lineTh": "ไวรัลจัด อยากทำการตลาด คิดมุกปังๆ ทั้งวัน",
-        "stressTh": "มุกปังๆ",
-        "scene": "phone-feed",
-        "ms": 2900
+        "who": "friend",
+        "lineTh": "AI เขียนแคปชันให้แล้ว จะเรียนการตลาด ไปทำไม?",
+        "stressTh": "เขียนแคปชัน",
+        "scene": "classroom"
       },
       {
-        "who": "friend",
-        "lineTh": "แต่เดี๋ยวนี้ AI ก็เขียนแคปชัน กับยิงแอด แทนได้แล้วปะ",
-        "stressTh": "แทนได้แล้วปะ",
-        "scene": "career:marketing-strategist/dream",
-        "ms": 3500
+        "who": "student",
+        "lineTh": "ไวรัลจัด อยากทำการตลาด คิดมุกปังๆ ทั้งวัน",
+        "stressTh": "คิดมุกปังๆ",
+        "scene": "phone-feed",
+        "ms": 2600
       },
       {
         "who": "text",

@@ -16,9 +16,9 @@ const scripts: StoryScript[] = [
     hookTh: "ตีสองแล้ว ยังไม่รู้ จะเลือกคณะอะไร",
     hookVariantsTh: ["เพื่อนเลือกคณะ กันหมดแล้ว เหลือฉัน", "ไม่รู้ว่าชอบอะไร ผิดไหม"],
     beats: [
-      { who: "student", scene: "bedroom-night", lineTh: "เพื่อนในกลุ่ม เลือกคณะกัน ได้หมดแล้ว", stressTh: "ได้หมดแล้ว" },
+      { who: "friend", lineTh: "ทั้งกลุ่ม เลือกคณะกันหมดแล้ว เหลือแค่แกเหรอ?", stressTh: "เหลือแค่แก", scene: "phone-feed" },
       { who: "student", scene: "phone-feed", lineTh: "ไถดูรีวิวคณะ มาทั้งคืน ยิ่งดูยิ่งงง", stressTh: "ยิ่งดูยิ่งงง" },
-      { who: "text", scene: "phone-feed", lineTh: "เหมือนทุกคน รู้หมดแล้ว ยกเว้นฉัน", stressTh: "ยกเว้นฉัน", big: true },
+      { who: "text", lineTh: "ยิ่งไถ ยิ่งรู้สึก ช้ากว่าคนอื่น", stressTh: "ช้ากว่าคนอื่น", scene: "phone-feed", big: true },
       { who: "host", mood: "talk", scene: "bedroom-night", lineTh: "ไม่รู้ว่าชอบอะไร ไม่ได้แปลว่า เธอช้านะ", stressTh: "ไม่ได้แปลว่า" },
       { who: "student", scene: "bedroom-night", lineTh: "แต่จะรู้ได้ไง ว่าชอบ ถ้ายังไม่เคยลองเลย", stressTh: "ถ้ายังไม่เคยลอง" },
       { who: "host", mood: "wow", scene: "bedroom-night", lineTh: "นั่นแหละ ลองทำงานจริง ดูสักชิ้นก่อน", stressTh: "ลองทำงานจริง" },
