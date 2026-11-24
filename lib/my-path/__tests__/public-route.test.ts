@@ -54,3 +54,9 @@ test("Crawler files and portfolio guides are readable without login", () => {
   assert.equal(isPublicRoute("/port/certificates-vs-projects"), true);
   assert.equal(isPublicRoute("/portal"), false);
 });
+
+test("Request for Winners is readable without an account", () => {
+  // Contest winners and their parents land here from posts. A login wall
+  // would stop them before they read anything.
+  assert.equal(isPublicRoute("/request-for-winners"), true);
+});

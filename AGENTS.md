@@ -37,6 +37,39 @@ Where facts live:
 CI builds with placeholder Supabase env vars, so the build must never depend on
 reaching a real service at build or prerender time.
 
+## Branches and worktrees
+
+Several agents work in this repo at the same time. Each one works in its own
+git worktree, so they never share a checkout or switch branches under each
+other. `scripts/worktree.sh` does the routine parts.
+
+**Starting work**
+
+1. Never edit in the main checkout (`~/dev/passionseed/web`). It stays on `main` with no changes, and it is where the other worktrees link their env files from.
+2. Start each task in a new worktree on a fresh branch from `origin/main`: `scripts/worktree.sh new feat/short-name`. This creates `../web-worktrees/feat-short-name`, links the env files, and runs `pnpm install`.
+3. A worktree made by a tool (T3 Code, `claude --worktree`, Superset) is fine. Run `scripts/worktree.sh setup` in it first if `.env.local` is missing.
+4. Worktrees do not copy ignored files. `.env`, `.env.local` and `.env.production` are links to the main checkout's files, so never edit them from a worktree, and never commit them.
+5. Name branches `feat/`, `fix/`, `docs/`, `chore/`, `perf/` or `proto/` plus a short slug. A multi-branch project uses one `proj/<name>` branch and merges its parts into it.
+
+**While working**
+
+6. Before you commit, run `git branch --show-current` and confirm it is your branch.
+7. Push early and open a draft pull request on the first push, so nobody mistakes the branch for abandoned work.
+8. One branch, one pull request. When a pull request is closed without merging, delete its branch the same day.
+
+**Finishing**
+
+9. After your pull request merges, run `scripts/worktree.sh done <branch>`. It removes the worktree and deletes the local branch, and it refuses if the branch is unmerged, the worktree has uncommitted changes, or a process is still running in it. GitHub deletes the remote branch on merge.
+10. To drop unmerged work, archive it first: `scripts/worktree.sh done <branch> --force-archive` keeps the commits as tag `archive/<branch>`.
+11. `scripts/worktree.sh sweep` lists merged branches and every worktree with its state. It changes nothing; use it to tidy up.
+
+**Never**
+
+- Delete a branch or worktree you did not create in this session without asking first.
+- Remove a worktree that has uncommitted changes or a running process (`lsof -d cwd | grep <path>`).
+- Delete a teammate's remote branch. Ask them on the pull request.
+- Put worktrees inside the repo: Next.js, Jest and TypeScript would scan them.
+
 ## Commands
 
 ```bash

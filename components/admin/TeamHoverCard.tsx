@@ -67,7 +67,7 @@ export function TeamHoverCard({ children, teamName, lobbyCode, members }: TeamHo
 
         {/* Link to teams page */}
         <Link
-          href="/admin/hackathon/teams"
+          href="/admin/archive/hackathon-healthcare/teams"
           target="_blank"
           className="flex items-center justify-center gap-1.5 border-t border-slate-800 px-3 py-2 text-[11px] text-indigo-400 hover:text-indigo-300 hover:bg-slate-800/50 transition-colors"
         >

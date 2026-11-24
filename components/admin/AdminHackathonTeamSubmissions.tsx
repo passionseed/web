@@ -784,7 +784,7 @@ function SubmissionDetail({
               {showClusters ? "Hide clusters" : "Preview clusters"}
             </button>
             <a
-              href={`/admin/hackathon/activities/${activity.activity_id}/clusters`}
+              href={`/admin/archive/hackathon-healthcare/activities/${activity.activity_id}/clusters`}
               target="_blank"
               rel="noreferrer"
               className="text-[10px] font-semibold uppercase tracking-wider text-sky-400 hover:text-sky-300"
@@ -871,7 +871,7 @@ export function AdminHackathonTeamSubmissions() {
   const fetchTeams = useCallback((pg = 1) => {
     setLoading(true);
     setLoadError(null);
-    fetch(`/api/admin/hackathon/teams/submissions?page=${pg}`)
+    fetch(`/api/admin/archive/hackathon-healthcare/teams/submissions?page=${pg}`)
       .then(async (r) => {
         const data = await r.json().catch(() => null);
         if (!r.ok) throw new Error(data?.error ?? `HTTP ${r.status}`);

@@ -33,10 +33,13 @@ export type SlipVerdict = (
   | { kind: "rejected"; reason: SlipRejectReason; code?: number; raw: unknown }
   /** Try again in a few minutes (the bank is slow or down). */
   | { kind: "retry"; code?: number; delayMinutes?: number; raw: unknown }
-  /** SlipOK can't decide (not configured, quota, network): a person checks it. */
-  | { kind: "unverified"; code?: number; detail: string; raw: unknown }
+  /**
+   * The checker can't decide (not configured, quota, network, unclear slip): a
+   * person checks it. transRef is set when the slip itself was read.
+   */
+  | { kind: "unverified"; code?: number; detail: string; transRef?: string; raw: unknown }
 ) & {
-  /** Which SlipOK account answered: 1 is SLIPOK_API_KEY, 2 is SLIPOK_API_KEY_2. */
+  /** Which SlipOK account answered: 1 is SLIPOK_API_KEY, 2 is SLIPOK_API_KEY_2. Not set for RDCW. */
   account?: number;
 };
 

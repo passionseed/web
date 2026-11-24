@@ -1,20 +1,21 @@
 import type { Metadata } from "next";
 
 import { ElementalLanding } from "@/components/hackathon/elemental/ElementalLanding";
+import { TrackStep } from "@/components/hackathon/elemental/TrackStep";
 import { ELEMENTAL, prizeTotal, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
 import { elementalRegistrationOpen, normalizeSource } from "@/lib/hackathon/elemental/registration";
 import { CANONICAL_ORIGIN } from "@/lib/seo/canonical-origin";
 
 const TITLE = `${ELEMENTAL.edition} Hackathon | ${ELEMENTAL.series}`;
-const DESCRIPTION = `${ELEMENTAL.edition} Hackathon: ดิน น้ำ ลม ไฟ ${thaiDateLine()} รางวัลรวม ${prizeTotal()} บาท สมัครคนเดียว ฿${ELEMENTAL.priceBaht} มากับเพื่อน ฿${ELEMENTAL.groupPriceBaht} ต่อคน`;
+const DESCRIPTION = `${ELEMENTAL.edition} Hackathon: ดิน น้ำ ลม ไฟ ${thaiDateLine()} สำหรับนักเรียน ${ELEMENTAL.gradesTh} รางวัลรวม ${prizeTotal()} บาท สมัครคนเดียว ฿${ELEMENTAL.priceBaht} มากับเพื่อน ฿${ELEMENTAL.groupPriceBaht} ต่อคน`;
 
 export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   // Tracked links (?src=ig) are the same page.
-  alternates: { canonical: "/hackathon" },
+  alternates: { canonical: "/hackathon/elemental" },
   // Without these, link previews used the site-wide PassionSeed title.
-  openGraph: { type: "website", siteName: "PassionSeed", locale: "th_TH", title: TITLE, description: DESCRIPTION, url: "/hackathon" },
+  openGraph: { type: "website", siteName: "PassionSeed", locale: "th_TH", title: TITLE, description: DESCRIPTION, url: "/hackathon/elemental" },
   twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };
 
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
  * link isn't public, so the online location is this page.
  */
 function eventSchema(open: boolean) {
-  const page = `${CANONICAL_ORIGIN}/hackathon`;
+  const page = `${CANONICAL_ORIGIN}/hackathon/elemental`;
   const offer = (name: string, price: number) => ({
     "@type": "Offer",
     name,
@@ -55,8 +56,8 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
-/** The current hackathon. Past ones live at /hackathon/past. */
-export default async function HackathonPage({ searchParams }: { searchParams: SearchParams }) {
+/** ELEMENTAL's permanent home. /hackathon redirects here while it is the current hackathon (next.config.mjs). */
+export default async function ElementalPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
   // Keep the tracked link (?src=ig, or utm_source) through to the sign-up form.
   const src = normalizeSource(first(params.src) ?? first(params.utm_source));
@@ -65,6 +66,7 @@ export default async function HackathonPage({ searchParams }: { searchParams: Se
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(eventSchema(open)) }} />
+      <TrackStep step="landing" source={src} />
       <ElementalLanding joinHref={joinHref} open={open} />
     </>
   );

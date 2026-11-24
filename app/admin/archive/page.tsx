@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bot, ChevronRight, University, type LucideIcon } from "lucide-react";
+import { Bot, ChevronRight, Trophy, University, type LucideIcon } from "lucide-react";
 
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
 import { requireAdmin } from "@/lib/admin/requireAdmin";
@@ -12,6 +12,12 @@ const ARCHIVE_SECTIONS: { href: string; title: string; description: string; icon
     title: "Universities",
     description: "Add, edit, and organize the universities students can pick as targets, and their example journey maps.",
     icon: University,
+  },
+  {
+    href: "/admin/archive/hackathon-healthcare",
+    title: "Hackathon, 1st edition",
+    description: "The Next Decade health hackathon (Feb to Jun 2026): participants, teams, submissions, grading, mentors and senders.",
+    icon: Trophy,
   },
   {
     href: "/admin/archive/ai",

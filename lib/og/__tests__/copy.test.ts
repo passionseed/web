@@ -5,8 +5,8 @@ test("top-level fallback labels do not repeat the PASSIONSEED prefix", () => {
 });
 
 test("admin pages read as team-only workspaces", () => {
-  const copy = copyForRoute("/admin/hackathon/teams");
-  expect(copy).toMatchObject({ title: "TEAMS", label: "ADMIN / HACKATHON", theme: "dusk" });
+  const copy = copyForRoute("/admin/archive/hackathon-healthcare/teams");
+  expect(copy).toMatchObject({ title: "TEAMS", label: "ADMIN / ARCHIVE", theme: "dusk" });
   expect(copy.footer).toContain("เฉพาะทีม");
   expect(copyForRoute("/admin/shift/views").title).toBe("PAGE VIEWS");
 });

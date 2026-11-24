@@ -27,6 +27,18 @@ export const TEASER_MEDIA = {
   poster9x16: "/hackathon/elemental/media/teaser-reels.webp",
 } as const;
 
+/**
+ * Seconds into teaser.mp4 (4:5) where the picture is fully up. The file opens
+ * on 1.1 s of black and a half-second fade in; playback skips both. The 9:16
+ * reels cut opens on picture, so it starts at 0.
+ */
+export const TEASER_4X5_START_S = 1.667;
+
+/** "ดิน" reads as "ธาตุดิน"; a name that already says ธาตุ stays as it is. */
+export function elementLabel(th: string): string {
+  return th.startsWith("ธาตุ") ? th : `ธาตุ${th}`;
+}
+
 export interface ElementChapter {
   key: ElementKey;
   en: string;
@@ -97,7 +109,7 @@ export const ELEMENT_CHAPTERS: readonly ElementChapter[] = [
   {
     key: "aether",
     en: "Aether",
-    th: "ธาตุที่มองไม่เห็น",
+    th: "อีเธอร์",
     subtitleTh: "AI โซเชียล และเทคที่ทำร้ายเราแบบไม่รู้ตัว",
     whatHappensTh: "ดาต้าเซ็นเตอร์ขนาดยักษ์ผุดขึ้น ดึงไฟจากสายส่งจนแสงสีม่วงแล่นผ่านและทุ่งนาแห้งเหือด",
     examplesTh: "แอปที่ออกแบบให้เลื่อนไม่หยุด · ข่าวปลอมและคลิป AI · ดีปเฟก · พลังงานที่ AI ใช้",

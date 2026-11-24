@@ -20,11 +20,12 @@ const STATUS_LABEL: Record<AdminRegistration["status"], string> = {
 };
 
 function slipNote(check: unknown): string | null {
-  const c = check as { kind?: string; code?: number; account?: number } | null;
+  const c = check as { provider?: string; kind?: string; code?: number; account?: number } | null;
   if (!c?.kind) return null;
-  // Account 1 is the usual one; only say so when another account answered.
+  const name = c.provider === "rdcw" ? "RDCW" : "SlipOK";
+  // SlipOK account 1 is the usual one; only say so when another account answered.
   const account = c.account && c.account > 1 ? ` · account ${c.account}` : "";
-  return `SlipOK: ${c.kind}${c.code ? ` (${c.code})` : ""}${account}`;
+  return `${name}: ${c.kind}${c.code ? ` (${c.code})` : ""}${account}`;
 }
 
 function RegistrationCard({ r }: { r: AdminRegistration }) {

@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { motion, useReducedMotion, useTransform } from "framer-motion";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 
 import styles from "./elemental-cinema.module.css";
-import { TEASER_MEDIA } from "./media";
+import { TEASER_4X5_START_S, TEASER_MEDIA } from "./media";
 import { useElementalSound } from "./sound-context";
+import { useSectionScroll } from "./use-section-scroll";
 
 const VIDEO_ID = "teaser";
 
@@ -30,7 +31,7 @@ export function TeaserScreening({ joinHref, open }: { joinHref: string; open: bo
   const [ended, setEnded] = useState(false);
   const hasPlayedInViewRef = useRef(false);
 
-  const { scrollYProgress } = useScroll({
+  const scrollYProgress = useSectionScroll({
     target: sectionRef,
     offset: ["start end", "end start"],
   });
@@ -49,6 +50,8 @@ export function TeaserScreening({ joinHref, open }: { joinHref: string; open: bo
 
   const videoSrc = isPortraitScreen ? TEASER_MEDIA.video9x16 : TEASER_MEDIA.video4x5;
   const posterSrc = isPortraitScreen ? TEASER_MEDIA.poster9x16 : TEASER_MEDIA.poster4x5;
+  // Start past the 4:5 file's black opening so the teaser plays straight onto picture.
+  const startAt = isPortraitScreen ? 0 : TEASER_4X5_START_S;
 
   // Lazy loading: nothing until the teaser is about half a screen away, then
   // only the poster and the video's header. The 5 to 8 MB video itself streams
@@ -98,7 +101,7 @@ export function TeaserScreening({ joinHref, open }: { joinHref: string; open: bo
         if (entry.intersectionRatio >= 0.55 && !hasPlayedInViewRef.current) {
           hasPlayedInViewRef.current = true;
           setEnded(false);
-          video.currentTime = 0;
+          video.currentTime = startAt;
           video.muted = !soundOn;
           video
             .play()
@@ -111,7 +114,7 @@ export function TeaserScreening({ joinHref, open }: { joinHref: string; open: bo
             });
         } else if (entry.intersectionRatio === 0) {
           video.pause();
-          video.currentTime = 0;
+          video.currentTime = startAt;
           hasPlayedInViewRef.current = false;
           setEnded(false);
         }
@@ -124,7 +127,7 @@ export function TeaserScreening({ joinHref, open }: { joinHref: string; open: bo
       observer.disconnect();
       reportVisibility(VIDEO_ID, 0);
     };
-  }, [reduceMotion, reportVisibility, soundOn, markAudioUnlocked, videoSrc]);
+  }, [reduceMotion, reportVisibility, soundOn, markAudioUnlocked, videoSrc, startAt]);
 
   const handleVideoClick = () => {
     const video = videoRef.current;
@@ -132,7 +135,7 @@ export function TeaserScreening({ joinHref, open }: { joinHref: string; open: bo
     activateVideoWithSound(VIDEO_ID);
     setEnded(false);
     video.muted = false;
-    video.currentTime = 0;
+    video.currentTime = startAt;
     video.play().catch(() => {
       video.muted = true;
       video.play().catch(() => {});
@@ -164,7 +167,7 @@ export function TeaserScreening({ joinHref, open }: { joinHref: string; open: bo
           <video
             key={videoSrc}
             ref={videoRef}
-            src={videoSrc}
+            src={startAt ? `${videoSrc}#t=${startAt}` : videoSrc}
             poster={nearViewport ? posterSrc : undefined}
             muted={!soundOn}
             playsInline
