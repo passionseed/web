@@ -31,7 +31,16 @@ export type FunnelStep = (typeof FUNNEL_STEPS)[number]["key"];
 
 /** Things that happen inside a step: a field that failed, a slip result. Not stages. */
 /** invite_shared: someone sent their team link (detail: copy, share or line). */
-export type FunnelDetailEvent = "invalid" | "submit_failed" | "slip_result" | "qr_saved" | "invite_shared";
+/** quiz_start, quiz_done (detail: the element) and quiz_shared (detail: how): the Elemental quiz. */
+export type FunnelDetailEvent =
+  | "invalid"
+  | "submit_failed"
+  | "slip_result"
+  | "qr_saved"
+  | "invite_shared"
+  | "quiz_start"
+  | "quiz_done"
+  | "quiz_shared";
 
 export type FunnelEventData = {
   sid: string;
@@ -53,6 +62,9 @@ const STEP_KEYS: [string, ...string[]] = [
   "slip_result",
   "qr_saved",
   "invite_shared",
+  "quiz_start",
+  "quiz_done",
+  "quiz_shared",
   ...FUNNEL_STEPS.map((s) => s.key),
 ];
 

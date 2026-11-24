@@ -20,9 +20,10 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
  * - Who can join: M.3 to M.6, from anywhere in Thailand (Angpao, 2026-11-24;
  *   it replaces M.4 to M.6, Big, 2026-11-22; company-brain decisions/log.md).
  * - Online, on Discord; groups of up to 5 (Bunyasit, 2026-11-20).
- * - Sign-up closes Fri 4 Dec 2026 (Angpao, 2026-11-23; it replaces Thu 3 Dec
- *   in hackathon-ops registration.md); a group is 2 or more people (Big's
- *   draft there) and pays on one slip.
+ * - Sign-up closes Thu 3 Dec 2026 (Big, 2026-11-24, replacing Fri 4 Dec).
+ *   A one-day extension to Fri 4 Dec is planned: change this date when it is
+ *   announced. A group is 2 or more people (Big's draft in hackathon-ops
+ *   registration.md) and pays on one slip.
  * Change a fact here, never in a poster.
  */
 export const ELEMENTAL = {
@@ -60,7 +61,7 @@ export const ELEMENTAL = {
   /** Database key for registrations. */
   slug: "elemental-2026",
   /** Last day to sign up, Bangkok time (inclusive). */
-  registrationClosesOn: "2026-12-04",
+  registrationClosesOn: "2026-12-03",
   /** Where it happens. */
   venueTh: "ออนไลน์ทาง Discord",
   /** The same, short enough for a ticket stub. */
