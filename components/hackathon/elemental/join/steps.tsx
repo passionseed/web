@@ -4,6 +4,7 @@ import { ArrowRight, User, Users } from "lucide-react";
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
 import { ADULT_AGE, elementalPriceBaht } from "@/lib/hackathon/elemental/registration";
+import { teamLabel } from "@/lib/hackathon/elemental/team-name";
 import type { PublicTeam } from "@/lib/supabase/hackathon-event-registrations";
 
 import { formatPhone, type Draft, type Errors, type Mode, type StepKey } from "./draft";
@@ -75,7 +76,7 @@ function ModeStep({ draft, team, choose }: StepProps) {
           className={`${styles.choice} mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full px-7 py-4 text-lg font-semibold`}
           style={{ backgroundColor: EL.flame, color: EL.flameWhite }}
         >
-          เข้าทีม {team.name} <ArrowRight className="h-5 w-5" />
+          เข้า{teamLabel(team.name)} <ArrowRight className="h-5 w-5" />
         </button>
         <button
           type="button"
@@ -133,7 +134,7 @@ function ModeStep({ draft, team, choose }: StepProps) {
           className="mt-5 w-full text-center text-sm underline underline-offset-4"
           style={{ color: EL.inkSoft }}
         >
-          กลับไปเข้าทีม {team.name}
+          กลับไปเข้า{teamLabel(team.name)}
         </button>
       )}
     </>
@@ -143,7 +144,7 @@ function ModeStep({ draft, team, choose }: StepProps) {
 function TeamStep({ draft, set, errors }: StepProps) {
   return (
     <>
-      <StepTitle sub="เพื่อนจะเห็นชื่อนี้ตอนกดลิงก์">ตั้งชื่อทีม</StepTitle>
+      <StepTitle sub="เพื่อนจะเห็นชื่อนี้ตอนกดลิงก์ เปลี่ยนทีหลังได้">ตั้งชื่อทีม</StepTitle>
       <Field label="" error={errors.teamName}>
         <TextInput
           aria-label="ชื่อทีม"
@@ -334,7 +335,7 @@ function SummaryRow({ label, value, onEdit }: { label: string; value: ReactNode;
 function ReviewStep({ draft, set, errors, team, goTo }: StepProps) {
   const mode = draft.mode ?? "solo";
   const total = elementalPriceBaht(1, mode !== "solo");
-  const how = { solo: "มาคนเดียว", create: `สร้างทีม ${draft.teamName}`, join: `เข้าทีม ${team?.name ?? ""}` }[mode];
+  const how = { solo: "มาคนเดียว", create: `สร้าง${teamLabel(draft.teamName)}`, join: `เข้า${teamLabel(team?.name ?? "")}` }[mode];
   return (
     <>
       <StepTitle>ตรวจอีกครั้ง</StepTitle>
@@ -370,7 +371,7 @@ function ReviewStep({ draft, set, errors, team, goTo }: StepProps) {
         <p className="text-sm" style={{ color: EL.creamSoft }}>สมัครก่อน จ่ายทีหลังได้ ที่นั่งยืนยันเมื่อจ่ายแล้ว</p>
         <div className="space-y-3 border-t pt-4" style={{ borderColor: "rgba(243,239,230,0.2)" }}>
           <CheckRow dark checked={draft.noRefund} onChange={(v) => set({ noRefund: v })} error={errors.noRefund}>
-            รับทราบว่าชำระค่าสมัครแล้ว <strong>ไม่มีการคืนเงิน</strong>
+            รับทราบว่า <strong>ไม่มีการคืนเงิน</strong> หลังชำระค่าสมัครแล้ว
           </CheckRow>
           <CheckRow dark checked={draft.contactAfter} onChange={(v) => set({ contactAfter: v })}>
             ให้ PassionSeed ติดต่อเรื่องกิจกรรมอื่นหลังจบ Hackathon ได้ (ไม่บังคับ)
@@ -378,6 +379,25 @@ function ReviewStep({ draft, set, errors, team, goTo }: StepProps) {
         </div>
       </section>
     </>
+  );
+}
+
+/** Sits right above the sign-up button on the review step. */
+export function LegalLine() {
+  return (
+    <p className="mb-3 text-pretty text-center text-xs" style={{ color: EL.inkSoft }}>
+      การกดสมัคร ถือว่ายอมรับ<LegalLink href="/terms">ข้อตกลงการใช้งาน</LegalLink>และ
+      <LegalLink href="/privacy">นโยบายความเป็นส่วนตัว</LegalLink>
+    </p>
+  );
+}
+
+/** Opens in a new tab so the answers on this page stay put. */
+function LegalLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <a href={href} target="_blank" rel="noopener" className="mx-1 whitespace-nowrap underline underline-offset-4">
+      {children}
+    </a>
   );
 }
 

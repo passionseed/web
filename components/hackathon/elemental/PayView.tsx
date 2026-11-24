@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -5,10 +6,12 @@ import type { ReactNode } from "react";
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
 import { SHIFT_PAYMENT } from "@/lib/content/shift-cohort";
+import { teamLabel } from "@/lib/hackathon/elemental/team-name";
 import type { PublicRegistration } from "@/lib/supabase/hackathon-event-registrations";
 
 import styles from "./join/join.module.css";
 import { PayWithSlip } from "./PayWithSlip";
+import { RECOVERED_PLACE } from "./RecoveringPlace";
 import { TeamInvite } from "./TeamInvite";
 import { TrackStep } from "./TrackStep";
 
@@ -19,7 +22,7 @@ import { TrackStep } from "./TrackStep";
 
 type Props = {
   token: string;
-  reg: Pick<PublicRegistration, "status" | "teamName" | "memberCount" | "amountBaht" | "memberNicknames" | "team">;
+  reg: Pick<PublicRegistration, "status" | "teamName" | "memberCount" | "amountBaht" | "memberNicknames" | "team" | "isTeamStarter">;
   qrSrc: string | null;
   links: { line: string | null; discord: string | null };
   demo?: boolean;
@@ -36,6 +39,19 @@ function Title({ children }: { children: ReactNode }) {
 function Seat({ who, people, amountBaht }: { who: string; people: string; amountBaht: number }) {
   return (
     <div className={`${styles.pop} overflow-hidden rounded-3xl`} style={{ backgroundColor: EL.char, color: EL.cream }}>
+      {/* The place from the sign-up, now in full colour. */}
+      <div className="relative h-40 sm:h-52">
+        <Image src={RECOVERED_PLACE.src} alt={RECOVERED_PLACE.altTh} fill sizes="(min-width: 640px) 576px, 100vw" className="object-cover" style={{ objectPosition: "50% 58%" }} />
+        <div
+          className="absolute inset-x-4 bottom-2.5 sm:inset-x-6"
+          style={{ color: EL.cream, textShadow: "0 1px 6px rgba(0,0,0,0.6)" }}
+        >
+          <p className="text-sm">{RECOVERED_PLACE.captionTh}</p>
+          <a href={RECOVERED_PLACE.creditUrl} target="_blank" rel="noopener noreferrer" className="mt-0.5 block text-[10px] opacity-80">
+            {RECOVERED_PLACE.credit}
+          </a>
+        </div>
+      </div>
       <div className="p-6 sm:p-8">
         <p className="text-4xl sm:text-5xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300, fontStyle: "italic" }}>
           {ELEMENTAL.edition}
@@ -81,11 +97,18 @@ function LineButton({ label, style }: { label: string; style: typeof filled | ty
 
 function whoAndPeople(reg: Props["reg"]): { who: string; people: string } {
   const who = reg.team ? reg.memberNicknames.join(", ") : (reg.teamName ?? reg.memberNicknames.join(", "));
-  if (reg.team) return { who, people: `ทีม ${reg.team.name}` };
+  if (reg.team) return { who, people: teamLabel(reg.team.name) };
   return { who, people: reg.memberCount > 1 ? `${reg.memberCount} คน` : "มาคนเดียว" };
 }
 
-function PaidSection({ reg, links, demo }: Props) {
+/** The team card; the person who started the team can rename it from here. */
+function Team({ token, reg, demo }: Props) {
+  if (!reg.team) return null;
+  return <TeamInvite team={reg.team} renameToken={reg.isTeamStarter ? token : undefined} demo={demo} />;
+}
+
+function PaidSection(props: Props) {
+  const { reg, links, demo } = props;
   const { who, people } = whoAndPeople(reg);
   return (
     <section className="mt-6 space-y-6">
@@ -111,7 +134,7 @@ function PaidSection({ reg, links, demo }: Props) {
       ) : (
         <p style={{ color: EL.inkSoft }}>ทีมงานจะส่งลิงก์เข้า Discord ทางอีเมลและเบอร์โทรที่ให้ไว้ ก่อนวันงาน</p>
       )}
-      {reg.team && <TeamInvite team={reg.team} />}
+      <Team {...props} />
       <p className="text-sm" style={{ color: EL.inkSoft }}>
         มีคำถามทักไลน์ {SHIFT_PAYMENT.lineId} ·{" "}
         <Link href="/hackathon/elemental" className="underline underline-offset-4">
@@ -122,7 +145,7 @@ function PaidSection({ reg, links, demo }: Props) {
   );
 }
 
-function ReviewSection({ reg }: Props) {
+function ReviewSection(props: Props) {
   return (
     <section className="mt-6 space-y-4">
       <Title>ได้รับสลิปแล้ว</Title>
@@ -131,7 +154,7 @@ function ReviewSection({ reg }: Props) {
       </p>
       <p style={{ color: EL.inkSoft }}>ลิงก์กลุ่ม LINE และ Discord ของงานขึ้นที่หน้านี้เมื่อสลิปผ่าน</p>
       <LineButton label={`มีคำถาม ทักไลน์ ${SHIFT_PAYMENT.lineId}`} style={outline} />
-      {reg.team && <TeamInvite team={reg.team} />}
+      <Team {...props} />
     </section>
   );
 }
@@ -146,7 +169,8 @@ function CancelledSection() {
   );
 }
 
-function PendingSection({ token, reg, qrSrc, demo }: Props) {
+function PendingSection(props: Props) {
+  const { token, reg, qrSrc, demo } = props;
   return (
     <section className="mt-6">
       {!demo && <TrackStep step="pay" />}
@@ -159,7 +183,7 @@ function PendingSection({ token, reg, qrSrc, demo }: Props) {
       </div>
       {reg.team && (
         <div className="mt-10">
-          <TeamInvite team={reg.team} />
+          <Team {...props} />
         </div>
       )}
     </section>

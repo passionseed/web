@@ -20,6 +20,8 @@ export type PublicRegistration = {
   amountBaht: number;
   memberNicknames: string[];
   team: PublicTeam | null;
+  /** Whether this sign-up started its team (the first one on it), so it may rename the team. */
+  isTeamStarter: boolean;
   createdAt: string;
 };
 
@@ -205,8 +207,34 @@ export async function getRegistrationByToken(
     amountBaht: data.amount_baht,
     memberNicknames: members.map(firstName),
     team: data.team_id ? await loadTeam({ id: data.team_id }, maxTeamSize) : null,
+    isTeamStarter: data.team_id ? (await teamStarterId(data.team_id)) === data.id : false,
     createdAt: data.created_at,
   };
+}
+
+/** The first sign-up on a team: the person who started it. */
+async function teamStarterId(teamId: string): Promise<string | null> {
+  const { data, error } = await createAdminClient()
+    .from("hackathon_event_registrations")
+    .select("id")
+    .eq("team_id", teamId)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.id ?? null;
+}
+
+/** Rename a team, and the copy of its name on each of its sign-ups. */
+export async function renameTeam(teamId: string, name: string): Promise<void> {
+  const db = createAdminClient();
+  const { error } = await db.from("hackathon_event_teams").update({ name }).eq("id", teamId);
+  if (error) throw error;
+  const { error: regError } = await db
+    .from("hackathon_event_registrations")
+    .update({ team_name: name })
+    .eq("team_id", teamId);
+  if (regError) throw regError;
 }
 
 export async function uploadSlip(file: File, path: string): Promise<void> {

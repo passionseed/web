@@ -1,17 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Copy, Share2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Check, Copy, Loader2, Share2 } from "lucide-react";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
+import { isRudeTeamName, teamLabel } from "@/lib/hackathon/elemental/team-name";
 import type { PublicTeam } from "@/lib/supabase/hackathon-event-registrations";
+
+import { TEAM_NAME_RUDE } from "./join/draft";
+import { TextInput } from "./join/fields";
 
 /**
  * The team on a person's own page: who has joined and paid, and the invite
  * link to send friends (copy, the phone's share sheet, or LINE).
  */
-export function TeamInvite({ team }: { team: PublicTeam }) {
+export function TeamInvite({ team, renameToken, demo }: { team: PublicTeam; renameToken?: string; demo?: boolean }) {
+  const [name, setName] = useState(team.name);
   const [origin, setOrigin] = useState("https://passionseed.org");
   const [copied, setCopied] = useState(false);
   const [canShare, setCanShare] = useState(false);
@@ -22,7 +28,7 @@ export function TeamInvite({ team }: { team: PublicTeam }) {
   }, []);
 
   const url = `${origin}/hackathon/join?team=${team.inviteCode}`;
-  const message = `มาลง ${ELEMENTAL.edition} Hackathon ทีม ${team.name} กัน คนละ ฿${ELEMENTAL.groupPriceBaht} สมัครที่ลิงก์นี้: ${url}`;
+  const message = `มาลง ${ELEMENTAL.edition} Hackathon ${teamLabel(name)} กัน คนละ ฿${ELEMENTAL.groupPriceBaht} สมัครที่ลิงก์นี้: ${url}`;
   const full = team.spotsLeft === 0;
 
   const copy = async () => {
@@ -33,12 +39,7 @@ export function TeamInvite({ team }: { team: PublicTeam }) {
 
   return (
     <section className="space-y-4 rounded-2xl border p-5 sm:p-6" style={{ borderColor: "rgba(29,33,31,0.18)" }}>
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="text-2xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>ทีม {team.name}</p>
-        <p className="text-xs" style={{ fontFamily: EL_FONT.mono, color: EL.inkSoft }}>
-          {team.roster.length}/{ELEMENTAL.maxGroupSize}
-        </p>
-      </div>
+      <TeamName name={name} onRenamed={setName} renameToken={renameToken} demo={demo} count={team.roster.length} />
 
       <ul className="space-y-1.5 text-sm">
         {team.roster.map((m, i) => (
@@ -61,7 +62,7 @@ export function TeamInvite({ team }: { team: PublicTeam }) {
               type="button"
               onClick={copy}
               className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold"
-              style={{ boxShadow: `inset 0 0 0 1px ${EL.ink}` }}
+              style={outline}
             >
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} {copied ? "คัดลอกแล้ว" : "คัดลอกลิงก์"}
             </button>
@@ -70,7 +71,7 @@ export function TeamInvite({ team }: { team: PublicTeam }) {
                 type="button"
                 onClick={() => navigator.share({ text: message }).catch(() => undefined)}
                 className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold"
-                style={{ boxShadow: `inset 0 0 0 1px ${EL.ink}` }}
+                style={outline}
               >
                 <Share2 className="h-4 w-4" /> แชร์
               </button>
@@ -80,7 +81,7 @@ export function TeamInvite({ team }: { team: PublicTeam }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold"
-                style={{ boxShadow: `inset 0 0 0 1px ${EL.ink}` }}
+                style={outline}
               >
                 <Share2 className="h-4 w-4" /> ส่งใน LINE
               </a>
@@ -89,5 +90,124 @@ export function TeamInvite({ team }: { team: PublicTeam }) {
         </div>
       )}
     </section>
+  );
+}
+
+const outline = { boxShadow: `inset 0 0 0 1px ${EL.ink}` };
+
+/** The team's name, and for the person who started it, a way to change it. */
+function TeamName({
+  name,
+  onRenamed,
+  renameToken,
+  demo,
+  count,
+}: {
+  name: string;
+  onRenamed: (name: string) => void;
+  renameToken?: string;
+  demo?: boolean;
+  count: number;
+}) {
+  const router = useRouter();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(name);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const save = async (e: { preventDefault(): void }) => {
+    e.preventDefault();
+    const next = draft.trim();
+    if (!next) return setError("ใส่ชื่อทีมก่อน");
+    if (isRudeTeamName(next)) return setError(TEAM_NAME_RUDE);
+    if (next === name) return setEditing(false);
+    setSaving(true);
+    setError(null);
+    const ok = demo
+      ? true
+      : await fetch(`/api/hackathon/elemental/${renameToken}/team-name`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: next }),
+        })
+          .then((r) => r.ok)
+          .catch(() => false);
+    setSaving(false);
+    if (!ok) return setError("เปลี่ยนชื่อไม่สำเร็จ ลองอีกครั้ง");
+    onRenamed(next);
+    setEditing(false);
+    if (!demo) router.refresh();
+  };
+
+  if (editing) {
+    return (
+      <form onSubmit={save} className="space-y-2">
+        <TextInput
+          autoFocus
+          aria-label="ชื่อทีม"
+          value={draft}
+          maxLength={80}
+          invalid={!!error}
+          onChange={(e) => {
+            setDraft(e.target.value);
+            setError(null);
+          }}
+          className="!mt-0"
+        />
+        {error && (
+          <p role="alert" className="text-sm" style={{ color: EL.ember }}>
+            {error}
+          </p>
+        )}
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            disabled={saving}
+            className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold disabled:opacity-70"
+            style={{ backgroundColor: EL.ink, color: EL.cream }}
+          >
+            {saving && <Loader2 className="h-4 w-4 animate-spin" />} บันทึก
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setDraft(name);
+              setError(null);
+              setEditing(false);
+            }}
+            className="rounded-full px-5 py-2.5 text-sm font-semibold"
+            style={outline}
+          >
+            ยกเลิก
+          </button>
+        </div>
+      </form>
+    );
+  }
+
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <p className="min-w-0 break-words text-2xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
+        {teamLabel(name)}
+      </p>
+      <div className="flex shrink-0 items-baseline gap-3">
+        {renameToken && (
+          <button
+            type="button"
+            onClick={() => {
+              setDraft(name);
+              setEditing(true);
+            }}
+            className="text-sm underline underline-offset-4"
+            style={{ color: EL.inkSoft }}
+          >
+            เปลี่ยนชื่อ
+          </button>
+        )}
+        <p className="text-xs" style={{ fontFamily: EL_FONT.mono, color: EL.inkSoft }}>
+          {count}/{ELEMENTAL.maxGroupSize}
+        </p>
+      </div>
+    </div>
   );
 }

@@ -1,4 +1,5 @@
 import { ADULT_AGE } from "@/lib/hackathon/elemental/registration";
+import { isRudeTeamName } from "@/lib/hackathon/elemental/team-name";
 
 /**
  * The sign-up answers and the rules for each step. Pure, so the flow and the
@@ -73,6 +74,8 @@ export function formatPhone(raw: string): string {
   return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
 }
 
+export const TEAM_NAME_RUDE = "ชื่อนี้ใช้ไม่ได้ ลองชื่ออื่น";
+
 /** What's wrong on one step, in Thai, keyed by field. Empty means the step is done. */
 export function validateStep(step: StepKey, d: Draft): Errors {
   const e: Errors = {};
@@ -82,6 +85,7 @@ export function validateStep(step: StepKey, d: Draft): Errors {
       break;
     case "team":
       if (!d.teamName.trim()) e.teamName = "ใส่ชื่อทีมก่อน";
+      else if (isRudeTeamName(d.teamName)) e.teamName = TEAM_NAME_RUDE;
       break;
     case "name":
       if (!d.fullName.trim()) e.fullName = "ใส่ชื่อ-นามสกุล";

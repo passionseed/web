@@ -45,7 +45,7 @@ export default async function PayDemoPage({ searchParams }: { searchParams: Sear
       <PayView
         token="demo"
         demo
-        reg={{ status: state, teamName: team?.name ?? null, memberCount: 1, amountBaht, memberNicknames: ["มิว"], team }}
+        reg={{ status: state, teamName: team?.name ?? null, memberCount: 1, amountBaht, memberNicknames: ["มิว"], team, isTeamStarter: mode === "create" }}
         qrSrc={state === "pending" ? await elementalPayQr(amountBaht) : null}
         links={{ line: "https://line.me/ti/g/demo", discord: "https://discord.gg/demo" }}
       />

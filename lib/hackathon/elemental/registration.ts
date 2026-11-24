@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
+import { isRudeTeamName } from "./team-name";
 
 /**
  * Elemental Hackathon sign-up: who can register, what they pay, and when
@@ -85,6 +86,9 @@ export const registrationSchema = z.object({
 }).superRefine((r, ctx) => {
   if (r.teamMode === "create" && !r.teamName) {
     ctx.addIssue({ code: "custom", path: ["teamName"], message: "required" });
+  }
+  if (r.teamName && isRudeTeamName(r.teamName)) {
+    ctx.addIssue({ code: "custom", path: ["teamName"], message: "rude" });
   }
   if (r.teamMode === "join" && !r.inviteCode) {
     ctx.addIssue({ code: "custom", path: ["inviteCode"], message: "required" });

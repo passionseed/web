@@ -7,6 +7,7 @@ import { JoinFlow } from "@/components/hackathon/elemental/join/JoinFlow";
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
 import { elementalRegistrationOpen, normalizeSource } from "@/lib/hackathon/elemental/registration";
+import { teamLabel } from "@/lib/hackathon/elemental/team-name";
 import { getTeamByInviteCode } from "@/lib/supabase/hackathon-event-registrations";
 
 export const metadata: Metadata = {
@@ -39,7 +40,7 @@ export default async function ElementalJoinPage({ searchParams }: { searchParams
     inviteCode && !team
       ? "ไม่เจอทีมจากลิงก์นี้ ขอลิงก์ใหม่จากเพื่อน หรือสมัครด้านล่างไปก่อน"
       : teamFull
-        ? `ทีม ${team.name} ครบ ${ELEMENTAL.maxGroupSize} คนแล้ว สร้างทีมใหม่หรือมาคนเดียวได้`
+        ? `${teamLabel(team.name)} ครบ ${ELEMENTAL.maxGroupSize} คนแล้ว สร้างทีมใหม่หรือมาคนเดียวได้`
         : undefined;
   // Dev only: ?demo=1 walks the flow without saving anything (see /hackathon/join/demo).
   const demo = process.env.NODE_ENV === "development" && first(params.demo) === "1";

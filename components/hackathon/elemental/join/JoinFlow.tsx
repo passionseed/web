@@ -7,8 +7,10 @@ import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
+import { teamLabel } from "@/lib/hackathon/elemental/team-name";
 import type { PublicTeam } from "@/lib/supabase/hackathon-event-registrations";
 
+import { RecoveringPlace } from "../RecoveringPlace";
 import { trackElemental } from "../track";
 import {
   emptyDraft,
@@ -22,7 +24,7 @@ import {
   type Mode,
   type StepKey,
 } from "./draft";
-import { STEP_VIEWS } from "./steps";
+import { LegalLine, STEP_VIEWS } from "./steps";
 import styles from "./join.module.css";
 
 /**
@@ -65,7 +67,7 @@ const SERVER_ERRORS: Record<string, string> = {
 function buttonLabel(step: StepKey, mode: Mode, saving: boolean, teamName = ""): string {
   if (step !== "review") return saving ? "บันทึก" : "ต่อไป";
   if (mode === "create") return "สร้างทีมและสมัคร";
-  if (mode === "join") return `เข้าทีม ${teamName}`;
+  if (mode === "join") return `เข้า${teamLabel(teamName)}`;
   return "สมัคร";
 }
 
@@ -304,7 +306,9 @@ export function JoinFlow({ source, utm, team, notice, backHref, demo }: Props) {
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-xl flex-1 px-5 pb-36 pt-8 sm:pt-14">
+      <div className="mx-auto w-full max-w-xl flex-1 px-5 pb-36 pt-6 sm:pt-10">
+        {/* Before and after: washed out here, in full colour on the paid seat. */}
+        {step === "mode" && <RecoveringPlace restored={0.25} className="mb-8 sm:mb-10" />}
         {notice && step === "mode" && (
           <p className="mb-6 rounded-xl p-4 text-sm" style={{ backgroundColor: "rgba(236,100,36,0.08)" }}>
             {notice}
@@ -328,6 +332,7 @@ export function JoinFlow({ source, utm, team, notice, backHref, demo }: Props) {
           style={{ backgroundColor: "rgba(243,239,230,0.94)", borderColor: "rgba(29,33,31,0.08)", backdropFilter: "blur(8px)" }}
         >
           <div className="mx-auto max-w-xl">
+            {step === "review" && <LegalLine />}
             <button
               type="submit"
               disabled={submitting}
