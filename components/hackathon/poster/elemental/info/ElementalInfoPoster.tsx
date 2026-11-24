@@ -188,7 +188,7 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
         </div>
 
         {/* The prize, as on slide 1 (trophy, the number in yellow), then who gets what. */}
-        <div style={{ marginTop: 20, display: "flex", alignItems: "center", gap: 24, borderTop: `1px solid rgba(243,239,230,0.28)`, borderBottom: `1px solid rgba(243,239,230,0.28)`, padding: "10px 0" }}>
+        <div style={{ marginTop: 20, display: "flex", alignItems: "center", gap: 14, borderTop: `1px solid rgba(243,239,230,0.28)`, borderBottom: `1px solid rgba(243,239,230,0.28)`, padding: "10px 0" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14, flex: "none" }}>
             <Trophy cell={6} />
             <span style={{ fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 84, lineHeight: "88px", letterSpacing: "-0.01em", color: HIGHLIGHT }}>{prizeTotal()}</span>
@@ -205,9 +205,9 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
                 <span style={{ whiteSpace: "nowrap" }}>{[p.cashBaht ? `เงินสด ${baht(p.cashBaht)}` : null, `เครดิต Claude ${baht(p.creditBaht)}`].filter(Boolean).join(" + ")}</span>
               </Fragment>
             ))}
-            {/* The winner of each element, under "ที่ 3" (Angpao, 2026-11-24: "winner in each track get 500 bath claude credit", a track being an element; "put it under ที่ 3 make space for it"). */}
+            {/* The winner of each element, under "ที่ 3" (Angpao, 2026-11-24: "winner in each track get 500 bath claude credit", a track being an element; "put it under ที่ 3 make space for it"; then the wording "5 รางวัลสำหรับผู้ชนะแต่ละธาตุ"). */}
             <span style={{ gridColumn: "1 / -1", whiteSpace: "nowrap" }}>
-              <span style={{ fontWeight: 400, color: HIGHLIGHT }}>ผู้ชนะแต่ละธาตุ</span> เครดิต Claude {baht(ELEMENTAL.elementPrizeCreditBaht)}
+              <span style={{ fontWeight: 400, color: HIGHLIGHT }}>{ELEMENTAL.elements.length} รางวัลสำหรับผู้ชนะแต่ละธาตุ</span> เครดิต Claude {baht(ELEMENTAL.elementPrizeCreditBaht)}
             </span>
           </div>
         </div>
