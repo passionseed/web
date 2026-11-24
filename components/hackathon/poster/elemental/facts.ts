@@ -14,8 +14,8 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
  *   replaces ธาตุที่ 5 and อีเธอร์.
  * - Prize total: told by Angpao, 2026-11-19. The three prizes: Angpao,
  *   2026-11-21 (company-brain numbers.md).
- * - Who can join: M.4 to M.6, from anywhere in Thailand (Big, 2026-11-22;
- *   company-brain decisions/log.md).
+ * - Who can join: M.3 to M.6, from anywhere in Thailand (Angpao, 2026-11-24;
+ *   it replaces M.4 to M.6, Big, 2026-11-22; company-brain decisions/log.md).
  * - Online, on Discord; groups of up to 5 (Bunyasit, 2026-11-20).
  * - Sign-up closes Fri 4 Dec 2026 (Angpao, 2026-11-23; it replaces Thu 3 Dec
  *   in hackathon-ops registration.md); a group is 2 or more people (Big's
@@ -40,7 +40,7 @@ export const ELEMENTAL = {
     { place: 3, cashBaht: 0, creditBaht: 3000 },
   ],
   /** Who can join: school years, from anywhere in Thailand. */
-  gradesTh: "ม.4–ม.6",
+  gradesTh: "ม.3–ม.6",
   theme: "Environmental negligence",
   /** The permanent link. /hackathon redirects here while Elemental is current. */
   url: "passionseed.org/hackathon/elemental",

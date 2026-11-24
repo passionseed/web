@@ -16,7 +16,7 @@ import { Body, DARK, H2, LINE_DARK, LINE_LIGHT, PRINT_CSS, Row, Section, SKY, St
  * Source: passionseed/company-brain on main, hackathon-csii-proposal.md,
  * content confirmed by Big on 2026-11-22, and the decisions behind it in
  * decisions/log.md (PassionSeed pays CSII's extra staff charge for opening
- * BAScii on 5–7 December and provides the food; M.4 to M.6; onsite and online).
+ * BAScii on 5–7 December and provides the food; M.3 to M.6; onsite and online).
  * PassionSeed's past work: the same sources as the sponsor deck. Where the
  * proposal says "to agree with CSII", so does this deck: nothing is filled in
  * that nobody has told us.
@@ -181,7 +181,7 @@ export function CsiiDeck() {
               [
                 ["When", "5–7 Dec 2026", "Long weekend"],
                 ["Where", "BAScii", "+ online on Discord"],
-                ["Who", `350+ students`, "M.4 to M.6"],
+                ["Who", `350+ students`, "M.3 to M.6"],
                 ["Cost to CSII", "฿0", "We pay staff and food"],
               ] as const
             ).map(([label, big, small]) => (
@@ -295,7 +295,7 @@ export function CsiiDeck() {
           <div className="grid grid-cols-2 gap-x-8 gap-y-6">
             <Stat big="350+" label="participants (target)" />
             <Stat big="800" label="joined the 1st edition of The Next Decade (2026)" />
-            <Stat big={`${ELEMENTAL.teamMin}–${ELEMENTAL.teamMax}`} label="people per team, M.4 to M.6, from across Thailand" />
+            <Stat big={`${ELEMENTAL.teamMin}–${ELEMENTAL.teamMax}`} label="people per team, M.3 to M.6, from across Thailand" />
             <Stat big={baht(ELEMENTAL.prizeTotalBaht)} label="in prizes, cash and Claude credit" />
           </div>
           <div style={{ fontFamily: EL_FONT.display }}>

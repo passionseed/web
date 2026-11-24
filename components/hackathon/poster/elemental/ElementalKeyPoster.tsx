@@ -291,6 +291,8 @@ const ICON = {
   prize: ["#########", "#.#####.#", ".#.###.#.", "...###...", "....#....", "....#....", "..#####..", ".#######.", "........."],
   friends: [".##...##.", "####.####", ".##...##.", ".........", "###...###", "####.####", "####.####", ".........", "........."],
   workshop: ["#########", "#.......#", "#.##....#", "#....##.#", "#.###...#", "#.......#", "#########", "...#.#...", "..#...#.."],
+  /** A graduation cap with its tassel: who the hackathon is for. */
+  school: ["....#....", "...###...", ".#######.", "#########", ".#######.", "#..###...", "#.#...#..", "#..###...", "........."],
 } as const;
 
 /** One fact in the bottom row: an icon and a few words, all the same size. */
@@ -404,6 +406,8 @@ function RegisterQrArt({ cell, fire = false, label = true }: { cell: number; fir
 const LINE = ["งานแข่งหาทางออกให้ธรรมชาติ", "ก่อนธรรมชาติจะให้เราออก"] as const;
 /** A question, then its answer (Angpao, 2026-11-23: "add ? to มือใหม่ไม่เคยแข่ง"). */
 const BEGINNER = ["มือใหม่ไม่เคยแข่ง?", "มี workshop สอน"] as const;
+/** Who it is for, as a tag in the facts row (Angpao, 2026-11-24: "add tag for มัธยมเท่านั้น", then "m3-m6 เท่านั้น"). */
+const WHO = `${ELEMENTAL.gradesTh} เท่านั้น`;
 
 export type BottomDesign = "stack" | "badge" | "number" | "scan" | "table";
 
@@ -593,7 +597,7 @@ function BottomBlock({ design, label = "tag", rule = true, side = "facts", troph
  * trophy, a plain sign-up QR code at the bottom right, and the line under
  * them. The other values are the layouts tried on the way there.
  */
-export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs = true, bottom = "number", label = "beside", rule = false, qr = "bottom", facts = "top", qrStyle = "art", trophy = "solid", prizeWeight = 200 }: { id?: string; sky?: keyof typeof PLATES; glyphs?: boolean; bottom?: BottomDesign; label?: PrizeLabel; rule?: boolean; qr?: false | "left" | "right" | "bottom"; facts?: "bottom" | "top"; trophy?: TrophyDesign; prizeWeight?: number; qrStyle?: "art" | "plain" | "glass" | "scan" | "fire" }) {
+export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs = true, bottom = "number", label = "beside", rule = false, qr = "bottom", facts = "top", qrStyle = "art", trophy = "solid", prizeWeight = 200, who = WHO }: { id?: string; who?: string; sky?: keyof typeof PLATES; glyphs?: boolean; bottom?: BottomDesign; label?: PrizeLabel; rule?: boolean; qr?: false | "left" | "right" | "bottom"; facts?: "bottom" | "top"; trophy?: TrophyDesign; prizeWeight?: number; qrStyle?: "art" | "plain" | "glass" | "scan" | "fire" }) {
   return (
     <div id={id} className={`${trirong.variable} relative overflow-hidden`} style={{ width: W, height: H, backgroundColor: "#2a2b26" }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -722,6 +726,7 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
             <Fact icon="online" color={EL.ink}>ออนไลน์</Fact>
             <Fact icon="friends" color={EL.ink}>{`มากับเพื่อน ฿${ELEMENTAL.groupPriceBaht} ต่อคน`}</Fact>
             <Fact icon="workshop" color={EL.ink}>{`${BEGINNER[0]} ${BEGINNER[1]}`}</Fact>
+            <Fact icon="school" color={EL.ink}>{who}</Fact>
           </div>
         ) : null}
       </div>
