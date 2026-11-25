@@ -22,6 +22,7 @@ const filled = (patch: Partial<Draft> = {}): Draft => ({
   parentConsent: true,
   email: "a@example.com",
   phone: "089-999-9999",
+  heardFrom: "passion_seed",
   noRefund: true,
   ...patch,
 });
@@ -46,7 +47,14 @@ describe("validateStep", () => {
   it("names the first step with a problem", () => {
     expect(firstInvalidStep(filled({ school: "" }))).toBe("school");
     expect(firstInvalidStep(filled({ parentConsent: false }))).toBe("parent");
+    expect(firstInvalidStep(filled({ heardFrom: "" }))).toBe("heard");
     expect(firstInvalidStep(filled({ noRefund: false }))).toBe("review");
+  });
+
+  it("needs one of the listed answers for where they saw the post", () => {
+    expect(validateStep("heard", filled({ heardFrom: "" })).heardFrom).toBeDefined();
+    expect(validateStep("heard", filled({ heardFrom: "tiktok" })).heardFrom).toBeDefined();
+    expect(validateStep("heard", filled({ heardFrom: "camp_hub" }))).toEqual({});
   });
 
   it("checks Thai phone numbers with or without dashes", () => {
@@ -69,10 +77,15 @@ describe("stepForServerPath", () => {
     expect(stepForServerPath(["members", 0, "age"])).toBe("school");
     expect(stepForServerPath(["members", 0, "parentPhone"])).toBe("parent");
     expect(stepForServerPath(["contactEmail"])).toBe("contact");
+    expect(stepForServerPath(["heardFrom"])).toBe("heard");
   });
 });
 
 describe("registrationBody", () => {
+  it("sends where they saw the post", () => {
+    expect(registrationBody(filled({ heardFrom: "contester" }), undefined).heardFrom).toBe("contester");
+  });
+
   it("is accepted by the API's schema", () => {
     const parsed = registrationSchema.safeParse(registrationBody(filled({ mode: "create", teamName: "ทีมไฟ" }), undefined, "ig"));
     expect(parsed.success).toBe(true);
