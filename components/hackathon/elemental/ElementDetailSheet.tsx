@@ -3,19 +3,18 @@
 import Image from "next/image";
 import { ArrowUpRight, ChevronDown } from "lucide-react";
 
-import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
+import { EL_FONT } from "@/components/hackathon/poster/elemental/brand";
+import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 
 import { ANY_PROBLEM_NOTE, type CaseImage, type ElementCase, type ElementDetail } from "./challenges";
-import type { ElementChapter } from "./media";
+import { buildLearnPrompt, ELEMENT_KEYWORDS } from "./learn";
+import { LearnDeeper } from "./LearnDeeper";
+import { elementLabel, type ElementChapter } from "./media";
 
 const BODY_FONT = "var(--font-bai-jamjuree), sans-serif";
 /** A case shows at most this many numbers up front; the rest of the story folds away. */
 const MAX_STATS = 3;
-
-function elementLabel(th: string) {
-  return th.startsWith("ธาตุ") ? th : `ธาตุ${th}`;
-}
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
@@ -123,16 +122,54 @@ function CaseCard({ item, color }: { item: ElementCase; color: string }) {
   );
 }
 
-function ChallengeSize({ label, text }: { label: string; text: string }) {
+/**
+ * One rung of the challenge: a dot on a line, so "start here, then go further"
+ * reads as a path instead of two equal boxes.
+ */
+function ChallengeStep({
+  color,
+  title,
+  note,
+  text,
+  first,
+}: {
+  color: string;
+  title: string;
+  note?: string;
+  text: string;
+  first?: boolean;
+}) {
   return (
-    <div className="border border-[#f3efe6]/15 p-4">
-      <p className="text-xs text-[#cfc9bd]" style={{ fontFamily: EL_FONT.mono }}>
-        [{label}]
-      </p>
-      <p className="mt-2 text-sm leading-relaxed text-[#e6e1d7]" style={{ fontFamily: BODY_FONT }}>
-        {text}
-      </p>
-    </div>
+    <li className="grid grid-cols-[14px_1fr] gap-x-4">
+      <div className="flex flex-col items-center pt-2.5">
+        <span
+          aria-hidden="true"
+          className="h-3.5 w-3.5 shrink-0 rounded-full border-2"
+          style={{ borderColor: color, backgroundColor: first ? color : "transparent" }}
+        />
+        {first ? (
+          <span aria-hidden="true" className="mt-1 w-px flex-1" style={{ backgroundColor: color, opacity: 0.4 }} />
+        ) : null}
+      </div>
+      <div className={first ? "pb-8" : ""}>
+        <h4 className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <span
+            className="text-xl text-[#faf8f4] sm:text-2xl"
+            style={{ fontFamily: EL_FONT.display, fontWeight: 300, lineHeight: 1.3 }}
+          >
+            {title}
+          </span>
+          {note ? (
+            <span className="text-xs" style={{ fontFamily: EL_FONT.mono, color }}>
+              {note}
+            </span>
+          ) : null}
+        </h4>
+        <p className="mt-2 text-base leading-relaxed text-[#e6e1d7]" style={{ fontFamily: BODY_FONT }}>
+          {text}
+        </p>
+      </div>
+    </li>
   );
 }
 
@@ -176,7 +213,7 @@ export function ElementDetailSheet({
           priority
         />
 
-        <div className="px-6 pb-12 pt-8 sm:px-10">
+        <div className="px-6 pb-6 pt-8 sm:px-10">
           <SheetTitle
             className="text-5xl sm:text-6xl"
             style={{ fontFamily: EL_FONT.display, fontWeight: 200, color: chapter.color, lineHeight: 1 }}
@@ -190,6 +227,24 @@ export function ElementDetailSheet({
             {detail.problemTh}
           </SheetDescription>
 
+          {/* The problem statement, up front: what a team has to answer. */}
+          <section className="mt-6 border-l-2 pl-4" style={{ borderColor: chapter.color }} aria-label="โจทย์">
+            <p className="text-xs" style={{ fontFamily: EL_FONT.mono, color: chapter.color }}>
+              โจทย์
+            </p>
+            <p
+              className="mt-1 text-xl text-[#faf8f4] sm:text-[1.5rem]"
+              style={{ fontFamily: EL_FONT.display, fontWeight: 300, lineHeight: 1.35 }}
+            >
+              {detail.howMightWeTh}
+            </p>
+            <LearnDeeper
+              prompt={buildLearnPrompt(chapter.key, elementLabel(chapter.th))}
+              keywords={ELEMENT_KEYWORDS[chapter.key]}
+              color={chapter.color}
+            />
+          </section>
+
           <section className="mt-10" aria-label="เคสที่เกิดขึ้นจริง">
             <SectionHeading>เกิดขึ้นจริงแล้ว</SectionHeading>
             <div className="mt-6 space-y-12">
@@ -199,34 +254,37 @@ export function ElementDetailSheet({
             </div>
           </section>
 
-          <section className="mt-14" aria-label="โจทย์">
-            <SectionHeading>โจทย์</SectionHeading>
-            <p
-              className="mt-4 border-l-2 pl-4 text-lg leading-relaxed text-[#faf8f4]"
-              style={{ borderColor: chapter.color, fontFamily: BODY_FONT }}
-            >
-              {detail.howMightWeTh}
-            </p>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <ChallengeSize label="เริ่มง่าย จบได้ใน 3 วัน" text={detail.starterTh} />
-              <ChallengeSize label="อยากไปให้สุด" text={detail.stretchTh} />
-            </div>
-            <p className="mt-4 text-sm text-[#cfc9bd]" style={{ fontFamily: BODY_FONT }}>
+          <section className="mt-14" aria-label="ลงมือทำ">
+            <SectionHeading>ลงมือทำ</SectionHeading>
+            <ol className="mt-6">
+              <ChallengeStep
+                color={chapter.color}
+                title="เริ่มง่าย"
+                note={`จบได้ใน ${ELEMENTAL.days} วัน`}
+                text={detail.starterTh}
+                first
+              />
+              <ChallengeStep color={chapter.color} title="อยากไปให้สุด" text={detail.stretchTh} />
+            </ol>
+            <p className="mt-8 text-sm text-[#cfc9bd]" style={{ fontFamily: BODY_FONT }}>
               {ANY_PROBLEM_NOTE}
             </p>
           </section>
+        </div>
 
-          {registrationOpen ? (
+        {/* Always in reach: the sign-up stays pinned to the bottom of the panel. */}
+        {registrationOpen ? (
+          <div className="sticky bottom-0 bg-gradient-to-t from-[#0c0d0c] via-[#0c0d0c]/95 to-transparent px-6 pb-5 pt-10 sm:px-10">
             <a
               href={joinHref}
-              className="mt-10 inline-flex items-center gap-2 border px-5 py-3 text-base transition-colors hover:bg-[#faf8f4] hover:text-[#0c0d0c]"
-              style={{ fontFamily: BODY_FONT, borderColor: EL.cream }}
+              className="flex w-full items-center justify-center gap-2 rounded-full px-5 py-3.5 text-base text-[#0c0d0c] transition-opacity hover:opacity-90"
+              style={{ fontFamily: BODY_FONT, backgroundColor: chapter.color }}
             >
               สมัครทีม แก้โจทย์นี้
               <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
             </a>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </SheetContent>
     </Sheet>
   );

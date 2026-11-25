@@ -4,39 +4,53 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-/** /admin/hackathon itself only redirects to Activities, so it has no tab. */
-export const HACKATHON_ITEMS = [
-  { href: "/admin/hackathon/registrations", label: "Elemental sign-ups" },
-  { href: "/admin/hackathon/activities", label: "Activities" },
-  { href: "/admin/hackathon/participants", label: "Participants" },
-  { href: "/admin/hackathon/teams", label: "Teams" },
-  { href: "/admin/hackathon/team-submissions", label: "Team submissions" },
-  { href: "/admin/hackathon/team-directions", label: "Team directions" },
-  { href: "/admin/hackathon/learning", label: "Learning" },
-  { href: "/admin/hackathon/questionnaire", label: "Questionnaire" },
-  { href: "/admin/hackathon/analytics", label: "Analytics" },
-  { href: "/admin/hackathon/mentors", label: "Mentors" },
-  { href: "/admin/hackathon/email-sender", label: "Email sender" },
-  { href: "/admin/hackathon/push-sender", label: "Push sender" },
-  { href: "/admin/hackathon/team-finder", label: "Team finder" },
-  { href: "/admin/hackathon/gallery", label: "Gallery" },
-] as const;
+export type HackathonNavItem = { href: string; label: string };
+
+/** The current hackathon: Elemental. /admin/hackathon redirects to its progress page. */
+export const HACKATHON_ITEMS: readonly HackathonNavItem[] = [
+  { href: "/admin/hackathon/elemental", label: "Progress" },
+  { href: "/admin/hackathon/registrations", label: "Sign-ups and slips" },
+];
+
+/** The 1st edition (the health hackathon, Feb to Jun 2026), kept in the admin archive. */
+export const FIRST_EDITION_ITEMS: readonly HackathonNavItem[] = [
+  { href: "/admin/archive/hackathon-healthcare/activities", label: "Activities" },
+  { href: "/admin/archive/hackathon-healthcare/participants", label: "Participants" },
+  { href: "/admin/archive/hackathon-healthcare/teams", label: "Teams" },
+  { href: "/admin/archive/hackathon-healthcare/team-submissions", label: "Team submissions" },
+  { href: "/admin/archive/hackathon-healthcare/team-directions", label: "Team directions" },
+  { href: "/admin/archive/hackathon-healthcare/learning", label: "Learning" },
+  { href: "/admin/archive/hackathon-healthcare/questionnaire", label: "Questionnaire" },
+  { href: "/admin/archive/hackathon-healthcare/analytics", label: "Analytics" },
+  { href: "/admin/archive/hackathon-healthcare/mentors", label: "Mentors" },
+  { href: "/admin/archive/hackathon-healthcare/email-sender", label: "Email sender" },
+  { href: "/admin/archive/hackathon-healthcare/push-sender", label: "Push sender" },
+  { href: "/admin/archive/hackathon-healthcare/team-finder", label: "Team finder" },
+  { href: "/admin/archive/hackathon-healthcare/gallery", label: "Gallery" },
+];
 
 /** The tab for the current page: its own path or any page under it. */
-export function activeHackathonHref(pathname: string): string | undefined {
-  return HACKATHON_ITEMS.find(
-    (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
-  )?.href;
+export function activeHackathonHref(
+  pathname: string,
+  items: readonly HackathonNavItem[] = HACKATHON_ITEMS,
+): string | undefined {
+  return items.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))?.href;
 }
 
-export function HackathonNav() {
+export function HackathonNav({
+  items = HACKATHON_ITEMS,
+  label = "Hackathon sections",
+}: {
+  items?: readonly HackathonNavItem[];
+  label?: string;
+}) {
   const pathname = usePathname();
-  const current = activeHackathonHref(pathname);
+  const current = activeHackathonHref(pathname, items);
 
   return (
-    <nav aria-label="Hackathon sections" className="w-full overflow-x-auto pb-2">
+    <nav aria-label={label} className="w-full overflow-x-auto pb-2">
       <ul className="flex w-max min-w-full gap-2">
-        {HACKATHON_ITEMS.map((item) => {
+        {items.map((item) => {
           const isActive = item.href === current;
           return (
             <li key={item.href}>

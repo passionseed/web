@@ -83,15 +83,17 @@ describe("getAdminBreadcrumbs", () => {
       { label: "Archive", href: "/admin/archive" },
       { label: "AI agents" },
     ]);
-    expect(getAdminBreadcrumbs("/admin/hackathon/learning")).toEqual([
+    expect(getAdminBreadcrumbs("/admin/archive/hackathon-healthcare/learning")).toEqual([
       { label: "Admin", href: "/admin" },
-      { label: "Hackathon", href: "/admin/hackathon" },
+      { label: "Archive", href: "/admin/archive" },
+      { label: "Hackathon, 1st edition", href: "/admin/archive/hackathon-healthcare" },
       { label: "Learning analytics" },
     ]);
-    expect(getAdminBreadcrumbs("/admin/hackathon/activities/editor")).toEqual([
+    expect(getAdminBreadcrumbs("/admin/archive/hackathon-healthcare/activities/editor")).toEqual([
       { label: "Admin", href: "/admin" },
-      { label: "Hackathon", href: "/admin/hackathon" },
-      { label: "Activities", href: "/admin/hackathon/activities" },
+      { label: "Archive", href: "/admin/archive" },
+      { label: "Hackathon, 1st edition", href: "/admin/archive/hackathon-healthcare" },
+      { label: "Activities", href: "/admin/archive/hackathon-healthcare/activities" },
       { label: "Activity editor" },
     ]);
   });
@@ -120,12 +122,13 @@ describe("getAdminBreadcrumbs", () => {
 
   it("only links crumbs that have a page", () => {
     const trail = getAdminBreadcrumbs(
-      `/admin/hackathon/activities/${ROUND}/clusters`,
+      `/admin/archive/hackathon-healthcare/activities/${ROUND}/clusters`,
     );
     expect(trail).toEqual([
       { label: "Admin", href: "/admin" },
-      { label: "Hackathon", href: "/admin/hackathon" },
-      { label: "Activities", href: "/admin/hackathon/activities" },
+      { label: "Archive", href: "/admin/archive" },
+      { label: "Hackathon, 1st edition", href: "/admin/archive/hackathon-healthcare" },
+      { label: "Activities", href: "/admin/archive/hackathon-healthcare/activities" },
       { label: "Activity" },
       { label: "Clusters" },
     ]);
@@ -161,9 +164,9 @@ describe("helpers", () => {
       label: "Payments",
       context: "Insights",
     });
-    expect(describeAdminPath("/admin/hackathon/activities/editor")).toEqual({
+    expect(describeAdminPath("/admin/archive/hackathon-healthcare/activities/editor")).toEqual({
       label: "Activity editor",
-      context: "Hackathon / Activities",
+      context: "Archive / Hackathon, 1st edition / Activities",
     });
   });
 

@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { motion, useReducedMotion, useTransform } from "framer-motion";
 
 import { BACKGROUND, EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
-import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
+import { ELEMENTAL, prizeTotal } from "@/components/hackathon/poster/elemental/facts";
 
 import { BeginnerJourneySection } from "./BeginnerJourneySection";
 import styles from "./elemental-cinema.module.css";
@@ -17,6 +17,7 @@ import { ScrollHookStatement } from "./ScrollHookStatement";
 import { SponsorSection } from "./SponsorSection";
 import { ElementalSoundProvider, useElementalSound } from "./sound-context";
 import { TeaserScreening } from "./TeaserTheater";
+import { useSectionScroll } from "./use-section-scroll";
 
 function GlobalSoundControl() {
   const { soundOn, audioUnlocked, toggleSound } = useElementalSound();
@@ -45,7 +46,7 @@ function ClosingPoster({ joinHref, open }: { joinHref: string; open: boolean }) 
   // The poster sits at the bottom of the page: load nothing until it's near.
   const [nearViewport, setNearViewport] = useState(false);
 
-  const { scrollYProgress } = useScroll({
+  const scrollYProgress = useSectionScroll({
     target: sectionRef,
     offset: ["start end", "center center"],
   });
@@ -174,6 +175,20 @@ function ElementalExperienceInner({
   fontClassName: string;
 }) {
   const [pastHero, setPastHero] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+
+  // Sticky sections read the top bar's height from --el-header-h, so they pin under it.
+  useEffect(() => {
+    const main = mainRef.current;
+    const header = headerRef.current;
+    if (!main || !header) return;
+    const observer = new ResizeObserver(() => {
+      main.style.setProperty("--el-header-h", `${header.offsetHeight}px`);
+    });
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setPastHero(window.scrollY > window.innerHeight * 0.95);
@@ -187,12 +202,13 @@ function ElementalExperienceInner({
   );
 
   return (
-    <main className={`${fontClassName} ${styles.cinemaRoot} min-h-screen`}>
+    <main ref={mainRef} className={`${fontClassName} ${styles.cinemaRoot} min-h-screen`}>
       {/* Global 35mm analog grain */}
       <div className={styles.filmGrain} aria-hidden="true" />
 
       {/* Minimal Header: ink on sky over hero, solid black + cream once past */}
       <header
+        ref={headerRef}
         className="fixed inset-x-0 top-0 z-40 transition-colors duration-200"
         style={{
           backgroundColor: pastHero ? "#0c0d0c" : "transparent",
@@ -254,7 +270,7 @@ function ElementalExperienceInner({
       {/* ACT 1: THE VALLEY (STICKY PARALLAX HERO) */}
       <ElementalHero joinHref={joinHref} open={open} />
 
-      {/* ACT 2: SCROLL-DRIVEN HOOK ("ทีละนิด นิดๆ ในที่ที่คุณไม่เห็น") */}
+      {/* ACT 2: SCROLL-DRIVEN HOOK ("ธรรมชาติไม่ได้พังเอง ... ตรงที่ไม่มีใครมอง") */}
       <ScrollHookStatement />
 
       {/* ACT 3: THE SCREENING (FULL TEASER WITH PARALLAX + DEFAULT-ON SOUND) */}
@@ -315,6 +331,59 @@ function ElementalExperienceInner({
               >
                 สมัครคนเดียว เราช่วยจับคู่เข้าทีมให้ก่อนเริ่มแข่ง
               </p>
+            </div>
+          </div>
+
+          {/* Where the fee goes (Big, 2026-11-22): all of it, after the hackathon's costs, hosts Request for Winners. */}
+          <p
+            className="mt-6 max-w-2xl text-base leading-relaxed"
+            style={{ fontFamily: "var(--font-bai-jamjuree), sans-serif", color: EL.inkSoft }}
+          >
+            เราไม่เก็บกำไรจากงานนี้ ค่าสมัครที่เหลือหลังหักค่าจัดงาน นำไปจัด{" "}
+            <Link href="/request-for-winners" className="underline underline-offset-4" style={{ color: EL.ink }}>
+              Request for Winners
+            </Link>{" "}
+            ทั้งหมด ให้ผลงานที่ดีที่สุดได้ไปต่อจนเป็นธุรกิจจริง
+          </p>
+
+          {/*
+            Who can join and the prizes (Angpao, 2026-11-24: "update hackathon
+            info include participant education level and also prize"). The
+            same facts as Instagram slide 2, all from facts.ts.
+          */}
+          <div className="mt-12 grid grid-cols-1 border-y border-[#1d211f]/20 md:grid-cols-[1fr_1.5fr]" id="who-and-prizes">
+            <div className="py-8 md:pr-10">
+              <p className="text-sm" style={{ fontFamily: EL_FONT.mono, color: EL.inkSoft }}>
+                [ใครสมัครได้]
+              </p>
+              <p className="mt-2 text-5xl sm:text-6xl" style={{ fontFamily: EL_FONT.display, fontWeight: 200, lineHeight: 1.05 }}>
+                {ELEMENTAL.gradesTh}
+              </p>
+              <p className="mt-3 text-base" style={{ fontFamily: "var(--font-bai-jamjuree), sans-serif", color: EL.inkSoft }}>
+                นักเรียนจากทั่วประเทศ ทีมละ {ELEMENTAL.teamMin}–{ELEMENTAL.teamMax} คน
+              </p>
+            </div>
+            <div className="border-t border-[#1d211f]/20 py-8 md:border-l md:border-t-0 md:pl-10">
+              <p className="text-sm" style={{ fontFamily: EL_FONT.mono, color: EL.inkSoft }}>
+                [รางวัลรวมมูลค่า {prizeTotal()} บาท]
+              </p>
+              <dl
+                className="mt-3 grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 text-base sm:text-lg"
+                style={{ fontFamily: "var(--font-bai-jamjuree), sans-serif" }}
+              >
+                {ELEMENTAL.prizes.map((p) => (
+                  <div key={p.place} className="contents">
+                    <dt className="font-semibold">ที่ {p.place}</dt>
+                    <dd style={{ color: EL.inkSoft }}>
+                      {[p.cashBaht ? `เงินสด ฿${p.cashBaht.toLocaleString("en-US")}` : null, `เครดิต Claude ฿${p.creditBaht.toLocaleString("en-US")}`]
+                        .filter(Boolean)
+                        .join(" + ")}
+                    </dd>
+                  </div>
+                ))}
+                <dt className="font-semibold">ผู้ชนะแต่ละธาตุ</dt>
+                <dd style={{ color: EL.inkSoft }}>เครดิต Claude ฿{ELEMENTAL.elementPrizeCreditBaht.toLocaleString("en-US")}</dd>
+              </dl>
             </div>
           </div>
 

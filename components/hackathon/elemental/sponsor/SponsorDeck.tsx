@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL, prizeTotal, thaiDayRange } from "@/components/hackathon/poster/elemental/facts";
 
-import { PixelArrow, PixelIcon, type IconName } from "./DeckArt";
+import { BenefitsArt, PixelArrow, PixelIcon, type IconName } from "./DeckArt";
 import { DeckEditor } from "./DeckEditor";
 import { PrintButton } from "./PrintButton";
 
@@ -130,16 +130,27 @@ export function Row({ label, children, light = false }: { label: ReactNode; chil
   );
 }
 
-export function Stat({ big, label, light = false }: { big: ReactNode; label: ReactNode; light?: boolean }) {
+export function Stat({ big, label, light = false, icon }: { big: ReactNode; label: ReactNode; light?: boolean; icon?: ReactNode }) {
   return (
     <div className="border-t pt-5" style={{ borderColor: light ? LINE_LIGHT : LINE_DARK }}>
-      <div className="text-[40px] leading-[1.1] sm:text-[54px]" style={{ fontFamily: EL_FONT.display, fontWeight: 200 }}>
-        {big}
+      <div className="flex items-center justify-between gap-3 text-[40px] leading-[1.1] sm:text-[54px]" style={{ fontFamily: EL_FONT.display, fontWeight: 200 }}>
+        <span>{big}</span>
+        {icon ? <span className="shrink-0">{icon}</span> : null}
       </div>
       <div className="mt-3 text-[15px] leading-[1.6] sm:text-[16px]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, color: light ? EL.inkSoft : EL.creamSoft }}>
         {label}
       </div>
     </div>
+  );
+}
+
+/** A benefits row label with its pixel icon. */
+function BenefitLabel({ icon, children }: { icon: IconName; children: ReactNode }) {
+  return (
+    <span className="flex items-center gap-3">
+      <PixelIcon name={icon} color={EL.ink} size={26} />
+      {children}
+    </span>
   );
 }
 
@@ -152,11 +163,14 @@ export function Stat({ big, label, light = false }: { big: ReactNode; label: Rea
  * list: teams pick any problem of that kind (Angpao, 2026-11-20: e.g. fire
  * covers fire hazards in a factory or a bar). Kinds of harm and most examples:
  * private/hackathon-elemental-theme-and-rules.md.
+ * The examples name the problem, not who caused it: the hackathon is about
+ * fixing the environment, not about people or companies making it worse
+ * (Angpao, 2026-11-24).
  */
 const ELEMENTS: { key: "water" | "earth" | "air" | "fire" | "aether"; kind: string; examples: string }[] = [
-  { key: "earth", kind: "ภัยจากขยะ ดิน และสารพิษ", examples: "เช่น ขยะอิเล็กทรอนิกส์ การลักลอบทิ้งหรือฝังกลบขยะ สารเคมีตกค้างในพื้นที่เกษตร ขยะที่ไม่ได้คัดแยก" },
-  { key: "water", kind: "ภัยในแหล่งน้ำ", examples: "เช่น น้ำเสียจากโรงงาน สารปนเปื้อนในแม่น้ำ ไมโครพลาสติก น้ำที่คนใช้ดื่มและทำเกษตร" },
-  { key: "air", kind: "ภัยในอากาศที่เราหายใจ", examples: "เช่น ฝุ่น PM2.5 ควันจากการเผาในที่โล่ง ไอเสียจากโรงงานใกล้บ้าน การปล่อยคาร์บอน" },
+  { key: "earth", kind: "ภัยจากขยะ ดิน และสารพิษ", examples: "เช่น ขยะอิเล็กทรอนิกส์ สารเคมีตกค้างในพื้นที่เกษตร ขยะที่ไม่ได้คัดแยก" },
+  { key: "water", kind: "ภัยในแหล่งน้ำ", examples: "เช่น น้ำเสีย สารปนเปื้อนในแม่น้ำ ไมโครพลาสติก น้ำที่คนใช้ดื่มและทำเกษตร" },
+  { key: "air", kind: "ภัยในอากาศที่เราหายใจ", examples: "เช่น ฝุ่น PM2.5 ควันจากการเผาในที่โล่ง ไอเสีย การปล่อยคาร์บอน" },
   { key: "fire", kind: "ภัยจากไฟและความร้อน", examples: "เช่น อัคคีภัยในโรงงาน ผับบาร์ หรืออาคาร โกดังเก็บสารเคมี การเผาไร่และป่า" },
   { key: "aether", kind: "ภัยจาก AI โซเชียล และเทคโนโลยี", examples: "เช่น แอปที่ออกแบบให้เลื่อนไม่หยุด ข่าวปลอมและคลิป AI ดีปเฟก พลังงานที่ AI ใช้" },
 ];
@@ -181,7 +195,7 @@ const TARGET = 350;
 /** Claude's draft from the concept page; nobody has decided it. */
 const MISSION: [string, string][] = [
   ["ทำความเข้าใจปัญหาจริง", `ชวนนักเรียน ${TARGET} คนขึ้นไป มาศึกษาปัญหาสิ่งแวดล้อมจริงใน 5 หัวข้อ`],
-  ["ลงมือแก้ให้คนจริง", "ทุกทีมพัฒนาผลงานที่ช่วยคนจริงอย่างน้อย 1 คน และทดสอบกับคนจริง"],
+  ["ลงมือสร้างผลงานให้คนลองใช้จริง", "ทุกทีมพัฒนาผลงานที่ช่วยคนจริงอย่างน้อย 1 คน และทดสอบกับคนจริง"],
   ["ต่อยอดหลังการแข่งขัน", "ผลงานที่ดีที่สุดได้ต่อยอดในโครงการ Request for Winners"],
 ];
 
@@ -240,37 +254,44 @@ const HISTORY: [string, string, string, string | null][] = [
   ["ธ.ค. 2569", "Elemental Hackathon", "The Next Decade ครั้งที่ 2", "/hackathon/poster/elemental/sheets/elemental-key.webp"],
 ];
 
+/** The public gallery of last edition's projects. Absolute, so the links also work in the PDF. */
+const GALLERY = "https://www.passionseed.org/hackathon/gallery";
+
 /**
  * Last edition from sign-up to final, and the mentoring behind it. Source:
  * company-brain numbers.md "Past events" (Supabase totals read 2026-11-25;
  * rounds from the participants' LINE group, shared by Big 2026-11-25) and
  * events.md for the dates.
  */
-const PAST_FUNNEL: [string, string, string][] = [
-  ["872", "ผู้สมัคร", "86% เป็นนักเรียน ม.ปลาย"],
-  ["221", "ทีม", "ทีมละ 2–5 คน"],
-  ["30", "ทีมผ่านเข้ารอบ", "รอบแรกและรอบสอง 29 พ.ค.–7 มิ.ย."],
-  ["10", "ทีมเข้ารอบชิงชนะเลิศ", "นำเสนอที่ ZenicHub 20 มิ.ย."],
+const PAST_FUNNEL: [string, string, string, IconName, string][] = [
+  ["872", "ผู้สมัคร", "86% เป็นนักเรียน ม.ปลาย", "person", EL.toxicCyan],
+  ["221", "ทีม", "ทีมละ 2–5 คน", "people", EL.toxicGreen],
+  ["30", "ทีมผ่านเข้ารอบ", "รอบแรกและรอบสอง 29 พ.ค.–7 มิ.ย.", "chart", EL.toxicYellow],
+  ["10", "ทีมเข้ารอบชิงชนะเลิศ", "นำเสนอที่ ZenicHub 20 มิ.ย.", "megaphone", EL.flame],
 ];
-const PAST_SUPPORT: [string, string][] = [
-  ["22", "เมนเทอร์ที่ให้คำปรึกษาทีม"],
-  ["81", "นัดปรึกษาเมนเทอร์ที่ยืนยันแล้ว จาก 52 ทีม"],
-  ["7", "ผลงานในแกลเลอรีบน passionseed.org"],
+const PAST_SUPPORT: [string, string, IconName, string][] = [
+  ["22", "เมนเทอร์ที่ให้คำปรึกษาทีม", "bubble", EL.toxicCyan],
+  ["81", "นัดเมนเทอร์ที่ยืนยันแล้ว จาก 52 ทีม", "calendar", EL.toxicGreen],
+  ["7", "ผลงานในแกลเลอรีบน passionseed.org", "frame", EL.toxicYellow],
 ];
 
 /**
  * Projects from last edition, from the public gallery at
  * passionseed.org/hackathon/gallery (read 2026-11-20). Product names only,
- * never team or member names. One-line summaries are Claude's.
+ * never team or member names. One-line summaries are Claude's. The third
+ * value is the project's page in the gallery (ids read from the live gallery,
+ * 2026-11-22).
  */
-const LAST_PROJECTS: [string, string][] = [
-  ["FreshTrack", "ติดตามอายุอาหารในตู้เย็น ไม่ต้องทิ้งเพราะไม่แน่ใจว่ายังกินได้"],
-  ["FitFiew", "ช่วยคนทำงานออกกำลังกายด้วยท่าที่ถูกต้อง ลดการบาดเจ็บ"],
-  ["KOKORO", "พื้นที่รับฟังสำหรับคนที่แบกความเครียดไว้คนเดียว"],
-  ["Aun Jai Wai Kao", "ลดความเหงาของผู้สูงอายุหลังเกษียณในจังหวัดนครปฐม"],
-  ["Pipo Care", "ลดความเสี่ยงตาแห้งจากการใช้หน้าจอเป็นเวลานาน"],
-  ["WeBloom", "รับมือภาวะหมดไฟของนักศึกษาจากวัฒนธรรม toxic productivity"],
+const LAST_PROJECTS: [string, string, string, IconName][] = [
+  ["FreshTrack", "ติดตามอายุอาหารในตู้เย็น ไม่ต้องทิ้งเพราะไม่แน่ใจว่ายังกินได้", "6ea95f72-e801-4f5d-98fb-62fae30faace", "fridge"],
+  ["FitFiew", "ช่วยคนทำงานออกกำลังกายด้วยท่าที่ถูกต้อง ลดการบาดเจ็บ", "e3f9085b-df56-4269-ba57-20097db9dd4e", "dumbbell"],
+  ["KOKORO", "พื้นที่รับฟังสำหรับคนที่แบกความเครียดไว้คนเดียว", "e903fe25-6535-41ef-848e-72b9639e22c9", "heart"],
+  ["Aun Jai Wai Kao", "ลดความเหงาของผู้สูงอายุหลังเกษียณในจังหวัดนครปฐม", "84a7adcb-1796-4c18-a1ca-a067532549ed", "home"],
+  ["Pipo Care", "ลดความเสี่ยงตาแห้งจากการใช้หน้าจอเป็นเวลานาน", "45068b1b-cfdc-4c23-95ad-005a76cc6a7e", "eye"],
+  ["WeBloom", "รับมือภาวะหมดไฟของนักศึกษาจากวัฒนธรรม toxic productivity", "c15983bb-555a-4756-a167-199593b635f7", "flower"],
 ];
+/** One colour per project card, in the elements' colours. */
+const PROJECT_COLORS = [EL.toxicCyan, EL.flame, EL.toxicGreen, EL.toxicYellow, EL.toxicCyan, EL.toxicGreen];
 
 /**
  * Sponsorship packages: three prices told by Angpao, 2026-11-20. Which
@@ -313,11 +334,11 @@ const PACKAGE_ROWS: [string, [string, [boolean, boolean, boolean]][]][] = [
 const IG = { followers: "3,406", reach: "236,221", views: "464,454", range: "21 ต.ค.–19 พ.ย. 2569" };
 
 /** The sponsor contact (told by Angpao, 2026-11-20). */
-const CONTACT = {
-  name: "นายเศรษฐ์ฐคุณ อมรรัตนศริ",
-  role: "ผู้ร่วมก่อตั้ง PassionSeed",
-  phone: "095-413-9393",
-};
+const CONTACTS = [
+  // The main contact (told by Angpao, 2026-11-22).
+  { label: "ผู้ประสานงานหลัก", name: "นายกฤษติณ วิชัยดิษฐ", role: "ผู้ร่วมก่อตั้ง PassionSeed", phone: "096-365-2899" },
+  { label: "ผู้ประสานงาน", name: "นายเศรษฐ์ฐคุณ อมรรัตนศริ", role: "ผู้ร่วมก่อตั้ง PassionSeed", phone: "095-413-9393" },
+];
 
 export function SponsorDeck() {
   const el = (k: string) => ELEMENTAL.elements.find((e) => e.key === k)!;
@@ -351,7 +372,7 @@ export function SponsorDeck() {
               </span>
             </h1>
             <p className="m-0 mt-2 text-[24px] sm:text-[32px]" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
-              ดิน · น้ำ · ลม · ไฟ · ธาตุที่มองไม่เห็น
+              ดิน · น้ำ · ลม · ไฟ · อีเธอร์
             </p>
           </div>
 
@@ -418,7 +439,7 @@ export function SponsorDeck() {
             {thaiDayRange()} {YEAR_TH} ({ELEMENTAL.days} วัน ช่วงวันหยุดยาว)
           </Row>
           <Row light label="ผู้เข้าร่วม">
-            นักเรียน ม.4–ม.6 ทั่วประเทศ
+            นักเรียน ม.3–ม.6 ทั่วประเทศ
             <Draft />
           </Row>
           <Row light label="รูปแบบ">
@@ -433,7 +454,7 @@ export function SponsorDeck() {
         <Tag n="02 TRACKS" />
         <H2>หัวข้อการแข่งขัน: 5 ธาตุ</H2>
         <Body>
-          หัวข้อหลักคือ Environmental negligence: ธุรกิจที่ละเลยจนทำร้ายสิ่งแวดล้อมและผู้คน เราแบ่งปัญหาออกเป็น 5 ธาตุ ตัวอย่างด้านล่างเป็นแค่จุดเริ่มต้น
+          หัวข้อหลักคือการแก้ปัญหาสิ่งแวดล้อม เราแบ่งปัญหาออกเป็น 5 ธาตุ ตัวอย่างด้านล่างเป็นแค่จุดเริ่มต้น
           ทีมเลือกปัญหาใดก็ได้ในธาตุนั้น หรือรวมหลายธาตุ แล้วพัฒนาผลงานที่ช่วยคนจริงอย่างน้อย 1 คน
         </Body>
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-5">
@@ -721,15 +742,16 @@ export function SponsorDeck() {
           หัวข้อ Preventive &amp; Predictive Healthcare · นักเรียนมัธยมปลายและนักศึกษา · ก.พ.–มิ.ย. 2569 · เวิร์กช็อป 8 เม.ย.–28 พ.ค.
         </p>
         <ol className="m-0 mt-5 grid list-none grid-cols-2 gap-x-6 gap-y-5 p-0 md:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr]" style={{ fontFamily: EL_FONT.display }}>
-          {PAST_FUNNEL.flatMap(([big, label, note], i) => [
+          {PAST_FUNNEL.flatMap(([big, label, note, icon, color], i) => [
             i > 0 ? (
               <li key={`arrow-${i}`} aria-hidden="true" className="hidden items-center md:flex">
                 <PixelArrow color={EL.creamSoft} />
               </li>
             ) : null,
             <li key={label} className="border-t-2 pt-4" style={{ borderColor: i === PAST_FUNNEL.length - 1 ? EL.flame : EL.cream }}>
-              <div className="text-[40px] leading-[1.1] sm:text-[54px]" style={{ fontWeight: 200 }}>
-                {big}
+              <div className="flex items-center justify-between gap-3 text-[40px] leading-[1.1] sm:text-[54px]" style={{ fontWeight: 200 }}>
+                <span>{big}</span>
+                <PixelIcon name={icon} color={color} size={38} />
               </div>
               <div className="mt-2 text-[17px]" style={{ fontWeight: 400 }}>
                 {label}
@@ -741,8 +763,9 @@ export function SponsorDeck() {
           ])}
         </ol>
         <div className="mt-5 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-3" style={{ fontFamily: EL_FONT.display }}>
-          {PAST_SUPPORT.map(([big, label]) => (
-            <div key={label} className="flex items-baseline gap-3 border-t py-2" style={{ borderColor: LINE_DARK }}>
+          {PAST_SUPPORT.map(([big, label, icon, color]) => (
+            <div key={label} className="flex items-center gap-3 border-t py-2" style={{ borderColor: LINE_DARK }}>
+              <PixelIcon name={icon} color={color} size={26} />
               <span className="text-[28px] leading-none" style={{ fontWeight: 300 }}>
                 {big}
               </span>
@@ -757,18 +780,29 @@ export function SponsorDeck() {
           <Draft>สรุปโดย Claude</Draft>
         </p>
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3" style={{ fontFamily: EL_FONT.display }}>
-          {LAST_PROJECTS.map(([name, what]) => (
-            <div key={name} className="flex gap-3 rounded-[3px] p-3" style={{ background: "rgba(243,239,230,0.07)" }}>
-              <PixelIcon name="sprout" color={EL.toxicGreen} size={22} />
-              <div>
-                <p className="m-0 text-[16px]" style={{ fontWeight: 400 }}>
-                  {name}
+          {LAST_PROJECTS.map(([name, what, id, icon], i) => (
+            // A real link, so it opens from the page and from the saved PDF.
+            <a
+              key={name}
+              href={`${GALLERY}/${id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="deck-project flex gap-3 rounded-[3px] p-3 no-underline transition-colors hover:bg-[rgba(243,239,230,0.13)]"
+              style={{ background: "rgba(243,239,230,0.07)", color: EL.cream }}
+            >
+              <PixelIcon name={icon} color={PROJECT_COLORS[i]} size={30} />
+              <div className="min-w-0 flex-1">
+                <p className="m-0 flex items-baseline justify-between gap-3 text-[16px]" style={{ fontWeight: 400 }}>
+                  <span>{name}</span>
+                  <span className="shrink-0 text-[13px] underline underline-offset-4" style={{ fontWeight: 300, color: EL.toxicGreen }}>
+                    ดูผลงาน ↗
+                  </span>
                 </p>
                 <p className="m-0 mt-1 text-[14px] leading-[1.45]" style={{ fontWeight: 300, color: EL.creamSoft }}>
                   {what}
                 </p>
               </div>
-            </div>
+            </a>
           ))}
         </div>
         <p className="m-0 mt-6 text-[15px]" style={{ fontFamily: EL_FONT.display, color: EL.creamSoft }}>
@@ -788,25 +822,31 @@ export function SponsorDeck() {
       {/* 09 Benefits */}
       <Section id="benefits" tone="paper">
         <Tag n="09 BENEFITS" light />
-        <H2>สิทธิประโยชน์ของผู้สนับสนุน</H2>
+        <div className="relative">
+          <H2>สิทธิประโยชน์ของผู้สนับสนุน</H2>
+          {/* Where a sponsor's logo shows up: poster, slides, report (Angpao, 2026-11-24: "add vector to page 10"). */}
+          <div className="absolute bottom-0 right-0 hidden sm:block">
+            <BenefitsArt />
+          </div>
+        </div>
         <div className="mt-8 grid grid-cols-2 gap-6 md:grid-cols-4">
-          <Stat light big={IG.followers} label="ผู้ติดตาม Instagram ของ PassionSeed" />
-          <Stat light big={IG.reach} label="บัญชีที่เห็นโพสต์ของเราใน 30 วัน" />
-          <Stat light big={IG.views} label="ยอดเข้าชมโพสต์และคลิปใน 30 วัน" />
-          <Stat light big={`${TARGET}+`} label="ผู้เข้าร่วมที่เห็นโลโก้ผู้สนับสนุนตลอด 3 วัน (เป้าหมาย)" />
+          <Stat light big={IG.followers} label="ผู้ติดตาม Instagram ของ PassionSeed" icon={<PixelIcon name="people" color={EL.ink} size={30} />} />
+          <Stat light big={IG.reach} label="บัญชีที่เห็นโพสต์ของเราใน 30 วัน" icon={<PixelIcon name="eye" color={EL.ink} size={30} />} />
+          <Stat light big={IG.views} label="ยอดเข้าชมโพสต์และคลิปใน 30 วัน" icon={<PixelIcon name="play" color={EL.ink} size={30} />} />
+          <Stat light big={`${TARGET}+`} label="ผู้เข้าร่วมที่เห็นโลโก้ผู้สนับสนุนตลอด 3 วัน (เป้าหมาย)" icon={<PixelIcon name="person" color={EL.ink} size={30} />} />
         </div>
         <p className="m-0 mt-3 text-[13px]" style={{ fontFamily: EL_FONT.display, color: EL.inkSoft }}>
           ข้อมูล Instagram @passion_seed.th จาก Meta ช่วง {IG.range}
         </p>
         <div className="mt-6 border-b" style={{ borderColor: LINE_LIGHT }}>
-          <Row light label="ก่อนงาน">
+          <Row light label={<BenefitLabel icon="megaphone">ก่อนงาน</BenefitLabel>}>
             โลโก้บนโปสเตอร์ โพสต์ประชาสัมพันธ์ และหน้ารับสมัคร
             <Draft>Claude ร่าง</Draft>
           </Row>
-          <Row light label="ระหว่างงาน">
+          <Row light label={<BenefitLabel icon="board">ระหว่างงาน</BenefitLabel>}>
             โลโก้บนพื้นหลังและสไลด์ของงาน กล่าวขอบคุณในพิธีเปิดและระหว่างเวิร์กช็อป
           </Row>
-          <Row light label="หลังงาน">
+          <Row light label={<BenefitLabel icon="chart">หลังงาน</BenefitLabel>}>
             รายงานสรุปผลโครงการ: จำนวนผู้สมัคร ทีม ผลงาน และยอดการมองเห็นของโพสต์ พร้อมภาพและคลิปบรรยากาศที่ได้รับความยินยอมแล้ว
             <Draft>Claude ร่าง</Draft>
           </Row>
@@ -878,19 +918,23 @@ export function SponsorDeck() {
       <Section id="contact" tone="paper">
         <Tag n="11 CONTACT" light />
         <H2>ติดต่อสอบถาม</H2>
-        <div className="mt-8 border-b" style={{ borderColor: LINE_LIGHT }}>
-          <Row light label="ผู้ประสานงาน">
-            {CONTACT.name}
-            <Draft>ตรวจตัวสะกด</Draft>
-          </Row>
-          <Row light label="ตำแหน่ง">
-            {CONTACT.role}
-          </Row>
-          <Row light label="โทร">
-            <a href={`tel:${CONTACT.phone.replace(/-/g, "")}`} className="underline-offset-4 hover:underline">
-              {CONTACT.phone}
-            </a>
-          </Row>
+        <div className="mt-8 grid grid-cols-1 gap-x-12 gap-y-8 md:grid-cols-2">
+          {CONTACTS.map((c) => (
+            <div key={c.phone} className="border-b" style={{ borderColor: LINE_LIGHT }}>
+              <Row light label={c.label}>
+                {c.name}
+                <Draft>ตรวจตัวสะกด</Draft>
+              </Row>
+              <Row light label="ตำแหน่ง">
+                {c.role}
+              </Row>
+              <Row light label="โทร">
+                <a href={`tel:${c.phone.replace(/-/g, "")}`} className="underline-offset-4 hover:underline">
+                  {c.phone}
+                </a>
+              </Row>
+            </div>
+          ))}
         </div>
         <div className="deck-no-print mt-10">
           <PrintButton light />

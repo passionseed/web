@@ -9,13 +9,21 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
  *   ฿149 a person with others (company-brain numbers.md).
  * - Elements and theme: private/hackathon-december-2026.md (PR #87) and
  *   Angpao, 2026-11-19 (Aether is the fifth element).
- * - Aether's Thai name and scope: ธาตุที่มองไม่เห็น, covering AI, social
- *   media and the harms of tech we don't notice (Big, 2026-11-21). It
- *   replaces ธาตุที่ 5 and อีเธอร์.
- * - Prize total: told by Angpao, 2026-11-19 (not yet in company-brain).
+ * - Aether's Thai name: อีเธอร์, always (Angpao, 2026-11-24; it replaces
+ *   ธาตุที่มองไม่เห็น, Big, 2026-11-21). Its scope is unchanged: AI, social
+ *   media and the harms of tech we don't notice (Big, 2026-11-21).
+ * - Prize total: told by Angpao, 2026-11-19. The three prizes: Angpao,
+ *   2026-11-21 (company-brain numbers.md). Changed by Angpao, 2026-11-24:
+ *   the Claude credit drops to 3,000 / 2,500 / 2,000, and the winner of
+ *   each track gets 500 of Claude credit. A track is one of the five
+ *   elements (confirmed by Angpao the same day), so the total stays 20,000.
+ * - Who can join: M.3 to M.6, from anywhere in Thailand (Angpao, 2026-11-24;
+ *   it replaces M.4 to M.6, Big, 2026-11-22; company-brain decisions/log.md).
  * - Online, on Discord; groups of up to 5 (Bunyasit, 2026-11-20).
- * - Sign-up closes Thu 3 Dec 2026 (hackathon-ops registration.md); a group
- *   is 2 or more people (Big's draft there) and pays on one slip.
+ * - Sign-up closes Thu 3 Dec 2026 (Big, 2026-11-24, replacing Fri 4 Dec).
+ *   A one-day extension to Fri 4 Dec is planned: change this date when it is
+ *   announced. A group is 2 or more people (Big's draft in hackathon-ops
+ *   registration.md) and pays on one slip.
  * Change a fact here, never in a poster.
  */
 export const ELEMENTAL = {
@@ -29,14 +37,35 @@ export const ELEMENTAL = {
   priceBaht: 199,
   groupPriceBaht: 149,
   prizeTotalBaht: 20000,
-  theme: "Environmental negligence",
-  url: "passionseed.org/hackathon",
+  /**
+   * The three prizes: cash and Claude credit, in baht. With the five element
+   * prizes below they add up to prizeTotalBaht.
+   */
+  prizes: [
+    { place: 1, cashBaht: 7000, creditBaht: 3000 },
+    { place: 2, cashBaht: 3000, creditBaht: 2500 },
+    { place: 3, cashBaht: 0, creditBaht: 2000 },
+  ],
+  /** Claude credit for the winner of each element ("each track"), in baht. */
+  elementPrizeCreditBaht: 500,
+  /** Who can join: school years, from anywhere in Thailand. */
+  gradesTh: "ม.3–ม.6",
+  /**
+   * The theme, as printed. The hackathon is about fixing the environment,
+   * not about who made it worse (Angpao, 2026-11-24; it replaces
+   * "Environmental negligence").
+   */
+  theme: "แก้ปัญหาสิ่งแวดล้อม",
+  /** The permanent link. /hackathon redirects here while Elemental is current. */
+  url: "passionseed.org/hackathon/elemental",
   /** Database key for registrations. */
   slug: "elemental-2026",
   /** Last day to sign up, Bangkok time (inclusive). */
   registrationClosesOn: "2026-12-03",
   /** Where it happens. */
   venueTh: "ออนไลน์ทาง Discord",
+  /** The same, short enough for a ticket stub. */
+  venueShort: "Discord",
   /** Largest group on one sign-up. */
   maxGroupSize: 5,
   /**
@@ -64,7 +93,7 @@ export const ELEMENTAL = {
     { key: "earth", en: "Earth", th: "ดิน" },
     { key: "air", en: "Air", th: "ลม" },
     { key: "fire", en: "Fire", th: "ไฟ" },
-    { key: "aether", en: "Aether", th: "ธาตุที่มองไม่เห็น" },
+    { key: "aether", en: "Aether", th: "อีเธอร์" },
   ],
 } as const;
 
@@ -82,6 +111,11 @@ export function thaiDayRange(): string {
 /** "20,000". */
 export function prizeTotal(): string {
   return ELEMENTAL.prizeTotalBaht.toLocaleString("en-US");
+}
+
+/** "5 ถึง 7 ธ.ค.": the date line without the year, for tight spots like the ticket stub. */
+export function thaiDateShort(): string {
+  return `${parts(ELEMENTAL.startDate).day} ถึง ${formatThaiDate(ELEMENTAL.endDate, false)}`;
 }
 
 /** "5 ถึง 8 ธ.ค. 2569": month once, Buddhist-era year. */

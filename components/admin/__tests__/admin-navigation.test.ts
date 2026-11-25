@@ -47,11 +47,14 @@ describe("getActiveAdminItem", () => {
       getActiveAdminItem("/admin/dm-leads/0b6c3a4e-1d2f-4a5b-9c8d-7e6f5a4b3c2d")
         ?.label,
     ).toBe("DM leads");
-    expect(getActiveAdminItem("/admin/hackathon/analytics")?.label).toBe(
+    expect(getActiveAdminItem("/admin/archive/hackathon-healthcare/analytics")?.label).toBe(
       "Traffic and links",
     );
-    expect(getActiveAdminItem("/admin/hackathon/teams")?.label).toBe(
-      "Hackathon",
+    expect(getActiveAdminItem("/admin/archive/hackathon-healthcare/teams")?.label).toBe(
+      "Archive",
+    );
+    expect(getActiveAdminItem("/admin/hackathon/registrations")?.label).toBe(
+      "Elemental hackathon",
     );
     expect(getActiveAdminItem("/admin/shift/rounds/abc/review")?.label).toBe(
       "Rounds",
