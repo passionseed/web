@@ -4,6 +4,7 @@ import path from "node:path";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 
 import { ELEMENT_DETAILS } from "../challenges";
+import { buildLearnPrompt, ELEMENT_KEYWORDS } from "../learn";
 import { ELEMENT_CHAPTERS } from "../media";
 
 const allCopy = (value: unknown): string[] => {
@@ -60,6 +61,32 @@ describe("Elemental element details", () => {
   it("keeps em dashes out of user-facing copy", () => {
     for (const text of allCopy(ELEMENT_DETAILS)) {
       expect(text).not.toContain("—");
+    }
+    for (const text of allCopy(ELEMENT_KEYWORDS)) {
+      expect(text).not.toContain("—");
+    }
+  });
+
+  it("gives every element keywords with an English term and a meaning", () => {
+    for (const chapter of ELEMENT_CHAPTERS) {
+      const keywords = ELEMENT_KEYWORDS[chapter.key];
+      expect(keywords.length).toBeGreaterThanOrEqual(4);
+      for (const k of keywords) {
+        expect(k.th && k.en && k.meaningTh).toBeTruthy();
+      }
+    }
+  });
+
+  it("builds an AI prompt that carries the brief, its cases and its keywords", () => {
+    for (const chapter of ELEMENT_CHAPTERS) {
+      const detail = ELEMENT_DETAILS[chapter.key];
+      const prompt = buildLearnPrompt(chapter.key, "ธาตุทดสอบ");
+      expect(prompt).toContain("ธาตุทดสอบ");
+      expect(prompt).toContain(detail.problemTh);
+      expect(prompt).toContain(detail.howMightWeTh);
+      for (const item of detail.cases) expect(prompt).toContain(item.titleTh);
+      for (const k of ELEMENT_KEYWORDS[chapter.key]) expect(prompt).toContain(k.en);
+      expect(prompt).not.toContain("—");
     }
   });
 });

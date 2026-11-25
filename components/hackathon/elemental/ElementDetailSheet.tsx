@@ -8,6 +8,8 @@ import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 
 import { ANY_PROBLEM_NOTE, type CaseImage, type ElementCase, type ElementDetail } from "./challenges";
+import { buildLearnPrompt, ELEMENT_KEYWORDS } from "./learn";
+import { LearnDeeper } from "./LearnDeeper";
 import { elementLabel, type ElementChapter } from "./media";
 
 const BODY_FONT = "var(--font-bai-jamjuree), sans-serif";
@@ -225,6 +227,24 @@ export function ElementDetailSheet({
             {detail.problemTh}
           </SheetDescription>
 
+          {/* The problem statement, up front: what a team has to answer. */}
+          <section className="mt-6 border-l-2 pl-4" style={{ borderColor: chapter.color }} aria-label="โจทย์">
+            <p className="text-xs" style={{ fontFamily: EL_FONT.mono, color: chapter.color }}>
+              โจทย์
+            </p>
+            <p
+              className="mt-1 text-xl text-[#faf8f4] sm:text-[1.5rem]"
+              style={{ fontFamily: EL_FONT.display, fontWeight: 300, lineHeight: 1.35 }}
+            >
+              {detail.howMightWeTh}
+            </p>
+            <LearnDeeper
+              prompt={buildLearnPrompt(chapter.key, elementLabel(chapter.th))}
+              keywords={ELEMENT_KEYWORDS[chapter.key]}
+              color={chapter.color}
+            />
+          </section>
+
           <section className="mt-10" aria-label="เคสที่เกิดขึ้นจริง">
             <SectionHeading>เกิดขึ้นจริงแล้ว</SectionHeading>
             <div className="mt-6 space-y-12">
@@ -234,15 +254,9 @@ export function ElementDetailSheet({
             </div>
           </section>
 
-          <section className="mt-14" aria-label="โจทย์">
-            <SectionHeading>โจทย์</SectionHeading>
-            <p
-              className="mt-4 text-xl text-[#faf8f4] sm:text-[1.6rem]"
-              style={{ fontFamily: EL_FONT.display, fontWeight: 300, lineHeight: 1.35 }}
-            >
-              {detail.howMightWeTh}
-            </p>
-            <ol className="mt-8">
+          <section className="mt-14" aria-label="ลงมือทำ">
+            <SectionHeading>ลงมือทำ</SectionHeading>
+            <ol className="mt-6">
               <ChallengeStep
                 color={chapter.color}
                 title="เริ่มง่าย"
