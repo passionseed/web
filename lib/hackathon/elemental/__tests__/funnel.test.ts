@@ -37,9 +37,10 @@ describe("summarizeFunnel", () => {
     expect(by["step:name"].fromPrevious).toBe(1);
   });
 
-  it("tallies failed fields and slip results without counting them as steps", () => {
+  it("tallies failed fields by people, and slip results, without counting them as steps", () => {
     const rows = [
       row("a", "invalid", { detail: "phone,email" }),
+      row("b", "invalid", { detail: "phone" }),
       row("b", "invalid", { detail: "phone" }),
       row("a", "slip_result", { detail: "rejected:amount" }),
       row("b", "slip_result", { detail: "paid" }),

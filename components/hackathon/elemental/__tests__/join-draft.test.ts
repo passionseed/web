@@ -7,6 +7,7 @@ import {
   registrationBody,
   stepForServerPath,
   stepsFor,
+  suggestTeamName,
   validateStep,
   type Draft,
 } from "../join/draft";
@@ -27,6 +28,11 @@ const filled = (patch: Partial<Draft> = {}): Draft => ({
 });
 
 describe("stepsFor", () => {
+  it("asks for the person's own name before the team name", () => {
+    expect(stepsFor(filled({ mode: "create", age: "22" }))).toEqual(["mode", "name", "team", "school", "contact", "review"]);
+  });
+
+
   it("asks for a team name only when starting a team", () => {
     expect(stepsFor(filled({ mode: "create" }))).toContain("team");
     expect(stepsFor(filled({ mode: "solo" }))).not.toContain("team");
@@ -82,5 +88,21 @@ describe("registrationBody", () => {
     const body = registrationBody(filled({ age: "21" }), undefined);
     expect(body.members[0].parentName).toBeUndefined();
     expect(registrationSchema.safeParse(body).success).toBe(true);
+  });
+});
+
+describe("suggestTeamName", () => {
+  it("starts from the nickname", () => {
+    expect(suggestTeamName({ nickname: " ชาย ", fullName: "สมชาย ใจดี" })).toBe("ทีมชาย");
+  });
+  it("falls back to the first word of the full name", () => {
+    expect(suggestTeamName({ nickname: "", fullName: "สมชาย ใจดี" })).toBe("ทีมสมชาย");
+  });
+  it("is empty when there's no name yet", () => {
+    expect(suggestTeamName({ nickname: "", fullName: "  " })).toBe("");
+  });
+  it("passes the team-name check", () => {
+    const d = filled({ mode: "create", teamName: suggestTeamName(filled()) });
+    expect(validateStep("team", d)).toEqual({});
   });
 });

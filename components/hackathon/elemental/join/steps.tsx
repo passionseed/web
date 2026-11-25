@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { ArrowRight, User, Users } from "lucide-react";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
-import { ELEMENTAL, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
+import { ELEMENTAL, prizeTotal, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
 import { ADULT_AGE, elementalPriceBaht } from "@/lib/hackathon/elemental/registration";
 import { teamLabel } from "@/lib/hackathon/elemental/team-name";
 import type { PublicTeam } from "@/lib/supabase/hackathon-event-registrations";
@@ -56,6 +56,7 @@ function ModeStep({ draft, team, choose }: StepProps) {
         <StepTitle sub={`เพื่อนชวนมา คนละ ${baht(ELEMENTAL.groupPriceBaht)} แต่ละคนสมัครและจ่ายเอง`}>
           เข้าทีม <span style={{ fontStyle: "italic", fontWeight: 300 }}>{team.name}</span>
         </StepTitle>
+        <WhatItIs />
         <div className="rounded-2xl border p-5" style={{ borderColor: "rgba(29,33,31,0.18)" }}>
           <Tag>ในทีมตอนนี้ · ว่างอีก {team.spotsLeft} ที่</Tag>
           <ul className="mt-3 flex flex-wrap gap-2">
@@ -138,6 +139,29 @@ function ModeStep({ draft, team, choose }: StepProps) {
         </button>
       )}
     </>
+  );
+}
+
+/**
+ * What the friend is being invited to. Invite links open straight onto this
+ * form, and most invited friends left before naming themselves (12 of 19,
+ * 24 to 25 Nov 2026), so the poster's line and the basic facts come first,
+ * with the full page a tap away. Lines reused from the poster and the quiz
+ * result page.
+ */
+function WhatItIs() {
+  return (
+    <section className="mb-6 rounded-2xl p-5" style={{ backgroundColor: EL.char, color: EL.cream }}>
+      <p className="text-pretty text-xl leading-snug" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
+        {ELEMENTAL.taglineTh[0]} {ELEMENTAL.taglineTh[1]}
+      </p>
+      <p className="mt-3 text-pretty text-sm" style={{ color: EL.creamSoft }}>
+        {ELEMENTAL.edition} Hackathon {thaiDateLine()} ออนไลน์ สำหรับ {ELEMENTAL.gradesTh} รางวัลรวม {prizeTotal()} บาท
+      </p>
+      <LegalLink href="/hackathon/elemental?src=team" className="mt-3 inline-block text-sm">
+        ดูรายละเอียดงาน
+      </LegalLink>
+    </section>
   );
 }
 
@@ -395,9 +419,9 @@ export function LegalLine() {
 }
 
 /** Opens in a new tab so the answers on this page stay put. */
-function LegalLink({ href, children }: { href: string; children: ReactNode }) {
+function LegalLink({ href, children, className = "mx-1" }: { href: string; children: ReactNode; className?: string }) {
   return (
-    <a href={href} target="_blank" rel="noopener" className="mx-1 whitespace-nowrap underline underline-offset-4">
+    <a href={href} target="_blank" rel="noopener" className={`${className} whitespace-nowrap underline underline-offset-4`}>
       {children}
     </a>
   );
