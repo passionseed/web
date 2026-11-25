@@ -59,8 +59,12 @@ export interface ElementKit {
   today: readonly KitAction[];
 }
 
-/** The kit's name everywhere: page titles, the tool heading and the story card. */
-export const KIT_TITLE_TH = "จากโทษ เป็นโจทย์";
+/**
+ * The kit's idea in its name: blame asks who is at fault, the kit asks where
+ * it goes wrong. Used for page titles, the tool heading and the story card.
+ */
+export const KIT_TITLE_PARTS = ["ใครผิด", "ผิดตรงไหน"] as const;
+export const KIT_TITLE_TH = KIT_TITLE_PARTS.join(" → ");
 
 export const PCD_REPORT: KitAction = {
   th: "เจอมลพิษแถวบ้าน โทรแจ้งกรมควบคุมมลพิษที่ 1650 หรือแจ้งทาง LINE @Traffyfondue ได้เลย",

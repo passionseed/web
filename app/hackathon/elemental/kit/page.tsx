@@ -4,7 +4,7 @@ import { ArrowRight } from "lucide-react";
 
 import { ELEMENT_DETAILS } from "@/components/hackathon/elemental/challenges";
 import { trirong } from "@/components/hackathon/elemental/fonts";
-import { EVERY_QUESTION_TH, FRAME_MOVES, KIT_TITLE_TH } from "@/components/hackathon/elemental/kit";
+import { EVERY_QUESTION_TH, FRAME_MOVES, KIT_TITLE_PARTS, KIT_TITLE_TH } from "@/components/hackathon/elemental/kit";
 import { H2, Tag, WhoCanHelp, kitLine } from "@/components/hackathon/elemental/kit/KitParts";
 import { NewsToQuestion } from "@/components/hackathon/elemental/kit/NewsToQuestion";
 import { RepairScene } from "@/components/hackathon/elemental/kit/RepairScene";
@@ -53,7 +53,10 @@ export default async function KitPage({ searchParams }: { searchParams: SearchPa
       <div className="mx-auto max-w-3xl px-6 pb-16 pt-12 sm:pt-20">
         <Tag>ELEMENTAL</Tag>
         <h1 className="mt-4 text-balance text-6xl sm:text-8xl" style={{ fontFamily: EL_FONT.display, fontWeight: 200, lineHeight: 1.05 }}>
-          {KIT_TITLE_TH}
+          <span className="block" style={{ color: EL.creamSoft, opacity: 0.55 }}>
+            {KIT_TITLE_PARTS[0]}
+          </span>
+          <span className="block">{KIT_TITLE_PARTS[1]}</span>
         </h1>
         <p className="mt-6 max-w-2xl text-pretty text-xl" style={{ color: EL.creamSoft }}>
           เคยอ่านข่าวแล้วนึกว่า “ทำไมไม่มีใครทำอะไรสักที” ไหม ลองเลือกสักข่าวจากห้าปัญหาในไทย แล้วถามว่าใครกำลังเดือดร้อนและจะช่วยเขาได้ยังไง
