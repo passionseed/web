@@ -3,7 +3,19 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 
 import type { AdminKpi, AdminKpiKey } from "@/lib/admin/console";
-import { getShiftCohortByName, type ShiftCohort } from "@/lib/content/shift-cohort";
+import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
+import { getShiftCohortByName } from "@/lib/content/shift-cohort";
+import { bangkokDate, shortDate } from "@/lib/hackathon/elemental/bangkok-date";
+import { pipelineProgress, type PipelineItem } from "@/lib/hackathon/elemental/pipeline";
+import {
+  neededPerDay,
+  seatPace,
+  summarizeRegistrations,
+  type RegistrationTotalsRow,
+} from "@/lib/hackathon/elemental/seats";
+import { ELEMENTAL_TARGETS } from "@/lib/hackathon/elemental/targets";
+import { listRegistrationTotals } from "@/lib/supabase/hackathon-event-registrations";
+import { listPipeline } from "@/lib/supabase/hackathon-pipeline";
 import {
   PAYMENT_RECORDER_ROLE,
   isRecordedByAdmin,
@@ -11,15 +23,11 @@ import {
 } from "@/lib/supabase/ceo-dashboard";
 
 import { ADMIN_OVERVIEW_TAG } from "./cache";
-import { applicationsHref, focusCohort } from "./cohort";
-import { headCount, lazyServiceDb, type ServiceDb } from "./db";
-import { embedded, readAllPages, readCount, ROW_CAP, timeoutSignal, type PagedRows } from "./query";
+import { lazyServiceDb, type ServiceDb } from "./db";
+import { readAllPages, ROW_CAP, timeoutSignal, type PagedRows } from "./query";
 import {
-  bangkokDayKey,
   bucketByBangkokDay,
-  distinctByBangkokDay,
   kpiWindows,
-  windowDistinct,
   windowTotals,
   type DayPoint,
   type KpiWindows,
@@ -33,7 +41,16 @@ const TRUNCATED_HINT = `Read capped at ${ROW_CAP.toLocaleString("en-US")} rows, 
 export interface KpiContext {
   db: () => ServiceDb;
   now: Date;
-  cohort: ShiftCohort;
+  /** Elemental sign-ups, read once and shared by the seat KPIs. */
+  registrations: () => Promise<RegistrationTotalsRow[]>;
+  /** The Elemental sponsor, voice and partner board, read once. */
+  pipeline: () => Promise<PipelineItem[]>;
+}
+
+/** Runs `load` on the first call only; later calls share the same promise. */
+function once<T>(load: () => Promise<T>): () => Promise<T> {
+  let promise: Promise<T> | null = null;
+  return () => (promise ??= load());
 }
 
 interface KpiResult {
@@ -80,34 +97,6 @@ async function readSources<T>(sources: Source<T>[]): Promise<{ rows: T[]; notes:
     ...(truncated ? [TRUNCATED_HINT] : []),
   ];
   return { rows, notes };
-}
-
-function createdAtSource(
-  db: ServiceDb,
-  table: string,
-  column: string,
-  since: string,
-  name = table,
-): Source<DayPoint> {
-  return {
-    name,
-    read: async () => {
-      const paged = await readAllPages<Record<string, string | null>>((from, to) =>
-        db
-          .from(table)
-          .select(column)
-          .gte(column, since)
-          .order(column)
-          .order("id")
-          .range(from, to)
-          .abortSignal(timeoutSignal()) as unknown as PromiseLike<{
-          data: Record<string, string | null>[] | null;
-          error: unknown;
-        }>,
-      );
-      return { ...paged, rows: paged.rows.map((row) => ({ at: row[column] })) };
-    },
-  };
 }
 
 function toAmount(value: unknown): number {
@@ -214,108 +203,46 @@ function revenueSources(db: ServiceDb, since: string): Source<DayPoint>[] {
         };
       },
     },
-  ];
-}
-
-interface ActivityPoint {
-  id: string | null | undefined;
-  at: string | null | undefined;
-}
-
-function activitySources(db: ServiceDb, since: string): Source<ActivityPoint>[] {
-  return [
     {
-      name: "map progress",
+      name: "hackathon sign-ups",
       read: async () => {
         const paged = await readAllPages<{
-          user_id: string;
-          arrived_at: string | null;
-          started_at: string | null;
-          submitted_at: string | null;
+          amount_baht: number | null;
+          paid_at: string | null;
+          created_at: string | null;
         }>((from, to) =>
           db
-            .from("student_node_progress")
-            .select("user_id, arrived_at, started_at, submitted_at")
-            .or(`arrived_at.gte.${since},started_at.gte.${since},submitted_at.gte.${since}`)
+            .from("hackathon_event_registrations")
+            .select("amount_baht, paid_at, created_at")
+            .eq("status", "paid")
+            .or(`paid_at.gte.${since},and(paid_at.is.null,created_at.gte.${since})`)
             .order("id")
             .range(from, to)
             .abortSignal(timeoutSignal()),
         );
         return {
           ...paged,
-          rows: paged.rows.flatMap((r) =>
-            [r.arrived_at, r.started_at, r.submitted_at]
-              .filter((at): at is string => !!at && at >= since)
-              .map((at) => ({ id: r.user_id, at })),
-          ),
-        };
-      },
-    },
-    {
-      name: "SHIFT round evidence",
-      read: async () => {
-        const paged = await readAllPages<{ user_id: string; submitted_at: string }>((from, to) =>
-          db
-            .from("shift_round_evidence")
-            .select("user_id, submitted_at")
-            .gte("submitted_at", since)
-            .order("submitted_at")
-            .order("id")
-            .range(from, to)
-            .abortSignal(timeoutSignal()),
-        );
-        return { ...paged, rows: paged.rows.map((r) => ({ id: r.user_id, at: r.submitted_at })) };
-      },
-    },
-    {
-      name: "SHIFT round check-ins",
-      read: async () => {
-        // No user_id on check-ins: it lives on the entry.
-        const paged = await readAllPages<{ submitted_at: string; shift_round_entries: unknown }>(
-          (from, to) =>
-            db
-              .from("shift_round_checkins")
-              .select("submitted_at, shift_round_entries!inner(user_id)")
-              .gte("submitted_at", since)
-              .order("submitted_at")
-              .order("entry_id")
-              .range(from, to)
-              .abortSignal(timeoutSignal()),
-        );
-        return {
-          ...paged,
           rows: paged.rows.map((r) => ({
-            id: embedded(r.shift_round_entries as { user_id?: string } | null)?.user_id,
-            at: r.submitted_at,
-          })),
-        };
-      },
-    },
-    {
-      name: "PathLab activities",
-      read: async () => {
-        // No user_id on activity progress: it lives on the path enrollment.
-        const paged = await readAllPages<{ updated_at: string; path_enrollments: unknown }>(
-          (from, to) =>
-            db
-              .from("path_activity_progress")
-              .select("updated_at, path_enrollments!inner(user_id)")
-              .gte("updated_at", since)
-              .order("updated_at")
-              .order("id")
-              .range(from, to)
-              .abortSignal(timeoutSignal()),
-        );
-        return {
-          ...paged,
-          rows: paged.rows.map((r) => ({
-            id: embedded(r.path_enrollments as { user_id?: string } | null)?.user_id,
-            at: r.updated_at,
+            at: r.paid_at ?? r.created_at,
+            amount: toPaymentAmount(r.amount_baht),
           })),
         };
       },
     },
   ];
+}
+
+/** Paid Elemental seats per Bangkok day: a team sign-up counts every member. */
+function seatPoints(rows: readonly RegistrationTotalsRow[]): DayPoint[] {
+  return rows
+    .filter((r) => r.status === "paid")
+    .map((r) => ({ at: r.paidAt ?? r.createdAt, amount: r.memberCount }));
+}
+
+/** "50 by 26 Nov": the seat checkpoint we are heading for, or the full target at the close. */
+function seatGoal(today: string): { seats: number; by: string } {
+  const next = ELEMENTAL_TARGETS.seats.checkpoints.find((cp) => today <= cp.by);
+  return next ?? { seats: ELEMENTAL_TARGETS.seats.target, by: ELEMENTAL_TARGETS.registrationClosesOn };
 }
 
 // ---------------------------------------------------------------------------
@@ -336,82 +263,108 @@ async function dailyKpi(
   };
 }
 
+const ELEMENTAL_HREF = "/admin/hackathon/elemental";
+
 export const KPI_DEFINITIONS: readonly KpiDefinition[] = [
+  {
+    key: "elemental_seats",
+    format: "ratio",
+    label: () => "Elemental paid seats",
+    hint: (ctx) => {
+      const goal = seatGoal(bangkokDate(ctx.now));
+      return (
+        `Paid hackathon seats out of ${ELEMENTAL_TARGETS.seats.target}; a team counts every member. ` +
+        `Next checkpoint: ${goal.seats} by ${shortDate(goal.by)}. The sparkline is seats paid per day.`
+      );
+    },
+    href: () => ELEMENTAL_HREF,
+    load: async (ctx) => {
+      const rows = await ctx.registrations();
+      const paid = summarizeRegistrations(rows, ctx.now).paidSeats;
+      const pace = seatPace(paid, bangkokDate(ctx.now));
+      const windows = kpiWindows(SERIES_DAYS, SERIES_DAYS, ctx.now);
+      const { series } = windowTotals(bucketByBangkokDay(seatPoints(rows), windows.days), windows);
+      return {
+        value: paid,
+        total: ELEMENTAL_TARGETS.seats.target,
+        previous: null,
+        series,
+        notes: [
+          pace.status === "behind"
+            ? `Behind the pace line by ${pace.behindBy}.`
+            : `On the pace line (${pace.aheadBy} ahead).`,
+        ],
+      };
+    },
+  },
+  {
+    key: "elemental_seats_per_day",
+    format: "number",
+    label: (ctx) => {
+      const goal = seatGoal(bangkokDate(ctx.now));
+      return `Seats a day needed for ${goal.seats} by ${shortDate(goal.by)}`;
+    },
+    hint: () =>
+      "Paid seats still missing for the next checkpoint, spread over the selling days left, today included. " +
+      "The sparkline is seats paid per day, to compare.",
+    href: () => ELEMENTAL_HREF,
+    load: async (ctx) => {
+      const rows = await ctx.registrations();
+      const today = bangkokDate(ctx.now);
+      const paid = summarizeRegistrations(rows, ctx.now).paidSeats;
+      const goal = seatGoal(today);
+      const perDay = neededPerDay(paid, goal.seats, today, goal.by);
+      if (perDay === null) throw new Error("sign-up has closed");
+      const windows = kpiWindows(SERIES_DAYS, SERIES_DAYS, ctx.now);
+      const { series } = windowTotals(bucketByBangkokDay(seatPoints(rows), windows.days), windows);
+      return { value: perDay, previous: null, series };
+    },
+  },
+  {
+    key: "elemental_sponsors",
+    format: "ratio",
+    label: () => "Elemental sponsors signed",
+    hint: () =>
+      `Sponsors at "signed" on the pipeline board, out of ${ELEMENTAL_TARGETS.sponsors.signed} ` +
+      `by ${shortDate(ELEMENTAL_TARGETS.sponsors.by)}.`,
+    href: () => ELEMENTAL_HREF,
+    load: async (ctx) => {
+      const progress = pipelineProgress(await ctx.pipeline());
+      return {
+        value: progress.sponsorsSigned,
+        total: progress.sponsorsTarget,
+        previous: null,
+        notes: [`${progress.sponsorsYes} said yes, ${progress.sponsorsTalking} talking.`],
+      };
+    },
+  },
+  {
+    key: "elemental_voices",
+    format: "ratio",
+    label: () => "Elements with a voice",
+    hint: () =>
+      `Elements with a speaker who said yes, out of ${ELEMENTAL_TARGETS.voices.elements} ` +
+      `by ${shortDate(ELEMENTAL_TARGETS.voices.by)}.`,
+    href: () => ELEMENTAL_HREF,
+    load: async (ctx) => {
+      const progress = pipelineProgress(await ctx.pipeline());
+      return {
+        value: progress.elementsCovered.length,
+        total: progress.voicesTarget,
+        previous: null,
+        notes: progress.elementsMissing.length ? [`Missing: ${progress.elementsMissing.join(", ")}.`] : [],
+      };
+    },
+  },
   {
     key: "revenue_30d",
     format: "baht",
     label: () => "Revenue, last 30 days",
     hint: () =>
-      "PathLab trial payments, manual payments in THB recorded by an admin, and SHIFT paid seats at list price. " +
-      "SHIFT is an estimate: the pair discount is not recorded.",
+      "Hackathon sign-ups paid, PathLab trial payments, manual payments in THB recorded by an admin, " +
+      "and SHIFT paid seats at list price. SHIFT is an estimate: the pair discount is not recorded.",
     href: () => "/admin/ceo/payments",
     load: (ctx) => dailyKpi((since) => revenueSources(ctx.db(), since), kpiWindows(30, SERIES_DAYS, ctx.now)),
-  },
-  {
-    key: "shift_seats",
-    format: "ratio",
-    label: (ctx) => `${ctx.cohort.name} paid seats`,
-    hint: (ctx) =>
-      `Applications marked paid in ${ctx.cohort.name}, out of ${ctx.cohort.seats} seats. ` +
-      "The sparkline is seats paid per day.",
-    href: (ctx) => applicationsHref(ctx.cohort.name, { status: "all", paid: "paid" }),
-    load: async (ctx) => {
-      const db = ctx.db();
-      const windows = kpiWindows(SERIES_DAYS, SERIES_DAYS, ctx.now);
-      const [paid, daily] = await Promise.all([
-        readCount(
-          headCount(db, "shift_applications")
-            .eq("cohort", ctx.cohort.name)
-            .not("paid_at", "is", null)
-            .abortSignal(timeoutSignal()),
-        ),
-        readAllPages<{ paid_at: string | null }>((from, to) =>
-          db
-            .from("shift_applications")
-            .select("paid_at")
-            .eq("cohort", ctx.cohort.name)
-            .gte("paid_at", windows.since)
-            .order("paid_at")
-            .order("id")
-            .range(from, to)
-            .abortSignal(timeoutSignal()),
-        ).catch(() => null),
-      ]);
-      const series = daily
-        ? windowTotals(
-            bucketByBangkokDay(daily.rows.map((r) => r.paid_at), windows.days),
-            windows,
-          ).series
-        : undefined;
-      return { value: paid, total: ctx.cohort.seats, previous: null, series };
-    },
-  },
-  {
-    key: "signups_7d",
-    format: "number",
-    label: () => "New signups, 7 days",
-    hint: () => "New accounts (profiles created) by Bangkok day, against the 7 days before.",
-    href: () => "/admin/users",
-    load: (ctx) =>
-      dailyKpi(
-        (since) => [createdAtSource(ctx.db(), "profiles", "created_at", since, "profiles")],
-        kpiWindows(7, SERIES_DAYS, ctx.now),
-      ),
-  },
-  {
-    key: "active_learners_7d",
-    format: "number",
-    label: () => "Active learners, 7 days (web)",
-    hint: () =>
-      "Distinct people with learning map, PathLab or SHIFT round activity on the web. " +
-      "The mobile app is not counted.",
-    href: () => "/admin/analytics",
-    load: async (ctx) => {
-      const windows = kpiWindows(7, SERIES_DAYS, ctx.now);
-      const { rows, notes } = await readSources(activitySources(ctx.db(), windows.since));
-      const totals = windowDistinct(distinctByBangkokDay(rows, windows.days), windows);
-      return { ...totals, notes };
-    },
   },
   {
     key: "new_leads_7d",
@@ -444,21 +397,6 @@ export const KPI_DEFINITIONS: readonly KpiDefinition[] = [
         kpiWindows(7, SERIES_DAYS, ctx.now),
       ),
   },
-  {
-    key: "pathlab_enrollments_7d",
-    format: "number",
-    label: () => "PathLab enrollments, 7 days",
-    hint: () => "Learning map enrollments plus PathLab path enrollments.",
-    href: () => "/admin/maps",
-    load: (ctx) =>
-      dailyKpi(
-        (since) => [
-          createdAtSource(ctx.db(), "user_map_enrollments", "enrolled_at", since, "map enrollments"),
-          createdAtSource(ctx.db(), "path_enrollments", "enrolled_at", since, "path enrollments"),
-        ],
-        kpiWindows(7, SERIES_DAYS, ctx.now),
-      ),
-  },
 ];
 
 function hintWith(base: string, notes: string[] = []): string {
@@ -470,7 +408,8 @@ export async function computeAdminKpis(now: Date = new Date()): Promise<AdminKpi
   const ctx: KpiContext = {
     db: lazyServiceDb(),
     now,
-    cohort: focusCohort(bangkokDayKey(now) ?? undefined),
+    registrations: once(() => listRegistrationTotals(ELEMENTAL.slug)),
+    pipeline: once(() => listPipeline(ELEMENTAL.slug)),
   };
   const settled = await Promise.allSettled(KPI_DEFINITIONS.map((def) => def.load(ctx)));
   return KPI_DEFINITIONS.map((def, i) => {
@@ -483,7 +422,6 @@ export async function computeAdminKpis(now: Date = new Date()): Promise<AdminKpi
       hint: def.hint(ctx),
       href: def.href(ctx),
     };
-    if (def.key === "shift_seats") base.total = ctx.cohort.seats;
     if (result.status === "rejected") return base;
     const { value, previous, series, total, notes } = result.value;
     return {
@@ -512,7 +450,7 @@ const cachedAdminKpis = unstable_cache(
   { revalidate: 300, tags: [ADMIN_OVERVIEW_TAG] },
 );
 
-/** The six overview KPIs with trends. Never throws. */
+/** The overview KPIs, led by the current focus (the Elemental hackathon). Never throws. */
 export async function getAdminKpis(): Promise<AdminKpi[]> {
   try {
     return await cachedAdminKpis();

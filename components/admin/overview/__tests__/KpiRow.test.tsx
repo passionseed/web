@@ -26,7 +26,7 @@ const KPIS: AdminKpi[] = [
     href: "/admin/ceo/payments",
   },
   {
-    key: "shift_seats",
+    key: "elemental_seats",
     label: "SHIFT[3] seats paid",
     value: 12,
     total: 30,
@@ -34,7 +34,7 @@ const KPIS: AdminKpi[] = [
     href: "/admin/shift/applications",
   },
   {
-    key: "signups_7d",
+    key: "elemental_seats_per_day",
     label: "Sign-ups, 7 days",
     value: 1234,
     previous: 1300,
