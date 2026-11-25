@@ -20,6 +20,7 @@ export const FUNNEL_STEPS = [
   { key: "step:school", label: "Age and school" },
   { key: "step:parent", label: "Parent consent", optional: true },
   { key: "step:contact", label: "Contact" },
+  { key: "step:heard", label: "Where they saw the post" },
   { key: "step:review", label: "Review and agree" },
   { key: "submitted", label: "Signed up" },
   { key: "pay", label: "Opened pay page" },

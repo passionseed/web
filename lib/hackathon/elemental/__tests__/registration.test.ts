@@ -87,3 +87,19 @@ describe("normalizeSource", () => {
     expect(normalizeSource("")).toBeUndefined();
   });
 });
+
+describe("registrationSchema heardFrom", () => {
+  it("accepts each listed answer", () => {
+    for (const heardFrom of ["passion_seed", "next_decade", "doodee_future", "contester", "camp_hub", "other"]) {
+      expect(registrationSchema.safeParse({ ...base, members: [adult], heardFrom }).success).toBe(true);
+    }
+  });
+
+  it("rejects an answer that is not listed", () => {
+    expect(registrationSchema.safeParse({ ...base, members: [adult], heardFrom: "tiktok" }).success).toBe(false);
+  });
+
+  it("still accepts a sign-up without it (older cached forms)", () => {
+    expect(registrationSchema.safeParse({ ...base, members: [adult] }).success).toBe(true);
+  });
+});

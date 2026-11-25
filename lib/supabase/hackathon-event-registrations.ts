@@ -157,6 +157,7 @@ export async function createRegistration(
       no_refund_ack: input.noRefundAck,
       contact_after_consent: input.contactAfterConsent,
       source: input.source ?? null,
+      heard_from: input.heardFrom ?? null,
       utm: input.utm ?? null,
     })
     .select("id, pay_token")

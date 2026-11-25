@@ -1,4 +1,5 @@
 import { ADULT_AGE } from "@/lib/hackathon/elemental/registration";
+import { HEARD_FROM_VALUES } from "@/lib/hackathon/elemental/heard-from";
 import { isRudeTeamName } from "@/lib/hackathon/elemental/team-name";
 
 /**
@@ -22,6 +23,7 @@ export type Draft = {
   email: string;
   phone: string;
   lineId: string;
+  heardFrom: string;
   wantsTeam: boolean;
   noRefund: boolean;
   contactAfter: boolean;
@@ -40,12 +42,13 @@ export const emptyDraft = (mode: Mode | null = null): Draft => ({
   email: "",
   phone: "",
   lineId: "",
+  heardFrom: "",
   wantsTeam: true,
   noRefund: false,
   contactAfter: false,
 });
 
-export type StepKey = "mode" | "team" | "name" | "school" | "parent" | "contact" | "review";
+export type StepKey = "mode" | "team" | "name" | "school" | "parent" | "contact" | "heard" | "review";
 
 export type Errors = Partial<Record<keyof Draft, string>>;
 
@@ -57,7 +60,7 @@ export function stepsFor(d: Draft): StepKey[] {
   if (d.mode === "create") steps.push("team");
   steps.push("name", "school");
   if (d.age === "" || isMinor(d)) steps.push("parent");
-  steps.push("contact", "review");
+  steps.push("contact", "heard", "review");
   return steps;
 }
 
@@ -107,6 +110,9 @@ export function validateStep(step: StepKey, d: Draft): Errors {
       else if (!EMAIL_RE.test(d.email.trim())) e.email = "ใส่อีเมลที่ใช้ได้";
       if (!PHONE_RE.test(cleanPhone(d.phone))) e.phone = "ใส่เบอร์โทร 10 หลัก";
       break;
+    case "heard":
+      if (!(HEARD_FROM_VALUES as string[]).includes(d.heardFrom)) e.heardFrom = "เลือกก่อนไปต่อ";
+      break;
     case "review":
       if (!d.noRefund) e.noRefund = "ติ๊กเพื่อรับทราบก่อนสมัคร";
       break;
@@ -127,6 +133,7 @@ export function stepForServerPath(path: (string | number)[]): StepKey {
   if (key === "age" || key === "school") return "school";
   if (key.startsWith("parent")) return "parent";
   if (key.startsWith("contact")) return "contact";
+  if (key === "heardFrom") return "heard";
   return "review";
 }
 
@@ -155,6 +162,7 @@ export function registrationBody(d: Draft, inviteCode: string | undefined, sourc
     wantsTeamMatching: mode === "solo" && d.wantsTeam,
     noRefundAck: d.noRefund,
     contactAfterConsent: d.contactAfter,
+    heardFrom: d.heardFrom || undefined,
     source,
     utm,
   };
