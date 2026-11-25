@@ -48,11 +48,11 @@ export default function CelebrationPage() {
         return () => clearTimeout(timer);
     }, []);
 
-    // Count-up animation for 800
+    // Count-up animation for 872 sign-ups
     useEffect(() => {
         if (!showContent || !countRef.current) return;
         const el = countRef.current;
-        const target = 800;
+        const target = 872;
         const duration = 2200;
         const start = Date.now();
         const tick = () => {
@@ -205,7 +205,7 @@ export default function CelebrationPage() {
                         </div>
                     )}
 
-                    {/* 800 counter */}
+                    {/* 872 counter */}
                     {showContent && (
                         <div
                             className="animate-fadeUp"
@@ -234,12 +234,6 @@ export default function CelebrationPage() {
                                         }}
                                     >
                                         0
-                                    </span>
-                                    <span
-                                        className="text-3xl md:text-4xl font-semibold mb-3 text-[#91C4E3]"
-                                        style={{ textShadow: "0 0 20px rgba(145,196,227,0.6)" }}
-                                    >
-                                        +
                                     </span>
                                 </div>
                                 <p

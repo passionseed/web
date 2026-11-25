@@ -24,9 +24,9 @@ export default function RegistrationClosedPage() {
     }
   }, []);
 
-  // Count-up to 800
+  // Count-up to 872 sign-ups
   useEffect(() => {
-    const target = 800;
+    const target = 872;
     const duration = 1800;
     const start = performance.now();
     function tick(now: number) {
@@ -190,15 +190,6 @@ export default function RegistrationClosedPage() {
               >
                 {count}
               </span>
-              <span
-                style={{
-                  fontSize: "clamp(1.5rem, 6vw, 4rem)",
-                  color: "#65ABFC",
-                  fontWeight: 900,
-                  lineHeight: 1.25,
-                  paddingBottom: "0.08em",
-                }}
-              >+</span>
             </div>
             <p
               className="tracking-widest font-semibold"

@@ -242,19 +242,38 @@ const MISSION_ICONS: IconName[] = ["magnifier", "person", "sprout"];
 
 /**
  * PassionSeed's work so far. Source: company-brain main (events.md,
- * history.md, numbers.md "Past events"; Angpao, 2026-11-20).
+ * history.md, numbers.md "Past events"; Angpao, 2026-11-20). Last edition
+ * counts sign-ups (872, Supabase): the 800 in numbers.md is wrong (Bunyasit, 2026-11-25).
  */
 const HISTORY: [string, string, string, string | null][] = [
   ["2568", "ค่าย TechSeed", "ค่ายลงมือทำโปรเจกต์ 4 รุ่น (TechSeed #2–#5)", null],
   ["ก.ย. 2568", "COE PSU Open House", "ร่วมกับมหาวิทยาลัยสงขลานครินทร์ เวิร์กช็อปออนไลน์ 300 ที่นั่ง", "/hackathon/elemental/sponsor/past-coe-psu.webp"],
   ["2568", "BizSeed", "ร่วมกับ CSII", "/hackathon/elemental/sponsor/past-bizseed.webp"],
-  ["ก.พ.–มิ.ย. 2569", "The Next Decade ครั้งแรก", "แฮกกาธอนด้านสุขภาพ ผู้เข้าร่วม 800 คน", "/hackathon/elemental/sponsor/past-next-decade.webp"],
+  ["ก.พ.–มิ.ย. 2569", "The Next Decade ครั้งแรก", "แฮกกาธอนด้านสุขภาพ ผู้สมัคร 872 คน", "/hackathon/elemental/sponsor/past-next-decade.webp"],
   ["ก.ย. 2569", "ค่าย SHIFT", "ค่าย 7 วัน ลงมือทำโปรเจกต์ให้คนจริงใช้", "/hackathon/elemental/sponsor/past-shift.webp"],
   ["ธ.ค. 2569", "Elemental Hackathon", "The Next Decade ครั้งที่ 2", "/hackathon/poster/elemental/sheets/elemental-key.webp"],
 ];
 
 /** The public gallery of last edition's projects. Absolute, so the links also work in the PDF. */
 const GALLERY = "https://www.passionseed.org/hackathon/gallery";
+
+/**
+ * Last edition from sign-up to final, and the mentoring behind it. Source:
+ * company-brain numbers.md "Past events" (Supabase totals read 2026-11-25;
+ * rounds from the participants' LINE group, shared by Big 2026-11-25) and
+ * events.md for the dates.
+ */
+const PAST_FUNNEL: [string, string, string, IconName, string][] = [
+  ["872", "ผู้สมัคร", "86% เป็นนักเรียน ม.ปลาย", "person", EL.toxicCyan],
+  ["221", "ทีม", "ทีมละ 2–5 คน", "people", EL.toxicGreen],
+  ["30", "ทีมผ่านเข้ารอบ", "รอบแรกและรอบสอง 29 พ.ค.–7 มิ.ย.", "chart", EL.toxicYellow],
+  ["10", "ทีมเข้ารอบชิงชนะเลิศ", "นำเสนอที่ ZenicHub 20 มิ.ย.", "megaphone", EL.flame],
+];
+const PAST_SUPPORT: [string, string, IconName, string][] = [
+  ["22", "เมนเทอร์ที่ให้คำปรึกษาทีม", "bubble", EL.toxicCyan],
+  ["81", "นัดเมนเทอร์ที่ยืนยันแล้ว จาก 52 ทีม", "calendar", EL.toxicGreen],
+  ["7", "ผลงานในแกลเลอรีบน passionseed.org", "frame", EL.toxicYellow],
+];
 
 /**
  * Projects from last edition, from the public gallery at
@@ -688,7 +707,7 @@ export function SponsorDeck() {
               </>
             }
           />
-          <Stat light big={<span className="text-[34px] sm:text-[44px]">800</span>} label="ผู้เข้าร่วม The Next Decade ครั้งแรก (2569)" />
+          <Stat light big={<span className="text-[34px] sm:text-[44px]">872</span>} label="ผู้สมัคร The Next Decade ครั้งแรก (2569)" />
           <Stat light big={<span className="whitespace-nowrap text-[30px] sm:text-[36px]">HK Tech 300</span>} label="ผู้ร่วมก่อตั้ง Bunyasit Fang ชนะ HK Tech 300 Southeast Asia Start-up Competition (2567) ในฐานะ CEO ของ Portex Innovation" />
         </div>
         <ol className="relative m-0 mt-8 grid list-none grid-cols-2 gap-x-4 gap-y-6 p-0 md:grid-cols-6" style={{ fontFamily: EL_FONT.display }}>
@@ -720,15 +739,43 @@ export function SponsorDeck() {
         <Tag n="08 PAST EVENT" />
         <H2>{ELEMENTAL.series} ครั้งที่ผ่านมา</H2>
         <p className="m-0 mt-2 text-[16px]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, color: EL.creamSoft }}>
-          หัวข้อ Preventive &amp; Predictive Healthcare · นักเรียนมัธยมปลายและนักศึกษา · ก.พ.–มิ.ย. 2569
+          หัวข้อ Preventive &amp; Predictive Healthcare · นักเรียนมัธยมปลายและนักศึกษา · ก.พ.–มิ.ย. 2569 · เวิร์กช็อป 8 เม.ย.–28 พ.ค.
         </p>
-        <div className="mt-6 grid grid-cols-2 gap-6 sm:grid-cols-4">
-          <Stat big="800" label="ผู้เข้าร่วม" icon={<PixelIcon name="person" color={EL.toxicCyan} size={38} />} />
-          <Stat big="229" label="ทีมที่ลงทะเบียน" icon={<PixelIcon name="people" color={EL.toxicGreen} size={38} />} />
-          <Stat big="3" label="เดือนที่ทีมพัฒนาผลงาน" icon={<PixelIcon name="calendar" color={EL.flame} size={38} />} />
-          <Stat big="7" label="ผลงานในแกลเลอรีบน passionseed.org" icon={<PixelIcon name="frame" color={EL.toxicYellow} size={38} />} />
+        <ol className="m-0 mt-5 grid list-none grid-cols-2 gap-x-6 gap-y-5 p-0 md:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr]" style={{ fontFamily: EL_FONT.display }}>
+          {PAST_FUNNEL.flatMap(([big, label, note, icon, color], i) => [
+            i > 0 ? (
+              <li key={`arrow-${i}`} aria-hidden="true" className="hidden items-center md:flex">
+                <PixelArrow color={EL.creamSoft} />
+              </li>
+            ) : null,
+            <li key={label} className="border-t-2 pt-4" style={{ borderColor: i === PAST_FUNNEL.length - 1 ? EL.flame : EL.cream }}>
+              <div className="flex items-center justify-between gap-3 text-[40px] leading-[1.1] sm:text-[54px]" style={{ fontWeight: 200 }}>
+                <span>{big}</span>
+                <PixelIcon name={icon} color={color} size={38} />
+              </div>
+              <div className="mt-2 text-[17px]" style={{ fontWeight: 400 }}>
+                {label}
+              </div>
+              <div className="mt-1 text-[14px] leading-[1.5]" style={{ fontWeight: 300, color: EL.creamSoft }}>
+                {note}
+              </div>
+            </li>,
+          ])}
+        </ol>
+        <div className="mt-5 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-3" style={{ fontFamily: EL_FONT.display }}>
+          {PAST_SUPPORT.map(([big, label, icon, color]) => (
+            <div key={label} className="flex items-center gap-3 border-t py-2" style={{ borderColor: LINE_DARK }}>
+              <PixelIcon name={icon} color={color} size={26} />
+              <span className="text-[28px] leading-none" style={{ fontWeight: 300 }}>
+                {big}
+              </span>
+              <span className="text-[15px] leading-[1.5]" style={{ fontWeight: 300, color: EL.creamSoft }}>
+                {label}
+              </span>
+            </div>
+          ))}
         </div>
-        <p className="m-0 mt-8 text-[15px]" style={{ fontFamily: EL_FONT.display, color: EL.creamSoft }}>
+        <p className="m-0 mt-6 text-[15px]" style={{ fontFamily: EL_FONT.display, color: EL.creamSoft }}>
           ตัวอย่างผลงาน
           <Draft>สรุปโดย Claude</Draft>
         </p>
@@ -758,7 +805,7 @@ export function SponsorDeck() {
             </a>
           ))}
         </div>
-        <p className="m-0 mt-8 text-[15px]" style={{ fontFamily: EL_FONT.display, color: EL.creamSoft }}>
+        <p className="m-0 mt-6 text-[15px]" style={{ fontFamily: EL_FONT.display, color: EL.creamSoft }}>
           ผู้สนับสนุนและพันธมิตรครั้งที่ผ่านมา
           <Draft>ยืนยันการใช้โลโก้</Draft>
         </p>

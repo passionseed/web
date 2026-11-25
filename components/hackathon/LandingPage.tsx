@@ -1008,7 +1008,7 @@ function LandingPageInner({ isLoggedIn }: LandingPageProps) {
                                     {L("All products are ready to explore", "ผลงานทั้งหมดพร้อมให้สำรวจแล้ว")}
                                 </h2>
                                 <p className="text-lg text-gray-300 max-w-xl mx-auto leading-relaxed">
-                                    {L("9 problems, 800+ participants built real health products. Find the one that matters to you.", "9 ปัญหา 800+ ผู้เข้าแข่งขัน สร้างผลิตภัณฑ์ที่แก้ปัญหาสุขภาพจริง หาผลงานที่ตรงกับคุณ")}
+                                    {L("872 people signed up to build real health products across 9 problems. Find the one that matters to you.", "ผู้สมัคร 872 คน สร้างผลิตภัณฑ์ที่แก้ปัญหาสุขภาพจริงใน 9 ปัญหา หาผลงานที่ตรงกับคุณ")}
                                 </p>
                                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
                                     <Link

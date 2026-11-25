@@ -111,7 +111,7 @@ const HISTORY: [string, string, string, string | null, boolean][] = [
   ["2025", "TechSeed camps", "4 project camps (TechSeed #2–#5)", null, false],
   ["Sep 2025", "COE PSU Open House", "With Prince of Songkla University, an online workshop for 300", "/hackathon/elemental/sponsor/past-coe-psu.webp", false],
   ["2025", "BizSeed", "With CSII", "/hackathon/elemental/sponsor/past-bizseed.webp", true],
-  ["Feb–Jun 2026", "The Next Decade, 1st edition", "A health hackathon with 800 participants", "/hackathon/elemental/sponsor/past-next-decade.webp", false],
+  ["Feb–Jun 2026", "The Next Decade, 1st edition", "A health hackathon with 872 sign-ups", "/hackathon/elemental/sponsor/past-next-decade.webp", false],
   ["Sep 2026", "SHIFT camp", "7 days building projects real people use", "/hackathon/elemental/sponsor/past-shift.webp", false],
   ["Dec 2026", "Elemental Hackathon", "The Next Decade, 2nd edition", "/hackathon/poster/elemental/sheets/elemental-key.webp", false],
 ];
@@ -290,7 +290,7 @@ export function CsiiDeck() {
         <div className="mt-8 grid grid-cols-1 gap-12 lg:grid-cols-[1fr_1.1fr]">
           <div className="grid grid-cols-2 gap-x-8 gap-y-6">
             <Stat big="350+" label="participants (target)" />
-            <Stat big="800" label="joined the 1st edition of The Next Decade (2026)" />
+            <Stat big="872" label="signed up for the 1st edition of The Next Decade (2026)" />
             <Stat big={`${ELEMENTAL.teamMin}–${ELEMENTAL.teamMax}`} label="people per team, M.3 to M.6, from across Thailand" />
             <Stat big={baht(ELEMENTAL.prizeTotalBaht)} label="in prizes, cash and Claude credit" />
           </div>
