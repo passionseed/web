@@ -50,7 +50,19 @@ export function nextHeadline(step: NextStep): string {
   }
 }
 
-/** The one line under the headline: the mentor's words, where the quest stands, or which quest it is. */
+/** Which quest it is, in a few words: "เควสต์หลัก 1 จาก 7", "เควสต์เสริม", or the student's own. */
+function questLabel(step: NextStep): string | null {
+  if (step.milestone != null) return NEXT_STEP.main(step.milestone);
+  if (step.kindOfQuest === "side") return NEXT_STEP.side;
+  if (step.kindOfQuest === "proposed") return NEXT_STEP.proposed;
+  return null;
+}
+
+/**
+ * The one line under the headline: the mentor's words, where the quest
+ * stands, the day's aim, or what the quest asks the student to do in the
+ * real world (step.todo). Which quest it is only when there is nothing better.
+ */
 export function nextLine(step: NextStep, intended: string | null = null): string | null {
   switch (step.kind) {
     case "answer":
@@ -69,10 +81,21 @@ export function nextLine(step: NextStep, intended: string | null = null): string
     case "start":
       break;
   }
-  if (step.milestone != null) return NEXT_STEP.main(step.milestone);
-  if (step.kindOfQuest === "side") return NEXT_STEP.side;
-  if (step.kindOfQuest === "proposed") return NEXT_STEP.proposed;
-  return null;
+  // The quest's action is for work to start or carry on; a mentor's question without words just names the quest.
+  const todo = step.kind === "start" || step.kind === "go" || step.kind === "retry" ? step.todo : null;
+  return todo ?? questLabel(step);
+}
+
+/**
+ * DRAFT: the small line under that one, on a quest to start or carry on:
+ * which quest it is and, for a main quest, what passing it does. Null where
+ * the line above already says which quest, and on every other kind of step.
+ */
+export function nextMeta(step: NextStep, intended: string | null = null): string | null {
+  if (step.kind !== "start" && step.kind !== "go" && step.kind !== "retry") return null;
+  const label = questLabel(step);
+  if (!label || nextLine(step, intended) === label) return null;
+  return step.milestone != null ? NEXT_STEP.payoff(step.milestone) : label;
 }
 
 /** The card's one button, in the student's words for what the tap does; null with nothing to tap. */
@@ -97,8 +120,9 @@ export function nextAction(step: NextStep): string | null {
 
 /**
  * The island's one gold element and its one main action, at the bottom of the
- * screen: the next step (nextStep), said in one headline and one line, with
- * one verb button that says what the tap does. With nothing to tap (work
+ * screen: the next step (nextStep), said in one headline, one line (on a quest
+ * to start or carry on, what it asks the student to do) and a small line on
+ * what passing it does, with one verb button that says what the tap does. With nothing to tap (work
  * waiting on a mentor, nothing else free) the card is plain words.
  */
 export function NextStepCard({ board, step, intended = null, pending = false, onTap }: NextStepCardProps) {
@@ -106,6 +130,7 @@ export function NextStepCard({ board, step, intended = null, pending = false, on
   const icon: IconKey = view?.icon ?? "moon";
   const grid = iconGrid(icon);
   const line = nextLine(step, intended);
+  const meta = nextMeta(step, intended);
   const label = nextAction(step);
 
   return (
@@ -117,7 +142,8 @@ export function NextStepCard({ board, step, intended = null, pending = false, on
         </span>
         <span className={styles.keynoteText}>
           <span className={styles.keynoteTitle}>{keepCounts(nextHeadline(step))}</span>
-          {line ? <span className={styles.keynoteLine}>{line}</span> : null}
+          {line ? <span className={styles.keynoteLine}>{keepCounts(line)}</span> : null}
+          {meta ? <span className={styles.keynoteMeta}>{meta}</span> : null}
         </span>
       </div>
       {label ? (

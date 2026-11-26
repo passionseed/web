@@ -6,6 +6,7 @@
 import { keynoteQuest, mainTileStatus, starterQuest, type BoardRef } from "@/lib/supabase/shift-quests/board";
 import type { QuestBoard } from "@/lib/supabase/shift-quests/types";
 
+import { questTodo } from "./copy";
 import { canStart, questView, type QuestKind, type QuestView } from "./model";
 
 export type NextStepKind =
@@ -37,6 +38,8 @@ export interface NextStep {
   kindOfQuest: QuestKind | null;
   /** The headline's quest title ("" when there is none). */
   title: string;
+  /** What the quest asks the student to do in the real world, in one short line (questTodo); null when it has none. */
+  todo: string | null;
   /** Main quests only: 1..7. */
   milestone: number | null;
   /** The student's own instance, so the day's check-in is filed under it. Null before a quest is started. */
@@ -92,6 +95,7 @@ function stepFor(
     ref,
     kindOfQuest: view.kind,
     title: view.title,
+    todo: questTodo(view.kind, view.slug, view.purpose),
     milestone: ref.kind === "main" ? ref.milestone : null,
     // A retry starts a new round: the old instance is closed.
     instanceId: kind === "retry" ? null : view.instanceId,
@@ -129,6 +133,7 @@ export function nextStep(board: QuestBoard, day: IslandDay): NextStep | null {
         ref: null,
         kindOfQuest: null,
         title: "",
+        todo: null,
         milestone: null,
         instanceId: null,
         feedback: null,

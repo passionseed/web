@@ -546,6 +546,16 @@
   opacity: 0.86;
 }
 
+/* The small line under it: which quest, and what passing it does. Quieter than the line, never gold. */
+.keynoteMeta {
+  font-size: 12px;
+  /* If it wraps on a narrow phone, never a word alone on the second line. */
+  text-wrap: pretty;
+  line-height: 1.5;
+  color: var(--isl-cream);
+  opacity: 0.64;
+}
+
 /* ---------------------------------------------------------------- results (the envelope) */
 
 .results {

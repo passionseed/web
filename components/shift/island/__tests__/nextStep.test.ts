@@ -1,7 +1,8 @@
 import type { BoardMain, QuestBoard, QuestMine } from "@/lib/supabase/shift-quests/types";
 
-import { IDS, MAIN_TITLES, makeBoard } from "../__fixtures__/board";
-import { nextAction, nextLine, nextHeadline } from "../NextStepCard";
+import { IDS, MAIN_SLUGS, MAIN_TITLES, makeBoard } from "../__fixtures__/board";
+import { QUEST_TODO, questTodo } from "../copy";
+import { nextAction, nextLine, nextHeadline, nextMeta } from "../NextStepCard";
 import { nextStep } from "../nextStep";
 
 const OPEN_DAY = { tapsToday: 0, resting: false };
@@ -40,7 +41,9 @@ describe("nextStep", () => {
     const step = nextStep(fresh(), OPEN_DAY);
     expect(step).toMatchObject({ kind: "start", ref: { kind: "main", milestone: 1 }, title: MAIN_TITLES[0], instanceId: null, checksIn: true });
     expect(nextHeadline(step!)).toBe(`เริ่มที่: ${MAIN_TITLES[0]}`);
-    expect(nextLine(step!)).toBe("เควสต์หลัก 1 จาก 7");
+    // What the quest asks in the real world, then which quest it is and what passing it does.
+    expect(nextLine(step!)).toBe("คุยกับคนที่เจอปัญหานี้จริง 1 คน แค่ 10 นาที");
+    expect(nextMeta(step!)).toBe("เควสต์หลัก 1/7 · พี่เลี้ยงให้ผ่าน ต้นไม้ของทีมโต");
   });
 
   it("goes straight to the quest once the day's check-in is in", () => {
@@ -57,7 +60,23 @@ describe("nextStep", () => {
   it("shows back what the student meant to do today, after the check-in only", () => {
     const board = active(fresh(), 1, IDS.m2Instance);
     expect(nextLine(nextStep(board, DONE_DAY)!, "คุยกับแม่ค้า")).toBe("เป้าวันนี้: คุยกับแม่ค้า");
-    expect(nextLine(nextStep(board, OPEN_DAY)!, "คุยกับแม่ค้า")).toBe("เควสต์หลัก 1 จาก 7");
+    expect(nextMeta(nextStep(board, DONE_DAY)!, "คุยกับแม่ค้า")).toBe("เควสต์หลัก 1/7 · พี่เลี้ยงให้ผ่าน ต้นไม้ของทีมโต");
+    expect(nextLine(nextStep(board, OPEN_DAY)!, "คุยกับแม่ค้า")).toBe(QUEST_TODO[MAIN_SLUGS[0]]);
+  });
+
+  it("gives every main quest its own action line on the card", () => {
+    for (const slug of MAIN_SLUGS) expect(QUEST_TODO[slug]).toBeTruthy();
+    // No em dash in student copy.
+    for (const line of Object.values(QUEST_TODO)) expect(line).not.toMatch(/\u2014/);
+  });
+
+  it("falls back to a short purpose for a quest with no action line, and to which quest it is with neither", () => {
+    expect(questTodo("side", "side-unknown", "  ถามเพื่อน 5 คน  ")).toBe("ถามเพื่อน 5 คน");
+    expect(questTodo("side", "side-unknown", "ก".repeat(61))).toBeNull();
+    expect(questTodo("proposed", "meet-one-real-person", "ให้เพื่อนหาร้านได้")).toBe("ให้เพื่อนหาร้านได้");
+    const step = nextStep(fresh(), OPEN_DAY)!;
+    expect(nextLine({ ...step, todo: null })).toBe("เควสต์หลัก 1 จาก 7");
+    expect(nextMeta({ ...step, todo: null })).toBeNull();
   });
 
   it("puts a mentor's question first, with their words", () => {
@@ -69,6 +88,8 @@ describe("nextStep", () => {
     expect(step).toMatchObject({ kind: "answer", ref: { kind: "main", milestone: 2 }, feedback: "ขอรูปอีกนิด" });
     expect(nextHeadline(step!)).toBe(`ตอบพี่เลี้ยง: ${MAIN_TITLES[1]}`);
     expect(nextLine(step!)).toBe("พี่เลี้ยงบอกว่า: ขอรูปอีกนิด");
+    // The mentor's question is the whole card: no payoff line under it.
+    expect(nextMeta(step!)).toBeNull();
   });
 
   it("while work waits on a mentor, points at a main quest to start meanwhile", () => {

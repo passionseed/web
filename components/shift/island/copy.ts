@@ -361,6 +361,8 @@ export const NEXT_STEP = {
   resting: "กำลังพัก",
   /** The line under the headline. */
   main: (milestone: number) => `เควสต์หลัก ${milestone} จาก 7`,
+  /** DRAFT: the small line under the quest's action (QUEST_TODO): which main quest, and what passing it does. */
+  payoff: (milestone: number) => `เควสต์หลัก ${milestone}/7 · พี่เลี้ยงให้ผ่าน ต้นไม้ของทีมโต`,
   side: "เควสต์เสริม",
   proposed: "เควสต์ที่คุณเสนอ",
   said: (text: string) => `พี่เลี้ยงบอกว่า: ${text}`,
@@ -498,8 +500,12 @@ export const DETAIL = {
   /** Where the quest stands, as five dots under its title. */
   stepper: ["เริ่ม", "ทำ", "ส่ง", "พี่เลี้ยงดู", "ผ่าน"] as const,
   stepperLabel: (step: string) => `สถานะเควสต์นี้: ${step}`,
-  /** The one fold for everything that helps but is not the task (steps, examples, words, lore). */
-  helpers: "รายละเอียดและตัวช่วย",
+  /**
+   * DRAFT: the one fold, for what is neither the task nor how to do it (what
+   * to send, the question, words, lore). How to do it (steps, examples,
+   * pitfalls, ตัวช่วย) sits open on the page.
+   */
+  helpers: "รายละเอียดเพิ่มเติม",
   /** The bar's one button once this quest needs nothing more from the student. */
   next: "ไปเควสต์ถัดไป",
   toOpen: "ไปเควสต์ที่ทำได้ตอนนี้",
@@ -954,6 +960,33 @@ export const QUEST_FLAVOR: Readonly<Record<string, string>> = {
   "side-review-a-friend": "คำติชมที่ดี ช่วยให้ต้นของเพื่อนโตต่อได้",
   "side-share-a-lesson": "สิ่งที่คุณเพิ่งเรียนรู้ อาจเป็นทางลัดของคนถัดไป",
 };
+
+/**
+ * DRAFT: what each main quest asks the student to do in the real world, in
+ * one short line, for the next-step card (NextStepCard). The headline names
+ * the quest; this line says the action, so the card's one button is never a
+ * leap in the dark. From each quest's purpose
+ * (20261115090000_shift_quests_pitfall_map.sql), cut to fit the card.
+ */
+export const QUEST_TODO: Readonly<Record<string, string>> = {
+  "meet-one-real-person": "คุยกับคนที่เจอปัญหานี้จริง 1 คน แค่ 10 นาที",
+  "real-stories-not-compliments": "คุยกับคนที่เจอปัญหานี้อีก 3 คน ถามถึงเรื่องที่เกิดขึ้นจริง",
+  "first-partner": "ชวนคนหนึ่งคนให้ตกลงลองขั้นต่อไปกับคุณ แบบมีวันนัด",
+  "in-their-hands": "ทำชิ้นเล็กที่สุด แล้วให้เขาลองเองภายใน 7 วัน",
+  "run-the-loop": "แก้เรื่องที่เขาติดบ่อยที่สุด แล้วให้คนเดิมลองอีกรอบ",
+  "what-we-learned": "เขียน 3 บรรทัด: เคยเชื่อ เจอจริง จะทำต่อ แล้วเล่าให้คนหนึ่งคนฟัง",
+  "beyond-the-first": "ให้คนที่ไม่รู้จักคุณลองใช้เอง โดยคุณไม่ต้องอธิบาย",
+};
+
+/** A purpose this short fits the card as it is (side and proposed quests have no QUEST_TODO line). */
+const TODO_FROM_PURPOSE = 60;
+
+/** The card's action line for a quest: its QUEST_TODO line, else a purpose short enough to fit, else null. */
+export function questTodo(kind: "main" | "side" | "proposed", slug: string | null | undefined, purpose: string): string | null {
+  if (kind !== "proposed" && slug && Object.hasOwn(QUEST_TODO, slug)) return QUEST_TODO[slug];
+  const short = purpose.trim();
+  return short && short.length <= TODO_FROM_PURPOSE ? short : null;
+}
 
 /** The quest's flavor line, or null for a proposed quest or a slug without one. */
 export function questFlavor(kind: "main" | "side" | "proposed", slug: string | null | undefined): string | null {

@@ -375,9 +375,8 @@ function QuestDetailBody({
   const canAsk = action.kind !== "locked" && action.kind !== "done" && action.kind !== "closed";
   // The day's intention belongs to work the student is doing now.
   const working = !!quest.instanceId && !!quest.mine && (quest.status === "active" || quest.status === "clarification");
-  // Main and side quests always bring something (steps, words, the side quests that help); a proposal may not.
-  const hasHelpers =
-    quest.kind !== "proposed" || !!more || !!flavor || steps.length + terms.length + pitfalls.length + examples.length > 0;
+  // The fold keeps what is neither the task nor how to do it: the details, the words, the lore.
+  const hasMore = !!more || !!flavor || terms.length > 0;
 
   return (
     <div className={styles.detail}>
@@ -409,6 +408,19 @@ function QuestDetailBody({
 
       {/* The tick hint only means something once notes can light it: a linked canvas, or the ownership checklist. */}
       <DoneWhen guide={guide} hints={hints} evidence={quest.evidence} hinting={(hasZones && !!ready) || !!ownRows} peer={peer} />
+
+      {/*
+        How to do it, open under the checklist: a skill quest's picture and
+        steps, work that passed, the pitfalls and the way around them, then
+        the side quests that help and (first act) the safety line. Season 1's
+        students never opened the fold this used to sit in.
+      */}
+      <StakeholderMap slug={quest.kind === "side" ? quest.slug : null} />
+      <Steps steps={steps} />
+      <Examples lines={examples} />
+      <Pitfalls pitfalls={pitfalls} />
+      {ownership ? <OwnershipBox ownership={ownership} /> : null}
+      <Helpers board={board} quest={quest} onOpenQuest={onOpenQuest} />
 
       {canAsk ? (
         <button type="button" className={`${styles.linkButton} ${styles.stuckLine}`} aria-haspopup="dialog" onClick={onStuck}>
@@ -455,8 +467,8 @@ function QuestDetailBody({
 
       <DetailNotice quest={quest} action={action} onSend={onSend} />
 
-      {/* Everything that helps but is not the task, folded: one tap away, never in the way. */}
-      {hasHelpers ? (
+      {/* What is neither the task nor how to do it, folded: one tap away, never in the way. */}
+      {hasMore ? (
         <details className={styles.more}>
           <summary className={styles.moreSummary}>
             <span>{DETAIL.helpers}</span>
@@ -466,14 +478,8 @@ function QuestDetailBody({
             {more}
             {/* DRAFT lore: one quiet line on why the quest matters on the island (none on a proposed quest). */}
             {flavor ? <p className={styles.detailFlavor}>{flavor}</p> : null}
-            {/* A skill quest teaches by showing: its picture, its steps, then the English words it uses. */}
-            <StakeholderMap slug={quest.kind === "side" ? quest.slug : null} />
-            <Steps steps={steps} />
+            {/* The English words the quest uses, each one tap from its meaning. */}
             <Terms terms={terms} />
-            <Pitfalls pitfalls={pitfalls} />
-            {ownership ? <OwnershipBox ownership={ownership} /> : null}
-            <Examples lines={examples} />
-            <Helpers board={board} quest={quest} onOpenQuest={onOpenQuest} />
           </div>
         </details>
       ) : null}
