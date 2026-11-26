@@ -184,7 +184,8 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
           <Head n="02" aside="เลือกปัญหาไหนก็ได้ในธาตุนั้น">
             โจทย์ 5 ธาตุ
           </Head>
-          <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "repeat(4, 1fr) 1.55fr", columnGap: 18 }}>
+          {/* 24px under its heading (Angpao, 2026-11-26: "move the elemental and text below it too close to โจทย์"). */}
+          <div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "repeat(4, 1fr) 1.55fr", columnGap: 18 }}>
             {ELEMENTS.map(({ key, color, line }) => (
               <div key={key}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
