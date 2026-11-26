@@ -78,10 +78,10 @@ const SHORT_URL = ELEMENTAL.url.replace(/\/elemental$/, "");
 /** One fact: a tag, the big value, one quiet line under it. */
 function Fact({ tag, big, below }: { tag: string; big: ReactNode; below: ReactNode }) {
   return (
-    <div style={{ borderTop: `1px solid rgba(243,239,230,0.28)`, paddingTop: 13 }}>
+    <div style={{ borderTop: `1px solid rgba(243,239,230,0.28)`, paddingTop: 9 }}>
       <Tag>{tag}</Tag>
-      <p style={{ margin: "6px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 42, lineHeight: "50px" }}>{big}</p>
-      <p style={{ margin: "4px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 23, lineHeight: "32px", color: EL.creamSoft }}>{below}</p>
+      <p style={{ margin: "6px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 42, lineHeight: "47px" }}>{big}</p>
+      <p style={{ margin: "4px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 23, lineHeight: "30px", color: EL.creamSoft }}>{below}</p>
     </div>
   );
 }
@@ -125,14 +125,14 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
           </span>
           <span>{ELEMENTAL.edition.toUpperCase()} HACKATHON</span>
         </div>
-        <h1 style={{ margin: "18px 0 0", fontFamily: EL_FONT.display, fontWeight: 200, fontSize: 76, lineHeight: "88px" }}>รายละเอียดการแข่งขัน</h1>
+        <h1 style={{ margin: "8px 0 0", fontFamily: EL_FONT.display, fontWeight: 200, fontSize: 76, lineHeight: "88px" }}>รายละเอียดการแข่งขัน</h1>
         <p style={{ margin: "2px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 28, lineHeight: "38px", color: EL.creamSoft }}>
           มือใหม่ก็ร่วมได้ ไม่ต้องมีพื้นฐานมาก่อน เราสอนให้ตั้งแต่ต้น
         </p>
 
         {/* Facts, 3 x 2 */}
-        <div style={{ marginTop: 18, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", columnGap: 36, rowGap: 12 }}>
-          <Fact tag="วันแข่ง" big={thaiDayRange()} below={`${YEAR_TH} · หยุดยาว ${ELEMENTAL.days} วัน`} />
+        <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", columnGap: 36, rowGap: 4 }}>
+          <Fact tag="วันแข่ง" big={thaiDayRange()} below={`${YEAR_TH} · ${ELEMENTAL.longWeekend ? "หยุดยาว " : ""}${ELEMENTAL.days} วัน`} />
           <Fact tag="รูปแบบ" big="ออนไลน์" below={`${ELEMENTAL.venueTh.replace("ออนไลน์", "").trim()} อยู่ที่ไหนก็ร่วมได้`} />
           <Fact tag="ใครสมัครได้" big={ELEMENTAL.gradesTh} below="นักเรียนจากทั่วประเทศ" />
           <Fact tag="ทีม" big={`${ELEMENTAL.teamMin}–${ELEMENTAL.teamMax} คน`} below="มาคนเดียวได้ เราหาทีมให้" />
@@ -141,7 +141,7 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
         </div>
 
         {/* The prize, as on slide 1 (trophy, the number in yellow), then who gets what. */}
-        <div style={{ marginTop: 20, display: "flex", alignItems: "center", gap: 14, borderTop: `1px solid rgba(243,239,230,0.28)`, borderBottom: `1px solid rgba(243,239,230,0.28)`, padding: "10px 0" }}>
+        <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 14, borderTop: `1px solid rgba(243,239,230,0.28)`, borderBottom: `1px solid rgba(243,239,230,0.28)`, padding: "8px 0" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14, flex: "none" }}>
             <Trophy cell={6} />
             <span style={{ fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 84, lineHeight: "88px", letterSpacing: "-0.01em", color: HIGHLIGHT }}>{prizeTotal()}</span>
@@ -151,7 +151,7 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
               บาท
             </span>
           </div>
-          <div style={{ flex: 1, display: "grid", gridTemplateColumns: "auto 1fr", columnGap: 12, rowGap: 2, fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 22, lineHeight: "29px" }}>
+          <div style={{ flex: 1, display: "grid", gridTemplateColumns: "auto 1fr", columnGap: 12, rowGap: 2, fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 22, lineHeight: "28px" }}>
             {ELEMENTAL.prizes.map((p) => (
               <Fragment key={p.place}>
                 <span style={{ fontWeight: 400, color: HIGHLIGHT, whiteSpace: "nowrap" }}>ที่ {p.place}</span>
@@ -183,7 +183,7 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
         </div>
 
         {/* Schedule */}
-        <div style={{ marginTop: 10 }}>
+        <div style={{ marginTop: 6 }}>
           <Head>กำหนดการ</Head>
           <div style={{ marginTop: 9, display: "grid", gridTemplateColumns: `repeat(${days.length}, 1fr)`, columnGap: 14 }}>
             {days.map((d) => (
@@ -203,8 +203,15 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
         </div>
 
         {/* Foot. The sign-up QR code stands where "สมัครที่ลิงก์ในไบโอ" was (Angpao, 2026-11-23), the same plain cream block as on slide 1, with one thin line under it. */}
-        <div style={{ marginTop: "auto", marginRight: QR + 28, borderTop: `1px solid rgba(243,239,230,0.28)`, paddingTop: 16 }}>
-          <p style={{ margin: 0, fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 23, lineHeight: "31px", color: EL.creamSoft }}>
+        <div style={{ marginTop: "auto", marginRight: QR + 28, borderTop: `1px solid rgba(243,239,230,0.28)`, paddingTop: 10 }}>
+          {/* The Demo Day, in person (Angpao, 2026-11-26). Its day isn't told yet, so only the time and place print. Its two lines came from tighter gaps above (title, facts, prize band, foot), so nothing else moved off the slide. */}
+          <p style={{ margin: "0 0 4px", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 23, lineHeight: "28px", color: EL.cream }}>
+            <span style={{ fontWeight: 400, color: HIGHLIGHT }}>ปิดท้ายด้วย Demo Day</span> ที่ {ELEMENTAL.demoDay.placeTh}
+            {ELEMENTAL.demoDay.date ? ` ${formatThaiDate(ELEMENTAL.demoDay.date)}` : ""} {ELEMENTAL.demoDay.time} น.
+            <br />
+            ผู้สนับสนุนและผู้เชี่ยวชาญแต่ละด้านมาชมผลงาน
+          </p>
+          <p style={{ margin: 0, fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 23, lineHeight: "28px", color: EL.creamSoft }}>
             มีเวิร์กช็อปสด แหล่งเรียนรู้ และฟอรัมถาม-ตอบตลอดการแข่งขัน
             <br />
             ผู้ชนะได้ต่อยอดใน Request for Winners

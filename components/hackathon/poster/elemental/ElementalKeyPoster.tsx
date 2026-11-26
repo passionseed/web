@@ -284,6 +284,21 @@ function Pixels({ rows, fill, cell }: { rows: readonly string[]; fill: Record<st
   );
 }
 
+/**
+ * CSII, Chulalongkorn School of Integrated Innovation, the Demo Day's host, at
+ * the end of the co-brand lockup (Angpao, 2026-11-26: "add logo to the main
+ * poster"). The CSII half of the CSII | BAScii lockup they sent, in ink.
+ */
+function CsiiMark() {
+  return (
+    <>
+      <span style={{ fontFamily: EL_FONT.mono, fontSize: 20, color: EL.inkSoft }}>×</span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/hackathon/partners/csii.png" alt="CSII, Chulalongkorn School of Integrated Innovation" width={153} height={50} style={{ opacity: 0.88 }} />
+    </>
+  );
+}
+
 /** The small icons in the facts row, 9x9. */
 const ICON = {
   date: ["#.......#", "#########", "#########", "#.......#", "#.#.#.#.#", "#.......#", "#.#.#.#.#", "#.......#", "#########"],
@@ -708,6 +723,7 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
               {/* The site's font for the name, Libre Franklin, in regular weight (Angpao, 2026-11-23: Libre Franklin, not bold). */}
               <span style={{ fontFamily: "var(--font-libre-franklin), sans-serif", fontWeight: 400, fontSize: 26, letterSpacing: "-0.01em", color: EL.ink }}>PassionSeed</span>
             </span>
+            <CsiiMark />
           </div>
         )}
         {/* "งานแข่ง" is gone from here (Angpao, 2026-11-23): the line at the bottom now starts with "แข่ง". */}
