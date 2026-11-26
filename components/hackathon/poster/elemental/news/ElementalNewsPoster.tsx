@@ -17,14 +17,15 @@ import { ELEMENTAL, thaiDayRange } from "../facts";
  * (Angpao, same day: "look at our main poster why is it good replicate it
  * not put text all screen with no design"):
  * - one picture fills the sheet, at full brightness, with one bright object
- *   in a calm photo. Here a pink pixel flag on the ridge, breaking into
- *   pixels as on slide 1; pink is Chula's colour on these posters;
+ *   in a calm photo. Here a pink pixel sun coming up behind the ridge, with
+ *   pixel clouds; pink is Chula's colour on these posters;
  * - three sizes of type only: the title on the sky, one row of small facts
  *   with pixel icons, one big yellow line on the dark foot;
  * - type sits on calm parts of the picture, never on a box;
  * - the same anchors: names top left, QR code bottom right, one line at the
  *   bottom.
- * The plate is made by scripts/make-elemental-news-plate.py from a photo
+ * The plate is made by scripts/render-elemental-news-plate.mjs (the pixel
+ * kit the key poster uses) from a photo
  * slides 1 and 2 don't use. Facts come from ../facts.ts only.
  */
 
@@ -82,20 +83,23 @@ export function ElementalNewsPoster({ id = "elemental-news" }: { id?: string }) 
           {/* What kind of post it is. */}
           <span style={{ marginLeft: 8, fontFamily: EL_FONT.display, fontWeight: 500, fontSize: 24, lineHeight: "34px", background: EL.ink, color: HIGHLIGHT, padding: "0 14px" }}>อัปเดตใหม่</span>
         </div>
-        {/* The event × CSII as the title (Angpao, 2026-11-26: "use Elemental Hackathon X CSII logo at the top make it stand out"). */}
-        <h1 className="m-0 mt-[20px]" style={{ fontFamily: EL_FONT.display, lineHeight: 1.02, letterSpacing: "-0.01em" }}>
-          <span className="block" style={{ fontWeight: 200, fontSize: 124 }}>
-            <EditionWord />
-          </span>
-          <span className="flex items-center" style={{ gap: 26 }}>
-            <span style={{ fontWeight: 300, fontStyle: "italic", fontSize: 124 }}>Hackathon</span>
-            <span style={{ fontWeight: 200, fontSize: 72, color: EL.inkSoft }}>×</span>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/hackathon/partners/csii.png" alt="CSII, Chulalongkorn School of Integrated Innovation" width={245} height={80} style={{ marginTop: 14 }} />
-          </span>
-        </h1>
+        {/* The event × CSII as the title, the two sides equal: the name on two lines, the CSII logo as tall as its letters need to match, centred on it (Angpao, 2026-11-26: "use Elemental Hackathon X CSII logo at the top make it stand out", then "the CSII logo is not equal as elemental hackathon"). */}
+        <div className="flex items-center" style={{ marginTop: 22, gap: 30 }}>
+          {/* Set at slide 1's 124px and scaled as one piece, because the pixel letters in the name are drawn for that size. */}
+          <h1 className="m-0" style={{ fontFamily: EL_FONT.display, lineHeight: 1.02, letterSpacing: "-0.01em", zoom: 100 / 124 }}>
+            <span className="block" style={{ fontWeight: 200, fontSize: 124 }}>
+              <EditionWord />
+            </span>
+            <span className="block" style={{ fontWeight: 300, fontStyle: "italic", fontSize: 124 }}>
+              Hackathon
+            </span>
+          </h1>
+          <span style={{ fontFamily: EL_FONT.display, fontWeight: 200, fontSize: 76, lineHeight: "76px", color: EL.inkSoft }}>×</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/hackathon/partners/csii.png" alt="CSII, Chulalongkorn School of Integrated Innovation" width={368} height={120} />
+        </div>
         {/* The facts as one row under the title, in ink on the sky. The date leads, with the old one crossed out. */}
-        <div className="flex flex-wrap items-center gap-x-[18px] gap-y-[6px]" style={{ width: 640, marginLeft: 4, marginTop: 10, fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 23, lineHeight: "32px" }}>
+        <div className="flex flex-wrap items-center gap-x-[18px] gap-y-[6px]" style={{ width: 700, marginLeft: 4, marginTop: 16, fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 23, lineHeight: "32px" }}>
           <Fact icon="date" color={EL.ink}>
             <span className="relative" style={{ color: EL.inkSoft, marginRight: 10 }}>
               {OLD_RANGE}
