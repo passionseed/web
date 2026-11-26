@@ -72,8 +72,9 @@ function Head({ n, children, aside }: { n: string; children: ReactNode; aside?: 
   );
 }
 
+/** A fact's label, without brackets (Angpao, 2026-11-26: "try remove the bracket"). */
 function Tag({ children }: { children: ReactNode }) {
-  return <p style={{ margin: 0, fontFamily: EL_FONT.mono, fontSize: 18, color: EL.creamSoft }}>[{children}]</p>;
+  return <p style={{ margin: 0, fontFamily: EL_FONT.mono, fontSize: 18, color: EL.creamSoft }}>{children}</p>;
 }
 
 /**

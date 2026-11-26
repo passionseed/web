@@ -5,8 +5,9 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
  * - Dates: 5 to 10 December 2026, with a Demo Day at CSII, Chulalongkorn
  *   University, 13:00 to 17:00, where sponsors and people from each field
  *   come to see the work (told by Angpao, 2026-11-26). It replaces 5 to 7
- *   December, 3 days over the long weekend (Angpao, 2026-11-19). Which day
- *   the Demo Day is: not told yet.
+ *   December, 3 days over the long weekend (Angpao, 2026-11-19). The Demo
+ *   Day is Sat 12 Dec, and the work is due Thu 10 Dec instead of Mon 7 Dec
+ *   (Angpao, 2026-11-26; the time, 23:00, is kept from the old schedule).
  * - Prices: ฿199 alone (told by Angpao, 2026-11-20; it replaces ฿190) and
  *   ฿149 a person with others (company-brain numbers.md).
  * - Elements and theme: private/hackathon-december-2026.md (PR #87) and
@@ -37,10 +38,10 @@ export const ELEMENTAL = {
   /** 5 to 10 Dec is longer than the long weekend (Sat 5 to Mon 7 Dec). */
   longWeekend: false,
   /**
-   * The Demo Day, in person (Angpao, 2026-11-26). date is null until it is
-   * told: print the place, not a day.
+   * The Demo Day, in person, Sat 12 Dec (Angpao, 2026-11-26). If date is
+   * null, posters print the place, not a day.
    */
-  demoDay: { date: null as string | null, time: "13:00–17:00", placeTh: "CSII จุฬาฯ", placeFull: "Chulalongkorn School of Integrated Innovation (CSII), จุฬาลงกรณ์มหาวิทยาลัย" },
+  demoDay: { date: "2026-12-12" as string | null, time: "13:00–17:00", placeTh: "CSII จุฬาฯ", placeFull: "Chulalongkorn School of Integrated Innovation (CSII), จุฬาลงกรณ์มหาวิทยาลัย" },
   priceBaht: 199,
   groupPriceBaht: 149,
   prizeTotalBaht: 20000,
@@ -95,7 +96,7 @@ export const ELEMENTAL = {
     { date: "2026-12-05", time: "10:00–11:00", th: "เวิร์กช็อป: สัมภาษณ์และหากลุ่มลูกค้า", kind: "workshop" },
     { date: "2026-12-05", time: "19:00–20:00", th: "เวิร์กช็อป: สร้างผลงาน", kind: "workshop" },
     { date: "2026-12-06", time: "19:00–20:00", th: "เวิร์กช็อป: การนำเสนอ", kind: "workshop" },
-    { date: "2026-12-07", time: "23:00", th: "ส่งคลิปผลงาน", kind: "due" },
+    { date: "2026-12-10", time: "23:00", th: "ส่งคลิปผลงาน", kind: "due" },
   ],
   elements: [
     { key: "water", en: "Water", th: "น้ำ" },
