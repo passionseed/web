@@ -16,8 +16,8 @@ import { ELEMENTAL } from "../facts";
  * Built the way the key poster (slide 1) is (Angpao, same day: "look at our
  * main poster why is it good replicate it not put text all screen with no
  * design"): one photo fills the sheet at full brightness, type sits on its
- * calm parts, and the anchors are the same (names top left, QR code bottom
- * right, one line at the bottom).
+ * calm parts, and the names are top left with one line at the bottom, as there. The QR
+ * code is bottom left here.
  *
  * The middle is a calendar, not pixel art (Angpao, same day: "remove the
  * pixel background but make it visualize date what day did what and what
@@ -179,12 +179,15 @@ export function ElementalNewsPoster({ id = "elemental-news" }: { id?: string }) 
         </div>
       </div>
 
-      {/* The foot, as slide 1's prize: one big yellow line, a small label beside it, the QR code, and one sentence. */}
-      <div className="absolute inset-x-[56px] bottom-[48px]" style={{ fontFamily: EL_FONT.display, color: EL.cream }}>
-        <div className="flex items-end justify-between gap-[14px]">
-          <div className="flex items-end whitespace-nowrap" style={{ gap: 16 }}>
-            <span style={{ marginBottom: 16 }}>
-              <Pixels rows={ICON.pin} fill={{ "#": HIGHLIGHT }} cell={7} />
+      {/* The foot: the QR code at the bottom left, level with the last sentence (Angpao, 2026-11-26: "put the qr at buttom left same level as แข่งนานขึ้น…"), and beside it one big yellow line with a small label, then the sentence. */}
+      <div className="absolute inset-x-[56px] bottom-[48px] flex items-end" style={{ gap: 24, fontFamily: EL_FONT.display, color: EL.cream }}>
+        <div style={{ background: EL.cream, padding: 9, flex: "none" }}>
+          <RegisterQr size={148} />
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <div className="flex items-end whitespace-nowrap" style={{ gap: 14 }}>
+            <span style={{ marginBottom: 14 }}>
+              <Pixels rows={ICON.pin} fill={{ "#": HIGHLIGHT }} cell={6} />
             </span>
             <span style={{ fontWeight: 200, fontSize: 84, lineHeight: "92px", letterSpacing: "-0.01em", color: HIGHLIGHT }}>Demo Day</span>
             <span style={{ marginBottom: 8, fontWeight: 400, fontSize: 23, lineHeight: "31px" }}>
@@ -202,12 +205,9 @@ export function ElementalNewsPoster({ id = "elemental-news" }: { id?: string }) 
               </span>
             </span>
           </div>
-          <div style={{ background: EL.cream, padding: 9, flex: "none", marginBottom: 6 }}>
-            <RegisterQr size={148} />
+          <div className="whitespace-nowrap" style={{ marginTop: 8, fontWeight: 500, fontSize: 38, lineHeight: "50px" }}>
+            แข่งนานขึ้น แล้วไปโชว์ผลงานที่ตึก CSII จุฬา
           </div>
-        </div>
-        <div className="whitespace-nowrap" style={{ marginTop: 12, fontWeight: 500, fontSize: 40, lineHeight: "52px" }}>
-          แข่งนานขึ้น แล้วไปโชว์ผลงานที่ตึก CSII จุฬา
         </div>
       </div>
 
