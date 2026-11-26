@@ -205,7 +205,7 @@ export function PayView(props: Props) {
     <main className="min-h-[100dvh] px-5 py-10 sm:px-8 sm:py-16" style={{ backgroundColor: EL.cream, color: EL.ink }}>
       <div className="mx-auto max-w-xl">
         <p className="text-sm" style={{ color: EL.inkSoft }}>
-          {ELEMENTAL.edition} Hackathon · {thaiDateLine()}
+          {ELEMENTAL.edition} Hackathon · {thaiDateLine()} · {ELEMENTAL.venueTh}
         </p>
         <StatusSection {...props} />
       </div>

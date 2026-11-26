@@ -1,10 +1,43 @@
 import { formatThaiDate } from "@/lib/content/shift-cohort";
 
+/** A kind of programme slot: opening, a live workshop, building, a deadline, or Demo Day. */
+export type ElementalSlotKind = "open" | "workshop" | "build" | "due" | "demo";
+
+/** One line of the programme. `time` is null when only the day is set. */
+export type ElementalSlot = {
+  date: string;
+  time: string | null;
+  th: string;
+  en: string;
+  kind: ElementalSlotKind;
+};
+
+/**
+ * The programme (Big, 2026-11-26; company-brain decisions/log.md, PR #134).
+ * Only the times below are decided. Which of the old workshop times
+ * (Sat 5 Dec 10:00 and 19:00, Sun 6 Dec 19:00) still hold is (fill in), so
+ * they are not listed: add them back here once they are confirmed.
+ */
+const SCHEDULE: readonly ElementalSlot[] = [
+  { date: "2026-12-04", time: "19:00", th: "เปิดงาน (ออนไลน์)", en: "Opening (online)", kind: "open" },
+  { date: "2026-12-04", time: "23:59", th: "ปิดรับสมัคร", en: "Sign-up closes", kind: "due" },
+  { date: "2026-12-05", time: null, th: "เริ่มช่วงสร้างผลงาน (ออนไลน์ทาง Discord)", en: "Build sprint starts (online, Discord)", kind: "build" },
+  { date: "2026-12-07", time: null, th: "จบช่วงสร้างผลงาน ประกาศทีมที่เข้ารอบ", en: "Sprint ends. Finalists announced", kind: "build" },
+  { date: "2026-12-08", time: null, th: "สัปดาห์ทดสอบ: หาผู้ใช้จริง เก็บหลักฐาน", en: "Test week: get real users, log evidence", kind: "build" },
+  { date: "2026-12-10", time: null, th: "วันรัฐธรรมนูญ (วันหยุด): ได้วันสร้างงานเพิ่มอีกวัน", en: "Constitution Day (holiday): extra build day", kind: "build" },
+  { date: "2026-12-11", time: "23:59", th: "ส่งผลงานรอบสุดท้าย", en: "Final hand-in", kind: "due" },
+  { date: "2026-12-12", time: null, th: "Demo Day และมอบรางวัล ที่ BAScii จุฬาฯ", en: "Demo Day and awards, onsite at BAScii, Chula", kind: "demo" },
+];
+
 /**
  * Facts the Elemental posters print. Source: passionseed/company-brain.
- * - Dates: 5 to 7 December 2026, 3 days over the long weekend (told by
- *   Angpao, 2026-11-19). This changes the 5 to 8 December in
- *   decisions/log.md, which needs a new entry there.
+ * - Dates: Fri 4 to Sat 12 December 2026 (Big, 2026-11-26; company-brain
+ *   decisions/log.md, PR #134). Online on Discord until Demo Day, which is
+ *   onsite at BAScii, Chula, on Sat 12 Dec. BAScii is closed on Sat 5 Dec.
+ *   This replaces 5 to 7 December, 3 days over the long weekend (Angpao,
+ *   2026-11-19), and the video hand-in on Mon 7 Dec at 23:00. CSII said OK to
+ *   BAScii for 12 Dec (told by Big, 2026-11-26; Linear HAC-74). Hours: (fill in).
+ * - Sponsor logos are locked on Mon 7 Dec (Big, 2026-11-26).
  * - Prices: ฿199 alone (told by Angpao, 2026-11-20; it replaces ฿190) and
  *   ฿149 a person with others (company-brain numbers.md).
  * - Elements and theme: private/hackathon-december-2026.md (PR #87) and
@@ -19,21 +52,25 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
  *   elements (confirmed by Angpao the same day), so the total stays 20,000.
  * - Who can join: M.3 to M.6, from anywhere in Thailand (Angpao, 2026-11-24;
  *   it replaces M.4 to M.6, Big, 2026-11-22; company-brain decisions/log.md).
- * - Online, on Discord; groups of up to 5 (Bunyasit, 2026-11-20).
- * - Sign-up closes Thu 3 Dec 2026 (Big, 2026-11-24, replacing Fri 4 Dec).
- *   A one-day extension to Fri 4 Dec is planned: change this date when it is
- *   announced. A group is 2 or more people (Big's draft in hackathon-ops
+ * - Online, on Discord; groups of up to 5 (Bunyasit, 2026-11-20). Demo Day
+ *   on 12 Dec is the only onsite day (Big, 2026-11-26).
+ * - Sign-up closes Fri 4 Dec 2026 at 23:59 (the one-day extension from
+ *   Thu 3 Dec, announced 2026-11-26; unchanged by the 12 Dec extension).
+ *   A group is 2 or more people (Big's draft in hackathon-ops
  *   registration.md) and pays on one slip.
  * Change a fact here, never in a poster.
  */
 export const ELEMENTAL = {
   series: "The Next Decade",
   edition: "Elemental",
-  startDate: "2026-12-05",
-  endDate: "2026-12-07",
-  days: 3,
-  /** The dates fall on a 3-day long weekend (Sat 5 to Mon 7 Dec). */
-  longWeekend: true,
+  /** Opening night, online. */
+  startDate: "2026-12-04",
+  /** Demo Day, onsite. */
+  endDate: "2026-12-12",
+  /** 4 to 12 December, counting both ends. */
+  days: 9,
+  /** No longer only a long weekend: it runs into the week after (it was Sat 5 to Mon 7 Dec). */
+  longWeekend: false,
   priceBaht: 199,
   groupPriceBaht: 149,
   prizeTotalBaht: 20000,
@@ -64,10 +101,21 @@ export const ELEMENTAL = {
   slug: "elemental-2026",
   /** Last day to sign up, Bangkok time (inclusive). */
   registrationClosesOn: "2026-12-04",
-  /** Where it happens. */
-  venueTh: "ออนไลน์ทาง Discord",
+  /** Where it happens: online until Demo Day, then onsite. */
+  venueTh: "ออนไลน์ทาง Discord, Demo Day ที่ BAScii จุฬาฯ",
   /** The same, short enough for a ticket stub. */
-  venueShort: "Discord",
+  venueShort: "Discord + BAScii",
+  /** The one onsite day. */
+  demoDay: {
+    date: "2026-12-12",
+    venueTh: "BAScii จุฬาฯ",
+    /** For search engines: no street address is on record, so only the city. */
+    venueEn: "BAScii, Chulalongkorn University",
+    city: "Bangkok",
+    country: "TH",
+  },
+  /** Sponsor logos are final on this day. */
+  sponsorLogosLockedOn: "2026-12-07",
   /** Largest group on one sign-up. */
   maxGroupSize: 5,
   /**
@@ -79,17 +127,8 @@ export const ELEMENTAL = {
   /** Team size: 2 to 5 (Angpao, 2026-11-20; company-brain numbers.md). */
   teamMin: 2,
   teamMax: 5,
-  /**
-   * The programme (Angpao, 2026-11-20; company-brain decisions/log.md).
-   * kind: open = opening, workshop = live workshop, due = hand-in deadline.
-   */
-  schedule: [
-    { date: "2026-12-04", time: "19:00", th: "เปิดงานและปฐมนิเทศ", kind: "open" },
-    { date: "2026-12-05", time: "10:00–11:00", th: "เวิร์กช็อป: สัมภาษณ์และหากลุ่มลูกค้า", kind: "workshop" },
-    { date: "2026-12-05", time: "19:00–20:00", th: "เวิร์กช็อป: สร้างผลงาน", kind: "workshop" },
-    { date: "2026-12-06", time: "19:00–20:00", th: "เวิร์กช็อป: การนำเสนอ", kind: "workshop" },
-    { date: "2026-12-07", time: "23:00", th: "ส่งคลิปผลงาน", kind: "due" },
-  ],
+  /** The programme, day by day. See SCHEDULE above. */
+  schedule: SCHEDULE,
   elements: [
     { key: "water", en: "Water", th: "น้ำ" },
     { key: "earth", en: "Earth", th: "ดิน" },
@@ -104,7 +143,7 @@ function parts(iso: string) {
   return { year, month, day };
 }
 
-/** "5–8 ธ.ค.": the big date. */
+/** "4–12 ธ.ค.": the big date. */
 export function thaiDayRange(): string {
   const s = parts(ELEMENTAL.startDate);
   return `${s.day}–${formatThaiDate(ELEMENTAL.endDate, false)}`;
@@ -115,14 +154,19 @@ export function prizeTotal(): string {
   return ELEMENTAL.prizeTotalBaht.toLocaleString("en-US");
 }
 
-/** "5 ถึง 7 ธ.ค.": the date line without the year, for tight spots like the ticket stub. */
+/** "4 ถึง 12 ธ.ค.": the date line without the year, for tight spots like the ticket stub. */
 export function thaiDateShort(): string {
   return `${parts(ELEMENTAL.startDate).day} ถึง ${formatThaiDate(ELEMENTAL.endDate, false)}`;
 }
 
-/** "5 ถึง 8 ธ.ค. 2569": month once, Buddhist-era year. */
+/** "4 ถึง 12 ธ.ค. 2569": month once, Buddhist-era year. */
 export function thaiDateLine(): string {
   const s = parts(ELEMENTAL.startDate);
   const e = parts(ELEMENTAL.endDate);
   return `${s.day} ถึง ${formatThaiDate(ELEMENTAL.endDate, false)} ${e.year + 543}`;
+}
+
+/** "Demo Day 12 ธ.ค. ที่ BAScii จุฬาฯ": the one onsite day. */
+export function demoDayLine(): string {
+  return `Demo Day ${formatThaiDate(ELEMENTAL.demoDay.date, false)} ที่ ${ELEMENTAL.demoDay.venueTh}`;
 }

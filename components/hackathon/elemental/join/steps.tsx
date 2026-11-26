@@ -157,7 +157,7 @@ function WhatItIs() {
         {ELEMENTAL.taglineTh[0]} {ELEMENTAL.taglineTh[1]}
       </p>
       <p className="mt-3 text-pretty text-sm" style={{ color: EL.creamSoft }}>
-        {ELEMENTAL.edition} Hackathon {thaiDateLine()} ออนไลน์ สำหรับ {ELEMENTAL.gradesTh} รางวัลรวม {prizeTotal()} บาท
+        {ELEMENTAL.edition} Hackathon {thaiDateLine()} {ELEMENTAL.venueTh} สำหรับ {ELEMENTAL.gradesTh} รางวัลรวม {prizeTotal()} บาท
       </p>
       <LegalLink href="/hackathon/elemental?src=team" className="mt-3 inline-block text-sm">
         ดูรายละเอียดงาน
