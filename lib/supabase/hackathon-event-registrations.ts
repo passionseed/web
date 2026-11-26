@@ -24,6 +24,10 @@ export type PublicRegistration = {
   isTeamStarter: boolean;
   /** 0 for the person who started the team, 1 for the next to sign up, and so on. Null when alone. */
   teamPosition: number | null;
+  /** Signed in with Discord from this page, which links the sign-up to a PassionSeed account. */
+  discordLinked: boolean;
+  /** The bot put them in the hackathon Discord server with the event role. */
+  discordJoined: boolean;
   createdAt: string;
 };
 
@@ -54,6 +58,8 @@ export type AdminRegistration = {
   paidAt: string | null;
   paidBy: string | null;
   adminNote: string | null;
+  /** Discord linked from the sign-up page, and whether the bot got them into the server. */
+  discord: { username: string | null; joinedAt: string | null; error: string | null } | null;
   createdAt: string;
   members: {
     position: number;
@@ -192,7 +198,7 @@ export async function getRegistrationByToken(
   const { data, error } = await db
     .from("hackathon_event_registrations")
     .select(
-      "id, status, team_id, team_name, member_count, amount_baht, created_at, hackathon_event_registration_members(position, nickname, full_name)",
+      "id, status, team_id, team_name, member_count, amount_baht, created_at, linked_at, discord_joined_at, hackathon_event_registration_members(position, nickname, full_name)",
     )
     .eq("pay_token", token)
     .maybeSingle();
@@ -212,6 +218,8 @@ export async function getRegistrationByToken(
     team: data.team_id ? await loadTeam({ id: data.team_id }, maxTeamSize) : null,
     isTeamStarter: teamPosition === 0,
     teamPosition,
+    discordLinked: Boolean(data.linked_at),
+    discordJoined: Boolean(data.discord_joined_at),
     createdAt: data.created_at,
   };
 }
@@ -354,6 +362,9 @@ export async function listRegistrations(eventSlug: string): Promise<AdminRegistr
     paidAt: r.paid_at,
     paidBy: r.paid_by,
     adminNote: r.admin_note,
+    discord: r.linked_at
+      ? { username: r.discord_username, joinedAt: r.discord_joined_at, error: r.discord_error }
+      : null,
     createdAt: r.created_at,
     members: [...(r.hackathon_event_registration_members ?? [])]
       .sort((a: { position: number }, b: { position: number }) => a.position - b.position)

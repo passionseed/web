@@ -10,6 +10,13 @@ import { completeShiftJoin } from "@/lib/shift/join";
 import { isShiftPath, shiftJoinPath, tokenFromShiftJoinPath } from "@/lib/shift/joinLink";
 import { shiftDiscordAuthError } from "@/lib/shift/discordAuth";
 import { safeRedirectPath } from "@/lib/security/redirects";
+import { completeElementalDiscordLink } from "@/lib/hackathon/elemental/discordJoin";
+import {
+  elementalJoinPath,
+  isHackathonPath,
+  tokenFromElementalJoinPath,
+} from "@/lib/hackathon/elemental/discordLink";
+import { hasHackathonRegistration } from "@/lib/hackathon/elemental/onboardExempt";
 
 type PendingCookie = {
   name: string;
@@ -107,7 +114,20 @@ export async function GET(request: Request) {
 
       // Any other /shift page (SeedStack, the alumni board): SHIFT students
       // never onboard, so no detour through /onboard either.
-      if (isShiftPath(next)) {
+      const elementalToken = tokenFromElementalJoinPath(next);
+      if (elementalToken) {
+        const outcome = await completeElementalDiscordLink({
+          token: elementalToken,
+          user: data.user,
+          providerToken: data.session.provider_token,
+        });
+        const target = new URL(elementalJoinPath(elementalToken), origin);
+        target.searchParams.set("discord", outcome);
+        return redirectWithCookies(target, pendingCookies);
+      }
+
+      // SHIFT and hackathon participants sign up through Discord and never onboard.
+      if (isShiftPath(next) || isHackathonPath(next)) {
         return redirectWithCookies(new URL(next, origin), pendingCookies);
       }
 
@@ -166,8 +186,9 @@ export async function GET(request: Request) {
           .maybeSingle();
 
         if (
-          !isProfileComplete(profileData, guardianConsent) ||
-          !profileData.is_onboarded
+          (!isProfileComplete(profileData, guardianConsent) ||
+            !profileData.is_onboarded) &&
+          !(await hasHackathonRegistration(supabase))
         ) {
           // Carry the destination through onboarding, otherwise a first-time
           // signup arriving from a join link loses where they were headed.
@@ -191,6 +212,13 @@ export async function GET(request: Request) {
 
   // The SHIFT island signs in with Discord too: back to the island with a
   // reason it can show, instead of the generic error page.
+  const failedElementalToken = tokenFromElementalJoinPath(next);
+  if (failedElementalToken) {
+    const retry = new URL(elementalJoinPath(failedElementalToken), origin);
+    retry.searchParams.set("discord", "auth");
+    return NextResponse.redirect(retry);
+  }
+
   const nextPath = next.split(/[?#]/)[0];
   if (nextPath === "/shift/island" || nextPath.startsWith("/shift/island/")) {
     const retry = new URL("/shift/island", origin);

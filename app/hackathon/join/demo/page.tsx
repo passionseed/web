@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { trirong } from "@/components/hackathon/elemental/fonts";
 import { PayView } from "@/components/hackathon/elemental/PayView";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
+import { parseElementalDiscordOutcome } from "@/lib/hackathon/elemental/discordLink";
 import { elementalPayQr } from "@/lib/hackathon/elemental/pay-qr";
 import { elementalPriceBaht } from "@/lib/hackathon/elemental/registration";
 import type { RegistrationStatus } from "@/lib/supabase/hackathon-event-registrations";
@@ -20,6 +21,7 @@ const STATES: RegistrationStatus[] = ["pending", "review", "paid", "cancelled"];
  * screenshotted without saving a sign-up or a slip. 404 everywhere else.
  * /hackathon/join/demo?state=pending|review|paid|cancelled&mode=solo|create|join&n=0..4
  * (n: the place in sign-up order inside the team, so each teammate's ticket can be seen)
+ * &discord=joined|not_member|taken|error shows each Discord state on the paid page.
  */
 export default async function PayDemoPage({ searchParams }: { searchParams: SearchParams }) {
   if (process.env.NODE_ENV !== "development") notFound();
@@ -48,9 +50,10 @@ export default async function PayDemoPage({ searchParams }: { searchParams: Sear
       <PayView
         token="demo"
         demo
-        reg={{ status: state, teamName: team?.name ?? null, memberCount: 1, amountBaht, memberNicknames: ["มิว"], team, isTeamStarter: mode === "create", teamPosition }}
+        reg={{ status: state, teamName: team?.name ?? null, memberCount: 1, amountBaht, memberNicknames: ["มิว"], team, isTeamStarter: mode === "create", teamPosition, discordJoined: first(params.discord) === "joined" }}
         qrSrc={state === "pending" ? await elementalPayQr(amountBaht) : null}
         links={{ line: "https://line.me/ti/g/demo", discord: "https://discord.gg/demo" }}
+        discordOutcome={parseElementalDiscordOutcome(first(params.discord))}
       />
     </div>
   );

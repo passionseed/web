@@ -1,6 +1,7 @@
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 
 import { cohortStatus, getShiftCohortByName } from "@/lib/content/shift-cohort";
+import { discordTokenOwner } from "@/lib/discord/guildJoin";
 import { extractDiscordIdentity } from "@/lib/projectseed/discord";
 import {
   joinShiftGuild,
@@ -93,24 +94,6 @@ export async function completeShiftJoin(input: {
   const accessToken = (await discordTokenOwner(input.providerToken)) === discord.userId ? input.providerToken : null;
   await syncShiftDiscord(linked, accessToken, supabase);
   return null;
-}
-
-/**
- * The Discord user an OAuth token belongs to. The bot only acts on a token
- * that provably belongs to the Discord account stored on the application.
- */
-async function discordTokenOwner(token: string | null | undefined): Promise<string | null> {
-  if (!token) return null;
-  try {
-    const res = await fetch("https://discord.com/api/v10/users/@me", {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    return ((await res.json()) as { id?: string }).id ?? null;
-  } catch {
-    return null;
-  }
 }
 
 /** Adds the student to the server (or just grants roles) and records the

@@ -7,6 +7,8 @@ import {
   PROFILE_COMPLETION_SELECT,
 } from '@/lib/profile-completion'
 import { isShiftPath } from '@/lib/shift/joinLink'
+import { isHackathonPath } from '@/lib/hackathon/elemental/discordLink'
+import { hasHackathonRegistration } from '@/lib/hackathon/elemental/onboardExempt'
 import { isPublicRoute } from './public-routes'
 
 function shouldSkipOnboardGate(pathname: string): boolean {
@@ -19,6 +21,9 @@ function shouldSkipOnboardGate(pathname: string): boolean {
     // also covers the school proposal forwarded to teachers and parents who
     // may hold a half-finished account.
     isShiftPath(pathname) ||
+    // Hackathon participants come in through their sign-up page and Discord,
+    // not the PassionSeed onboard.
+    isHackathonPath(pathname) ||
     // Career Radar is public, and its links carry utm tags the page reads in
     // the browser: a bounce to /onboard would drop them. /r/ short links
     // return early in proxy.ts; they are listed here too as a second guard.
@@ -63,7 +68,9 @@ async function needsOnboard(
       .eq('user_id', userId)
       .maybeSingle(),
   ])
-  return !isProfileComplete(profile, guardianConsent) || !profile?.is_onboarded
+  if (isProfileComplete(profile, guardianConsent) && profile?.is_onboarded) return false
+  // A linked hackathon sign-up counts as a finished onboard.
+  return !(await hasHackathonRegistration(supabase))
 }
 
 /** decodeURIComponent that keeps any escape it cannot decode, instead of throwing. */

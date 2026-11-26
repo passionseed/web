@@ -13,6 +13,8 @@ import {
   PROFILE_COMPLETION_SELECT,
 } from "@/lib/profile-completion";
 import { isShiftPath } from "@/lib/shift/joinLink";
+import { isHackathonPath } from "@/lib/hackathon/elemental/discordLink";
+import { hasHackathonRegistration } from "@/lib/hackathon/elemental/onboardExempt";
 import { safeRedirectPath } from "@/lib/security/redirects";
 
 export const metadata: Metadata = {
@@ -60,7 +62,7 @@ export default async function LoginPage({
   const { data } = await supabase.auth.getUser();
   if (data.user && !isAnonymousUser(data.user)) {
     // SHIFT students sign up through Discord and never onboard.
-    if (isShiftPath(next)) redirect(next);
+    if (isShiftPath(next) || isHackathonPath(next)) redirect(next);
     // Check if profile is complete before redirecting
     const { data: profileData, error: profileError } = await supabase
       .rpc("get_my_profile")
@@ -73,9 +75,10 @@ export default async function LoginPage({
       .maybeSingle();
 
     if (
-      profileError ||
-      !isProfileComplete(profileData, guardianConsent) ||
-      !profileData.is_onboarded
+      (profileError ||
+        !isProfileComplete(profileData, guardianConsent) ||
+        !profileData.is_onboarded) &&
+      !(await hasHackathonRegistration(supabase))
     ) {
       redirect(
         next === "/me" ? "/onboard" : `/onboard?next=${encodeURIComponent(next)}`
