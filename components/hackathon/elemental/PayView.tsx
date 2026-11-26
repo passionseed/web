@@ -25,6 +25,8 @@ type Props = {
   reg: Pick<PublicRegistration, "status" | "teamName" | "memberCount" | "amountBaht" | "memberNicknames" | "team" | "isTeamStarter" | "teamPosition" | "discordJoined">;
   qrSrc: string | null;
   links: { line: string | null; discord: string | null };
+  /** The find-a-team OpenChat, set only on an unpaid page that still needs teammates. */
+  teamUpUrl?: string | null;
   /** How the last Discord sign-in from this page went (?discord=…). */
   discordOutcome?: ElementalDiscordOutcome | null;
   demo?: boolean;
@@ -60,6 +62,26 @@ function whoAndPeople(reg: Props["reg"]): { who: string; people: string } {
 function Team({ token, reg, demo }: Props) {
   if (!reg.team) return null;
   return <TeamInvite team={reg.team} renameToken={reg.isTeamStarter ? token : undefined} demo={demo} />;
+}
+
+/**
+ * The find-a-team LINE OpenChat, for someone who signed up without enough
+ * teammates (Big, 2026-11-26). It sits under the payment, so paying stays the
+ * main step.
+ */
+function TeamUp({ url }: { url: string }) {
+  return (
+    <section className="space-y-3 rounded-2xl border p-5 sm:p-6" style={{ borderColor: "rgba(29,33,31,0.18)" }}>
+      <p className="text-lg">หาเพื่อนร่วมทีม</p>
+      <p className="text-sm" style={{ color: EL.inkSoft }}>
+        เข้าโอเพนแชท {ELEMENTAL.edition} Hackathon หาเพื่อนร่วมทีม จากโรงเรียนเดียวกันหรือต่างโรงเรียนก็ได้ ทีมละ{" "}
+        {ELEMENTAL.teamMin}–{ELEMENTAL.maxGroupSize} คน
+      </p>
+      <a href={url} target="_blank" rel="noopener noreferrer" className={`${primary} w-full`} style={outline}>
+        เข้าโอเพนแชทหาทีม
+      </a>
+    </section>
+  );
 }
 
 const DISCORD_FAILED = "เชื่อม Discord ไม่สำเร็จ ลองอีกครั้ง หรือทักไลน์ทีมงาน";
@@ -167,7 +189,7 @@ function CancelledSection() {
 }
 
 function PendingSection(props: Props) {
-  const { token, reg, qrSrc, demo } = props;
+  const { token, reg, qrSrc, demo, teamUpUrl } = props;
   return (
     <section className="mt-6">
       {!demo && <TrackStep step="pay" />}
@@ -181,6 +203,11 @@ function PendingSection(props: Props) {
       {reg.team && (
         <div className="mt-10">
           <Team {...props} />
+        </div>
+      )}
+      {teamUpUrl && (
+        <div className={reg.team ? "mt-4" : "mt-10"}>
+          <TeamUp url={teamUpUrl} />
         </div>
       )}
     </section>
