@@ -1,8 +1,11 @@
 /**
  * SHIFT High Island: the come-back DM and the return card (code name away,
  * 20261121090000_shift_quest_away, schema 23).
- *   * consent first: away_dm is null (never asked) by default, set only by the
- *     student (staff 'not_allowed'), audited; no drops what is queued;
+ *   * consent: away_dm null means never asked, set only by the student
+ *     (staff 'not_allowed'), audited; no drops what is queued. From schema
+ *     24 (20261126100000) a new member starts with it on (the default is
+ *     true; nudges.ts covers that): this suite sets its students back to
+ *     null so the never-asked path stays covered;
  *   * the switch: /admin feature away (shift_quest_admin_set key 'away'), off
  *     by default; off means no strip, no card, no DM;
  *   * activity: the Bangkok day of the latest write (journal, quest started,
@@ -323,12 +326,13 @@ async function main(): Promise<void> {
     "or (table_name = 'shift_quest_settings' and column_name like 'away\\_%'))",
   )).rows.sort((x, y) => (x.col < y.col ? -1 : 1));
   check(JSON.stringify(cols) === JSON.stringify([
-    { col: "shift_quest_members.away_dm", data_type: "boolean", is_nullable: "YES", column_default: null },
+    // Schema 24 (20261126100000_shift_quest_nudges_on): on unless the student turns it off.
+    { col: "shift_quest_members.away_dm", data_type: "boolean", is_nullable: "YES", column_default: "true" },
     { col: "shift_quest_members.away_dm_at", data_type: "timestamp with time zone", is_nullable: "YES", column_default: null },
     { col: "shift_quest_settings.away_after_days", data_type: "smallint", is_nullable: "NO", column_default: "7" },
     { col: "shift_quest_settings.away_enabled", data_type: "boolean", is_nullable: "NO", column_default: "false" },
     { col: "shift_quest_settings.away_hour", data_type: "smallint", is_nullable: "NO", column_default: "17" },
-  ]), "the columns: away_dm and away_dm_at (null: never asked), the switch (off), N (7) and the hour (17); no history of days away", cols);
+  ]), "the columns: away_dm (true by default from schema 24; null: never asked) and away_dm_at, the switch (off), N (7) and the hour (17); no history of days away", cols);
   check(!/away/.test(String(await scalar(db,
       "select string_agg(table_name, ',') from information_schema.tables where table_schema = 'public' and table_name like 'shift\\_quest\\_%' and table_name <> $1",
       [TABLE]))),
@@ -363,6 +367,9 @@ async function main(): Promise<void> {
   for (const id of STUDENTS) await mid(id);
   await mid(ADMIN);
   await mid(R1);
+  // Schema 24 starts every new member with the come-back DM on (nudges.ts). This suite is about the choice
+  // itself, so everyone starts where a member reset by an admin does: never asked.
+  await db.query("update public.shift_quest_members set away_dm = null, away_dm_at = null");
 
   check(await count(`select count(*) from public.shift_quest_members where away_dm is not null or away_dm_at is not null`) === 0,
     "consent is null for everyone by default: never asked");

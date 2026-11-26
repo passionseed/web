@@ -50,9 +50,9 @@ describe("registrationSchema team modes", () => {
 });
 
 describe("elementalRegistrationOpen", () => {
-  it("is open through the end of Thu 3 Dec, Bangkok time", () => {
-    expect(elementalRegistrationOpen(new Date("2026-12-03T23:59:00+07:00"))).toBe(true);
-    expect(elementalRegistrationOpen(new Date("2026-12-04T00:00:01+07:00"))).toBe(false);
+  it("is open through the end of Fri 4 Dec, Bangkok time", () => {
+    expect(elementalRegistrationOpen(new Date("2026-12-04T23:59:00+07:00"))).toBe(true);
+    expect(elementalRegistrationOpen(new Date("2026-12-05T00:00:01+07:00"))).toBe(false);
   });
 });
 
@@ -85,5 +85,21 @@ describe("normalizeSource", () => {
     expect(normalizeSource(" IG-Story ")).toBe("ig-story");
     expect(normalizeSource("<script>")).toBe("script");
     expect(normalizeSource("")).toBeUndefined();
+  });
+});
+
+describe("registrationSchema heardFrom", () => {
+  it("accepts each listed answer", () => {
+    for (const heardFrom of ["passion_seed", "next_decade", "doodee_future", "contester", "camp_hub", "other"]) {
+      expect(registrationSchema.safeParse({ ...base, members: [adult], heardFrom }).success).toBe(true);
+    }
+  });
+
+  it("rejects an answer that is not listed", () => {
+    expect(registrationSchema.safeParse({ ...base, members: [adult], heardFrom: "tiktok" }).success).toBe(false);
+  });
+
+  it("still accepts a sign-up without it (older cached forms)", () => {
+    expect(registrationSchema.safeParse({ ...base, members: [adult] }).success).toBe(true);
   });
 });

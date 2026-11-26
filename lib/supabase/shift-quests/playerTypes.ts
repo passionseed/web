@@ -196,5 +196,5 @@ export interface AwayReport {
  * The island notice's version. Bumped for the come-back DM and the return
  * answers (2026-11-21); a bump cancels no consent already on file.
  */
-export const ISLAND_CONSENT_VERSION = "island-2026-11-21";
+export const ISLAND_CONSENT_VERSION = "island-2026-11-25";
 export const STAFF_AWARD_KEYS = ["taught-next-shift", "helped-most"] as const;

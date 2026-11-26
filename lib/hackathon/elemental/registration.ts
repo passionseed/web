@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
+import { HEARD_FROM_VALUES } from "./heard-from";
 import { isRudeTeamName } from "./team-name";
 
 /**
@@ -81,6 +82,8 @@ export const registrationSchema = z.object({
   wantsTeamMatching: z.boolean().default(false),
   noRefundAck: z.literal(true),
   contactAfterConsent: z.boolean().default(false),
+  /** Self-reported "where did you find the post". Optional so older cached forms still submit. */
+  heardFrom: z.enum(HEARD_FROM_VALUES).optional(),
   source: optionalTrimmed(60),
   utm: z.record(z.string(), z.string().max(120)).optional(),
 }).superRefine((r, ctx) => {

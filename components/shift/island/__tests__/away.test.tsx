@@ -121,7 +121,7 @@ describe("AWAY copy", () => {
     expect(AWAY.card.who).toContain("ความปลอดภัย");
     expect(AWAY.card.who).toContain("แอดมินเปิดดูได้ว่าใครเขียน");
     expect(AWAY.card.who).toContain("ระบบบันทึกทุกครั้ง");
-    const row = ISLAND_NOTICE.rows.find((r) => r.lead.includes("DM ชวนกลับเกาะ"));
+    const row = ISLAND_NOTICE.rows.find((r) => r.lead.includes("DM จากบอท"));
     expect(row?.short).toContain("ความปลอดภัย");
     expect(JSON.stringify(row?.items)).toContain("ระบบบันทึกทุกครั้ง");
   });

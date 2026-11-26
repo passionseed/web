@@ -6,8 +6,11 @@ import path from "node:path";
 
 import { MessageFlags, type Client } from "discord.js";
 
+import { MAIN_TITLES, makeBoard } from "@/components/shift/island/__fixtures__/board";
+import type { QuestBoard } from "@/lib/supabase/shift-quests/types";
+
 import type { QuestApi } from "../api";
-import { AWAY_DM, T, TREE_GREW, renderOutbox } from "../copy";
+import { AWAY_DM, NUDGE_DM, T, TREE_GREW, renderOutbox } from "../copy";
 import { DIGEST } from "../digestCopy";
 import { STAGE_NAMES } from "../island/copy";
 import { NEWS } from "../newsCopy";
@@ -15,6 +18,7 @@ import type { IslandPlot } from "../island/render";
 import {
   PING_NAMED_TEAMS,
   TREE_GREW_REACTIONS,
+  awayNext,
   awayRows,
   deliver,
   outboxView,
@@ -221,17 +225,18 @@ describe("deliver", () => {
     expect(channelSend).not.toHaveBeenCalled();
     expect(nudge.flags).toBe(MessageFlags.IsComponentsV2);
     expect(nudge.allowedMentions).toEqual(NO_MENTIONS);
-    expect(bodyText(nudge)).toBe(`### ${T.dmNudgeTitle}\n${T.dmNudge}\n-# ${T.dmNoReplies}`);
-    expect(bodyText(nudge)).toContain("/inbox ในเซิร์ฟเวอร์");
+    expect(bodyText(nudge)).toBe(`### ${T.dmNudgeTitle}\n${T.dmNudge}\n-# ${NUDGE_DM.off}\n-# ${T.dmNoReplies}`);
+    // Content-free: it points at the island (the link button, when there is an address) and names nothing.
+    expect(T.dmNudgeTitle).toContain("บนเกาะ");
     expect(bodyText(nudge)).not.toContain("</inbox:");
 
     userSend.mockClear();
     await deliver(client, fakeApi(), claimed({ kind: "reminder", params: { open_quests: 2 }, channel_id: null, dm_user_id: "111" }));
     const reminder = bodyText(sentPayload(userSend));
     expect(reminder).toBe(
-      "### ⏰ ถึงเวลาที่คุณตั้งไว้แล้ว\nมีเควสต์เปิดอยู่ **2** อัน\nเริ่มด้วย /work start ในเซิร์ฟเวอร์ได้เลย\n-# ปิดการเตือนได้ที่ /settings\n-# บอทนี้ไม่อ่านหรือตอบข้อความส่วนตัว"
+      "### ⏰ ถึงเวลาที่คุณตั้งไว้แล้ว\nมีเควสต์เปิดอยู่ **2** อัน\nเปิดเกาะแล้วเริ่มจากการ์ดด้านล่างได้เลย\n-# ปิดการเตือนได้ที่ /settings\n-# บอทนี้ไม่อ่านหรือตอบข้อความส่วนตัว"
     );
-    expect(renderOutbox("reminder", { open_quests: 0 }, null, null)!.body).toBe("เริ่มด้วย /work start ในเซิร์ฟเวอร์ได้เลย");
+    expect(renderOutbox("reminder", { open_quests: 0 }, null, null)!.body).toBe("เปิดเกาะแล้วเริ่มจากการ์ดด้านล่างได้เลย");
   });
 
   it("puts the weekly island picture above the heading and the consented names below", async () => {
@@ -526,8 +531,8 @@ describe("away: the come-back DM (schema 23)", () => {
     expect(id).toBe("dm-1");
     expect(channelSend).not.toHaveBeenCalled();
     expect(client.users.fetch).toHaveBeenCalledWith("111");
-    // Nothing is read at send time.
-    expect(api.call).not.toHaveBeenCalled();
+    // One read at send time: the student's own board, for the next quest (here it fails, so the plain line).
+    expect((api.call as jest.Mock).mock.calls).toEqual([["shift_quest_board", "111"]]);
     const payload = sentPayload(userSend);
     expect(payload.flags).toBe(MessageFlags.IsComponentsV2);
     expect(payload.allowedMentions).toEqual(NO_MENTIONS);
@@ -578,12 +583,100 @@ describe("away: the come-back DM (schema 23)", () => {
     expect(userSend).not.toHaveBeenCalled();
   });
 
-  it("leaves every other DM without a button", async () => {
+  it("gives every other DM the island's link too, and sends it without one when the island has no address", async () => {
+    const link = [{ type: 2, style: 5, url: WEB, label: "🌐 เปิดเกาะบนเว็บ" }];
+    for (const kind of ["nudge", "reminder"]) {
+      const { client, userSend } = fakeClient();
+      await deliver(client, fakeApi(), claimed({ kind, params: { open_quests: 1 }, channel_id: null, dm_user_id: "111" }));
+      expect([kind, rowsOf(sentPayload(userSend))]).toEqual([kind, [link]]);
+      expect(customIds(sentPayload(userSend))).toEqual([]);
+    }
+    delete process.env.SHIFT_ISLAND_URL;
+    delete process.env.NEXT_PUBLIC_SITE_URL;
     const { client, userSend } = fakeClient();
     await deliver(client, fakeApi(), claimed({ kind: "nudge", channel_id: null, dm_user_id: "111" }));
     expect(rowsOf(sentPayload(userSend))).toEqual([]);
-    userSend.mockClear();
-    await deliver(client, fakeApi(), claimed({ kind: "reminder", params: { open_quests: 1 }, channel_id: null, dm_user_id: "111" }));
-    expect(rowsOf(sentPayload(userSend))).toEqual([]);
+  });
+});
+
+describe("schema 24: DMs that say what happened", () => {
+  const WEB = "https://island.example/shift/island";
+  const SAVED = process.env.SHIFT_ISLAND_URL;
+  beforeEach(() => {
+    process.env.SHIFT_ISLAND_URL = WEB;
+  });
+  afterEach(() => {
+    if (SAVED === undefined) delete process.env.SHIFT_ISLAND_URL;
+    else process.env.SHIFT_ISLAND_URL = SAVED;
+  });
+
+  /** No quest open: every in-flight, mine and side quest cleared, so main 1 is the one to start. */
+  function freshBoard(): QuestBoard {
+    const b = makeBoard();
+    return {
+      ...b,
+      main: b.main.map((m) => ({ ...m, in_flight: null, mine: null, done: m.milestone === 3 })),
+      side: [],
+      proposed: [],
+    };
+  }
+
+  it("the come-back DM names the open quest to carry on, read from the student's own board at send time", async () => {
+    const board = makeBoard();
+    expect(awayNext(board)).toEqual({ next: "ฟังเสียงจริงอีก 5 คน", begin: false });
+    const api = { call: jest.fn(async () => board), rows: jest.fn() } as unknown as QuestApi;
+    const { client, userSend } = fakeClient();
+    await deliver(client, api, claimed({ kind: "away", channel_id: null, dm_user_id: "111" }));
+    expect((api.call as jest.Mock).mock.calls).toEqual([["shift_quest_board", "111"]]);
+    const body = bodyText(sentPayload(userSend));
+    expect(body).toBe(`### ${AWAY_DM.title}\n${AWAY_DM.carryOn("ฟังเสียงจริงอีก 5 คน")}\n-# ${AWAY_DM.why}\n-# ${T.dmNoReplies}`);
+  });
+
+  it("with nothing open, names the first main quest to start; all done, the plain line", () => {
+    expect(awayNext(freshBoard())).toEqual({ next: MAIN_TITLES[0], begin: true });
+    expect(renderOutbox("away", { next: MAIN_TITLES[0], begin: true }, null, null)!.body).toBe(AWAY_DM.begin(MAIN_TITLES[0]));
+    const done = freshBoard();
+    done.main = done.main.map((m) => ({ ...m, done: true }));
+    expect(awayNext(done)).toBeNull();
+  });
+
+  it("the update DM says which quest passed, grew the tree, or needs more, and never carries the mentor's words", () => {
+    const feedback = "ลองเล่าให้ชัดขึ้นว่าใครใช้";
+    const approved = renderOutbox("nudge", { notice: "review_approved", title: "เจอคนจริงคนแรก", milestone: 1, feedback }, null, null)!;
+    expect(approved.title).toBe(NUDGE_DM.approvedTitle);
+    expect(approved.body).toBe(NUDGE_DM.approved("เจอคนจริงคนแรก", true));
+    expect(approved.body).toContain("ต้นไม้ของทีมโตขึ้น");
+    const side = renderOutbox("nudge", { notice: "review_approved", title: "ฟังเสียงจริง" }, null, null)!;
+    expect(side.body).not.toContain("ต้นไม้");
+    const more = renderOutbox("nudge", { notice: "review_clarification", title: "เจอคนจริงคนแรก", feedback }, null, null)!;
+    expect(more.body).toBe(NUDGE_DM.clarification("เจอคนจริงคนแรก"));
+    const declined = renderOutbox("nudge", { notice: "review_declined", title: "เจอคนจริงคนแรก", note: feedback }, null, null)!;
+    expect(declined.body).toBe(NUDGE_DM.declined("เจอคนจริงคนแรก"));
+    for (const post of [approved, side, more, declined]) {
+      expect(JSON.stringify(post)).not.toContain(feedback);
+      expect(post.note).toBe(`${NUDGE_DM.off}\n${T.dmNoReplies}`);
+    }
+    const invite = renderOutbox("nudge", { notice: "project_invite", from: "มิ้นต์", project_name: "ร้านขนม" }, null, null)!;
+    expect(invite.body).toBe(NUDGE_DM.invite("มิ้นต์", "ร้านขนม"));
+  });
+
+  it("an older row, an unknown notice, or a missing title is the plain line; markdown in a title is escaped", () => {
+    for (const params of [{}, { notice: "award_issued", title: "x" }, { notice: "review_approved" }, { notice: "project_invite", from: "a" }]) {
+      const post = renderOutbox("nudge", params, null, null)!;
+      expect([params, post.title, post.body]).toEqual([params, T.dmNudgeTitle, T.dmNudge]);
+    }
+    expect(renderOutbox("nudge", { notice: "review_approved", title: "**x**" }, null, null)!.body).not.toContain("****x");
+  });
+
+  it("no DM line uses a dash, น้องๆ, or a question", () => {
+    const words = [
+      ...Object.values(NUDGE_DM).map((v) => (typeof v === "function" ? (v as (...a: string[]) => string)("ชื่อ", "ชื่อ") : v)),
+      AWAY_DM.carryOn("ชื่อ"),
+      AWAY_DM.begin("ชื่อ"),
+      AWAY_DM.why,
+    ].join("\n");
+    expect(words).not.toMatch(/[—–?？]/);
+    expect(words).not.toContain("น้องๆ");
+    expect(words).not.toContain("ไหม");
   });
 });

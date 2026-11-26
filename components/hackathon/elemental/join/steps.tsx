@@ -4,6 +4,7 @@ import { ArrowRight, User, Users } from "lucide-react";
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL, prizeTotal, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
 import { ADULT_AGE, elementalPriceBaht } from "@/lib/hackathon/elemental/registration";
+import { HEARD_FROM, heardFromLabel } from "@/lib/hackathon/elemental/heard-from";
 import { teamLabel } from "@/lib/hackathon/elemental/team-name";
 import type { PublicTeam } from "@/lib/supabase/hackathon-event-registrations";
 
@@ -345,6 +346,40 @@ function ContactStep({ draft, set, errors }: StepProps) {
   );
 }
 
+function HeardStep({ draft, set, errors }: StepProps) {
+  return (
+    <>
+      <StepTitle sub="ช่วยให้เรารู้ว่าควรไปโพสต์ที่ไหนอีก">เห็นโพสต์ของงานนี้จากที่ไหน</StepTitle>
+      <div className="grid gap-3" role="radiogroup" aria-label="เห็นโพสต์จากที่ไหน">
+        {HEARD_FROM.map((o) => {
+          const on = draft.heardFrom === o.value;
+          return (
+            <button
+              key={o.value}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              onClick={() => set({ heardFrom: o.value })}
+              className={`${styles.choice} rounded-2xl border bg-white/60 px-5 py-4 text-left text-lg`}
+              style={{
+                borderColor: on ? EL.flame : errors.heardFrom ? EL.ember : "rgba(29,33,31,0.18)",
+                boxShadow: on ? `inset 0 0 0 1px ${EL.flame}` : undefined,
+              }}
+            >
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+      {errors.heardFrom && (
+        <span role="alert" className="mt-3 block text-sm" style={{ color: EL.ember }}>
+          {errors.heardFrom}
+        </span>
+      )}
+    </>
+  );
+}
+
 function SummaryRow({ label, value, onEdit }: { label: string; value: ReactNode; onEdit: () => void }) {
   return (
     <div className="flex items-start justify-between gap-4 py-3">
@@ -378,6 +413,7 @@ function ReviewStep({ draft, set, errors, team, goTo }: StepProps) {
           value={[draft.email, draft.phone, draft.lineId && `LINE ${draft.lineId}`].filter(Boolean).join(" · ")}
           onEdit={() => goTo("contact")}
         />
+        <SummaryRow label="เห็นโพสต์จาก" value={heardFromLabel(draft.heardFrom)} onEdit={() => goTo("heard")} />
       </div>
 
       {mode === "solo" && (
@@ -434,5 +470,6 @@ export const STEP_VIEWS: Record<StepKey, (p: StepProps) => ReactNode> = {
   school: SchoolStep,
   parent: ParentStep,
   contact: ContactStep,
+  heard: HeardStep,
   review: ReviewStep,
 };
