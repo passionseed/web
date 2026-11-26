@@ -64,13 +64,21 @@ function saveConsent(value: AdsConsent) {
 
 /** How long the banner takes to leave after a choice (matches dock-out in the CSS). */
 const LEAVE_MS = 420;
+/** Let the page land first: the banner appears this long after the page loads. */
+const SHOW_DELAY_MS = 4000;
 
 /**
  * Asks once. Declining changes nothing about using the page or applying.
  * Space look from /shift on every SHIFT page; both answers look and leave the same way.
  */
 function CookieBanner({ onChoose }: { onChoose: (value: AdsConsent) => void }) {
+  const [shown, setShown] = useState(false);
   const [leaving, setLeaving] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setShown(true), SHOW_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   function choose(value: AdsConsent) {
     if (leaving) return;
@@ -82,6 +90,8 @@ function CookieBanner({ onChoose }: { onChoose: (value: AdsConsent) => void }) {
     setLeaving(true);
     window.setTimeout(() => onChoose(value), LEAVE_MS);
   }
+
+  if (!shown) return null;
 
   return (
     <div
