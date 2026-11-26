@@ -35,8 +35,8 @@ const SCHEDULE: readonly ElementalSlot[] = [
  *   decisions/log.md, PR #134). Online on Discord until Demo Day, which is
  *   onsite at BAScii, Chula, on Sat 12 Dec. BAScii is closed on Sat 5 Dec.
  *   This replaces 5 to 7 December, 3 days over the long weekend (Angpao,
- *   2026-11-19), and the video hand-in on Mon 7 Dec at 23:00. Whether CSII
- *   confirms BAScii for 12 Dec, and its hours: (fill in) (Linear HAC-74).
+ *   2026-11-19), and the video hand-in on Mon 7 Dec at 23:00. CSII said OK to
+ *   BAScii for 12 Dec (told by Big, 2026-11-26; Linear HAC-74). Hours: (fill in).
  * - Sponsor logos are locked on Mon 7 Dec (Big, 2026-11-26).
  * - Prices: ฿199 alone (told by Angpao, 2026-11-20; it replaces ฿190) and
  *   ฿149 a person with others (company-brain numbers.md).
