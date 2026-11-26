@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Trirong } from "next/font/google";
 import QRCode from "qrcode";
 import { EL, EL_FONT } from "./brand";
@@ -299,6 +300,14 @@ function CsiiMark() {
   );
 }
 
+/** Chula's pink (an approximation), so "จุฬาฯ" stands out in the facts row (Angpao, 2026-11-26: "make จุฬา character more standout", then option B, "Demo Day @ จุฬา"). */
+const CHULA_PINK = "#DE5C8E";
+
+/** "จุฬา" as white type on a pink tag, spelled as Angpao wrote it (no ฯ, which also keeps the facts on two lines). */
+function Chula() {
+  return <span style={{ display: "inline-block", marginLeft: 6, padding: "0 7px", backgroundColor: CHULA_PINK, color: "#ffffff", fontWeight: 600 }}>จุฬา</span>;
+}
+
 /** The small icons in the facts row, 9x9. */
 const ICON = {
   date: ["#.......#", "#########", "#########", "#.......#", "#.#.#.#.#", "#.......#", "#.#.#.#.#", "#.......#", "#########"],
@@ -317,7 +326,7 @@ const ICON = {
 const HIGHLIGHT = "#ffd067";
 
 /** One fact in the bottom row: an icon and a few words, all the same size. */
-function Fact({ icon, children, color = EL.cream }: { icon: keyof typeof ICON; children: string; color?: string }) {
+function Fact({ icon, children, color = EL.cream }: { icon: keyof typeof ICON; children: ReactNode; color?: string }) {
   return (
     <span className="flex items-center gap-[9px] whitespace-nowrap">
       <Pixels rows={ICON[icon]} fill={{ "#": color }} cell={3} />
@@ -739,11 +748,11 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
         </h1>
         {/* The facts as a row under the title, in ink on the sky (review note, 2026-11-23: "move the info under here, as a row"). The longest one takes its own line. */}
         {facts === "top" ? (
-          /* Two lines, not three: a third line's icon sat on the dark mountain and couldn't be read (Angpao, 2026-11-26), so the type is 21px, not 23, and the Demo Day fact names Chula only. */
-          <div className="flex flex-wrap items-center gap-x-[16px] gap-y-[6px]" style={{ width: 660, marginLeft: 4, marginTop: 4, fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 21, lineHeight: "30px" }}>
+          /* Two lines, not three: a third line's icon sat on the dark mountain and couldn't be read (Angpao, 2026-11-26), so the type is 21px, not 23, and the Demo Day fact names Chula only, as a pink tag. */
+          <div className="flex flex-wrap items-center gap-x-[14px] gap-y-[6px]" style={{ width: 660, marginLeft: 4, marginTop: 4, fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 21, lineHeight: "30px" }}>
             <Fact icon="date" color={EL.ink}>{thaiDayRange()}</Fact>
             <Fact icon="online" color={EL.ink}>ออนไลน์</Fact>
-            <Fact icon="pin" color={EL.ink}>Demo Day ที่จุฬาฯ</Fact>
+            <Fact icon="pin" color={EL.ink}>Demo Day @<Chula /></Fact>
             <Fact icon="school" color={EL.ink}>{who}</Fact>
             <Fact icon="friends" color={EL.ink}>{`มากับเพื่อน ฿${ELEMENTAL.groupPriceBaht} ต่อคน`}</Fact>
             <Fact icon="workshop" color={EL.ink}>{`${BEGINNER[0]} ${BEGINNER[1]}`}</Fact>
