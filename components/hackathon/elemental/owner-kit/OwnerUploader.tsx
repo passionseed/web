@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import type { OwnerElement } from "@/lib/hackathon/elemental/owner-link";
-import { OWNER_UPLOAD_ACCEPT } from "@/lib/hackathon/elemental/owner-upload";
+import { formatFileSize, OWNER_UPLOAD_ACCEPT } from "@/lib/hackathon/elemental/owner-upload";
 
 type Item = {
   id: number;
@@ -13,8 +13,6 @@ type Item = {
   progress: number;
   error?: string;
 };
-
-const mb = (n: number) => (n >= 1024 ** 3 ? `${(n / 1024 ** 3).toFixed(1)} GB` : `${Math.max(0.1, n / 1024 ** 2).toFixed(1)} MB`);
 
 function put(url: string, file: File, contentType: string, onProgress: (p: number) => void): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -58,6 +56,7 @@ export function OwnerUploader({ org, element, signature }: { org: string; elemen
 
   const start = async () => {
     setBusy(true);
+    const uploaded: string[] = [];
     for (const it of items.filter((i) => i.status === "waiting" || i.status === "error")) {
       update(it.id, { status: "uploading", progress: 0, error: undefined });
       try {
@@ -70,11 +69,21 @@ export function OwnerUploader({ org, element, signature }: { org: string; elemen
         if (!res.ok) throw new Error(data.error || "อัปโหลดไม่สำเร็จ");
         await put(data.uploadUrl, it.file, data.contentType, (p) => update(it.id, { progress: p }));
         update(it.id, { status: "done", progress: 1 });
+        uploaded.push(data.key);
       } catch (error) {
         update(it.id, { status: "error", error: error instanceof Error ? error.message : "อัปโหลดไม่สำเร็จ" });
       }
     }
     setBusy(false);
+    // Tell the team on Discord. The owner's files are safe either way, so a failure here stays silent.
+    if (uploaded.length > 0) {
+      fetch("/api/hackathon/elemental/owner-upload/done", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ o: org, el: element, s: signature, keys: uploaded }),
+        keepalive: true,
+      }).catch(() => {});
+    }
   };
 
   const pending = items.filter((i) => i.status === "waiting" || i.status === "error").length;
@@ -98,7 +107,7 @@ export function OwnerUploader({ org, element, signature }: { org: string; elemen
               <div className="flex items-baseline justify-between gap-3" style={{ fontFamily: EL_FONT.display, fontSize: 17, fontWeight: 300 }}>
                 <span className="min-w-0 truncate">{it.file.name}</span>
                 <span className="flex-none" style={{ fontFamily: EL_FONT.mono, fontSize: 13, color: it.status === "error" ? EL.flame : it.status === "done" ? EL.toxicCyan : EL.creamSoft }}>
-                  {it.status === "done" ? "ได้รับแล้ว" : it.status === "uploading" ? `${Math.round(it.progress * 100)}%` : it.status === "error" ? "ไม่สำเร็จ" : mb(it.file.size)}
+                  {it.status === "done" ? "ได้รับแล้ว" : it.status === "uploading" ? `${Math.round(it.progress * 100)}%` : it.status === "error" ? "ไม่สำเร็จ" : formatFileSize(it.file.size)}
                 </span>
               </div>
               <div className="mt-2 h-1" style={{ background: "rgba(243,239,230,0.18)" }}>
