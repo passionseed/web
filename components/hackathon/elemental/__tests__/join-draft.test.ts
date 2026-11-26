@@ -30,7 +30,7 @@ const filled = (patch: Partial<Draft> = {}): Draft => ({
 
 describe("stepsFor", () => {
   it("asks for the person's own name before the team name", () => {
-    expect(stepsFor(filled({ mode: "create", age: "22" }))).toEqual(["mode", "name", "team", "school", "contact", "review"]);
+    expect(stepsFor(filled({ mode: "create", age: "22" }))).toEqual(["mode", "name", "team", "school", "contact", "heard", "review"]);
   });
 
 
