@@ -17,94 +17,9 @@ const SCHEDULE_TIME_COLOR: Record<ElementalSlotKind, string> = {
 };
 
 /**
- * The workshops are still on, but which of their old times (Sat 5 Dec 10:00
- * and 19:00, Sun 6 Dec 19:00) still hold after the 12 Dec extension is
- * (fill in) in company-brain, so no time is shown until it's decided.
- */
-const WORKSHOP_TIME_SOON = "ประกาศเวลาเร็ว ๆ นี้";
-
-const BEGINNER_JOURNEY = [
-  {
-    step: "01",
-    color: EL.toxicCyan,
-    fear: "ยังไม่มีทีม ยังไม่มีไอเดีย",
-    answer:
-      "มาคนเดียวได้เลย เราช่วยจับคู่ทีมให้ก่อนเริ่ม แล้วเข้าเวิร์กช็อปแรก ฝึกสัมภาษณ์คนจริงจนเจอปัญหาที่ใช่",
-    session: `เวิร์กช็อปสัมภาษณ์และหากลุ่มลูกค้า · ${WORKSHOP_TIME_SOON}`,
-  },
-  {
-    step: "02",
-    color: EL.flameLight,
-    fear: "ไม่เคยแข่ง เขียนโค้ดไม่เก่ง",
-    answer:
-      "มีเวิร์กช็อปพาลงมือสร้างจริง พร้อมพี่เลี้ยงช่วยแก้จุดติดขัดตลอดงาน",
-    session: `เวิร์กช็อปสร้างผลงาน · ${WORKSHOP_TIME_SOON}`,
-  },
-  {
-    step: "03",
-    color: EL.flameCore,
-    fear: "ไม่เคยพรีเซนต์งานแข่งมาก่อน",
-    answer:
-      "ก่อนส่งงานรอบสุดท้าย มีเวิร์กช็อปช่วยเรียบเรียงเรื่องและวิธีเล่า ให้ผลงานของคุณเล่าได้ชัด คม และตรงประเด็น",
-    session: `เวิร์กช็อปการนำเสนอ · ${WORKSHOP_TIME_SOON}`,
-  },
-] as const;
-
-function JourneyRow({
-  item,
-}: {
-  item: (typeof BEGINNER_JOURNEY)[number];
-}) {
-  const rowRef = useRef<HTMLLIElement>(null);
-  const reduceMotion = useReducedMotion();
-  const scrollYProgress = useSectionScroll({
-    target: rowRef,
-    offset: ["start 92%", "start 45%"],
-  });
-
-  const opacity = useTransform(scrollYProgress, [0, 1], [0.62, 1]);
-  const y = useTransform(scrollYProgress, [0, 1], [24, 0]);
-
-  return (
-    <motion.li
-      ref={rowRef}
-      style={reduceMotion ? undefined : { opacity, y }}
-      className="grid grid-cols-1 gap-4 border-t border-[#f3efe6]/18 py-10 will-change-transform md:grid-cols-[90px_1fr_1.15fr] md:gap-8 md:py-12"
-    >
-      <span
-        className="text-sm tracking-[0.12em]"
-        style={{ fontFamily: EL_FONT.mono, color: item.color }}
-      >
-        {item.step}
-      </span>
-
-      <h3
-        className="text-2xl text-[#faf8f4] sm:text-3xl"
-        style={{ fontFamily: EL_FONT.display, fontWeight: 300, lineHeight: 1.2 }}
-      >
-        {item.fear}
-      </h3>
-
-      <div>
-        <p
-          className="text-base leading-relaxed text-[#e8e3d9] sm:text-lg"
-          style={{ fontFamily: "var(--font-bai-jamjuree), sans-serif" }}
-        >
-          {item.answer}
-        </p>
-        <p
-          className="mt-3 text-xs tracking-[0.04em]"
-          style={{ fontFamily: EL_FONT.mono, color: item.color }}
-        >
-          {item.session}
-        </p>
-      </div>
-    </motion.li>
-  );
-}
-
-/**
- * Beginner-friendly pitch + guided workshop & mentor journey + full schedule.
+ * Beginner-friendly pitch + full schedule. The three fear-to-workshop rows were
+ * cut (Big, 2026-11-26): the six steps after the hero (JourneySteps) now say
+ * what to do and the help for each, so the rows only repeated them.
  * Sharp editorial lines, zero cards, zero icons, Apple scroll-driven reveal.
  */
 export function BeginnerJourneySection() {
@@ -149,13 +64,6 @@ export function BeginnerJourneySection() {
             เริ่มจากศูนย์ได้เลย ทำงานบน Discord มีเวิร์กช็อปและพี่เลี้ยงช่วยจนส่งงาน
           </p>
         </motion.div>
-
-        {/* 3-Step Guided Support Journey */}
-        <ol className="mt-16 border-b border-[#f3efe6]/18 sm:mt-20">
-          {BEGINNER_JOURNEY.map((item) => (
-            <JourneyRow key={item.step} item={item} />
-          ))}
-        </ol>
 
         {/* Full schedule */}
         <div className="mt-20 sm:mt-24">
