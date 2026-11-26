@@ -276,7 +276,7 @@ function GlyphLetter({ ch, el, on }: { ch: string; el: GlyphElement; on: boolean
 }
 
 /** Pixel art from rows of characters, one cell per character. */
-function Pixels({ rows, fill, cell }: { rows: readonly string[]; fill: Record<string, string>; cell: number }) {
+export function Pixels({ rows, fill, cell }: { rows: readonly string[]; fill: Record<string, string>; cell: number }) {
   const w = rows[0].length;
   const h = rows.length;
   return (
@@ -310,7 +310,7 @@ export function Chula() {
 }
 
 /** The small icons in the facts row, 9x9. */
-const ICON = {
+export const ICON = {
   date: ["#.......#", "#########", "#########", "#.......#", "#.#.#.#.#", "#.......#", "#.#.#.#.#", "#.......#", "#########"],
   online: ["..#####..", ".#.....#.", "#..###..#", "..#...#..", ".#..#..#.", "...#.#...", "....#....", ".........", "....#...."],
   prize: ["#########", "#.#####.#", ".#.###.#.", "...###...", "....#....", "....#....", "..#####..", ".#######.", "........."],
@@ -327,7 +327,7 @@ const ICON = {
 const HIGHLIGHT = "#ffd067";
 
 /** One fact in the bottom row: an icon and a few words, all the same size. */
-function Fact({ icon, children, color = EL.cream }: { icon: keyof typeof ICON; children: ReactNode; color?: string }) {
+export function Fact({ icon, children, color = EL.cream }: { icon: keyof typeof ICON; children: ReactNode; color?: string }) {
   return (
     <span className="flex items-center gap-[9px] whitespace-nowrap">
       <Pixels rows={ICON[icon]} fill={{ "#": color }} cell={3} />
@@ -791,4 +791,9 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
       </svg>
     </div>
   );
+}
+
+/** The edition's name with its element letters, as in the key poster's title, for other posters in the series. */
+export function EditionWord({ glyphs = true }: { glyphs?: boolean }) {
+  return <>{Array.from(ELEMENTAL.edition).map((ch, i) => (TITLE_GLYPHS[i] ? <GlyphLetter key={i} ch={ch} el={TITLE_GLYPHS[i]} on={glyphs} /> : ch))}</>;
 }

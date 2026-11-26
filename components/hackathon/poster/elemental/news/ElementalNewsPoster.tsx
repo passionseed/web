@@ -4,26 +4,32 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
 import { PassionSeedWordmark } from "@/components/hackathon/PassionSeedWordmark";
 
 import { EL, EL_FONT } from "../brand";
-import { Chula, RegisterQr } from "../ElementalKeyPoster";
+import { Chula, EditionWord, Fact, ICON, Pixels, RegisterQr } from "../ElementalKeyPoster";
 import { ELEMENTAL, thaiDayRange } from "../facts";
 
 /**
  * Elemental Hackathon, an Instagram announcement (1080x1350): the hackathon
  * is longer (5 to 10 Dec instead of 5 to 7), the work is due Thu 10 Dec, and
  * it ends with a Demo Day at CSII, Chulalongkorn, with CSII as partner
- * (Angpao, 2026-11-26: "poster tell that we got collab with csii with demo
- * day and extend duration of hackathon").
+ * (Angpao, 2026-11-26).
  *
- * Its own photo at full brightness, not dimmed (Angpao, same day: "use new
- * background and don't dim the bg make it work"): dark type sits on the
- * light sky, and everything below the horizon sits on a solid ticket and a
- * solid band, so the photo never has to be darkened. Layout choices follow a
- * cognitive-science review of the first draft (cogsci-design-review skill).
- * Facts come from ../facts.ts only.
+ * Built the way the key poster (slide 1) is, because that is why it works
+ * (Angpao, same day: "look at our main poster why is it good replicate it
+ * not put text all screen with no design"):
+ * - one picture fills the sheet, at full brightness, with one bright object
+ *   in a calm photo. Here a pink pixel flag on the ridge, breaking into
+ *   pixels as on slide 1; pink is Chula's colour on these posters;
+ * - three sizes of type only: the title on the sky, one row of small facts
+ *   with pixel icons, one big yellow line on the dark foot;
+ * - type sits on calm parts of the picture, never on a box;
+ * - the same anchors: names top left, QR code bottom right, one line at the
+ *   bottom.
+ * The plate is made by scripts/make-elemental-news-plate.py from a photo
+ * slides 1 and 2 don't use. Facts come from ../facts.ts only.
  */
 
 const trirong = Trirong({
-  weight: ["200", "300", "400", "500"],
+  weight: ["200", "300", "400", "500", "600"],
   style: ["normal", "italic"],
   subsets: ["thai", "latin"],
   variable: "--font-trirong",
@@ -31,132 +37,111 @@ const trirong = Trirong({
 
 export const W = 1080;
 export const H = 1350;
-const PAD = 64;
-/** A valley under a cloudy sky, not used on slides 1 and 2. */
-const PHOTO = "/hackathon/poster/elemental/bg/valley-sergei-gussev-stocksnap.jpg";
-const QR = 156;
+const PLATE = "/hackathon/poster/elemental/plate-news-valley.png";
 const HIGHLIGHT = "#ffd067";
 /** The dates before the change (Angpao, 2026-11-19), shown crossed out. */
-const OLD_RANGE = "5–7 ธ.ค.";
-/** The link as printed on slide 2: the short one, which redirects. */
-const SHORT_URL = ELEMENTAL.url.replace(/\/elemental$/, "");
-/** Where the ticket's stub ends, in px from its left edge. */
-const STUB = 236;
-/** The radius of the ticket's two notches. */
-const NOTCH = 16;
+const OLD_RANGE = "5–7";
 
 const due = ELEMENTAL.schedule.find((s) => s.kind === "due");
 
 export function ElementalNewsPoster({ id = "elemental-news" }: { id?: string }) {
   const demo = ELEMENTAL.demoDay;
-  // "ส. 12 ธ.ค." split into the weekday, the day and the month for the ticket stub.
-  const [demoWeekday, demoDay, demoMonth] = demo.date ? formatThaiDate(demo.date).split(" ") : [];
-  const notchMask = `radial-gradient(circle ${NOTCH}px at ${STUB}px 0, transparent ${NOTCH - 0.5}px, #000 ${NOTCH}px), radial-gradient(circle ${NOTCH}px at ${STUB}px 100%, transparent ${NOTCH - 0.5}px, #000 ${NOTCH}px)`;
   return (
-    <div
-      id={id}
-      className={`${trirong.variable} relative overflow-hidden`}
-      style={{ width: W, height: H, backgroundColor: "#d9dcd8", color: EL.ink, padding: PAD, boxSizing: "border-box" }}
-    >
+    <div id={id} className={`${trirong.variable} relative overflow-hidden`} style={{ width: W, height: H, backgroundColor: "#2a2b26" }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={PHOTO} alt="" width={W} height={H} className="absolute inset-0 h-full w-full" style={{ objectFit: "cover", objectPosition: "72% 30%" }} />
-      {/* Grain, like the key visual's film. Light, so the photo stays bright. */}
-      <svg className="pointer-events-none absolute inset-0" width={W} height={H} aria-hidden="true" style={{ opacity: 0.12, mixBlendMode: "overlay" }}>
-        <filter id={`${id}-grain`}>
-          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" />
-          <feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1.4 -0.5" />
-        </filter>
-        <rect width={W} height={H} filter={`url(#${id}-grain)`} />
+      <img src={PLATE} alt="" width={W} height={H} className="absolute inset-0 h-full w-full" />
+
+      {/* The dark foot, as on slide 1: only the bottom fades, the picture stays bright. */}
+      <svg className="absolute inset-0" width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
+        <defs>
+          <linearGradient id={`${id}-foot`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#0f0f0d" stopOpacity="0" />
+            <stop offset="0.32" stopColor="#0f0f0d" stopOpacity="0.58" />
+            <stop offset="0.6" stopColor="#0f0f0d" stopOpacity="0.8" />
+            <stop offset="1" stopColor="#0f0f0d" stopOpacity="0.92" />
+          </linearGradient>
+          <filter id={`${id}-grain`} x="0" y="0" width="100%" height="100%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4" stitchTiles="stitch" />
+            <feColorMatrix type="saturate" values="0" />
+          </filter>
+        </defs>
+        <rect y={H - 330} width={W} height={330} fill={`url(#${id}-foot)`} />
       </svg>
 
-      <div className="relative" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-        {/* The organisers, small, with what kind of post it is. */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ display: "flex", alignItems: "center", gap: 14, fontFamily: EL_FONT.mono, fontSize: 18, color: EL.inkSoft }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/hackathon/HackLogo.png" alt={ELEMENTAL.series} width={95} height={38} style={{ filter: "brightness(0)", opacity: 0.8 }} />
-            <span>×</span>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/passion-seed-logo.png" alt="" width={36} height={36} />
-            <PassionSeedWordmark height={20} style={{ color: EL.ink, marginLeft: -6 }} />
-          </span>
-          <span style={{ fontFamily: EL_FONT.display, fontWeight: 500, fontSize: 24, lineHeight: "32px", background: EL.ink, color: HIGHLIGHT, padding: "2px 14px" }}>อัปเดตใหม่</span>
-        </div>
-
-        {/* The lockup, big: the event × CSII (Angpao, 2026-11-26: "use Elemental Hackathon X CSII logo at the top make it stand out"). It also says the partnership, so there's no separate CSII line. */}
-        <div style={{ marginTop: 34, display: "flex", alignItems: "center", gap: 20 }}>
-          <span style={{ fontFamily: EL_FONT.display, fontStyle: "italic", fontWeight: 300, fontSize: 68, lineHeight: "78px", letterSpacing: "-0.01em", whiteSpace: "nowrap" }}>{ELEMENTAL.edition} Hackathon</span>
-          <span style={{ fontFamily: EL_FONT.display, fontWeight: 200, fontSize: 56, lineHeight: "56px", color: EL.inkSoft }}>×</span>
+      {/* Title lockup on the sky, as on slide 1. */}
+      <div className="absolute left-[56px] top-[46px]" style={{ color: EL.ink }}>
+        <div className="flex items-center gap-[18px]" style={{ marginLeft: 4 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/hackathon/partners/csii.png" alt="CSII, Chulalongkorn School of Integrated Innovation" width={220} height={72} />
+          <img src="/hackathon/HackLogo.png" alt={ELEMENTAL.series} width={125} height={50} style={{ filter: "brightness(0)", opacity: 0.85 }} />
+          <span style={{ fontFamily: EL_FONT.mono, fontSize: 20, color: EL.inkSoft }}>×</span>
+          <span className="flex items-center gap-[10px]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/passion-seed-logo.png" alt="" width={50} height={50} />
+            <PassionSeedWordmark height={26} style={{ color: EL.ink }} />
+          </span>
+          {/* What kind of post it is. */}
+          <span style={{ marginLeft: 8, fontFamily: EL_FONT.display, fontWeight: 500, fontSize: 24, lineHeight: "34px", background: EL.ink, color: HIGHLIGHT, padding: "0 14px" }}>อัปเดตใหม่</span>
         </div>
-        <div style={{ marginTop: 22, height: 2, background: EL.ink, opacity: 0.85 }} />
-
-        <h1 style={{ margin: "22px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 70, lineHeight: "86px", letterSpacing: "-0.005em" }}>
-          แข่งนานขึ้นเป็น {ELEMENTAL.days} วัน
-          <br />
-          แล้วไปโชว์ผลงานที่<span style={{ fontWeight: 500 }}>จุฬาฯ</span>
+        {/* The event × CSII as the title (Angpao, 2026-11-26: "use Elemental Hackathon X CSII logo at the top make it stand out"). */}
+        <h1 className="m-0 mt-[20px]" style={{ fontFamily: EL_FONT.display, lineHeight: 1.02, letterSpacing: "-0.01em" }}>
+          <span className="block" style={{ fontWeight: 200, fontSize: 124 }}>
+            <EditionWord />
+          </span>
+          <span className="flex items-center" style={{ gap: 26 }}>
+            <span style={{ fontWeight: 300, fontStyle: "italic", fontSize: 124 }}>Hackathon</span>
+            <span style={{ fontWeight: 200, fontSize: 72, color: EL.inkSoft }}>×</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/hackathon/partners/csii.png" alt="CSII, Chulalongkorn School of Integrated Innovation" width={245} height={80} style={{ marginTop: 14 }} />
+          </span>
         </h1>
-
-        {/* The change itself: online, the old dates crossed out, the new ones on a highlighter mark. */}
-        <div style={{ marginTop: 26 }}>
-          <p style={{ margin: 0, fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 26, lineHeight: "32px" }}>แข่งออนไลน์ทาง Discord</p>
-          <div style={{ display: "flex", alignItems: "center", gap: 22, marginTop: 2 }}>
-            <span className="relative" style={{ fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 44, lineHeight: "56px", color: EL.inkSoft }}>
+        {/* The facts as one row under the title, in ink on the sky. The date leads, with the old one crossed out. */}
+        <div className="flex flex-wrap items-center gap-x-[18px] gap-y-[6px]" style={{ width: 640, marginLeft: 4, marginTop: 10, fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 23, lineHeight: "32px" }}>
+          <Fact icon="date" color={EL.ink}>
+            <span className="relative" style={{ color: EL.inkSoft, marginRight: 10 }}>
               {OLD_RANGE}
-              {/* A slanted cross-out, so it can't merge with the dash in "5–7". */}
-              <span className="absolute" style={{ left: -4, right: -4, top: "52%", height: 4, background: EL.ember, transform: "rotate(-12deg)" }} />
+              <span className="absolute" style={{ left: -2, right: -2, top: "48%", height: 3, background: EL.ember, transform: "rotate(-32deg)" }} />
             </span>
-            <span style={{ fontFamily: EL_FONT.mono, fontSize: 36, color: EL.inkSoft }}>→</span>
-            <span style={{ fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 108, lineHeight: "112px", letterSpacing: "-0.01em", background: `linear-gradient(transparent 52%, ${HIGHLIGHT} 52%, ${HIGHLIGHT} 90%, transparent 90%)`, padding: "0 10px" }}>
-              {thaiDayRange()}
-            </span>
-          </div>
-          {due ? (
-            <p style={{ margin: "6px 0 0", fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 28, lineHeight: "36px" }}>
-              ส่งคลิปผลงาน <span style={{ fontWeight: 500 }}>{formatThaiDate(due.date)} {due.time} น.</span>
-            </p>
-          ) : null}
+            <span style={{ fontWeight: 600, background: `linear-gradient(transparent 55%, ${HIGHLIGHT} 55%, ${HIGHLIGHT} 92%, transparent 92%)`, padding: "0 4px" }}>{thaiDayRange()}</span>
+          </Fact>
+          <Fact icon="online" color={EL.ink}>ออนไลน์</Fact>
+          <Fact icon="school" color={EL.ink}>{`${ELEMENTAL.gradesTh} เท่านั้น`}</Fact>
+          {due ? <Fact icon="workshop" color={EL.ink}>{`ส่งคลิป ${formatThaiDate(due.date)} ${due.time} น.`}</Fact> : null}
+          <Fact icon="friends" color={EL.ink}>{`สมัครได้ถึง ${formatThaiDate(ELEMENTAL.registrationClosesOn)}`}</Fact>
         </div>
-
-        {/* The Demo Day as a ticket: the day big on the stub, so its date is as easy to see as its name. Solid cream, so the photo under it needs no dimming. */}
-        <div style={{ marginTop: 44, display: "flex", background: EL.cream, maskImage: notchMask, WebkitMaskImage: notchMask, maskComposite: "intersect", WebkitMaskComposite: "source-in", boxShadow: "0 10px 30px rgba(0,0,0,0.18)" }}>
-          <div style={{ width: STUB, flex: "none", background: HIGHLIGHT, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "18px 0", borderRight: `3px dashed ${EL.ink}` }}>
-            <span style={{ fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 30, lineHeight: "34px" }}>{demoWeekday ?? "ปิดท้าย"}</span>
-            <span style={{ fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 112, lineHeight: "112px" }}>{demoDay ?? ""}</span>
-            <span style={{ fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 30, lineHeight: "34px" }}>{demoMonth ?? ""}</span>
-          </div>
-          <div style={{ flex: 1, padding: "20px 28px 22px" }}>
-            <p style={{ margin: 0, fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 24, lineHeight: "30px", color: EL.inkSoft }}>ปิดท้ายแบบออนไซต์</p>
-            <p style={{ margin: "2px 0 0", fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 64, lineHeight: "80px", whiteSpace: "nowrap" }}>
-              Demo Day @<Chula />
-            </p>
-            <p style={{ margin: "2px 0 0", fontFamily: EL_FONT.display, fontWeight: 500, fontSize: 30, lineHeight: "38px" }}>{demo.time} น. · CSII</p>
-            {/* Only invited projects present (Angpao, 2026-11-26). */}
-            <p style={{ margin: "8px 0 0", display: "inline-block", fontFamily: EL_FONT.display, fontWeight: 500, fontSize: 24, lineHeight: "32px", background: EL.ink, color: EL.cream, padding: "1px 12px" }}>{demo.whoTh}</p>
-            <p style={{ margin: "4px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 24, lineHeight: "32px" }}>ผู้สนับสนุนและผู้เชี่ยวชาญแต่ละด้านมาชมผลงาน</p>
-          </div>
-        </div>
-
       </div>
 
-      {/* Foot: a solid band like slide 1's, with the deadline in the accent and a way to sign up from the same phone. */}
-      <div className="absolute" style={{ left: 0, right: 0, bottom: 0, height: 214, background: EL.char, color: EL.cream, padding: `26px ${PAD}px 0`, boxSizing: "border-box" }}>
-        <p style={{ margin: 0, fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 44, lineHeight: "54px" }}>
-          ยังสมัครได้ถึง <span style={{ fontWeight: 500, color: HIGHLIGHT }}>{formatThaiDate(ELEMENTAL.registrationClosesOn)}</span>
-        </p>
-        <p style={{ margin: "6px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 24, lineHeight: "32px" }}>
-          สมัครที่ <span style={{ fontWeight: 400, color: HIGHLIGHT }}>{SHORT_URL}</span>
-        </p>
-        <p style={{ margin: "4px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 21, lineHeight: "28px", color: EL.creamSoft }}>
-          {ELEMENTAL.gradesTh} · มากับเพื่อน ฿{ELEMENTAL.groupPriceBaht} / คน · คนเดียว ฿{ELEMENTAL.priceBaht}
-        </p>
-        <div className="absolute" style={{ right: PAD, top: 22, width: QR }}>
-          <div style={{ background: EL.cream, padding: 8 }}>
-            <RegisterQr size={QR - 16} />
+      {/* The foot, as slide 1's prize: one big yellow line, a small label beside it, the QR code, and one sentence. */}
+      <div className="absolute inset-x-[56px] bottom-[48px]" style={{ fontFamily: EL_FONT.display, color: EL.cream }}>
+        <div className="flex items-end justify-between gap-[14px]">
+          <div className="flex items-end whitespace-nowrap" style={{ gap: 16 }}>
+            <span style={{ marginBottom: 16 }}>
+              <Pixels rows={ICON.pin} fill={{ "#": HIGHLIGHT }} cell={7} />
+            </span>
+            <span style={{ fontWeight: 200, fontSize: 92, lineHeight: "96px", letterSpacing: "-0.01em", color: HIGHLIGHT }}>Demo Day</span>
+            <span style={{ marginBottom: 8, fontWeight: 400, fontSize: 23, lineHeight: "31px" }}>
+              <span className="block" style={{ fontWeight: 600, fontSize: 30, lineHeight: "40px" }}>
+                @<Chula />
+              </span>
+              <span className="block">
+                {demo.date ? `${formatThaiDate(demo.date)} · ` : ""}
+                {demo.time} น.
+              </span>
+              <span className="block" style={{ color: HIGHLIGHT }}>{demo.whoTh}</span>
+            </span>
+          </div>
+          <div style={{ background: EL.cream, padding: 9, flex: "none", marginBottom: 6 }}>
+            <RegisterQr size={148} />
           </div>
         </div>
+        <div className="whitespace-nowrap" style={{ marginTop: 12, fontWeight: 500, fontSize: 40, lineHeight: "52px" }}>
+          แข่งนานขึ้นเป็น {ELEMENTAL.days} วัน แล้วไปโชว์ผลงานที่จุฬาฯ
+        </div>
       </div>
+
+      {/* Grain over the type too, so it sits in the same film. */}
+      <svg className="pointer-events-none absolute inset-0" width={W} height={H} aria-hidden="true">
+        <rect width={W} height={H} filter={`url(#${id}-grain)`} opacity="0.1" style={{ mixBlendMode: "overlay" }} />
+      </svg>
     </div>
   );
 }
