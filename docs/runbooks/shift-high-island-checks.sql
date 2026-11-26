@@ -191,14 +191,14 @@ web_allow(sig) AS (VALUES
   ('shift_quest_admin_away(text)'),
   ('shift_quest_admin_away_reveal(text,uuid)')
 )
--- The schema: 23 is every migration on this branch (the come-back DM and
--- the return card, 20261121090000). run-local.sh runs this file on its
+-- The schema: 24 is every migration on this branch (the bot's DMs on by
+-- default, 20261126100000). run-local.sh runs this file on its
 -- single pass, so a new migration that moves the version fails there until
 -- this line follows.
-SELECT 'schema: shift_quest_schema_version() is ' || coalesce(v::text, 'missing') || ', expected 23' AS problem
+SELECT 'schema: shift_quest_schema_version() is ' || coalesce(v::text, 'missing') || ', expected 24' AS problem
 FROM (SELECT CASE WHEN to_regprocedure('public.shift_quest_schema_version()') IS NULL THEN NULL
   ELSE public.shift_quest_schema_version() END AS v) s
-WHERE v IS DISTINCT FROM 23
+WHERE v IS DISTINCT FROM 24
 UNION ALL
 -- The two logins: they exist, NOINHERIT, member of no role, their connection
 -- limit and statement_timeout. LOGIN itself is step D, so it is not checked here.

@@ -2,6 +2,9 @@ import fs from "node:fs";
 
 import { ActionRowBuilder, AttachmentBuilder, DiscordAPIError, type ButtonBuilder, type Client, type Message } from "discord.js";
 
+import { openQuests, starterQuest } from "@/lib/supabase/shift-quests/board";
+import type { QuestBoard } from "@/lib/supabase/shift-quests/types";
+
 import { QuestDbError, QuestError, type QuestApi } from "./api";
 import { enqueueAway } from "./away";
 import { TREE_GREW, renderOutbox, safePost, type OutboxRender } from "./copy";
@@ -203,7 +206,7 @@ export function renderDelivery(
   return kind === "tree_grew" ? renderTreeGrew(params) : renderOutbox(kind, params, memberUserId, peerUserId);
 }
 
-/** "🌐 เปิดเกาะบนเว็บ" under a tree_grew post and in the come-back DM, when the island has an address. */
+/** "🌐 เปิดเกาะบนเว็บ" under a tree_grew post and in every DM, when the island has an address. */
 function islandRows(): Row[] {
   const button = islandLinkButton();
   return button ? [new ActionRowBuilder<ButtonBuilder>().addComponents(button)] : [];
@@ -252,10 +255,42 @@ export function outboxView(kind: string, post: OutboxRender, island: IslandPost 
   return { tone: OUTBOX_TONE[kind] ?? "neutral", title: post.title, blocks, rows, files: island?.files ?? [] };
 }
 
+/**
+ * The come-back DM's next quest, from the student's own board: the open quest
+ * that needs them (a mentor asked for more, active, or paused), else the first
+ * main quest they can start. Null when there is neither (all done, or only
+ * work waiting on a mentor, which the database never sends a come-back DM for).
+ */
+export function awayNext(board: QuestBoard): { next: string; begin: boolean } | null {
+  const open = openQuests(board).find((q) => q.status === "clarification" || q.status === "active" || q.status === "paused");
+  if (open) return { next: open.title, begin: false };
+  const ref = starterQuest(board);
+  const main = ref?.kind === "main" ? board.main.find((m) => m.milestone === ref.milestone) : undefined;
+  return main ? { next: main.title, begin: true } : null;
+}
+
+/**
+ * The come-back DM's params, read at send time with the student as the actor.
+ * A failed read is the plain DM (no params): the island's first card names the
+ * step anyway, and the DM still goes.
+ */
+export async function awayParams(api: QuestApi, userId: string | null): Promise<Record<string, unknown>> {
+  if (!userId) return {};
+  try {
+    return awayNext(await api.call<QuestBoard>("shift_quest_board", userId)) ?? {};
+  } catch {
+    return {};
+  }
+}
+
 /** Sends one claimed delivery as a card and returns the Discord message ID. */
 export async function deliver(client: Client, api: QuestApi, msg: Claimed): Promise<string> {
   const tree = msg.kind === "tree_grew";
-  const params = tree ? await treeGrewParams(api, msg.params) : msg.params;
+  const params = tree
+    ? await treeGrewParams(api, msg.params)
+    : msg.kind === "away"
+      ? await awayParams(api, msg.dm_user_id)
+      : msg.params;
   const post = renderDelivery(msg.kind, params, msg.member_user_id, msg.peer_user_id);
   if (!post) throw Object.assign(new Error(`unknown kind ${msg.kind}`), { permanent: true });
   const island = msg.kind === "island_weekly" ? await islandPost(api) : null;
@@ -263,8 +298,9 @@ export async function deliver(client: Client, api: QuestApi, msg: Claimed): Prom
   if (msg.kind === "away" && !msg.dm_user_id) throw Object.assign(new Error("away without a DM target"), { permanent: true });
 
   if (msg.dm_user_id) {
-    // The come-back DM carries the island's link; every other DM no button at all.
-    const rows = msg.kind === "away" ? awayRows() : [];
+    // Every DM points at the island, where the work is (the bot is notify-only). The come-back DM
+    // is nothing without the link, so it fails without an address; the others go without one.
+    const rows = msg.kind === "away" ? awayRows() : islandRows();
     const user = await client.users.fetch(msg.dm_user_id);
     // Pings nobody (renderView's default).
     const sent = await user.send(

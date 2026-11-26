@@ -565,7 +565,8 @@ export const student: HandlerSet = {
   actions: {
     async start(i, ctx) {
       requireEligible(ctx);
-      await ctx.api.call("shift_quest_start", ctx.userId, ctx.name, false);
+      // null: keep the DM choice (on by default for a new student, schema 24); a second start never changes it.
+      await ctx.api.call("shift_quest_start", ctx.userId, ctx.name, null);
       await show(i, startedView(ctx), { replace: true });
     },
 
