@@ -9,7 +9,7 @@ import { teamLabel } from "@/lib/hackathon/elemental/team-name";
 import type { PublicTeam } from "@/lib/supabase/hackathon-event-registrations";
 
 import { IouSlip, PixelEdge } from "../BuddyPass";
-import { formatPhone, type BuddyPassOffer, type Draft, type Errors, type Mode, type StepKey } from "./draft";
+import { formatPhone, teamNameFor, type BuddyPassOffer, type Draft, type Errors, type Mode, type StepKey } from "./draft";
 import { CheckRow, Field, TextInput } from "./fields";
 import styles from "./join.module.css";
 
@@ -227,29 +227,15 @@ function WhatItIs() {
   );
 }
 
-function TeamStep({ draft, set, errors }: StepProps) {
-  return (
-    <>
-      <StepTitle sub="เพื่อนจะเห็นชื่อนี้ตอนกดลิงก์ เปลี่ยนทีหลังได้">ตั้งชื่อทีม</StepTitle>
-      <Field label="" error={errors.teamName}>
-        <TextInput
-          aria-label="ชื่อทีม"
-          data-autofocus
-          value={draft.teamName}
-          maxLength={80}
-          invalid={!!errors.teamName}
-          enterKeyHint="next"
-          onChange={(e) => set({ teamName: e.target.value })}
-        />
-      </Field>
-    </>
-  );
-}
-
 function NameStep({ draft, set, errors }: StepProps) {
+  // People starting a team left here and on the old team-name screen, likely to go and ask friends first.
+  const sub =
+    draft.mode === "create"
+      ? `เพื่อนยังไม่ต้องสมัครตอนนี้ สมัครเสร็จแล้วจะได้ลิงก์${teamLabel(teamNameFor(draft) || "ทีม")}ไว้ส่งให้เพื่อน`
+      : undefined;
   return (
     <>
-      <StepTitle>ข้อมูลของคุณ</StepTitle>
+      <StepTitle sub={sub}>ข้อมูลของคุณ</StepTitle>
       <div className="space-y-5">
         <Field label="ชื่อ-นามสกุล" error={errors.fullName}>
           <TextInput
@@ -262,8 +248,19 @@ function NameStep({ draft, set, errors }: StepProps) {
             onChange={(e) => set({ fullName: e.target.value })}
           />
         </Field>
-        <Field label="ชื่อเล่น (ไม่บังคับ)" hint="เพื่อนในทีมจะเห็นชื่อนี้">
-          <TextInput value={draft.nickname} autoComplete="nickname" maxLength={60} enterKeyHint="next" onChange={(e) => set({ nickname: e.target.value })} />
+        <Field
+          label="ชื่อเล่น (ไม่บังคับ)"
+          hint={draft.mode === "create" ? "ใช้ตั้งชื่อทีมด้วย เปลี่ยนชื่อทีมทีหลังได้" : "เพื่อนในทีมจะเห็นชื่อนี้"}
+          error={errors.nickname}
+        >
+          <TextInput
+            value={draft.nickname}
+            autoComplete="nickname"
+            maxLength={60}
+            invalid={!!errors.nickname}
+            enterKeyHint="next"
+            onChange={(e) => set({ nickname: e.target.value, teamName: "" })}
+          />
         </Field>
       </div>
     </>
@@ -460,7 +457,7 @@ function ReviewStep({ draft, set, errors, team, buddyPass, goTo }: StepProps) {
   const total = mode === "buddy" ? ELEMENTAL.buddyPriceBaht : elementalPriceBaht(1, mode !== "solo");
   const how = {
     solo: "มาคนเดียว",
-    create: `สร้าง${teamLabel(draft.teamName)}`,
+    create: `สร้าง${teamLabel(teamNameFor(draft))}`,
     join: `เข้า${teamLabel(team?.name ?? "")}`,
     buddy: `บัตรเพื่อนจาก ${buddyPass?.senderName ?? "เพื่อน"}`,
   }[mode];
@@ -474,7 +471,11 @@ function ReviewStep({ draft, set, errors, team, buddyPass, goTo }: StepProps) {
     <>
       <StepTitle>ตรวจอีกครั้ง</StepTitle>
       <div className="divide-y divide-[rgba(29,33,31,0.1)] rounded-2xl border bg-white/60 px-5" style={{ borderColor: "rgba(29,33,31,0.18)" }}>
-        <SummaryRow label="สมัครแบบไหน" value={how} onEdit={() => goTo(mode === "create" ? "team" : "mode")} />
+        <SummaryRow
+          label="สมัครแบบไหน"
+          value={mode === "create" ? <>{how}<span className="block text-sm" style={{ color: EL.inkSoft }}>เปลี่ยนชื่อทีมได้หลังสมัคร</span></> : how}
+          onEdit={() => goTo("mode")}
+        />
         <SummaryRow label="ชื่อ" value={`${draft.fullName}${draft.nickname ? ` (${draft.nickname})` : ""}`} onEdit={() => goTo("name")} />
         <SummaryRow label="อายุ · โรงเรียน" value={`${draft.age} ปี · ${draft.school}`} onEdit={() => goTo("school")} />
         {Number(draft.age) < ADULT_AGE && (
@@ -543,7 +544,6 @@ function LegalLink({ href, children, className = "mx-1" }: { href: string; child
 
 export const STEP_VIEWS: Record<StepKey, (p: StepProps) => ReactNode> = {
   mode: ModeStep,
-  team: TeamStep,
   name: NameStep,
   school: SchoolStep,
   parent: ParentStep,

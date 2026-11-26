@@ -16,7 +16,7 @@ export const FUNNEL_STEPS = [
   { key: "join", label: "Opened sign-up" },
   { key: "step:mode", label: "Saw the first question (alone or with friends)" },
   { key: "step:name", label: "Name" },
-  { key: "step:team", label: "Named a team", optional: true },
+  { key: "step:team", label: "Named a team (screen removed 26 Nov)", optional: true },
   { key: "step:school", label: "Age and school" },
   { key: "step:parent", label: "Parent consent", optional: true },
   { key: "step:contact", label: "Contact" },
