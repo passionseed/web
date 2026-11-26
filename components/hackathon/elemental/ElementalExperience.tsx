@@ -12,6 +12,7 @@ import { BeginnerJourneySection } from "./BeginnerJourneySection";
 import styles from "./elemental-cinema.module.css";
 import { ElementalHero } from "./ElementalHero";
 import { ElementalPlacesShowcase } from "./ElementalPlacesShowcase";
+import { JourneySteps } from "./JourneySteps";
 import { ELEMENT_CHAPTERS, KEY_VISUAL_MEDIA } from "./media";
 import { ScrollHookStatement } from "./ScrollHookStatement";
 import { SponsorSection } from "./SponsorSection";
@@ -281,6 +282,9 @@ function ElementalExperienceInner({
 
       {/* ACT 1: THE VALLEY (STICKY PARALLAX HERO) */}
       <ElementalHero joinHref={joinHref} open={open} />
+
+      {/* What a student does, in six steps, with the help for each (Big, 2026-11-26: students didn't know what to do). */}
+      <JourneySteps boardHref={boardHref} joinHref={open ? joinHref : undefined} />
 
       {/* ACT 2: SCROLL-DRIVEN HOOK ("ธรรมชาติไม่ได้พังเอง ... ตรงที่ไม่มีใครมอง") */}
       <ScrollHookStatement />

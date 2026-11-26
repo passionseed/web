@@ -3,16 +3,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
-import { ArrowUpRight, BookOpen, Combine, Flag, Lightbulb, Lock, Megaphone, MousePointerClick, Play, Ticket, UserRound, Users } from "lucide-react";
+import { ArrowUpRight, BookOpen, Combine, Flag, Lightbulb, Lock, Megaphone, Play, UserRound } from "lucide-react";
 
 import { EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ElementIcon } from "@/components/hackathon/poster/elemental/element-icons";
-import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
-import { formatThaiDate } from "@/lib/content/shift-cohort";
 
 import styles from "../elemental-cinema.module.css";
 import { ElementDetailSheet } from "../ElementDetailSheet";
 import { trirong } from "../fonts";
+import { JourneyStepsCompact } from "../JourneySteps";
 import { elementLabel, type ElementChapter } from "../media";
 import { boardCounts, buildBoard, type BoardColumn, type BoardTile, type OwnerProblem } from "../problem-owners";
 import { trackElemental } from "../track";
@@ -135,33 +134,6 @@ function Tile({ column, tile, index, seed, onOpen }: { column: BoardColumn; tile
   return <LockedTile chapter={column.chapter} seed={seed} />;
 }
 
-/** How it works, in three icons: pick, team up, sign up. */
-function Steps() {
-  const steps: { icon: LucideIcon; label: string }[] = [
-    { icon: MousePointerClick, label: "เลือกโจทย์" },
-    { icon: Users, label: `ทีม ${ELEMENTAL.teamMin}–${ELEMENTAL.teamMax} คน` },
-    // A no-break space keeps "4 ธ.ค." on one line on small phones.
-    { icon: Ticket, label: `สมัครถึง ${formatThaiDate(ELEMENTAL.registrationClosesOn, false).replace(/ /g, "\u00a0")}` },
-  ];
-  return (
-    <ol className="mt-8 grid max-w-2xl grid-cols-3 gap-3 sm:gap-4">
-      {steps.map(({ icon: Icon, label }, i) => (
-        <li key={label} className={`flex flex-col gap-3 border ${LINE} p-3 sm:p-4`}>
-          <span className="flex items-center justify-between">
-            <Icon aria-hidden="true" className="h-7 w-7 text-[#ffd57a] sm:h-8 sm:w-8" strokeWidth={1.75} />
-            <span className="text-xs text-[#f3efe6]/45" style={{ fontFamily: EL_FONT.mono }}>
-              {i + 1}
-            </span>
-          </span>
-          <span className="text-sm leading-snug text-[#faf8f4] sm:text-base" style={{ fontFamily: BODY_FONT }}>
-            {label}
-          </span>
-        </li>
-      ))}
-    </ol>
-  );
-}
-
 /** What each tile icon means, with how many of each: the board's scoreboard. */
 function Legend({ counts }: { counts: ReturnType<typeof boardCounts> }) {
   const items: { icon: LucideIcon; label: string; n: number }[] = [
@@ -262,7 +234,7 @@ export function ProblemBoard({
         <h1 className="text-5xl sm:text-7xl" style={{ fontFamily: EL_FONT.display, fontWeight: 200, lineHeight: 1.05 }}>
           บอร์ดโจทย์
         </h1>
-        <Steps />
+        <JourneyStepsCompact joinHref={registrationOpen ? joinHref : undefined} stepsHref={`${homeHref}#steps`} />
         <Legend counts={counts} />
       </section>
 
