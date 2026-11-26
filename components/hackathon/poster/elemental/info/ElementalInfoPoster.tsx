@@ -7,6 +7,7 @@ import { EL, EL_FONT } from "../brand";
 import { AetherPixels, ELEMENT_ICON_ROWS, Pixels, type ElementIconKey } from "../element-icons";
 import { Chula, RegisterQr } from "../ElementalKeyPoster";
 import { ELEMENTAL, prizeTotal, thaiDayRange } from "../facts";
+import { PassionSeedWordmark } from "@/components/hackathon/PassionSeedWordmark";
 
 /**
  * Elemental Hackathon, Instagram slide 2 (1080x1350): every fact in one
@@ -127,8 +128,8 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
             <span style={{ display: "flex", alignItems: "center", gap: 9 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/passion-seed-logo.png" alt="" width={44} height={44} />
-              {/* The name as on slide 1: Libre Franklin, regular (Angpao, 2026-11-23). */}
-              <span style={{ fontFamily: "var(--font-libre-franklin), sans-serif", fontWeight: 400, fontSize: 24, letterSpacing: "-0.01em", color: EL.cream }}>PassionSeed</span>
+              {/* The name as on slide 1: the PassionSeed wordmark (Angpao, 2026-11-26; it replaces Libre Franklin type). */}
+              <PassionSeedWordmark height={24} style={{ color: EL.cream }} />
             </span>
           </span>
           <span>{ELEMENTAL.edition.toUpperCase()} HACKATHON</span>

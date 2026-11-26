@@ -10,6 +10,7 @@ import type { OwnerElement } from "@/lib/hackathon/elemental/owner-link";
 import { ElementMark, PixelScene, VideoOverlay } from "./PixelArt";
 import { OwnerUploader } from "./OwnerUploader";
 import { ALL_ELEMENTS, ELEMENT_MARKS, type SceneName } from "./scenes";
+import { PassionSeedWordmark } from "@/components/hackathon/PassionSeedWordmark";
 
 /**
  * The Elemental problem-owner kit: what we ask an organisation for (a short
@@ -106,7 +107,7 @@ export function OwnerKit({ element, upload }: { element: OwnerElement | null; up
             <span className="flex items-center gap-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/passion-seed-logo.png" alt="" width={34} height={34} />
-              <span style={{ fontFamily: "var(--font-libre-franklin), sans-serif", fontSize: 19, letterSpacing: "-0.01em" }}>PassionSeed</span>
+              <PassionSeedWordmark height={19} />
             </span>
           </span>
           <span className="whitespace-nowrap">
