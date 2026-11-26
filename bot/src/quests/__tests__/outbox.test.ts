@@ -234,9 +234,9 @@ describe("deliver", () => {
     await deliver(client, fakeApi(), claimed({ kind: "reminder", params: { open_quests: 2 }, channel_id: null, dm_user_id: "111" }));
     const reminder = bodyText(sentPayload(userSend));
     expect(reminder).toBe(
-      "### ⏰ ถึงเวลาที่คุณตั้งไว้แล้ว\nมีเควสต์เปิดอยู่ **2** อัน\nเปิดเกาะแล้วเริ่มจากการ์ดแรกได้เลย\n-# ปิดการเตือนได้ที่ /settings\n-# บอทนี้ไม่อ่านหรือตอบข้อความส่วนตัว"
+      "### ⏰ ถึงเวลาที่คุณตั้งไว้แล้ว\nมีเควสต์เปิดอยู่ **2** อัน\nเปิดเกาะแล้วเริ่มจากการ์ดด้านล่างได้เลย\n-# ปิดการเตือนได้ที่ /settings\n-# บอทนี้ไม่อ่านหรือตอบข้อความส่วนตัว"
     );
-    expect(renderOutbox("reminder", { open_quests: 0 }, null, null)!.body).toBe("เปิดเกาะแล้วเริ่มจากการ์ดแรกได้เลย");
+    expect(renderOutbox("reminder", { open_quests: 0 }, null, null)!.body).toBe("เปิดเกาะแล้วเริ่มจากการ์ดด้านล่างได้เลย");
   });
 
   it("puts the weekly island picture above the heading and the consented names below", async () => {

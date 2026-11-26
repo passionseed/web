@@ -474,7 +474,7 @@ export const T = {
    * away_after_days (left out when unknown). Never asked by DM; the island asks first. DRAFT for the Thai review.
    */
   awayOn: (days: number | null) =>
-    `🌱 DM ชวนกลับเกาะ${days ? ` เมื่อห่างเกาะ ${days} วัน` : ""}: **เปิด** (ครั้งเดียว บอกเควสต์ถัดไปของคุณ)`,
+    `🌱 DM ชวนกลับเกาะ${days ? ` เมื่อห่างเกาะ ${days} วัน` : ""}: **เปิด** (ส่งครั้งเดียวต่อช่วงที่ห่าง)`,
   /** Off, or never chosen: either way no DM goes. DRAFT. */
   awayOff: (days: number | null) => `🌱 DM ชวนกลับเกาะ${days ? ` เมื่อห่างเกาะ ${days} วัน` : ""}: **ปิด**`,
   /** DRAFT. */
@@ -522,10 +522,10 @@ export const T = {
   // Reminders and nudges (DM: broadcast only, never a conversation). Each is one small card.
   // Each DM carries the island's link button (outbox.ts): the island is where the work is. DRAFT for the Thai review.
   dmNudgeTitle: "🔔 มีอัปเดตใหม่บนเกาะ",
-  dmNudge: "เปิดเกาะเพื่อดูได้เลย",
+  dmNudge: "เปิดเกาะดูได้เลย",
   dmReminderTitle: "⏰ ถึงเวลาที่คุณตั้งไว้แล้ว",
   dmReminder: (open: number) =>
-    `${open ? `มีเควสต์เปิดอยู่ **${open}** อัน\n` : ""}เปิดเกาะแล้วเริ่มจากการ์ดแรกได้เลย`,
+    `${open ? `มีเควสต์เปิดอยู่ **${open}** อัน\n` : ""}เปิดเกาะแล้วเริ่มจากการ์ดด้านล่างได้เลย`,
   dmReminderOff: "ปิดการเตือนได้ที่ /settings",
   dmNoReplies: "บอทนี้ไม่อ่านหรือตอบข้อความส่วนตัว",
 
@@ -790,15 +790,15 @@ export const TREE_GREW = {
  * Thai review.
  */
 export const AWAY_DM = {
-  title: "🌱 ก้าวต่อไปของคุณรออยู่บนเกาะ",
+  title: "🌱 ก้าวต่อไปรออยู่บนเกาะแล้ว",
   /** When the board could not be read: the island's first card names the step. */
-  body: "เปิดเกาะแล้วการ์ดแรกจะบอกว่าทำอะไรต่อ",
+  body: "เปิดเกาะได้เลย การ์ดด้านล่างจะบอกว่าทำอะไรต่อ",
   /** An open quest of theirs (active, paused, or a mentor asked for more). */
   carryOn: (title: string) => `ทำต่อได้เลย: **${title}**`,
   /** Nothing open: the first main quest they can start. */
   begin: (title: string) => `เริ่มได้เลย: **${title}**`,
   /** Why it came and how to stop it (plain text in a DM: commands there cannot run). */
-  why: "บอทส่งข้อความสั้นๆ แบบนี้เมื่อห่างเกาะไปสักพัก ปิดได้ในตั้งค่าบนเกาะ หรือ /settings ในเซิร์ฟเวอร์",
+  why: "บอทส่งข้อความชวนกลับแบบนี้เมื่อห่างเกาะไปสักพัก ปิดได้ในตั้งค่าบนเกาะ หรือพิมพ์ /settings ในเซิร์ฟเวอร์",
 };
 
 /**
@@ -810,17 +810,17 @@ export const AWAY_DM = {
  * "something new" line. DRAFT for the three-model Thai review.
  */
 export const NUDGE_DM = {
-  approvedTitle: "✅ งานของคุณผ่านแล้ว",
+  approvedTitle: "✅ พี่เลี้ยงให้ผ่านแล้ว",
   approved: (title: string, grew: boolean) =>
     `**${title}**${grew ? " ผ่านแล้ว ต้นไม้ของทีมโตขึ้นอีกขั้น" : " ผ่านแล้ว"}\nไปดูความเห็นพี่เลี้ยงบนเกาะได้เลย`,
-  clarificationTitle: "💬 พี่เลี้ยงตอบงานของคุณแล้ว",
-  clarification: (title: string) => `พี่เลี้ยงอยากรู้เพิ่มอีกนิดเรื่อง **${title}**\nอ่านแล้วตอบได้บนเกาะ`,
-  declinedTitle: "↩️ พี่เลี้ยงตอบงานของคุณแล้ว",
-  declined: (title: string) => `**${title}** ยังไม่ผ่านรอบนี้\nพี่เลี้ยงบอกไว้ว่าเพิ่มอะไรได้ ดูบนเกาะแล้วลองอีกรอบได้เลย`,
-  inviteTitle: "👋 มีคนชวนคุณเข้าทีม",
-  invite: (from: string, project: string) => `**${from}** ชวนคุณเข้าทีม **${project}**\nตอบรับได้บนเกาะ`,
+  clarificationTitle: "💬 พี่เลี้ยงขอรายละเอียดเพิ่ม",
+  clarification: (title: string) => `เรื่อง **${title}**\nอ่านแล้วตอบบนเกาะได้เลย`,
+  declinedTitle: "↩️ พี่เลี้ยงตรวจงานแล้ว",
+  declined: (title: string) => `**${title}** ยังไม่ผ่านรอบนี้\nดูความเห็นพี่เลี้ยงบนเกาะแล้วลองอีกรอบได้เลย`,
+  inviteTitle: "👋 มีคนชวนเข้าทีม",
+  invite: (from: string, project: string) => `**${from}** ชวนเข้าทีม **${project}**\nตอบรับบนเกาะได้เลย`,
   /** How to stop it. */
-  off: "ปิดข้อความแบบนี้ได้ที่ /settings ในเซิร์ฟเวอร์",
+  off: "ปิดข้อความแบบนี้ได้โดยพิมพ์ /settings ในเซิร์ฟเวอร์",
 };
 
 /** The update DM's heading and lines from its whitelisted fields (NUDGE_DM); the plain line when they are missing. */
