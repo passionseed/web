@@ -362,7 +362,7 @@ export const NEXT_STEP = {
   /** The line under the headline. */
   main: (milestone: number) => `เควสต์หลัก ${milestone} จาก 7`,
   /** DRAFT: the small line under the quest's action (QUEST_TODO): which main quest, and what passing it does. */
-  payoff: (milestone: number) => `เควสต์หลัก ${milestone}/7 · พี่เลี้ยงให้ผ่าน ต้นไม้ของทีมโต`,
+  payoff: (milestone: number) => `เควสต์หลัก ${milestone}/7 · พี่เลี้ยงให้ผ่าน ต้นไม้ทีมก็โต`,
   side: "เควสต์เสริม",
   proposed: "เควสต์ที่คุณเสนอ",
   said: (text: string) => `พี่เลี้ยงบอกว่า: ${text}`,
@@ -966,16 +966,17 @@ export const QUEST_FLAVOR: Readonly<Record<string, string>> = {
  * one short line, for the next-step card (NextStepCard). The headline names
  * the quest; this line says the action, so the card's one button is never a
  * leap in the dark. From each quest's purpose
- * (20261115090000_shift_quests_pitfall_map.sql), cut to fit the card.
+ * (20261115090000_shift_quests_pitfall_map.sql), cut to fit the card;
+ * reviewed by Codex (logic) and Gemini (natural Thai) on 2026-11-26.
  */
 export const QUEST_TODO: Readonly<Record<string, string>> = {
   "meet-one-real-person": "คุยกับคนที่เจอปัญหานี้จริง 1 คน แค่ 10 นาที",
-  "real-stories-not-compliments": "คุยกับคนที่เจอปัญหานี้อีก 3 คน ถามถึงเรื่องที่เกิดขึ้นจริง",
-  "first-partner": "ชวนคนหนึ่งคนให้ตกลงลองขั้นต่อไปกับคุณ แบบมีวันนัด",
-  "in-their-hands": "ทำชิ้นเล็กที่สุด แล้วให้เขาลองเองภายใน 7 วัน",
-  "run-the-loop": "แก้เรื่องที่เขาติดบ่อยที่สุด แล้วให้คนเดิมลองอีกรอบ",
-  "what-we-learned": "เขียน 3 บรรทัด: เคยเชื่อ เจอจริง จะทำต่อ แล้วเล่าให้คนหนึ่งคนฟัง",
-  "beyond-the-first": "ให้คนที่ไม่รู้จักคุณลองใช้เอง โดยคุณไม่ต้องอธิบาย",
+  "real-stories-not-compliments": "คุยกับคนที่เจอปัญหานี้อีก 3 คน ถามเรื่องที่เขาเจอมาจริง",
+  "first-partner": "ชวน 1 คนตกลงลองอะไรด้วยกัน พร้อมนัดวัน",
+  "in-their-hands": "ทำชิ้นเล็กที่สุดที่แก้เรื่องที่เขาเล่า แล้วให้เขาลองเองใน 7 วัน",
+  "run-the-loop": "แก้จุดที่เขาติดบ่อยที่สุด แล้วให้คนเดิมลองใหม่ อย่างน้อย 2 รอบ",
+  "what-we-learned": "เขียน 3 บรรทัด: เคยเชื่อ เจอจริง จะทำอะไรต่อ แล้วเล่าให้ใครสักคนฟัง",
+  "beyond-the-first": "ให้คนที่ไม่รู้จักกันลองใช้เอง โดยไม่บอกวิธี",
 };
 
 /** A purpose this short fits the card as it is (side and proposed quests have no QUEST_TODO line). */

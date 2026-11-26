@@ -43,7 +43,7 @@ describe("nextStep", () => {
     expect(nextHeadline(step!)).toBe(`เริ่มที่: ${MAIN_TITLES[0]}`);
     // What the quest asks in the real world, then which quest it is and what passing it does.
     expect(nextLine(step!)).toBe("คุยกับคนที่เจอปัญหานี้จริง 1 คน แค่ 10 นาที");
-    expect(nextMeta(step!)).toBe("เควสต์หลัก 1/7 · พี่เลี้ยงให้ผ่าน ต้นไม้ของทีมโต");
+    expect(nextMeta(step!)).toBe("เควสต์หลัก 1/7 · พี่เลี้ยงให้ผ่าน ต้นไม้ทีมก็โต");
   });
 
   it("goes straight to the quest once the day's check-in is in", () => {
@@ -60,7 +60,7 @@ describe("nextStep", () => {
   it("shows back what the student meant to do today, after the check-in only", () => {
     const board = active(fresh(), 1, IDS.m2Instance);
     expect(nextLine(nextStep(board, DONE_DAY)!, "คุยกับแม่ค้า")).toBe("เป้าวันนี้: คุยกับแม่ค้า");
-    expect(nextMeta(nextStep(board, DONE_DAY)!, "คุยกับแม่ค้า")).toBe("เควสต์หลัก 1/7 · พี่เลี้ยงให้ผ่าน ต้นไม้ของทีมโต");
+    expect(nextMeta(nextStep(board, DONE_DAY)!, "คุยกับแม่ค้า")).toBe("เควสต์หลัก 1/7 · พี่เลี้ยงให้ผ่าน ต้นไม้ทีมก็โต");
     expect(nextLine(nextStep(board, OPEN_DAY)!, "คุยกับแม่ค้า")).toBe(QUEST_TODO[MAIN_SLUGS[0]]);
   });
 
