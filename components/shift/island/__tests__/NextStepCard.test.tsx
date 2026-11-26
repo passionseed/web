@@ -36,6 +36,7 @@ const GO: NextStep = {
   ref: { kind: "main", milestone: 1 },
   kindOfQuest: "main",
   title: TITLE,
+  todo: null,
   milestone: 1,
   instanceId: IDS.m2Instance,
   feedback: null,
@@ -60,6 +61,17 @@ describe("NextStepCard", () => {
     expect(buttons[0]).toHaveClass("ei-button-dawn");
     fireEvent.click(buttons[0]);
     expect(onTap).toHaveBeenCalledWith({ ...GO, checksIn: false });
+  });
+
+  it("says what the quest asks in the real world, then which quest it is and what passing it does", () => {
+    const todo = "คุยกับคนที่เจอปัญหานี้จริง 1 คน แค่ 10 นาที";
+    render(<NextStepCard board={makeBoard()} step={{ ...START, todo }} onTap={jest.fn()} />);
+    const card = screen.getByRole("region", { name: `เริ่มที่: ${TITLE}` });
+    expect(card).toHaveTextContent(todo);
+    // The number keeps its noun on the same line (a no-break space).
+    expect(card.textContent).toContain(keepCounts(todo));
+    expect(card).toHaveTextContent(NEXT_STEP.payoff(1));
+    expect(within(card).getByRole("button", { name: NEXT_STEP.action.start })).toBeInTheDocument();
   });
 
   it("says เริ่มเลย on a quest it starts", () => {

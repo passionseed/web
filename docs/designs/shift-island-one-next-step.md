@@ -28,7 +28,8 @@ An audit on 2026-11-17 (read only) found:
 |---|---|---|
 | 1 | What a student sees over the island | **2026-11-18:** the team chip, the next-step card with one verb button, and the ดูเควสต์ทั้งหมด text link: three things to tap, nothing floating over the canvas. The envelope and ≡ are gone from home; results and the menu's lines live in the chip's sheet. ("I don't want the BMW dashboard button menu. So much visual clutter. Make everything intuitive.") *Replaces 2026-11-17: chip, envelope and menu in the top bar.* |
 | 2 | Where the check-in lives | **2026-11-18:** the card's tap is the check-in. The day's first tap that leads to work saves it quietly and opens the work; no screen in between. What the student means to do today is an optional, folded box inside the quest they are on. *Replaces 2026-11-16/17: a check-in sheet before the work.* |
-| 3 | The quest page | "Take inspiration from the best designed, for the game aspects too." **2026-11-18:** five dots for where the work stands, the mentor's words first, the checklist right under the goal, everything else (details, the lore line, steps, words, pitfalls, examples, helper quests) folded into one closed รายละเอียดและตัวช่วย, and exactly one thing in the sticky bar per state. ติด leaves the bar for a quiet ติดตรงไหน? line under the checklist. |
+| 3 | The quest page | "Take inspiration from the best designed, for the game aspects too." **2026-11-18:** five dots for where the work stands, the mentor's words first, the checklist right under the goal, everything else (details, the lore line, steps, words, pitfalls, examples, helper quests) folded into one closed รายละเอียดและตัวช่วย, and exactly one thing in the sticky bar per state. ติด leaves the bar for a quiet ติดตรงไหน? line under the checklist. **2026-11-26** (after Season 1 went quiet, "the ui might just be bad"): how to do the quest leaves the fold and sits open under the checklist (a skill quest's picture and steps, ตัวอย่างที่ผ่าน, หลุมพราง with เลี่ยงยังไง, ตัวช่วย with the safety line), above the optional extras. The one closed fold, now รายละเอียดเพิ่มเติม, keeps the details, the lore line and the words. *Narrows 2026-11-18's fold.* |
+| 7 | The next-step card's line | **2026-11-26:** on a quest to start or carry on, the line under the headline says what the quest asks in the real world (`QUEST_TODO`, e.g. คุยกับคนที่เจอปัญหานี้จริง 1 คน แค่ 10 นาที), and a small line under it says which main quest it is and what passing it does (`NEXT_STEP.payoff`). The button still starts and opens the quest: the card now says what the tap commits to. *Replaces "เควสต์หลัก 1 จาก 7" alone.* |
 | 4 | Mentor review on the web | Not now: reviews stay in Discord for Season 1, and students are promised no turnaround time. Part 3, Wave B (B1) of the core-loop design waits. |
 | 5 | The chip's sheet | **2026-11-18:** one line of progress (the tree's stage), no stats grid (side quests, community, check-ins; the data stays in the database), and no season panel (Demo Day stands in the plaza). |
 | 6 | The whole quest board | **2026-11-18 (later):** off home. The ดูเควสต์ทั้งหมด link under the card is gone: home is the chip and the card. The board opens from a tap on the plaza's notice board (its button is named กระดานเควสต์; no words are printed over it, after the founder's "dont clutter" the same day: the small คุณ over the viewer's own figure is the only label left over the plaza, and the stage's countdown board draws its days in pixels), and from a กระดานเควสต์ line at the head of the chip sheet's short list: the board has one name everywhere, as in the bot. The wide board button stays only when there is no next step. *Narrows decision 1 to two things to tap.* |
@@ -89,10 +90,13 @@ Everything else lives where it stands on the island (founder's first play,
 **The quest page** (`QuestDetailSheet`): the header with five dots
 (เริ่ม, ทำ, ส่ง, พี่เลี้ยงดู, ผ่าน; `questStage`) in place of the status chip,
 the mentor's words, one line of goal, the เสร็จเมื่อ checklist, a quiet
+how to do it, open (a skill quest's steps, ตัวอย่างที่ผ่าน, หลุมพราง, ตัวช่วย
+and the safety line; decision 3, 2026-11-26), a quiet
 ติดตรงไหน? ขอความช่วยเหลือ line, the folded intention box on work in progress,
 photos and peer checks once sent, the team's problem on first-act quests, the
 canvas (refresh now inside its notes box), the quest's state in words, and
-one closed รายละเอียดและตัวช่วย fold for the rest. The sticky bar
+one closed รายละเอียดเพิ่มเติม fold for the rest (what to send, the
+question, the lore line, the words). The sticky bar
 (`questBar`) holds exactly one thing:
 
 | State | Bar |

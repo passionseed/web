@@ -17,7 +17,7 @@ import type { MyTree, QuestBoard, QuestSubmitResult } from "@/lib/supabase/shift
 
 import { IDS, MAIN_SLUGS, MAIN_TITLES, makeBoard } from "../__fixtures__/board";
 import { QuestCardComposer, useQuestCanvas } from "../canvas";
-import { DETAIL, QUEST_FLAVOR } from "../copy";
+import { DETAIL, HELPERS, QUEST_FLAVOR } from "../copy";
 import { clearAllDrafts } from "../drafts";
 import { QuestDetailSheet } from "../QuestDetailSheet";
 
@@ -461,16 +461,25 @@ describe("QuestDetailSheet: the quest page", () => {
     expect(within(list).queryByText("ติ๊กให้จากโน้ตในแคนวาส พี่เลี้ยงเป็นคนดูและตัดสิน")).toBeNull();
   });
 
-  it("folds everything that helps but is not the task into one closed ตัวช่วย: details, lore, examples", () => {
+  it("puts how to do it open under the checklist, and folds only the details, the words and the lore", () => {
     open({ kind: "main", milestone: 1 });
     const guide = questGuide({ kind: "main", slug: MAIN_SLUGS[0] });
     const details = within(body()).getByText(DETAIL.helpers).closest("details") as HTMLElement;
     expect(details).not.toHaveAttribute("open");
+    const done = within(body()).getByRole("heading", { name: "เสร็จเมื่อ" });
+    // How to do it is open, never folded: work that passed, the pitfalls and the way around them, ตัวช่วย.
     const examples = within(body()).getByRole("heading", { name: "ตัวอย่างที่ผ่าน" }).closest("section") as HTMLElement;
-    expect(examples.closest("details")).toBe(details);
+    expect(examples.closest("details")).toBeNull();
     expect(within(examples).getByText(guide.examples[0])).toBeInTheDocument();
+    const pitfalls = within(body()).getByRole("heading", { name: "หลุมพราง" }).closest("section") as HTMLElement;
+    expect(pitfalls.closest("details")).toBeNull();
+    expect(within(body()).getByText(HELPERS.safety).closest("details")).toBeNull();
+    // Right under the checklist, before anything optional.
+    expect(done.compareDocumentPosition(examples) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(pitfalls.compareDocumentPosition(details) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     // The checklist stays out of the fold: it is the task.
-    expect(within(body()).getByRole("heading", { name: "เสร็จเมื่อ" }).closest("details")).toBeNull();
+    expect(done.closest("details")).toBeNull();
+    expect(within(details).getByRole("heading", { name: /คำศัพท์/ })).toBeInTheDocument();
     expect(within(details).getByRole("heading", { name: "ส่งอะไร" })).toBeInTheDocument();
     expect(within(details).getByText("หลักฐานของขั้นที่ 1")).toBeInTheDocument();
     expect(within(details).getByRole("heading", { name: "คำถามหนึ่งข้อ" })).toBeInTheDocument();
