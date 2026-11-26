@@ -301,10 +301,10 @@ function CsiiMark() {
 }
 
 /** Chula's pink (an approximation), so "จุฬาฯ" stands out in the facts row (Angpao, 2026-11-26: "make จุฬา character more standout", then option B, "Demo Day @ จุฬา"). */
-const CHULA_PINK = "#DE5C8E";
+export const CHULA_PINK = "#DE5C8E";
 
 /** "จุฬา" as white type on a pink tag, spelled as Angpao wrote it (no ฯ, which also keeps the facts on two lines). */
-function Chula() {
+export function Chula() {
   return <span style={{ display: "inline-block", marginLeft: 6, padding: "0 7px", backgroundColor: CHULA_PINK, color: "#ffffff", fontWeight: 600 }}>จุฬา</span>;
 }
 
