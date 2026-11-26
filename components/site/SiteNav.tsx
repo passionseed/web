@@ -6,10 +6,11 @@ import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { Menu, X } from "lucide-react";
 
-import { ShiftApplyButton } from "@/components/shift/ShiftApplyButton";
+import { LeadButton } from "@/components/home/LeadButton";
 import { INK, paper } from "@/components/shift/ShiftRiso";
 import { UserNav } from "@/components/user-nav";
 import { SITE_NAV_LINKS } from "@/lib/content/home";
+import type { LeadCta } from "@/lib/content/home-lead";
 import { createClient } from "@/utils/supabase/client";
 
 /** Past this scroll depth the bar gets its ink backing so links stay legible. */
@@ -61,7 +62,7 @@ function AccountLink({ user }: { user: User | null }) {
   );
 }
 
-function MobileMenu({ user, onClose }: { user: User | null; onClose: () => void }) {
+function MobileMenu({ user, cta, onClose }: { user: User | null; cta: LeadCta; onClose: () => void }) {
   return (
     <div
       className="border-t px-5 pb-8 pt-4 md:hidden"
@@ -83,9 +84,7 @@ function MobileMenu({ user, onClose }: { user: User | null; onClose: () => void 
       </ul>
       <div className="mt-6 flex items-center justify-between gap-4">
         <AccountLink user={user} />
-        <ShiftApplyButton href="/shift" location="site_nav_mobile" className="!px-5 !py-2.5 !text-sm">
-          สมัคร SHIFT
-        </ShiftApplyButton>
+        <LeadButton cta={cta} label={cta.short} location="site_nav_mobile" className="!px-5 !py-2.5 !text-sm" />
       </div>
     </div>
   );
@@ -93,9 +92,10 @@ function MobileMenu({ user, onClose }: { user: User | null; onClose: () => void 
 
 /**
  * Public-site navbar in the SHIFT riso palette. Transparent over the hero
- * sky, ink-backed once the page scrolls.
+ * sky, ink-backed once the page scrolls. Its button asks for whatever leads
+ * right now (lib/content/home-lead.ts), worked out on the server.
  */
-export function SiteNav() {
+export function SiteNav({ cta }: { cta: LeadCta }) {
   const user = useSignedInUser();
   const scrolled = useScrolledPast(SOLID_AFTER_PX);
   const [open, setOpen] = useState(false);
@@ -128,9 +128,7 @@ export function SiteNav() {
 
         <div className="hidden items-center gap-5 md:flex">
           <AccountLink user={user} />
-          <ShiftApplyButton href="/shift" location="site_nav" className="!px-5 !py-2 !text-sm">
-            สมัคร SHIFT
-          </ShiftApplyButton>
+          <LeadButton cta={cta} label={cta.short} location="site_nav" className="!px-5 !py-2 !text-sm" />
         </div>
 
         <button
@@ -145,7 +143,7 @@ export function SiteNav() {
         </button>
       </nav>
 
-      {open && <MobileMenu user={user} onClose={() => setOpen(false)} />}
+      {open && <MobileMenu user={user} cta={cta} onClose={() => setOpen(false)} />}
     </header>
   );
 }

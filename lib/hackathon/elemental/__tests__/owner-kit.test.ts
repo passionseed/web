@@ -2,7 +2,14 @@
  * @jest-environment node
  */
 import { isValidOrg, ownerKitPath, signOwnerLink, verifyOwnerLink } from "../owner-link";
-import { checkOwnerUpload, OWNER_UPLOAD_MAX_BYTES, ownerUploadContentType, ownerUploadKey } from "../owner-upload";
+import {
+  checkOwnerUpload,
+  isOwnerUploadKey,
+  OWNER_UPLOAD_MAX_BYTES,
+  ownerUploadContentType,
+  ownerUploadKey,
+  ownerUploadsMessage,
+} from "../owner-upload";
 
 const SECRET = "test-secret";
 
@@ -55,5 +62,37 @@ describe("owner uploads", () => {
     const key = ownerUploadKey("mekong-school", "คลิป เรื่อง1 river.MOV", "mov", new Date("2026-11-27T03:00:00Z"), "r4nd0m");
     expect(key).toBe(`elemental-owners/mekong-school/2026-11-27/${Date.parse("2026-11-27T03:00:00Z")}_r4nd0m_1_river.mov`);
     expect(ownerUploadKey("x-org", "ภาพ.jpg", "jpg", new Date(0), "r")).toMatch(/_r_file\.jpg$/);
+  });
+
+  it("only lets an org report keys made for that org", () => {
+    const key = ownerUploadKey("mekong-school", "river.MOV", "mov", new Date("2026-11-27T03:00:00Z"), "r4nd0m");
+    expect(isOwnerUploadKey("mekong-school", key)).toBe(true);
+    expect(isOwnerUploadKey("panthipa", key)).toBe(false);
+    expect(isOwnerUploadKey("mekong-school", "elemental-owners/mekong-school/../panthipa/x.mov")).toBe(false);
+    expect(isOwnerUploadKey("mekong-school", "hackathon/other.png")).toBe(false);
+    expect(isOwnerUploadKey("mekong-school", 42)).toBe(false);
+  });
+});
+
+describe("owner upload ping", () => {
+  const file = (name: string, size: number) => ({
+    key: `elemental-owners/panthipa/2026-11-27/1_abc_${name}`,
+    size,
+    url: `https://bucket.example/${name}`,
+  });
+
+  it("says who sent what, with a link per file", () => {
+    const msg = ownerUploadsMessage({ org: "panthipa", element: "aether", files: [file("clip.mov", 300 * 1024 ** 2), file("logo.png", 1024 ** 2)] });
+    expect(msg).toContain("**panthipa** (aether) uploaded 2 files (301.0 MB)");
+    expect(msg).toContain("- [clip.mov](<https://bucket.example/clip.mov>) 300.0 MB");
+    expect(msg).toContain("pnpm elemental:owner-kit list panthipa");
+  });
+
+  it("stays under Discord's 2000-character limit for a big batch", () => {
+    const files = Array.from({ length: 50 }, (_, i) => file(`a_very_long_file_name_from_a_phone_${i}.mov`, 1024 ** 2));
+    const msg = ownerUploadsMessage({ org: "panthipa", element: null, files });
+    expect(msg).toContain("uploaded 50 files");
+    expect(msg).toContain("and 38 more");
+    expect(msg.length).toBeLessThan(2000);
   });
 });

@@ -85,3 +85,42 @@ export function ownerUploadKey(
   const day = now.toISOString().slice(0, 10);
   return `elemental-owners/${org}/${day}/${now.getTime()}_${random}_${safe}.${extension}`;
 }
+
+/** A key this org's link may report: one ownerUploadKey made for this org. */
+export function isOwnerUploadKey(org: string, key: unknown): key is string {
+  if (typeof key !== "string" || key.length > 300) return false;
+  const prefix = `elemental-owners/${org}/`;
+  return key.startsWith(prefix) && /^\d{4}-\d{2}-\d{2}\/\d+_[a-z0-9]+_[A-Za-z0-9_-]+\.[a-z0-9]+$/.test(key.slice(prefix.length));
+}
+
+/** "1.2 GB" or "340.5 MB", for the upload list and the team ping. */
+export function formatFileSize(bytes: number): string {
+  return bytes >= 1024 ** 3 ? `${(bytes / 1024 ** 3).toFixed(1)} GB` : `${Math.max(0.1, bytes / 1024 ** 2).toFixed(1)} MB`;
+}
+
+/** The file's own name, without the folder, time and random parts. */
+const shortName = (key: string) => key.split("/").pop()!.replace(/^\d+_[a-z0-9]+_/, "");
+
+/** Discord caps a message at 2000 characters, so list at most this many files. */
+const LISTED = 12;
+
+/**
+ * The team's Discord ping when an owner finishes uploading a batch: who sent
+ * what, with links to open each file.
+ */
+export function ownerUploadsMessage(input: {
+  org: string;
+  element: string | null;
+  files: { key: string; size: number; url: string }[];
+}): string {
+  const { org, element, files } = input;
+  const total = files.reduce((sum, f) => sum + f.size, 0);
+  const who = element ? `**${org}** (${element})` : `**${org}**`;
+  const lines = files.slice(0, LISTED).map((f) => `- [${shortName(f.key)}](<${f.url}>) ${formatFileSize(f.size)}`);
+  if (files.length > LISTED) lines.push(`- and ${files.length - LISTED} more`);
+  return [
+    `📥 ${who} uploaded ${files.length} file${files.length === 1 ? "" : "s"} (${formatFileSize(total)})`,
+    ...lines,
+    `All files: \`pnpm elemental:owner-kit list ${org}\``,
+  ].join("\n");
+}

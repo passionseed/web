@@ -42,6 +42,8 @@ export function Layout({ children }: LayoutProps) {
     pathname === "/admin" ||
     pathname?.startsWith("/admin/") ||
     pathname === "/" ||
+    // About shares the home page's riso nav and footer (components/site)
+    pathname === "/about" ||
     pathname === "/support" ||
     pathname === "/contact" ||
     pathname === "/link" ||

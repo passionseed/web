@@ -1,0 +1,563 @@
+/* ============================================================
+   /about: the toys, each one a real object. Every animation is a reply
+   to a tap, or a scroll reveal where scroll timelines exist. Content is
+   complete without motion, and all of it stops under
+   prefers-reduced-motion. Light falls from the top left, so every cast
+   shadow drops down and to the right.
+   ============================================================ */
+
+.about-page ::selection {
+  background: #ff48b0;
+  color: #17151c;
+}
+
+.about-page :focus-visible {
+  outline: 2px solid #ffe800;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* A quieter sibling of .shift-button for second actions. */
+.about-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.4rem;
+  border-radius: 999px;
+  border: 1px solid rgba(243, 239, 230, 0.3);
+  color: #f2ead9;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: border-color 140ms ease-out, color 140ms ease-out;
+}
+@media (hover: hover) {
+  .about-ghost:hover {
+    border-color: #ffe800;
+    color: #ffe800;
+  }
+}
+
+/* ---------- Materials ---------- */
+
+/* Uncoated paper: warm, with a little fibre running across the sheet. */
+.about-paper {
+  background-color: #f5efe0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.035 0.9' numOctaves='2' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 0.42  0 0 0 0 0.36  0 0 0 0 0.28  0 0 0 0.16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='9'/%3E%3CfeColorMatrix values='0 0 0 0 0.3  0 0 0 0 0.26  0 0 0 0 0.2  0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+
+/* Rubber-stamp ink: the pad never inks the rubber evenly. */
+.about-ink {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='i'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' seed='2'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  3.2 0 0 0 -0.62'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23i)'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='i'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' seed='2'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  3.2 0 0 0 -0.62'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23i)'/%3E%3C/svg%3E");
+  -webkit-mask-size: 150px;
+  mask-size: 150px;
+}
+
+/* Masking tape, torn by hand at both ends. */
+.about-tape {
+  position: absolute;
+  height: 22px;
+  width: 86px;
+  background: linear-gradient(180deg, rgba(247, 238, 205, 0.8), rgba(231, 219, 178, 0.74));
+  background-image: linear-gradient(180deg, rgba(247, 238, 205, 0.8), rgba(231, 219, 178, 0.74)), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='9'/%3E%3CfeColorMatrix values='0 0 0 0 0.3  0 0 0 0 0.26  0 0 0 0 0.2  0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
+  clip-path: polygon(0 10%, 4% 0, 96% 6%, 100% 18%, 97% 34%, 100% 52%, 96% 70%, 100% 86%, 95% 100%, 5% 95%, 0 82%, 3% 64%, 0 46%, 4% 28%);
+}
+
+/* A sticky note: the glue strip is a shade darker, the free corner lifts. */
+.about-sticky {
+  position: relative;
+  padding: 0.65rem 0.9rem 0.75rem 0.55rem;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.09) 0, rgba(0, 0, 0, 0) 18%), var(--note, #ffe97a);
+  color: #2b2620;
+  font-family: var(--font-iannnnn-cow), var(--font-bai-jamjuree), sans-serif;
+  font-size: clamp(0.95rem, 3.4vw, 1.15rem);
+  line-height: 1.28;
+  border-bottom-right-radius: 70% 9px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2), 6px 14px 14px -9px rgba(0, 0, 0, 0.75);
+  transform: translateY(var(--y, 0px)) rotate(var(--r, 0deg));
+}
+@media (min-width: 640px) {
+  .about-sticky {
+    padding: 0.7rem 1.05rem 0.85rem 0.65rem;
+  }
+}
+
+/* ---------- The portfolio machine ---------- */
+
+/* The little screen: a reflective LCD with each digit's shadow on the backing. */
+.about-lcd {
+  background: linear-gradient(180deg, #bdc8a0 0%, #a8b48b 100%);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: #1d2716;
+  text-shadow: 1px 1px 0 rgba(29, 39, 22, 0.16);
+}
+.about-lcd-code {
+  font-family: var(--font-tiny5), var(--font-space-mono), monospace;
+  letter-spacing: 0.08em;
+}
+
+/* A screw head: a dished disc with one slot, each turned its own way. */
+.about-screw {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 35% 30%, #6b6874, #2b2930 70%);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.about-screw::after {
+  content: "";
+  position: absolute;
+  inset: 4px 1.5px auto;
+  height: 1.2px;
+  background: #121015;
+  transform: rotate(var(--turn, 30deg));
+}
+
+/* The name tag: a printed band over a white writing panel. */
+.about-nametag-input {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 0.1rem 0.25rem 0.2rem;
+  font-family: var(--font-iannnnn-cow), var(--font-bai-jamjuree), sans-serif;
+  font-size: 2.1rem;
+  line-height: 1.25;
+  color: #1c2a6b;
+  caret-color: #d81b5c;
+  text-align: center;
+}
+.about-nametag-input::placeholder {
+  color: rgba(23, 21, 28, 0.38);
+}
+.about-nametag-input:focus,
+.about-nametag-input:focus-visible {
+  outline: none;
+  border-radius: 0;
+  border-bottom-color: #d81b5c;
+}
+
+/* The notebook page: blue rules, a pink margin, a torn top edge. */
+.about-notebook {
+  --rule: 32px;
+  background-color: #f7f2e4;
+  background-image:
+    linear-gradient(90deg, transparent 84px, rgba(255, 72, 176, 0.5) 84px, rgba(255, 72, 176, 0.5) 85.5px, transparent 85.5px),
+    repeating-linear-gradient(180deg, transparent 0, transparent calc(var(--rule) - 1px), rgba(0, 120, 191, 0.22) calc(var(--rule) - 1px), rgba(0, 120, 191, 0.22) var(--rule)),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.035 0.9' numOctaves='2' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 0.42  0 0 0 0 0.36  0 0 0 0 0.28  0 0 0 0.16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='9'/%3E%3CfeColorMatrix values='0 0 0 0 0.3  0 0 0 0 0.26  0 0 0 0 0.2  0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-position: 0 0, 0 14px, 0 0, 0 0;
+}
+.about-hand {
+  font-family: var(--font-iannnnn-cow), var(--font-bai-jamjuree), sans-serif;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+/* A coffee mug was set down here once. */
+.about-coffee {
+  position: absolute;
+  width: 116px;
+  height: 116px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, transparent 54%, rgba(140, 92, 48, 0.2) 57%, rgba(140, 92, 48, 0.07) 61%, transparent 66%);
+  pointer-events: none;
+}
+
+/* Mechanical roller feed: the sheet or ticket advances in 3 steps from the slot. */
+.about-feed {
+  animation: about-feed 1300ms cubic-bezier(0.3, 0, 0.2, 1) both;
+}
+@keyframes about-feed {
+  0% {
+    transform: translateY(-100%);
+  }
+  22% {
+    transform: translateY(-78%);
+  }
+  30% {
+    transform: translateY(-78%);
+  }
+  54% {
+    transform: translateY(-42%);
+  }
+  62% {
+    transform: translateY(-42%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* Motor jolt: a quick 2-cycle 1px twitch on the printer case as feeding begins. */
+.about-jolt {
+  animation: about-jolt 180ms linear both;
+}
+@keyframes about-jolt {
+  0%,
+  50%,
+  100% {
+    transform: translateY(0);
+  }
+  25%,
+  75% {
+    transform: translateY(1px);
+  }
+}
+
+/* A sheet put down by hand: dropped in from above right, settling crooked. */
+.about-place {
+  animation: about-place 760ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes about-place {
+  from {
+    opacity: 0;
+    transform: translate(12%, -8%) rotate(8deg) scale(1.05);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(var(--rest, -1.5deg));
+    filter: none;
+  }
+}
+
+/* A rubber stamp landing: big and blurred, then flat. */
+.about-stamp {
+  animation: about-stamp 560ms cubic-bezier(0.16, 1, 0.3, 1) var(--d, 650ms) both;
+}
+@keyframes about-stamp {
+  0% {
+    opacity: 0;
+    transform: scale(2.3) rotate(-20deg);
+    filter: blur(5px);
+  }
+  65% {
+    opacity: 1;
+    transform: scale(0.94) rotate(-9deg);
+    filter: none;
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(-9deg);
+  }
+}
+
+/* Lines that appear after a beat; --d staggers neighbours. */
+.about-pop {
+  animation: about-pop 480ms cubic-bezier(0.16, 1, 0.3, 1) var(--d, 0ms) both;
+}
+@keyframes about-pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.9);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+/* ---------- The answer ball ---------- */
+
+.about-ball {
+  container-type: inline-size;
+  background: radial-gradient(circle at 33% 27%, #5d5a66 0%, #2c2933 20%, #141218 52%, #060508 100%);
+  box-shadow:
+    inset -18px -22px 44px rgba(0, 0, 0, 0.85),
+    inset 10px 12px 26px rgba(255, 255, 255, 0.07),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+.about-ball-window {
+  background: radial-gradient(circle at 50% 38%, #0d2147 0%, #071230 46%, #02060f 100%);
+  box-shadow:
+    0 0 0 2.4cqw #0c0b0f,
+    0 0 0 2.9cqw rgba(255, 255, 255, 0.07),
+    inset 0 2.5cqw 5cqw rgba(0, 0, 0, 0.9);
+}
+.about-ball-text {
+  font-size: 3.45cqw;
+  line-height: 1.18;
+}
+.about-ball-btn:active .about-ball {
+  transform: scale(0.985);
+}
+.about-shake {
+  animation: about-shake 640ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+@keyframes about-shake {
+  0%,
+  100% {
+    transform: none;
+  }
+  14% {
+    transform: translate(-5%, -3%) rotate(-11deg);
+  }
+  30% {
+    transform: translate(5%, 1%) rotate(9deg);
+  }
+  46% {
+    transform: translate(-3.5%, -1%) rotate(-6deg);
+  }
+  62% {
+    transform: translate(2.5%, 0) rotate(3.5deg);
+  }
+  80% {
+    transform: translate(-1%, 0) rotate(-1.2deg);
+  }
+}
+/* The answer floats up through the dark liquid and turns face-on. */
+.about-rise {
+  animation: about-rise 1000ms cubic-bezier(0.16, 1, 0.3, 1) 560ms both;
+}
+@keyframes about-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16%) rotate(16deg) scale(0.84);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+/* ---------- Slide vs prototype ---------- */
+
+/* The red pen circles the problem, in one stroke. */
+.about-pen {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: about-pen 700ms cubic-bezier(0.65, 0, 0.35, 1) var(--d, 0ms) forwards;
+}
+@keyframes about-pen {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* A note slapped on: from a little above, then pressed flat at its tilt. */
+.about-stick {
+  animation: about-stick 520ms cubic-bezier(0.16, 1, 0.3, 1) var(--d, 0ms) both;
+}
+@keyframes about-stick {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--y, 0px) - 16px)) rotate(calc(var(--r, 0deg) - 9deg)) scale(1.12);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(var(--y, 0px)) rotate(var(--r, 0deg));
+    filter: none;
+  }
+}
+
+/* The slide that nobody can use shrugs. */
+.about-shrug {
+  animation: about-shrug 520ms ease-out both;
+}
+@keyframes about-shrug {
+  0%,
+  100% {
+    transform: none;
+  }
+  25% {
+    transform: translateX(-6px) rotate(-1deg);
+  }
+  50% {
+    transform: translateX(5px) rotate(1deg);
+  }
+  75% {
+    transform: translateX(-3px);
+  }
+}
+
+/* The object you pick up lifts off the table. */
+.about-object {
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), filter 220ms ease-out;
+  filter: drop-shadow(3px 8px 8px rgba(0, 0, 0, 0.55));
+}
+[aria-checked="true"] > .about-object {
+  transform: translateY(-6px) rotate(var(--lift-r, -1deg));
+  filter: drop-shadow(8px 20px 16px rgba(0, 0, 0, 0.6));
+}
+
+/* ---------- The group chat ---------- */
+
+.about-typing span {
+  animation: about-typing 1s ease-in-out infinite;
+}
+.about-typing span:nth-child(2) {
+  animation-delay: 160ms;
+}
+.about-typing span:nth-child(3) {
+  animation-delay: 320ms;
+}
+@keyframes about-typing {
+  0%,
+  60%,
+  100% {
+    transform: none;
+    opacity: 0.45;
+  }
+  30% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+
+/* ---------- Departures board and ticket ---------- */
+
+.about-led {
+  font-family: var(--font-tiny5), var(--font-space-mono), monospace;
+  letter-spacing: 0.1em;
+  color: #ffe800;
+  text-shadow: 0 0 7px rgba(255, 232, 0, 0.45);
+}
+/* The board's dot grid sits over everything it shows. */
+.about-led-grid {
+  background-image: radial-gradient(rgba(0, 0, 0, 0.5) 0.7px, transparent 1px);
+  background-size: 3px 3px;
+}
+.about-board-row:focus-visible {
+  outline: 2px solid #ffe800;
+  outline-offset: -3px;
+  border-radius: 3px;
+}
+/* Printed ink CTA block on the paper ticket stub. */
+.about-printed-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.72rem 1.2rem;
+  border-radius: 2px;
+  background-color: #17151c;
+  color: #f2ead9;
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  transition: background-color 140ms ease-out;
+}
+@media (hover: hover) {
+  .about-printed-cta:hover {
+    background-color: #2b2734;
+  }
+}
+.about-printed-cta:focus-visible {
+  outline: 2px solid #0078bf;
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+.about-ticket {
+  --stub: 96px;
+  -webkit-mask:
+    radial-gradient(circle 11px at 0 calc(100% - var(--stub)), transparent 97%, #000 100%) left / 51% 100% no-repeat,
+    radial-gradient(circle 11px at 100% calc(100% - var(--stub)), transparent 97%, #000 100%) right / 51% 100% no-repeat;
+  mask:
+    radial-gradient(circle 11px at 0 calc(100% - var(--stub)), transparent 97%, #000 100%) left / 51% 100% no-repeat,
+    radial-gradient(circle 11px at 100% calc(100% - var(--stub)), transparent 97%, #000 100%) right / 51% 100% no-repeat;
+}
+
+/* ---------- Small shared motions ---------- */
+
+/* The hero's "scroll down to play" arrow: a slow nudge, not a bounce. */
+.about-nudge {
+  animation: about-nudge 2.4s ease-in-out infinite;
+}
+@keyframes about-nudge {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(4px);
+  }
+}
+
+/* A ready light. */
+.about-blink {
+  animation: about-blink 1.6s steps(2, jump-none) infinite;
+}
+@keyframes about-blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* The trail draws itself as it scrolls into view; the transfer sign flips up. */
+@supports (animation-timeline: view()) {
+  .about-draw {
+    transform-origin: top;
+    animation: about-draw-y linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 100%;
+  }
+  .about-sign-scroll {
+    animation: about-sign-scroll linear both;
+    animation-timeline: view();
+    animation-range: entry 40% cover 45%;
+  }
+}
+@keyframes about-draw-y {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+@keyframes about-sign-scroll {
+  from {
+    opacity: 0;
+    transform: perspective(400px) rotateX(-70deg);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-feed,
+  .about-jolt,
+  .about-place,
+  .about-stamp,
+  .about-pop,
+  .about-shake,
+  .about-rise,
+  .about-stick,
+  .about-shrug,
+  .about-typing span,
+  .about-blink,
+  .about-nudge,
+  .about-draw,
+  .about-sign-scroll {
+    animation: none !important;
+  }
+  .about-pen {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .about-place {
+    transform: rotate(var(--rest, -1.5deg));
+  }
+  .about-stick,
+  .about-sticky {
+    transform: translateY(var(--y, 0px)) rotate(var(--r, 0deg));
+  }
+  .about-stamp {
+    transform: rotate(-9deg);
+  }
+  .about-printed-cta,
+  .about-object,
+  [aria-checked="true"] > .about-object {
+    transition: none;
+  }
+}
