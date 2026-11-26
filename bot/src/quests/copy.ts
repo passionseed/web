@@ -474,7 +474,7 @@ export const T = {
    * away_after_days (left out when unknown). Never asked by DM; the island asks first. DRAFT for the Thai review.
    */
   awayOn: (days: number | null) =>
-    `🌱 DM ชวนกลับเกาะ${days ? ` เมื่อห่างเกาะ ${days} วัน` : ""}: **เปิด** (ครั้งเดียว มีแค่ลิงก์เปิดเกาะ)`,
+    `🌱 DM ชวนกลับเกาะ${days ? ` เมื่อห่างเกาะ ${days} วัน` : ""}: **เปิด** (ครั้งเดียว บอกเควสต์ถัดไปของคุณ)`,
   /** Off, or never chosen: either way no DM goes. DRAFT. */
   awayOff: (days: number | null) => `🌱 DM ชวนกลับเกาะ${days ? ` เมื่อห่างเกาะ ${days} วัน` : ""}: **ปิด**`,
   /** DRAFT. */
@@ -520,11 +520,12 @@ export const T = {
   requestSent: "ส่งคำขอแล้ว ทีมจะติดต่อกลับผ่าน /inbox",
 
   // Reminders and nudges (DM: broadcast only, never a conversation). Each is one small card.
-  dmNudgeTitle: "🔔 มีอัปเดตใหม่ใน SHIFT High quests",
-  dmNudge: "ดูได้ด้วย /inbox ในเซิร์ฟเวอร์",
+  // Each DM carries the island's link button (outbox.ts): the island is where the work is. DRAFT for the Thai review.
+  dmNudgeTitle: "🔔 มีอัปเดตใหม่บนเกาะ",
+  dmNudge: "เปิดเกาะเพื่อดูได้เลย",
   dmReminderTitle: "⏰ ถึงเวลาที่คุณตั้งไว้แล้ว",
   dmReminder: (open: number) =>
-    `${open ? `มีเควสต์เปิดอยู่ **${open}** อัน\n` : ""}เริ่มด้วย /work start ในเซิร์ฟเวอร์ได้เลย`,
+    `${open ? `มีเควสต์เปิดอยู่ **${open}** อัน\n` : ""}เปิดเกาะแล้วเริ่มจากการ์ดแรกได้เลย`,
   dmReminderOff: "ปิดการเตือนได้ที่ /settings",
   dmNoReplies: "บอทนี้ไม่อ่านหรือตอบข้อความส่วนตัว",
 
@@ -778,20 +779,71 @@ export const TREE_GREW = {
 
 /**
  * The come-back DM (kind 'away', schema 23, 20261121090000_shift_quest_away),
- * sent only to a student who chose it, after a stretch away from the island.
- * Safeguarding section 4: broadcast only. It asks nothing (no question mark,
- * no question word), counts nothing (no digits: never how many days), names
- * nothing (no project, team or quest) and carries no guilt (never ยังไม่ได้,
- * พลาด, หายไป, เมื่อวาน, สตรีค or ติดต่อกัน). Its only button is the island's
- * link (outbox.ts), never an interaction; the question about why is asked on
- * the island. DRAFT for the three-model Thai review.
+ * sent after a stretch away from the island. On by default since schema 24
+ * (20261125100000_shift_quest_nudges_on); off in /settings or on the island.
+ * It names the student's own next quest when the bot can read their board at
+ * send time (outbox.ts awayParams): the open quest to carry on, or the first
+ * main quest to start. Safeguarding section 4: broadcast only, so it asks
+ * nothing (no question mark, no question word), and it carries no guilt
+ * (never ยังไม่ได้, พลาด, หายไป, เมื่อวาน, สตรีค or ติดต่อกัน, never a day
+ * count). Its only button is the island's link. DRAFT for the three-model
+ * Thai review.
  */
 export const AWAY_DM = {
-  title: "🏝️ เกาะ SHIFT เปิดอยู่เสมอ",
-  body: "แวะมาได้เมื่อพร้อม",
-  /** Why this DM came, and where to turn it off (plain text in a DM: commands there cannot run). */
-  why: "ส่งมาเพราะคุณเปิดรับข้อความนี้ไว้ ปิดได้ในตั้งค่าบนเกาะ หรือ /settings ในเซิร์ฟเวอร์",
+  title: "🌱 ก้าวต่อไปของคุณรออยู่บนเกาะ",
+  /** When the board could not be read: the island's first card names the step. */
+  body: "เปิดเกาะแล้วการ์ดแรกจะบอกว่าทำอะไรต่อ",
+  /** An open quest of theirs (active, paused, or a mentor asked for more). */
+  carryOn: (title: string) => `ทำต่อได้เลย: **${title}**`,
+  /** Nothing open: the first main quest they can start. */
+  begin: (title: string) => `เริ่มได้เลย: **${title}**`,
+  /** Why it came and how to stop it (plain text in a DM: commands there cannot run). */
+  why: "บอทส่งข้อความสั้นๆ แบบนี้เมื่อห่างเกาะไปสักพัก ปิดได้ในตั้งค่าบนเกาะ หรือ /settings ในเซิร์ฟเวอร์",
 };
+
+/**
+ * The update DM (kind 'nudge'): from schema 24 it says what happened. The
+ * database passes the notice kind and a few fields (shift_quest__notify): the
+ * quest title, the milestone, who invited the student to which project. A
+ * mentor's own words never come in it; the DM sends the student to the island
+ * to read them. Anything else, or an older row with no fields, is the plain
+ * "something new" line. DRAFT for the three-model Thai review.
+ */
+export const NUDGE_DM = {
+  approvedTitle: "✅ งานของคุณผ่านแล้ว",
+  approved: (title: string, grew: boolean) =>
+    `**${title}**${grew ? " ผ่านแล้ว ต้นไม้ของทีมโตขึ้นอีกขั้น" : " ผ่านแล้ว"}\nไปดูความเห็นพี่เลี้ยงบนเกาะได้เลย`,
+  clarificationTitle: "💬 พี่เลี้ยงตอบงานของคุณแล้ว",
+  clarification: (title: string) => `พี่เลี้ยงอยากรู้เพิ่มอีกนิดเรื่อง **${title}**\nอ่านแล้วตอบได้บนเกาะ`,
+  declinedTitle: "↩️ พี่เลี้ยงตอบงานของคุณแล้ว",
+  declined: (title: string) => `**${title}** ยังไม่ผ่านรอบนี้\nพี่เลี้ยงบอกไว้ว่าเพิ่มอะไรได้ ดูบนเกาะแล้วลองอีกรอบได้เลย`,
+  inviteTitle: "👋 มีคนชวนคุณเข้าทีม",
+  invite: (from: string, project: string) => `**${from}** ชวนคุณเข้าทีม **${project}**\nตอบรับได้บนเกาะ`,
+  /** How to stop it. */
+  off: "ปิดข้อความแบบนี้ได้ที่ /settings ในเซิร์ฟเวอร์",
+};
+
+/** The update DM's heading and lines from its whitelisted fields (NUDGE_DM); the plain line when they are missing. */
+function nudgeDm(p: Record<string, any>): { title: string; body: string } {
+  const title = typeof p.title === "string" && p.title.trim() ? safe(p.title, 80) : null;
+  switch (p.notice) {
+    case "review_approved":
+      if (title) return { title: NUDGE_DM.approvedTitle, body: NUDGE_DM.approved(title, typeof p.milestone === "number") };
+      break;
+    case "review_clarification":
+      if (title) return { title: NUDGE_DM.clarificationTitle, body: NUDGE_DM.clarification(title) };
+      break;
+    case "review_declined":
+      if (title) return { title: NUDGE_DM.declinedTitle, body: NUDGE_DM.declined(title) };
+      break;
+    case "project_invite":
+      if (typeof p.from === "string" && typeof p.project_name === "string") {
+        return { title: NUDGE_DM.inviteTitle, body: NUDGE_DM.invite(safe(p.from, 60), safe(p.project_name, 80)) };
+      }
+      break;
+  }
+  return { title: T.dmNudgeTitle, body: T.dmNudge };
+}
 
 /** Renders a queued message. Returns null for an unknown kind (it fails permanently). */
 export function renderOutbox(
@@ -877,10 +929,13 @@ export function renderOutbox(
         mentionUserIds: [],
       };
     case "nudge":
-      return { title: T.dmNudgeTitle, body: T.dmNudge, note: T.dmNoReplies, mentionUserIds: [] };
-    case "away":
-      // Params are '{}': the same few words for everyone, nothing about the student.
-      return { title: AWAY_DM.title, body: AWAY_DM.body, note: `${AWAY_DM.why}\n${T.dmNoReplies}`, mentionUserIds: [] };
+      return { ...nudgeDm(params), note: `${NUDGE_DM.off}\n${T.dmNoReplies}`, mentionUserIds: [] };
+    case "away": {
+      // Only the next quest the bot read from the student's own board (outbox.ts awayParams); nothing else passes.
+      const next = typeof params.next === "string" && params.next.trim() ? safe(params.next, 80) : null;
+      const body = next ? (params.begin === true ? AWAY_DM.begin(next) : AWAY_DM.carryOn(next)) : AWAY_DM.body;
+      return { title: AWAY_DM.title, body, note: `${AWAY_DM.why}\n${T.dmNoReplies}`, mentionUserIds: [] };
+    }
     case "reminder":
       return {
         title: T.dmReminderTitle,

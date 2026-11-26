@@ -19,7 +19,10 @@ table). These rules never bend:
   cosmetic tree look with no cash value, nothing to buy, nothing lost for
   skipping). No other random prize.
 - **Minors.** No private channel between an adult and a student. A mentor's
-  words never travel in a DM; bot DMs are content-free nudges. Evidence and
+  words never travel in a DM. Bot DMs are on by default with an off switch,
+  and may name the student's own quest, its result and their next step
+  (schema 24, `docs/designs/shift-island-nudge.md`); they never ask anything
+  or carry adult-written text. Evidence and
   forms never ask for a real name, phone number or address. A team's name
   shows on the shared map only with every member's consent.
 - **The database holds the rules.** Every rule lives in a `shift_quest_*`

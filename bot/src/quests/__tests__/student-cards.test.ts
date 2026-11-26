@@ -181,7 +181,7 @@ describe("/start", () => {
     const c = ctx(() => null, session({ onboarded: false }));
     const { i, sent } = interaction("button");
     await ACTION_HANDLERS.get("start")!(i, c, []);
-    expect(calls(c)).toEqual([["shift_quest_start", "1111111111", "x", false]]);
+    expect(calls(c)).toEqual([["shift_quest_start", "1111111111", "x", null]]);
     expect(sent[0].how).toBe("update");
     const p = sent[0].payload;
     expectCard(p, V2);
@@ -269,7 +269,7 @@ describe("/start link to the website", () => {
     const c = ctx(() => null, session({ onboarded: false }));
     const a = interaction("button");
     await ACTION_HANDLERS.get("start")!(a.i, c, []);
-    expect(calls(c)).toEqual([["shift_quest_start", "1111111111", "x", false]]);
+    expect(calls(c)).toEqual([["shift_quest_start", "1111111111", "x", null]]);
     expectCard(a.sent[0].payload, V2);
     expect(rowsWithLinks(a.sent[0].payload)).toEqual([["sq|nav|project_new", "sq|nav|island", "sq|is_how", `link:${ISLAND_URL}`]]);
     expect(buttonOf(a.sent[0].payload, "sq|nav|project_new").style).toBe(3);

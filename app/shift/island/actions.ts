@@ -151,7 +151,8 @@ export async function startIsland(): Promise<IslandActionResult> {
     noInput,
     undefined,
     async ({ actor, name }) => {
-      await questApi().call("shift_quest_start", actor, name, false);
+      // null: keep the DM choice (on by default for a new student, schema 24); a second start never changes it.
+      await questApi().call("shift_quest_start", actor, name, null);
       return null;
     },
     { allowNotStarted: true }

@@ -92,6 +92,11 @@
 #             admin report's counts, "1-2" floors and nameless lines; the
 #             audited reveal; erasure, /data and the admin reset; 90-day
 #             lines; the grants), with consent off
+#   nudges    every migration applied twice, then nudges.ts (schema 24,
+#             20261125100000: the bot's DMs on by default, a start with no
+#             choice, a choice kept across starts, the update DM's whitelisted
+#             fields and never the mentor's words, three days to the come-back
+#             DM)
 #
 #   supabase/tests/shift_quests/run-local.sh       # or: pnpm test:db:quests
 #   PG_BIN=/usr/lib/postgresql/15/bin supabase/tests/shift_quests/run-local.sh
@@ -498,7 +503,7 @@ echo "# migrations"
 for f in "${MIGRATIONS[@]}"; do echo "apply $(basename "$f")"; done
 new_db once
 apply once "single pass" "${MIGRATIONS[@]}"
-for DB in rules island flows islandflows board canvas campfire live player roots tree reset evidence peer treepost webeverything visitors news newsmissed campfirecall deepfire away; do
+for DB in rules island flows islandflows board canvas campfire live player roots tree reset evidence peer treepost webeverything visitors news newsmissed campfirecall deepfire away nudges; do
   new_db "$DB"
   apply "$DB" "first pass" "${MIGRATIONS[@]}"
   apply "$DB" "second pass" "${MIGRATIONS[@]}"
@@ -594,6 +599,7 @@ suite "island news missed-night note" newsmissed news_missed.ts
 suite "campfire call and evening guest" campfirecall campfire_call.ts
 suite "deep fire" deepfire deepfire.ts
 suite "come-back DM and return card" away away.ts
+suite "DMs on by default" nudges nudges.ts
 # island_rules.ts runs against wave 1 alone once it knows to skip season cases.
 if [ "${#WAVE1[@]}" -lt "${#MIGRATIONS[@]}" ] && grep -q SHIFT_QUESTS_WAVE "$HERE/island_rules.ts"; then
   export SHIFT_QUESTS_WAVE=1

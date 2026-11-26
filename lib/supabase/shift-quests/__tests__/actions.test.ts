@@ -36,7 +36,7 @@ const proof = { proof: " ทำต้นแบบแล้ว ", reflection: "�
 
 describe("each action calls exactly one function with the server-side actor", () => {
   const cases: Array<[string, () => Promise<unknown>, unknown, string, unknown[], unknown]> = [
-    ["startIsland", () => actions.startIsland(), {}, "shift_quest_start", [ACTOR, "Mint", false], null],
+    ["startIsland", () => actions.startIsland(), {}, "shift_quest_start", [ACTOR, "Mint", null], null],
     [
       "createProject",
       () => actions.createProject({ name: " Lamp ", route: "software", ambition: "" }),
@@ -308,7 +308,7 @@ describe("viewer gates", () => {
     await expect(actions.createProject({ name: "A", route: "other" })).resolves.toMatchObject({ code: "not_started" });
     await expect(actions.submitMainQuest({ milestone: 1, ...proof })).resolves.toMatchObject({ code: "not_started" });
     expect(call).toHaveBeenCalledTimes(1);
-    expect(call).toHaveBeenCalledWith("shift_quest_start", ACTOR, "Mint", false);
+    expect(call).toHaveBeenCalledWith("shift_quest_start", ACTOR, "Mint", null);
   });
 
   it("refuses start for an ineligible viewer", async () => {
