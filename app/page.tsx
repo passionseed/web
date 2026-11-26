@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { HomePage } from "@/components/home/HomePage";
+import { getHomeLead } from "@/lib/content/home-lead";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { unstable_cache } from "next/cache";
 
@@ -36,5 +37,5 @@ const getStudentCount = unstable_cache(
 export default async function Home() {
   const studentCount = await getStudentCount().catch(() => null);
 
-  return <HomePage studentCount={studentCount} />;
+  return <HomePage studentCount={studentCount} lead={getHomeLead()} />;
 }

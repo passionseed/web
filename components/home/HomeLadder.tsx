@@ -35,9 +35,6 @@ function ExploreLinks() {
                 {item.label}
                 <ArrowUpRight className="h-4 w-4 opacity-50 group-hover:opacity-100" />
               </span>
-              <span className="mt-1.5 block text-sm leading-relaxed" style={{ color: paper("99") }}>
-                {item.body}
-              </span>
             </Link>
           </li>
         ))}

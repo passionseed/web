@@ -1,19 +1,21 @@
 import Link from "next/link";
 
-import { ShiftApplyButton } from "@/components/shift/ShiftApplyButton";
 import { ShiftSeatsRemaining } from "@/components/shift/ShiftSeatsRemaining";
 import { MISREG_TEXT, paper } from "@/components/shift/ShiftRiso";
 import { ChromeBevelFilter, ChromeWordmark, INK, OrbitSky } from "@/components/shift/poster/riso";
-import { HOME_NOTES } from "@/lib/content/home";
+import { HOME_NOTES, HOME_SHIFT_NEXT } from "@/lib/content/home";
+import { leadCta, type HomeLead } from "@/lib/content/home-lead";
 import {
   cohortPath,
   cohortToday,
   formatThaiDate,
   formatThaiDateRange,
-  getEffectiveCohort,
   getRunningCohort,
   type ShiftCohort,
 } from "@/lib/content/shift-cohort";
+import { MIN_BUILDERS, NEXT_ROUND_NAME } from "@/lib/content/shift-next";
+import { HomeHackathonHero } from "./HomeHackathonHero";
+import { LeadButton } from "./LeadButton";
 import { MarginNote } from "./MarginNote";
 
 const HORIZON = "clamp(600px, 78svh, 860px)";
@@ -71,9 +73,29 @@ function CohortFacts({ cohort }: { cohort: ShiftCohort }) {
   );
 }
 
-/** Home hero: the SHIFT sky and chrome wordmark, pitched to first-time visitors. */
-export function HomeHero() {
-  const cohort = getEffectiveCohort();
+/** No round on sale: say so, and offer the free sign-up for the next one. */
+function NextRoundFacts() {
+  return (
+    <div className="mt-8 flex flex-col items-center gap-2">
+      <p className="font-kodchasan text-lg font-semibold sm:text-xl" style={MISREG_TEXT}>
+        {HOME_SHIFT_NEXT.status}
+      </p>
+      <p className="text-sm sm:text-base" style={{ color: paper("b3") }}>
+        {HOME_SHIFT_NEXT.howItOpens.replace("{min}", String(MIN_BUILDERS))} · {HOME_SHIFT_NEXT.free}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Home hero, pointed at the lead (lib/content/home-lead.ts). The hackathon
+ * gets its own scene; SHIFT keeps the sky and chrome wordmark.
+ */
+export function HomeHero({ lead }: { lead: HomeLead }) {
+  const cta = leadCta(lead, "home");
+  if (lead.kind === "hackathon") return <HomeHackathonHero cta={cta} />;
+
+  const cohort = lead.kind === "shift" ? lead.cohort : null;
   const running = getRunningCohort();
 
   return (
@@ -86,7 +108,7 @@ export function HomeHero() {
           className="flex flex-col items-center justify-center pb-10 pt-28 text-center"
           style={{ minHeight: HORIZON }}
         >
-          {running && running.round !== cohort.round && (
+          {running && running.round !== cohort?.round && (
             <LiveRoundStrip cohort={running} />
           )}
           <h1
@@ -98,7 +120,7 @@ export function HomeHero() {
             มาสร้างของจริง<span className="whitespace-nowrap">ใน 7 วัน</span>
           </h1>
           <div className="mt-4 sm:mt-6">
-            <ChromeWordmark size="clamp(76px, 15vw, 188px)" name={cohort.name} />
+            <ChromeWordmark size="clamp(76px, 15vw, 188px)" name={cohort?.name ?? NEXT_ROUND_NAME} />
           </div>
         </div>
 
@@ -108,18 +130,12 @@ export function HomeHero() {
             ปล่อยให้คนนอกใช้ เก็บจุดพังเป็นข้อมูล แล้วจบด้วยพอร์ต 1 หน้า
           </p>
           <div className="mt-10 flex flex-col items-center gap-5 sm:flex-row">
-            <ShiftApplyButton location="home_hero">
-              จองที่นั่ง {cohort.name}
-            </ShiftApplyButton>
-            <Link
-              href="/shift"
-              className="font-mono text-xs font-semibold uppercase tracking-[0.16em] underline decoration-[rgba(255,72,176,0.6)] decoration-2 underline-offset-8 transition hover:decoration-[rgba(255,72,176,1)]"
-              style={{ color: INK.yellow }}
-            >
+            <LeadButton cta={cta} location="home_hero" />
+            <Link href="/shift" className="site-ghost">
               ดูว่า 7 วันทำอะไรบ้าง
             </Link>
           </div>
-          <CohortFacts cohort={cohort} />
+          {cohort ? <CohortFacts cohort={cohort} /> : <NextRoundFacts />}
           <MarginNote className="mt-8">{HOME_NOTES.hero}</MarginNote>
         </div>
       </div>

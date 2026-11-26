@@ -1,9 +1,8 @@
 import "@/components/shift/round/shiftRound.css";
 import "./home.css";
 
-import localFont from "next/font/local";
-
 import { INK, RisoPageTexture } from "@/components/shift/ShiftRiso";
+import { leadCta, type HomeLead } from "@/lib/content/home-lead";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteNav } from "@/components/site/SiteNav";
 import { HomeContrast } from "./HomeContrast";
@@ -14,25 +13,21 @@ import { HomeParents } from "./HomeParents";
 import { HomeProof } from "./HomeProof";
 import { HomeShowcase } from "./HomeShowcase";
 import { HomeWeek } from "./HomeWeek";
+import { iannnnnCow } from "./notesFont";
 
-const iannnnnCow = localFont({
-  src: "./fonts/Iannnnn-COW-Regular.otf",
-  weight: "400",
-  variable: "--font-iannnnn-cow",
-  display: "swap",
-  preload: false,
-});
-
-/** Public home page. SHIFT leads; everything else hangs off it. */
-export function HomePage({ studentCount }: { studentCount: number | null }) {
+/**
+ * Public home page. The hero, nav button and last call follow the lead
+ * (lib/content/home-lead.ts); the sections between tell the SHIFT story.
+ */
+export function HomePage({ studentCount, lead }: { studentCount: number | null; lead: HomeLead }) {
   return (
     <div
-      className={`${iannnnnCow.variable} home-handwritten-notes relative min-h-screen font-bai-jamjuree antialiased`}
+      className={`${iannnnnCow.variable} site-shell home-handwritten-notes relative min-h-screen font-bai-jamjuree antialiased`}
       style={{ backgroundColor: INK.black, color: INK.paper }}
     >
       <RisoPageTexture />
-      <SiteNav />
-      <HomeHero />
+      <SiteNav cta={leadCta(lead, "home")} />
+      <HomeHero lead={lead} />
       <main className="relative mx-auto max-w-5xl px-5 pb-10 sm:px-8">
         <HomeContrast />
         <HomeShowcase />
@@ -41,7 +36,7 @@ export function HomePage({ studentCount }: { studentCount: number | null }) {
         <HomeParents />
         <HomeLadder />
       </main>
-      <HomeFinalCta />
+      <HomeFinalCta lead={lead} />
       <SiteFooter />
     </div>
   );
