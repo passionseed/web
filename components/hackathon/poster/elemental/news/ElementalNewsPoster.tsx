@@ -196,10 +196,8 @@ export function ElementalNewsPoster({ id = "elemental-news" }: { id?: string }) 
                 {demo.date ? `${formatThaiDate(demo.date)} · ` : ""}
                 {demo.time} น.
               </span>
-              <span className="block" style={{ color: HIGHLIGHT, fontSize: 21 }}>
-                {demo.whoTh}
-                {demo.optional ? " (Optional)" : ""}
-              </span>
+              {/* "(Optional)" is on the calendar only, not here (Angpao, 2026-11-26: "remove optional buttom right"). */}
+              <span className="block" style={{ color: HIGHLIGHT }}>{demo.whoTh}</span>
             </span>
           </div>
           <div className="whitespace-nowrap" style={{ marginTop: 8, fontWeight: 500, fontSize: 38, lineHeight: "50px" }}>
