@@ -739,13 +739,13 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
         </h1>
         {/* The facts as a row under the title, in ink on the sky (review note, 2026-11-23: "move the info under here, as a row"). The longest one takes its own line. */}
         {facts === "top" ? (
-          <div className="flex flex-wrap items-center gap-x-[24px] gap-y-[6px]" style={{ width: 660, marginLeft: 4, marginTop: 4, fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 23, lineHeight: "32px" }}>
+          /* Two lines, not three: a third line's icon sat on the dark mountain and couldn't be read (Angpao, 2026-11-26), so the type is 21px, not 23, and the Demo Day fact names Chula only. */
+          <div className="flex flex-wrap items-center gap-x-[16px] gap-y-[6px]" style={{ width: 660, marginLeft: 4, marginTop: 4, fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 21, lineHeight: "30px" }}>
             <Fact icon="date" color={EL.ink}>{thaiDayRange()}</Fact>
             <Fact icon="online" color={EL.ink}>ออนไลน์</Fact>
-            <Fact icon="pin" color={EL.ink}>{`Demo Day ที่ ${ELEMENTAL.demoDay.placeTh}`}</Fact>
-            <Fact icon="friends" color={EL.ink}>{`มากับเพื่อน ฿${ELEMENTAL.groupPriceBaht} ต่อคน`}</Fact>
+            <Fact icon="pin" color={EL.ink}>Demo Day ที่จุฬาฯ</Fact>
             <Fact icon="school" color={EL.ink}>{who}</Fact>
-            {/* Last, so the longest fact takes the third line alone (three lines since the Demo Day joined, 2026-11-26). */}
+            <Fact icon="friends" color={EL.ink}>{`มากับเพื่อน ฿${ELEMENTAL.groupPriceBaht} ต่อคน`}</Fact>
             <Fact icon="workshop" color={EL.ink}>{`${BEGINNER[0]} ${BEGINNER[1]}`}</Fact>
           </div>
         ) : null}
