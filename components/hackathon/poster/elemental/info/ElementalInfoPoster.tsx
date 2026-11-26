@@ -146,7 +146,7 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
         </div>
 
         {/* 01 The prize: the total as on slide 1 (trophy, yellow), then a small table, cash and credit in their own columns. */}
-        <div style={{ marginTop: 34 }}>
+        <div style={{ marginTop: 28 }}>
           <Head n="01">รางวัล</Head>
           <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 28 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 14, flex: "none" }}>
@@ -180,7 +180,7 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
         </div>
 
         {/* 02 The five elements. */}
-        <div style={{ marginTop: 34 }}>
+        <div style={{ marginTop: 28 }}>
           <Head n="02" aside="เลือกปัญหาไหนก็ได้ในธาตุนั้น">
             โจทย์ 5 ธาตุ
           </Head>
@@ -199,7 +199,7 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
         </div>
 
         {/* 03 The schedule as one timeline, ending at the Demo Day (Angpao, 2026-11-26), which gets its own lit stop. */}
-        <div style={{ marginTop: 34 }}>
+        <div style={{ marginTop: 28 }}>
           <Head
             n="03"
             aside={
