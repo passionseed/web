@@ -16,7 +16,7 @@ import { ELEMENTAL, thaiDayRange } from "../facts";
  *
  * Its own photo at full brightness, not dimmed (Angpao, same day: "use new
  * background and don't dim the bg make it work"): dark type sits on the
- * light sky, and everything below the horizon sits on solid cards and a
+ * light sky, and everything below the horizon sits on a solid ticket and a
  * solid band, so the photo never has to be darkened. Layout choices follow a
  * cognitive-science review of the first draft (cogsci-design-review skill).
  * Facts come from ../facts.ts only.
@@ -70,27 +70,29 @@ export function ElementalNewsPoster({ id = "elemental-news" }: { id?: string }) 
       </svg>
 
       <div className="relative" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-        {/* Header: the three names, dark on the sky as on slide 1. */}
-        <div style={{ display: "flex", alignItems: "center", gap: 16, fontFamily: EL_FONT.mono, fontSize: 20, color: EL.inkSoft }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/hackathon/HackLogo.png" alt={ELEMENTAL.series} width={110} height={44} style={{ filter: "brightness(0)", opacity: 0.85 }} />
-          <span>×</span>
-          <span style={{ display: "flex", alignItems: "center", gap: 9 }}>
+        {/* The organisers, small, with what kind of post it is. */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 14, fontFamily: EL_FONT.mono, fontSize: 18, color: EL.inkSoft }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/passion-seed-logo.png" alt="" width={44} height={44} />
-            <PassionSeedWordmark height={24} style={{ color: EL.ink }} />
+            <img src="/hackathon/HackLogo.png" alt={ELEMENTAL.series} width={95} height={38} style={{ filter: "brightness(0)", opacity: 0.8 }} />
+            <span>×</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/passion-seed-logo.png" alt="" width={36} height={36} />
+            <PassionSeedWordmark height={20} style={{ color: EL.ink, marginLeft: -6 }} />
           </span>
-          <span>×</span>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/hackathon/partners/csii.png" alt="CSII, Chulalongkorn School of Integrated Innovation" width={135} height={44} style={{ opacity: 0.88 }} />
-        </div>
-
-        {/* The event's name, big enough to place the post in the feed, and what kind of post it is. */}
-        <div style={{ marginTop: 30, display: "flex", alignItems: "center", gap: 18 }}>
-          <span style={{ fontFamily: EL_FONT.display, fontStyle: "italic", fontWeight: 300, fontSize: 50, lineHeight: "58px" }}>{ELEMENTAL.edition} Hackathon</span>
           <span style={{ fontFamily: EL_FONT.display, fontWeight: 500, fontSize: 24, lineHeight: "32px", background: EL.ink, color: HIGHLIGHT, padding: "2px 14px" }}>อัปเดตใหม่</span>
         </div>
-        <h1 style={{ margin: "10px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 76, lineHeight: "92px", letterSpacing: "-0.005em" }}>
+
+        {/* The lockup, big: the event × CSII (Angpao, 2026-11-26: "use Elemental Hackathon X CSII logo at the top make it stand out"). It also says the partnership, so there's no separate CSII line. */}
+        <div style={{ marginTop: 34, display: "flex", alignItems: "center", gap: 20 }}>
+          <span style={{ fontFamily: EL_FONT.display, fontStyle: "italic", fontWeight: 300, fontSize: 68, lineHeight: "78px", letterSpacing: "-0.01em", whiteSpace: "nowrap" }}>{ELEMENTAL.edition} Hackathon</span>
+          <span style={{ fontFamily: EL_FONT.display, fontWeight: 200, fontSize: 56, lineHeight: "56px", color: EL.inkSoft }}>×</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/hackathon/partners/csii.png" alt="CSII, Chulalongkorn School of Integrated Innovation" width={220} height={72} />
+        </div>
+        <div style={{ marginTop: 22, height: 2, background: EL.ink, opacity: 0.85 }} />
+
+        <h1 style={{ margin: "22px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 70, lineHeight: "86px", letterSpacing: "-0.005em" }}>
           แข่งนานขึ้นเป็น {ELEMENTAL.days} วัน
           <br />
           แล้วไปโชว์ผลงานที่<span style={{ fontWeight: 500 }}>จุฬาฯ</span>
@@ -118,7 +120,7 @@ export function ElementalNewsPoster({ id = "elemental-news" }: { id?: string }) 
         </div>
 
         {/* The Demo Day as a ticket: the day big on the stub, so its date is as easy to see as its name. Solid cream, so the photo under it needs no dimming. */}
-        <div style={{ marginTop: 56, display: "flex", background: EL.cream, maskImage: notchMask, WebkitMaskImage: notchMask, maskComposite: "intersect", WebkitMaskComposite: "source-in", boxShadow: "0 10px 30px rgba(0,0,0,0.18)" }}>
+        <div style={{ marginTop: 44, display: "flex", background: EL.cream, maskImage: notchMask, WebkitMaskImage: notchMask, maskComposite: "intersect", WebkitMaskComposite: "source-in", boxShadow: "0 10px 30px rgba(0,0,0,0.18)" }}>
           <div style={{ width: STUB, flex: "none", background: HIGHLIGHT, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "18px 0", borderRight: `3px dashed ${EL.ink}` }}>
             <span style={{ fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 30, lineHeight: "34px" }}>{demoWeekday ?? "ปิดท้าย"}</span>
             <span style={{ fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 112, lineHeight: "112px" }}>{demoDay ?? ""}</span>
@@ -130,21 +132,12 @@ export function ElementalNewsPoster({ id = "elemental-news" }: { id?: string }) 
               Demo Day @<Chula />
             </p>
             <p style={{ margin: "2px 0 0", fontFamily: EL_FONT.display, fontWeight: 500, fontSize: 30, lineHeight: "38px" }}>{demo.time} น. · CSII</p>
+            {/* Only invited projects present (Angpao, 2026-11-26). */}
+            <p style={{ margin: "8px 0 0", display: "inline-block", fontFamily: EL_FONT.display, fontWeight: 500, fontSize: 24, lineHeight: "32px", background: EL.ink, color: EL.cream, padding: "1px 12px" }}>{demo.whoTh}</p>
             <p style={{ margin: "4px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 24, lineHeight: "32px" }}>ผู้สนับสนุนและผู้เชี่ยวชาญแต่ละด้านมาชมผลงาน</p>
           </div>
         </div>
 
-        {/* The partnership in words, as its own group (the review: the logo alone read as a venue credit). */}
-        <div style={{ marginTop: 18, display: "flex", alignItems: "center", gap: 20, background: "#ffffff", padding: "14px 24px", boxShadow: "0 10px 30px rgba(0,0,0,0.14)" }}>
-          <span style={{ fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 28, lineHeight: "34px", whiteSpace: "nowrap" }}>จับมือกับ</span>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/hackathon/partners/csii.png" alt="CSII, Chulalongkorn School of Integrated Innovation" width={153} height={50} />
-          <span style={{ fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 21, lineHeight: "27px" }}>
-            Chulalongkorn School of Integrated Innovation
-            <br />
-            จุฬาลงกรณ์มหาวิทยาลัย
-          </span>
-        </div>
       </div>
 
       {/* Foot: a solid band like slide 1's, with the deadline in the accent and a way to sign up from the same phone. */}
