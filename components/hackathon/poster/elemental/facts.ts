@@ -44,9 +44,10 @@ export const ELEMENTAL = {
    * 2026-11-26: "demo day only for ผลงานที่ได้รับเชิญ"). If date is null,
    * posters print the place, not a day. The place is the CSII building at
    * Chula, "ตึก CSII จุฬา", not just "จุฬา" (Angpao, 2026-11-26: "the location
-   * is not @จุฬา it at ตึก CSII จุฬา").
+   * is not @จุฬา it at ตึก CSII จุฬา"). Going is optional (Angpao, same day:
+   * "12 Demo Day have (Optional)").
    */
-  demoDay: { date: "2026-12-12" as string | null, time: "13:00–17:00", whoTh: "เฉพาะผลงานที่ได้รับเชิญ", placeTh: "ตึก CSII จุฬา", placeFull: "Chulalongkorn School of Integrated Innovation (CSII), จุฬาลงกรณ์มหาวิทยาลัย" },
+  demoDay: { date: "2026-12-12" as string | null, time: "13:00–17:00", whoTh: "เฉพาะผลงานที่ได้รับเชิญ", optional: true, placeTh: "ตึก CSII จุฬา", placeFull: "Chulalongkorn School of Integrated Innovation (CSII), จุฬาลงกรณ์มหาวิทยาลัย" },
   priceBaht: 199,
   groupPriceBaht: 149,
   prizeTotalBaht: 20000,

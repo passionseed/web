@@ -5,7 +5,7 @@ import { PassionSeedWordmark } from "@/components/hackathon/PassionSeedWordmark"
 
 import { EL, EL_FONT } from "../brand";
 import { CHULA_PINK, Chula, EditionWord, ICON, Pixels, RegisterQr } from "../ElementalKeyPoster";
-import { ELEMENTAL, thaiDayRange } from "../facts";
+import { ELEMENTAL } from "../facts";
 
 /**
  * Elemental Hackathon, an Instagram announcement (1080x1350): the hackathon
@@ -43,8 +43,15 @@ const HIGHLIGHT = "#ffd067";
 const HOLIDAY = "#a8200e";
 /** The dates before the change (Angpao, 2026-11-19), shown crossed out. */
 const OLD_RANGE = "5–7";
+/**
+ * The dates this poster prints: from the first day to the Demo Day, "5–12 ธ.ค."
+ * (Angpao, 2026-11-26: "change to 5-12 but 12 Demo Day have (Optional)").
+ * The competing days themselves still end on ELEMENTAL.endDate, the hand-in.
+ */
+const LAST_DAY = ELEMENTAL.demoDay.date ?? ELEMENTAL.endDate;
+const NEW_RANGE = `${Number(ELEMENTAL.startDate.slice(8))}–${formatThaiDate(LAST_DAY, false)}`;
 /** "ธ.ค.", taken from the new range so the two always match. */
-const MONTH = thaiDayRange().split(" ").slice(1).join(" ");
+const MONTH = NEW_RANGE.split(" ").slice(1).join(" ");
 
 /** Every day from the opening to the Demo Day, with what happens on it. */
 function calendarDays() {
@@ -61,7 +68,7 @@ function calendarDays() {
     // Times as told (the hand-in's time isn't confirmed, and the Demo Day's is in the foot, so neither prints here).
     const times = demo ? null : slots.filter((s) => s.kind !== "due").map((s) => s.time.split("–")[0]).join(", ") || null;
     const dot = demo ? CHULA_PINK : slots.some((s) => s.kind === "due") ? EL.flame : workshops ? "#0f8f8a" : EL.ink;
-    days.push({ iso, weekday, day, holiday: (ELEMENTAL.holidays as readonly string[]).includes(iso), inRun: iso >= ELEMENTAL.startDate && iso <= ELEMENTAL.endDate, demo, label, times, dot });
+    days.push({ iso, weekday, day, holiday: (ELEMENTAL.holidays as readonly string[]).includes(iso), inRun: iso >= ELEMENTAL.startDate && iso <= LAST_DAY, demo, label, times, dot });
   }
   return days;
 }
@@ -128,13 +135,13 @@ export function ElementalNewsPoster({ id = "elemental-news" }: { id?: string }) 
             <span className="absolute" style={{ left: -6, right: -6, top: "50%", height: 5, background: EL.ember, transform: "rotate(-9deg)" }} />
           </span>
           <span style={{ fontWeight: 300, fontSize: 50, lineHeight: "64px", color: EL.ink }}>→</span>
-          <span style={{ fontWeight: 600, fontSize: 84, lineHeight: "92px", letterSpacing: "-0.01em", background: `linear-gradient(transparent 52%, ${HIGHLIGHT} 52%, ${HIGHLIGHT} 92%, transparent 92%)`, padding: "0 10px" }}>{thaiDayRange()}</span>
+          <span style={{ fontWeight: 600, fontSize: 84, lineHeight: "92px", letterSpacing: "-0.01em", background: `linear-gradient(transparent 52%, ${HIGHLIGHT} 52%, ${HIGHLIGHT} 92%, transparent 92%)`, padding: "0 10px" }}>{NEW_RANGE}</span>
         </div>
 
         {/* The calendar: what happens on each day, and which days are days off. */}
         <div style={{ width: 968, marginTop: 30, fontFamily: EL_FONT.display }}>
           <div className="flex items-end justify-between" style={{ marginBottom: 8, fontSize: 27, lineHeight: "36px" }}>
-            <span style={{ fontWeight: 500 }}>แข่งออนไลน์ {ELEMENTAL.days} วัน แล้วปิดท้ายด้วย Demo Day</span>
+            <span style={{ fontWeight: 500 }}>แข่งออนไลน์ แล้วปิดท้ายด้วย Demo Day{ELEMENTAL.demoDay.optional ? " (Optional)" : ""}</span>
             <span className="flex items-center" style={{ gap: 8, fontWeight: 500, color: HOLIDAY }}>
               <span style={{ width: 16, height: 16, background: HOLIDAY }} />
               วันหยุด
@@ -163,6 +170,7 @@ export function ElementalNewsPoster({ id = "elemental-news" }: { id?: string }) 
                     <span style={{ width: 12, height: 12, background: d.dot, marginBottom: 6 }} />
                     {d.label}
                     {d.times ? <span style={{ fontWeight: 400, fontSize: 20, lineHeight: "26px", color: EL.inkSoft }}>{d.times}</span> : null}
+                    {d.demo && ELEMENTAL.demoDay.optional ? <span style={{ fontWeight: 400, fontSize: 20, lineHeight: "26px", color: EL.inkSoft }}>(Optional)</span> : null}
                   </span>
                 ) : null}
               </div>
@@ -178,7 +186,7 @@ export function ElementalNewsPoster({ id = "elemental-news" }: { id?: string }) 
             <span style={{ marginBottom: 16 }}>
               <Pixels rows={ICON.pin} fill={{ "#": HIGHLIGHT }} cell={7} />
             </span>
-            <span style={{ fontWeight: 200, fontSize: 92, lineHeight: "96px", letterSpacing: "-0.01em", color: HIGHLIGHT }}>Demo Day</span>
+            <span style={{ fontWeight: 200, fontSize: 84, lineHeight: "92px", letterSpacing: "-0.01em", color: HIGHLIGHT }}>Demo Day</span>
             <span style={{ marginBottom: 8, fontWeight: 400, fontSize: 23, lineHeight: "31px" }}>
               <span className="block" style={{ fontWeight: 600, fontSize: 30, lineHeight: "40px" }}>
                 {/* The place is the CSII building at Chula, not just Chula (Angpao, 2026-11-26). */}
@@ -188,7 +196,10 @@ export function ElementalNewsPoster({ id = "elemental-news" }: { id?: string }) 
                 {demo.date ? `${formatThaiDate(demo.date)} · ` : ""}
                 {demo.time} น.
               </span>
-              <span className="block" style={{ color: HIGHLIGHT }}>{demo.whoTh}</span>
+              <span className="block" style={{ color: HIGHLIGHT, fontSize: 21 }}>
+                {demo.whoTh}
+                {demo.optional ? " (Optional)" : ""}
+              </span>
             </span>
           </div>
           <div style={{ background: EL.cream, padding: 9, flex: "none", marginBottom: 6 }}>
@@ -196,7 +207,7 @@ export function ElementalNewsPoster({ id = "elemental-news" }: { id?: string }) 
           </div>
         </div>
         <div className="whitespace-nowrap" style={{ marginTop: 12, fontWeight: 500, fontSize: 40, lineHeight: "52px" }}>
-          แข่งนานขึ้นเป็น {ELEMENTAL.days} วัน แล้วไปโชว์ผลงานที่ตึก CSII จุฬา
+          แข่งนานขึ้น แล้วไปโชว์ผลงานที่ตึก CSII จุฬา
         </div>
       </div>
 
