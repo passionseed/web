@@ -23,6 +23,8 @@ const trirong = Trirong({
 
 export const W = 1080;
 export const H = 1350;
+/** A4 proportions at the same width (1:√2), for printing on A4 (Big, 2026-11-26: the print shop said 4:5 doesn't fill A4). */
+export const H_A4 = Math.round(W * Math.SQRT2);
 const PLATES = {
   grey: "/hackathon/poster/elemental/plate-key.png",
   blue: "/hackathon/poster/elemental/plate-key-blue.png",
@@ -617,14 +619,18 @@ function PosterNoTag({ posterNo }: { posterNo: number }) {
  * them. The other values are the layouts tried on the way there.
  * `posterNo` makes a numbered printed copy: its QR code tags ?src=poster-<n>
  * and its number is printed under the code (Big, 2026-11-26).
+ * `format="a4"` makes the canvas A4-shaped: the scene and title stay where
+ * they are, the dark foot runs on below the scene, and the bottom block (prize,
+ * QR, line) moves down with the bottom edge.
  */
-export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs = true, bottom = "number", label = "beside", rule = false, qr = "bottom", facts = "top", qrStyle = "art", trophy = "solid", prizeWeight = 200, who = WHO, posterNo }: { id?: string; who?: string; sky?: keyof typeof PLATES; glyphs?: boolean; bottom?: BottomDesign; label?: PrizeLabel; rule?: boolean; qr?: false | "left" | "right" | "bottom"; facts?: "bottom" | "top"; trophy?: TrophyDesign; prizeWeight?: number; qrStyle?: "art" | "plain" | "glass" | "scan" | "fire"; posterNo?: number }) {
+export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs = true, bottom = "number", label = "beside", rule = false, qr = "bottom", facts = "top", qrStyle = "art", trophy = "solid", prizeWeight = 200, who = WHO, posterNo, format = "feed" }: { id?: string; who?: string; sky?: keyof typeof PLATES; glyphs?: boolean; bottom?: BottomDesign; label?: PrizeLabel; rule?: boolean; qr?: false | "left" | "right" | "bottom"; facts?: "bottom" | "top"; trophy?: TrophyDesign; prizeWeight?: number; qrStyle?: "art" | "plain" | "glass" | "scan" | "fire"; posterNo?: number; format?: "feed" | "a4" }) {
+  const height = format === "a4" ? H_A4 : H;
   return (
-    <div id={id} className={`${trirong.variable} relative overflow-hidden`} style={{ width: W, height: H, backgroundColor: "#2a2b26" }}>
+    <div id={id} className={`${trirong.variable} relative overflow-hidden`} style={{ width: W, height, backgroundColor: "#2a2b26" }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={PLATES[sky]} alt="" width={W} height={H} className="absolute inset-0 h-full w-full" />
+      <img src={PLATES[sky]} alt="" width={W} height={H} className="absolute left-0 top-0" style={{ width: W, height: H }} />
 
-      <svg className="absolute inset-0" width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
+      <svg className="absolute inset-0" width={W} height={height} viewBox={`0 0 ${W} ${height}`} aria-hidden="true">
         <defs>
           <linearGradient id="el-key-foot" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor="#0f0f0d" stopOpacity="0" />
@@ -654,6 +660,8 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
         ))}
         {/* The dark foot starts 150px lower than at first (Angpao, 2026-11-23: "move it a bit down", three times). */}
         <rect y={H - 300} width={W} height={300} fill="url(#el-key-foot)" />
+        {/* A4: below the scene, the foot carries on at its darkest, so there is no seam. */}
+        {height > H ? <rect y={H} width={W} height={height - H} fill="#0f0f0d" fillOpacity={0.92} /> : null}
       </svg>
 
       {/* The sign-up QR code in the top-right corner, over the top of the smoke (Angpao, 2026-11-23: "try top right instead"). */}
@@ -777,8 +785,8 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
       )}
 
       {/* Grain over the type too, so it sits in the same film */}
-      <svg className="pointer-events-none absolute inset-0" width={W} height={H} aria-hidden="true">
-        <rect width={W} height={H} filter="url(#el-key-grain)" opacity="0.1" style={{ mixBlendMode: "overlay" }} />
+      <svg className="pointer-events-none absolute inset-0" width={W} height={height} aria-hidden="true">
+        <rect width={W} height={height} filter="url(#el-key-grain)" opacity="0.1" style={{ mixBlendMode: "overlay" }} />
       </svg>
     </div>
   );

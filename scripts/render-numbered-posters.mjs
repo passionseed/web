@@ -5,7 +5,9 @@
  * opens the hackathon page with ?src=poster-<n> (Big, 2026-11-26).
  *
  *   node scripts/render-numbered-posters.mjs --from 1 --to 30 \
- *        --out output/marketing/elemental-posters [--base http://localhost:3010] [--scale 2]
+ *        --out output/marketing/elemental-posters [--base http://localhost:3010] [--scale 2] [--format a4|feed]
+ *
+ * A4-shaped by default (1080x1527); --format feed gives the 4:5 Instagram shape.
  *
  * The browser's own Save as PDF makes a very large file (the poster's film
  * grain is a blend layer, so every page is rasterised), which is why this
@@ -18,11 +20,9 @@ import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-const W = 1080;
-const H = 1350;
 
 function parseArgs(argv) {
-  const args = { base: "http://localhost:3010", from: "1", to: "30", out: null, scale: 2 };
+  const args = { base: "http://localhost:3010", from: "1", to: "30", out: null, scale: 2, format: "a4" };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--base") args.base = argv[++i];
@@ -30,6 +30,7 @@ function parseArgs(argv) {
     else if (a === "--to") args.to = argv[++i];
     else if (a === "--out") args.out = argv[++i];
     else if (a === "--scale") args.scale = Number(argv[++i]);
+    else if (a === "--format") args.format = argv[++i];
     else throw new Error(`Unknown argument ${a}`);
   }
   if (!args.out) {
@@ -64,8 +65,8 @@ mkdirSync(outDir, { recursive: true });
 const chromium = await loadChromium();
 const browser = await chromium.launch();
 try {
-  const page = await browser.newPage({ viewport: { width: W + 120, height: H + 150 }, deviceScaleFactor: args.scale });
-  const url = `${args.base}/hackathon/poster/elemental/print?from=${encodeURIComponent(args.from)}&to=${encodeURIComponent(args.to)}`;
+  const page = await browser.newPage({ viewport: { width: 1200, height: 1700 }, deviceScaleFactor: args.scale });
+  const url = `${args.base}/hackathon/poster/elemental/print?from=${encodeURIComponent(args.from)}&to=${encodeURIComponent(args.to)}&format=${encodeURIComponent(args.format)}`;
   await page.goto(url, { waitUntil: "networkidle", timeout: 180_000 });
   await page.evaluate(() => document.fonts.ready);
   await page.waitForFunction(() => [...document.images].every((img) => img.complete && img.naturalWidth > 0), null, { timeout: 60_000 });
@@ -73,6 +74,8 @@ try {
   // The page clamps the range, so read the numbers it actually drew.
   const numbers = await page.$$eval(".el-print-sheet", (els) => els.map((el) => Number(el.getAttribute("data-poster-no"))));
   const sheets = await page.$$(".el-print-sheet");
+  // Each PDF page takes the sheet's own size (A4-shaped or 4:5).
+  const { width: W, height: H } = await sheets[0].boundingBox();
   const files = [];
   for (let i = 0; i < sheets.length; i++) {
     const file = join(outDir, `elemental-poster-${String(numbers[i]).padStart(2, "0")}.jpg`);
