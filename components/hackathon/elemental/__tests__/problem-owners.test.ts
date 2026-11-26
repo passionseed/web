@@ -51,7 +51,7 @@ describe("buildBoard", () => {
   it("locks one tile in each element with no owner yet", () => {
     const board = buildBoard([]);
     for (const column of board) expect(column.tiles.map((t) => t.kind)).toEqual(["starter", "locked"]);
-    expect(boardCounts(board)).toEqual({ open: 5, locked: 5 });
+    expect(boardCounts(board)).toEqual({ starter: 5, owner: 0, locked: 5 });
   });
 
   it("unlocks an element once it has an owner", () => {
@@ -59,7 +59,7 @@ describe("buildBoard", () => {
     const water = board.find((c) => c.chapter.key === "water")!;
     expect(water.tiles.map((t) => t.kind)).toEqual(["starter", "owner"]);
     expect(water.tiles[1].key).toBe("water:demo_water");
-    expect(boardCounts(board)).toEqual({ open: 7, locked: 3 });
+    expect(boardCounts(board)).toEqual({ starter: 5, owner: 2, locked: 3 });
   });
 
   it("makes tile keys the funnel accepts as a detail", () => {

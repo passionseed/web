@@ -1,9 +1,22 @@
 "use client";
 
-import { ArrowUpRight } from "lucide-react";
+import {
+  ArrowUpRight,
+  ExternalLink,
+  Flag,
+  Megaphone,
+  MessageCircleQuestion,
+  UserRound,
+} from "lucide-react";
 
 import { EL_FONT } from "@/components/hackathon/poster/elemental/brand";
-import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
+import { ElementIcon } from "@/components/hackathon/poster/elemental/element-icons";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 import { elementLabel, type ElementChapter } from "../media";
 import type { OwnerProblem } from "../problem-owners";
@@ -52,38 +65,79 @@ export function OwnerProblemSheet({
           </div>
         ) : null}
 
-        <div className={`px-6 pb-6 sm:px-10 ${problem.clip ? "pt-8" : "pt-16"}`}>
-          <p className="text-xs" style={{ fontFamily: EL_FONT.mono, color: chapter.color }}>
-            [เจ้าของโจทย์ · {elementLabel(chapter.th)}]{problem.demo ? " [ตัวอย่าง]" : ""}
+        <div
+          className={`px-6 pb-6 sm:px-10 ${problem.clip ? "pt-8" : "pt-16"}`}
+        >
+          <p
+            className="flex items-center gap-2 text-xs"
+            style={{ fontFamily: EL_FONT.mono, color: chapter.color }}
+          >
+            <ElementIcon
+              element={chapter.key}
+              size={16}
+              id={`owner-icon-${problem.id}`}
+            />
+            <Megaphone
+              aria-hidden="true"
+              className="h-3.5 w-3.5"
+              strokeWidth={2.25}
+            />
+            เจ้าของโจทย์ · {elementLabel(chapter.th)}
+            {problem.demo ? (
+              <span className="border border-[#f3efe6]/30 px-1.5 text-[10px] text-[#f3efe6]/70">
+                ตัวอย่าง
+              </span>
+            ) : null}
           </p>
           <SheetTitle
             className="mt-3 text-3xl text-[#faf8f4] sm:text-4xl"
-            style={{ fontFamily: EL_FONT.display, fontWeight: 300, lineHeight: 1.25 }}
+            style={{
+              fontFamily: EL_FONT.display,
+              fontWeight: 300,
+              lineHeight: 1.25,
+            }}
           >
             {problem.titleTh}
           </SheetTitle>
 
-          <div className="mt-5 border-l-2 pl-4" style={{ borderColor: chapter.color }}>
-            <p className="text-base font-semibold text-[#faf8f4]" style={{ fontFamily: BODY_FONT }}>
-              {problem.ownerTh}
-            </p>
-            {problem.ownerRoleTh ? (
-              <p className="text-sm text-[#cfc9bd]" style={{ fontFamily: BODY_FONT }}>
-                {problem.ownerRoleTh}
-              </p>
-            ) : null}
-            {problem.ownerUrl ? (
-              <a
-                href={problem.ownerUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-1 inline-flex items-center gap-1 text-sm text-[#e6e1d7] underline underline-offset-4 hover:text-[#faf8f4]"
+          <div className="mt-5 flex items-start gap-3">
+            <span
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+              style={{ backgroundColor: chapter.color }}
+            >
+              <UserRound
+                aria-hidden="true"
+                className="h-5 w-5 text-[#0c0d0c]"
+              />
+            </span>
+            <div className="min-w-0">
+              <p
+                className="text-base font-semibold text-[#faf8f4]"
                 style={{ fontFamily: BODY_FONT }}
               >
-                ดูหน้าของเจ้าของโจทย์
-                <ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5" />
-              </a>
-            ) : null}
+                {problem.ownerTh}
+              </p>
+              {problem.ownerRoleTh ? (
+                <p
+                  className="text-sm text-[#cfc9bd]"
+                  style={{ fontFamily: BODY_FONT }}
+                >
+                  {problem.ownerRoleTh}
+                </p>
+              ) : null}
+              {problem.ownerUrl ? (
+                <a
+                  href={problem.ownerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 inline-flex items-center gap-1 text-sm text-[#e6e1d7] underline underline-offset-4 hover:text-[#faf8f4]"
+                  style={{ fontFamily: BODY_FONT }}
+                >
+                  <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
+                  ดูเพจ
+                </a>
+              ) : null}
+            </div>
           </div>
 
           <SheetDescription
@@ -95,12 +149,24 @@ export function OwnerProblemSheet({
 
           {problem.askTh ? (
             <section className="mt-8" aria-label="สิ่งที่เจ้าของโจทย์อยากให้ทีมคิด">
-              <p className="text-xs" style={{ fontFamily: EL_FONT.mono, color: chapter.color }}>
-                อยากให้ทีมคิดเรื่องนี้
+              <p
+                className="flex items-center gap-1.5 text-xs"
+                style={{ fontFamily: EL_FONT.mono, color: chapter.color }}
+              >
+                <MessageCircleQuestion
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5"
+                  strokeWidth={2.25}
+                />
+                อยากให้ทีมคิด
               </p>
               <p
                 className="mt-1 text-xl text-[#faf8f4] sm:text-[1.5rem]"
-                style={{ fontFamily: EL_FONT.display, fontWeight: 300, lineHeight: 1.35 }}
+                style={{
+                  fontFamily: EL_FONT.display,
+                  fontWeight: 300,
+                  lineHeight: 1.35,
+                }}
               >
                 {problem.askTh}
               </p>
@@ -113,7 +179,8 @@ export function OwnerProblemSheet({
             className="mt-10 inline-flex items-center gap-1.5 text-sm text-[#e6e1d7] underline underline-offset-4 hover:text-[#faf8f4]"
             style={{ fontFamily: BODY_FONT }}
           >
-            ดูโจทย์ตั้งต้นและเคสจริงของ{elementLabel(chapter.th)}
+            <Flag aria-hidden="true" className="h-3.5 w-3.5" />
+            ดูโจทย์ตั้งต้น{elementLabel(chapter.th)}
           </button>
         </div>
 

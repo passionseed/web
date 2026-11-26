@@ -2,11 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Lock, Play } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { ArrowUpRight, BookOpen, Combine, Flag, Lightbulb, Lock, Megaphone, MousePointerClick, Play, Ticket, UserRound, Users } from "lucide-react";
 
 import { EL_FONT } from "@/components/hackathon/poster/elemental/brand";
+import { ElementIcon } from "@/components/hackathon/poster/elemental/element-icons";
+import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
+import { formatThaiDate } from "@/lib/content/shift-cohort";
 
-import { ANY_PROBLEM_NOTE } from "../challenges";
 import styles from "../elemental-cinema.module.css";
 import { ElementDetailSheet } from "../ElementDetailSheet";
 import { trirong } from "../fonts";
@@ -17,17 +20,29 @@ import { OwnerProblemSheet } from "./OwnerProblemSheet";
 
 const BODY_FONT = "var(--font-bai-jamjuree), sans-serif";
 const LINE = "border-[#f3efe6]/12";
-const TILE = `relative flex flex-col justify-between gap-4 border-t ${LINE} bg-[#0c0d0c] p-5 text-left min-[420px]:even:border-l lg:even:border-l-0`;
-const OPEN_TILE = `${TILE} min-h-[10.5rem] transition-colors hover:bg-[#161715]`;
+const CREAM_DIM = "text-[#cfc9bd]";
+/** Every tile: the grid lines and the dark ground. Direction and height are set per kind. */
+const TILE = `relative flex border-t ${LINE} bg-[#0c0d0c] p-5 text-left min-[420px]:even:border-l lg:even:border-l-0`;
+const OPEN_TILE = `${TILE} group min-h-[10rem] flex-col justify-between gap-4 transition-[background-color,transform] duration-150 hover:bg-[#161715] active:scale-[0.985]`;
 
-const number = (i: number) => `[${String(i + 1).padStart(2, "0")}]`;
+const two = (i: number) => String(i + 1).padStart(2, "0");
+
+/** One small line: an icon, then a few words. The board's only kind of label. */
+function IconLabel({ icon: Icon, children, color, className = "" }: { icon: LucideIcon; children: React.ReactNode; color?: string; className?: string }) {
+  return (
+    <span className={`inline-flex items-center gap-1.5 ${className}`} style={color ? { color } : undefined}>
+      <Icon aria-hidden="true" className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} />
+      {children}
+    </span>
+  );
+}
 
 /** Size of one pixel on a locked tile, in px. */
 const PIXEL = 12;
 
 /**
- * A few faint pixels in a locked tile's top corner, the same blocks the
- * Elemental art uses for Aether. Fixed per element, so nothing shifts on reload.
+ * A few faint pixels in a locked tile's corner, the same blocks the Elemental
+ * art uses for Aether. Fixed per element, so nothing shifts on reload.
  */
 function LockedPixels({ color, seed }: { color: string; seed: number }) {
   const cells: { x: number; y: number; o: number }[] = [];
@@ -48,56 +63,67 @@ function LockedPixels({ color, seed }: { color: string; seed: number }) {
   );
 }
 
+function TileTop({ icon, index, color, sample }: { icon: LucideIcon; index: number; color: string; sample?: boolean }) {
+  return (
+    <span className="flex items-center justify-between gap-2 text-xs" style={{ fontFamily: EL_FONT.mono }}>
+      <span className="inline-flex items-center gap-2">
+        <IconLabel icon={icon} color={color}>
+          {two(index)}
+        </IconLabel>
+        {sample ? <span className="border border-[#f3efe6]/30 px-1.5 text-[10px] text-[#f3efe6]/70">ตัวอย่าง</span> : null}
+      </span>
+      <ArrowUpRight aria-hidden="true" className="h-4 w-4 text-[#f3efe6]/35 transition-colors group-hover:text-[#faf8f4]" />
+    </span>
+  );
+}
+
 function StarterTile({ column, onOpen }: { column: BoardColumn; onOpen: () => void }) {
   const { chapter, detail } = column;
   return (
-    <button type="button" onClick={onOpen} className={OPEN_TILE}>
-      <span className="text-xs" style={{ fontFamily: EL_FONT.mono, color: chapter.color }}>
-        {number(0)} โจทย์ตั้งต้น
-      </span>
-      <span className="text-lg text-[#faf8f4]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, lineHeight: 1.35 }}>
+    <button type="button" onClick={onOpen} className={OPEN_TILE} aria-label={`โจทย์ตั้งต้น${elementLabel(chapter.th)}: ${detail.ctaTh}`}>
+      <TileTop icon={Flag} index={0} color={chapter.color} />
+      <span className="text-xl text-[#faf8f4]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, lineHeight: 1.3 }}>
         {detail.ctaTh}
       </span>
-      <span className="text-xs text-[#cfc9bd]" style={{ fontFamily: BODY_FONT }}>
-        จาก PassionSeed · เคสจริง {detail.cases.length} เคส
-      </span>
+      <IconLabel icon={BookOpen} className={`text-xs ${CREAM_DIM}`}>
+        <span style={{ fontFamily: BODY_FONT }}>{detail.cases.length} เคสจริง</span>
+      </IconLabel>
     </button>
   );
 }
 
 function OwnerTile({ chapter, problem, index, onOpen }: { chapter: ElementChapter; problem: OwnerProblem; index: number; onOpen: () => void }) {
   return (
-    <button type="button" onClick={onOpen} className={OPEN_TILE}>
-      <span className="text-xs" style={{ fontFamily: EL_FONT.mono, color: chapter.color }}>
-        {number(index)} เจ้าของโจทย์{problem.demo ? " [ตัวอย่าง]" : ""}
-      </span>
-      <span className="line-clamp-4 text-lg text-[#faf8f4]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, lineHeight: 1.35 }}>
+    <button type="button" onClick={onOpen} className={OPEN_TILE} aria-label={`เจ้าของโจทย์ ${problem.ownerTh}: ${problem.titleTh}`}>
+      <TileTop icon={Megaphone} index={index} color={chapter.color} sample={problem.demo} />
+      <span className="line-clamp-3 text-xl text-[#faf8f4]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, lineHeight: 1.3 }}>
         {problem.titleTh}
       </span>
-      <span className="flex items-center gap-2 text-xs text-[#cfc9bd]" style={{ fontFamily: BODY_FONT }}>
-        <span className="line-clamp-1">{problem.ownerTh}</span>
+      <span className={`flex items-center gap-3 text-xs ${CREAM_DIM}`} style={{ fontFamily: BODY_FONT }}>
+        <IconLabel icon={UserRound} className="min-w-0">
+          <span className="line-clamp-1">{problem.ownerTh}</span>
+        </IconLabel>
         {problem.clip ? (
-          <span className="inline-flex shrink-0 items-center gap-1" style={{ color: chapter.color }}>
-            <Play aria-hidden="true" className="h-3 w-3" />
+          <IconLabel icon={Play} color={chapter.color} className="shrink-0">
             คลิป
-          </span>
+          </IconLabel>
         ) : null}
       </span>
     </button>
   );
 }
 
-function LockedTile({ chapter, index, seed }: { chapter: ElementChapter; index: number; seed: number }) {
+/** A slim row on phones, a full tile in the desktop grid. */
+function LockedTile({ chapter, seed }: { chapter: ElementChapter; seed: number }) {
   return (
-    <div className={`${TILE} min-h-[6.5rem] overflow-hidden lg:min-h-[10.5rem]`} aria-label={`ช่องที่ยังล็อก: รอเจ้าของโจทย์${elementLabel(chapter.th)}ยืนยัน`}>
+    <div
+      className={`${TILE} min-h-[4.5rem] items-center gap-2.5 overflow-hidden lg:min-h-[10rem] lg:flex-col lg:items-start lg:justify-end`}
+      aria-label={`ช่องที่ยังล็อก: รอเจ้าของโจทย์${elementLabel(chapter.th)}ยืนยัน`}
+    >
       <LockedPixels color={chapter.color} seed={seed} />
-      <span className="relative inline-flex items-center gap-1.5 text-xs text-[#f3efe6]/50" style={{ fontFamily: EL_FONT.mono }}>
-        {number(index)}
-        <Lock aria-hidden="true" className="h-3 w-3" />
-        ล็อก
-      </span>
+      <Lock aria-hidden="true" className="relative h-5 w-5 text-[#f3efe6]/45" />
       <span className="relative text-sm text-[#f3efe6]/55" style={{ fontFamily: BODY_FONT }}>
-        รอเจ้าของโจทย์{elementLabel(chapter.th)}ยืนยัน
+        รอเจ้าของโจทย์
       </span>
     </div>
   );
@@ -106,14 +132,66 @@ function LockedTile({ chapter, index, seed }: { chapter: ElementChapter; index: 
 function Tile({ column, tile, index, seed, onOpen }: { column: BoardColumn; tile: BoardTile; index: number; seed: number; onOpen: (key: string) => void }) {
   if (tile.kind === "starter") return <StarterTile column={column} onOpen={() => onOpen(tile.key)} />;
   if (tile.kind === "owner") return <OwnerTile chapter={column.chapter} problem={tile.problem} index={index} onOpen={() => onOpen(tile.key)} />;
-  return <LockedTile chapter={column.chapter} index={index} seed={seed} />;
+  return <LockedTile chapter={column.chapter} seed={seed} />;
+}
+
+/** How it works, in three icons: pick, team up, sign up. */
+function Steps() {
+  const steps: { icon: LucideIcon; label: string }[] = [
+    { icon: MousePointerClick, label: "เลือกโจทย์" },
+    { icon: Users, label: `ทีม ${ELEMENTAL.teamMin}–${ELEMENTAL.teamMax} คน` },
+    // A no-break space keeps "4 ธ.ค." on one line on small phones.
+    { icon: Ticket, label: `สมัครถึง ${formatThaiDate(ELEMENTAL.registrationClosesOn, false).replace(/ /g, "\u00a0")}` },
+  ];
+  return (
+    <ol className="mt-8 grid max-w-2xl grid-cols-3 gap-3 sm:gap-4">
+      {steps.map(({ icon: Icon, label }, i) => (
+        <li key={label} className={`flex flex-col gap-3 border ${LINE} p-3 sm:p-4`}>
+          <span className="flex items-center justify-between">
+            <Icon aria-hidden="true" className="h-7 w-7 text-[#ffd57a] sm:h-8 sm:w-8" strokeWidth={1.75} />
+            <span className="text-xs text-[#f3efe6]/45" style={{ fontFamily: EL_FONT.mono }}>
+              {i + 1}
+            </span>
+          </span>
+          <span className="text-sm leading-snug text-[#faf8f4] sm:text-base" style={{ fontFamily: BODY_FONT }}>
+            {label}
+          </span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** What each tile icon means, with how many of each: the board's scoreboard. */
+function Legend({ counts }: { counts: ReturnType<typeof boardCounts> }) {
+  const items: { icon: LucideIcon; label: string; n: number }[] = [
+    { icon: Flag, label: "โจทย์ตั้งต้น", n: counts.starter },
+    { icon: Megaphone, label: "เจ้าของโจทย์", n: counts.owner },
+    { icon: Lock, label: "รอเปิด", n: counts.locked },
+  ];
+  return (
+    <ul className={`mt-10 flex flex-wrap gap-x-6 gap-y-2 text-sm ${CREAM_DIM}`} style={{ fontFamily: BODY_FONT }}>
+      {items.map(({ icon, label, n }) => (
+        <li key={label}>
+          <IconLabel icon={icon}>
+            {label}
+            <span className="text-[#faf8f4]" style={{ fontFamily: EL_FONT.mono }}>
+              {n}
+            </span>
+          </IconLabel>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 /**
  * /hackathon/elemental/problems: every problem on one board, a column per
- * element, like a CTF's challenge board. Each tile opens its panel over the
- * board, and the link (#water or #water:owner_id) opens it again, so a
- * problem owner can be sent straight to their own tile.
+ * element, like a CTF's challenge board. Made for students who scan, not
+ * read: icons and a few words, and the detail waits behind each tile. Each
+ * tile opens its panel over the board, and the link (#water or
+ * #water:owner_id) opens it again, so a problem owner can be sent straight
+ * to their own tile.
  */
 export function ProblemBoard({
   owners,
@@ -180,19 +258,15 @@ export function ProblemBoard({
         </div>
       </header>
 
-      <section className="mx-auto max-w-7xl px-5 pb-10 pt-14 sm:px-10 sm:pt-20">
+      <section className="mx-auto max-w-7xl px-5 pb-2 pt-12 sm:px-10 sm:pt-16">
         <h1 className="text-5xl sm:text-7xl" style={{ fontFamily: EL_FONT.display, fontWeight: 200, lineHeight: 1.05 }}>
           บอร์ดโจทย์
         </h1>
-        <p className="mt-5 max-w-2xl text-base leading-relaxed text-[#e6e1d7] sm:text-lg" style={{ fontFamily: BODY_FONT }}>
-          โจทย์ทั้ง 5 ธาตุในที่เดียว แต่ละธาตุมีโจทย์ตั้งต้นจากเรา และโจทย์จากเจ้าของโจทย์ คนที่ทำงานกับปัญหานั้นจริง ช่องที่ยังล็อกจะเปิดเมื่อเจ้าของโจทย์ยืนยัน
-        </p>
-        <p className="mt-6 text-xs text-[#cfc9bd]" style={{ fontFamily: EL_FONT.mono }}>
-          [เปิดแล้ว {counts.open} · ล็อก {counts.locked}]
-        </p>
+        <Steps />
+        <Legend counts={counts} />
       </section>
 
-      <div className="mx-auto max-w-7xl px-5 sm:px-10">
+      <div className="mx-auto mt-5 max-w-7xl px-5 sm:px-10">
         <div className={`grid grid-cols-1 border-l border-t ${LINE} lg:grid-cols-5`}>
           {columns.map((column, c) => (
             <section
@@ -200,17 +274,15 @@ export function ProblemBoard({
               aria-labelledby={`board-${column.chapter.key}`}
               className={`flex flex-col border-b border-r ${LINE}`}
             >
-              <div className="px-5 pb-5 pt-6">
+              <div className="flex items-center gap-3 px-5 pb-5 pt-6">
+                <ElementIcon element={column.chapter.key} size={30} id={`board-icon-${column.chapter.key}`} />
                 <h2
                   id={`board-${column.chapter.key}`}
-                  className="text-4xl"
-                  style={{ fontFamily: EL_FONT.display, fontWeight: 200, color: column.chapter.color, lineHeight: 1.05 }}
+                  className="text-3xl"
+                  style={{ fontFamily: EL_FONT.display, fontWeight: 300, color: column.chapter.color, lineHeight: 1.1 }}
                 >
                   {elementLabel(column.chapter.th)}
                 </h2>
-                <p className="mt-2 text-sm text-[#cfc9bd] lg:min-h-[2.5rem]" style={{ fontFamily: BODY_FONT }}>
-                  {column.chapter.subtitleTh}
-                </p>
               </div>
               <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-1">
                 {column.tiles.map((tile, i) => (
@@ -220,9 +292,16 @@ export function ProblemBoard({
             </section>
           ))}
         </div>
-        <p className="mt-6 text-sm text-[#cfc9bd]" style={{ fontFamily: BODY_FONT }}>
-          {ANY_PROBLEM_NOTE}
-        </p>
+
+        {/* The rule under every brief (ANY_PROBLEM_NOTE), as two icons. */}
+        <ul className={`mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm ${CREAM_DIM}`} style={{ fontFamily: BODY_FONT }}>
+          <li>
+            <IconLabel icon={Lightbulb}>ปัญหาอื่นในธาตุเดียวกันก็ได้</IconLabel>
+          </li>
+          <li>
+            <IconLabel icon={Combine}>รวมหลายธาตุก็ได้</IconLabel>
+          </li>
+        </ul>
       </div>
 
       <section className="flex flex-col items-center px-5 pb-24 pt-20 text-center">

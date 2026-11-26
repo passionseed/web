@@ -107,9 +107,9 @@ export function buildBoard(owners: readonly OwnerProblem[]): BoardColumn[] {
   });
 }
 
-/** Open and locked tiles, for the count above the board. */
-export function boardCounts(columns: readonly BoardColumn[]): { open: number; locked: number } {
-  const tiles = columns.flatMap((c) => c.tiles);
-  const locked = tiles.filter((t) => t.kind === "locked").length;
-  return { open: tiles.length - locked, locked };
+/** How many tiles of each kind, for the legend above the board. */
+export function boardCounts(columns: readonly BoardColumn[]): Record<BoardTile["kind"], number> {
+  const counts: Record<BoardTile["kind"], number> = { starter: 0, owner: 0, locked: 0 };
+  for (const tile of columns.flatMap((c) => c.tiles)) counts[tile.kind] += 1;
+  return counts;
 }
