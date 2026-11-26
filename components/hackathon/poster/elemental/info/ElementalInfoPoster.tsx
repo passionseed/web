@@ -80,7 +80,7 @@ function Fact({ tag, big, below }: { tag: string; big: ReactNode; below: ReactNo
   return (
     <div style={{ borderTop: `1px solid rgba(243,239,230,0.28)`, paddingTop: 9 }}>
       <Tag>{tag}</Tag>
-      <p style={{ margin: "6px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 42, lineHeight: "47px" }}>{big}</p>
+      <p style={{ margin: "6px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 42, lineHeight: "45px" }}>{big}</p>
       <p style={{ margin: "4px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 23, lineHeight: "30px", color: EL.creamSoft }}>{below}</p>
     </div>
   );
@@ -126,7 +126,7 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
           <span>{ELEMENTAL.edition.toUpperCase()} HACKATHON</span>
         </div>
         <h1 style={{ margin: "8px 0 0", fontFamily: EL_FONT.display, fontWeight: 200, fontSize: 76, lineHeight: "88px" }}>รายละเอียดการแข่งขัน</h1>
-        <p style={{ margin: "2px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 28, lineHeight: "38px", color: EL.creamSoft }}>
+        <p style={{ margin: "2px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 28, lineHeight: "36px", color: EL.creamSoft }}>
           มือใหม่ก็ร่วมได้ ไม่ต้องมีพื้นฐานมาก่อน เราสอนให้ตั้งแต่ต้น
         </p>
 
@@ -185,14 +185,14 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
         {/* Schedule */}
         <div style={{ marginTop: 6 }}>
           <Head>กำหนดการ</Head>
-          <div style={{ marginTop: 9, display: "grid", gridTemplateColumns: `repeat(${days.length}, 1fr)`, columnGap: 14 }}>
+          <div style={{ marginTop: 6, display: "grid", gridTemplateColumns: `repeat(${days.length}, 1fr)`, columnGap: 14 }}>
             {days.map((d) => (
               <div key={d} style={{ borderTop: `2px solid ${EL.cream}`, paddingTop: 9 }}>
                 <p style={{ margin: 0, fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 25, lineHeight: "32px" }}>{formatThaiDate(d)}</p>
                 {ELEMENTAL.schedule
                   .filter((s) => s.date === d)
                   .map((s) => (
-                    <div key={s.time + s.th} style={{ marginTop: 8, paddingLeft: 12, borderLeft: `4px solid ${SLOT_COLOR[s.kind]}` }}>
+                    <div key={s.time + s.th} style={{ marginTop: 6, paddingLeft: 12, borderLeft: `4px solid ${SLOT_COLOR[s.kind]}` }}>
                       <p style={{ margin: 0, fontFamily: EL_FONT.mono, fontSize: 18, color: SLOT_COLOR[s.kind] }}>{s.time}</p>
                       <p style={{ margin: "2px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 21, lineHeight: "28px" }}>{s.th}</p>
                     </div>
@@ -203,13 +203,14 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
         </div>
 
         {/* Foot. The sign-up QR code stands where "สมัครที่ลิงก์ในไบโอ" was (Angpao, 2026-11-23), the same plain cream block as on slide 1, with one thin line under it. */}
-        <div style={{ marginTop: "auto", marginRight: QR + 28, borderTop: `1px solid rgba(243,239,230,0.28)`, paddingTop: 10 }}>
-          {/* The Demo Day, in person (Angpao, 2026-11-26). Its day isn't told yet, so only the time and place print. Its two lines came from tighter gaps above (title, facts, prize band, foot), so nothing else moved off the slide. */}
+        <div style={{ marginTop: "auto", marginRight: QR + 28, borderTop: `1px solid rgba(243,239,230,0.28)`, paddingTop: 4 }}>
+          {/* The Demo Day, in person (Angpao, 2026-11-26), big enough that people see there's a day at Chula ("ปิดท้าย make it bigger so people know we have demo day at Chula"). Its day isn't told yet, so only the place and time print. It fits because of tighter gaps above (title, facts, prize band). */}
+          <p style={{ margin: 0, fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 40, lineHeight: "48px", color: EL.cream }}>
+            ปิดท้ายด้วย <span style={{ fontWeight: 400, color: HIGHLIGHT }}>Demo Day</span> ที่จุฬาฯ
+          </p>
           <p style={{ margin: "0 0 4px", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 23, lineHeight: "28px", color: EL.cream }}>
-            <span style={{ fontWeight: 400, color: HIGHLIGHT }}>ปิดท้ายด้วย Demo Day</span> ที่ {ELEMENTAL.demoDay.placeTh}
-            {ELEMENTAL.demoDay.date ? ` ${formatThaiDate(ELEMENTAL.demoDay.date)}` : ""} {ELEMENTAL.demoDay.time} น.
-            <br />
-            ผู้สนับสนุนและผู้เชี่ยวชาญแต่ละด้านมาชมผลงาน
+            {ELEMENTAL.demoDay.date ? `${formatThaiDate(ELEMENTAL.demoDay.date)} ` : ""}
+            CSII · {ELEMENTAL.demoDay.time} น. · ผู้สนับสนุนและผู้เชี่ยวชาญแต่ละด้านมาชมผลงาน
           </p>
           <p style={{ margin: 0, fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 23, lineHeight: "28px", color: EL.creamSoft }}>
             มีเวิร์กช็อปสด แหล่งเรียนรู้ และฟอรัมถาม-ตอบตลอดการแข่งขัน
