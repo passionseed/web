@@ -61,7 +61,7 @@ export const ELEMENTAL = {
   /** Database key for registrations. */
   slug: "elemental-2026",
   /** Last day to sign up, Bangkok time (inclusive). */
-  registrationClosesOn: "2026-12-03",
+  registrationClosesOn: "2026-12-04",
   /** Where it happens. */
   venueTh: "ออนไลน์ทาง Discord",
   /** The same, short enough for a ticket stub. */

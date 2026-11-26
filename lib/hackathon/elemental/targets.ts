@@ -18,7 +18,7 @@ export type Owner = (typeof OWNERS)[number];
 export const ELEMENTAL_TARGETS = {
   event: { start: "2026-12-05", end: "2026-12-07" },
   /** Last day to sign up, Bangkok time (inclusive). */
-  registrationClosesOn: "2026-12-03",
+  registrationClosesOn: "2026-12-04",
 
   seats: {
     target: 350,
@@ -36,7 +36,7 @@ export const ELEMENTAL_TARGETS = {
       { by: "2026-11-26", seats: 50 },
       { by: "2026-11-30", seats: 150 },
       { by: "2026-12-01", seats: 250 },
-      { by: "2026-12-03", seats: 350 },
+      { by: "2026-12-04", seats: 350 },
     ] satisfies SeatCheckpoint[],
   },
 

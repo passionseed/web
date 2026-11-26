@@ -42,7 +42,7 @@ describe("expectedSeatsOn", () => {
     expect(expectedSeatsOn("2026-11-26")).toBe(50);
     expect(expectedSeatsOn("2026-11-30")).toBe(150);
     expect(expectedSeatsOn("2026-12-01")).toBe(250);
-    expect(expectedSeatsOn("2026-12-03")).toBe(350);
+    expect(expectedSeatsOn("2026-12-04")).toBe(350);
   });
 
   it("draws a straight line between checkpoints, rounded up", () => {
@@ -50,8 +50,8 @@ describe("expectedSeatsOn", () => {
     expect(expectedSeatsOn("2026-11-23")).toBe(25);
     // 50 on 26 Nov to 150 on 30 Nov: 2 of 4 days.
     expect(expectedSeatsOn("2026-11-28")).toBe(100);
-    // 250 on 1 Dec to 350 on 3 Dec: 1 of 2 days.
-    expect(expectedSeatsOn("2026-12-02")).toBe(300);
+    // 250 on 1 Dec to 350 on 4 Dec: 1 of 3 days is 283.3, rounded up.
+    expect(expectedSeatsOn("2026-12-02")).toBe(284);
     // 1 of 6 days of 50 is 8.33, rounded up.
     expect(expectedSeatsOn("2026-11-21")).toBe(9);
   });
@@ -94,7 +94,7 @@ describe("seatPace", () => {
   });
 
   it("has no next checkpoint after registration closes", () => {
-    const p = seatPace(300, "2026-12-04");
+    const p = seatPace(300, "2026-12-05");
     expect(p.next).toBeNull();
     expect(p.daysToNext).toBeNull();
     expect(p.neededForNext).toBe(50);
@@ -201,19 +201,19 @@ describe("paid timing", () => {
 
   it("lays out one cell per day from the pace start to the close", () => {
     const cells = paidPerDay(rows, "2026-11-23");
-    expect(cells).toHaveLength(13);
+    expect(cells).toHaveLength(14);
     expect(cells[0]).toEqual({ date: "2026-11-21", seats: 2, when: "past" });
     expect(cells[2]).toEqual({ date: "2026-11-23", seats: 4, when: "today" });
-    expect(cells[12]).toEqual({ date: "2026-12-03", seats: 0, when: "future" });
+    expect(cells[13]).toEqual({ date: "2026-12-04", seats: 0, when: "future" });
   });
 });
 
 describe("forecastByClose", () => {
-  it("runs the rate on to the end of 3 Dec, Bangkok time", () => {
-    // 3 Dec 00:00 Bangkok leaves one full day.
-    expect(forecastByClose(100, 10, new Date("2026-12-02T17:00:00Z"))).toBe(110);
-    // 21 Nov 00:00 Bangkok leaves 13 days.
-    expect(forecastByClose(0, 2, new Date("2026-11-20T17:00:00Z"))).toBe(26);
+  it("runs the rate on to the end of 4 Dec, Bangkok time", () => {
+    // 4 Dec 00:00 Bangkok leaves one full day.
+    expect(forecastByClose(100, 10, new Date("2026-12-03T17:00:00Z"))).toBe(110);
+    // 21 Nov 00:00 Bangkok leaves 14 days.
+    expect(forecastByClose(0, 2, new Date("2026-11-20T17:00:00Z"))).toBe(28);
     // After the close nothing more comes in.
     expect(forecastByClose(300, 10, new Date("2026-12-05T00:00:00Z"))).toBe(300);
   });
@@ -225,16 +225,16 @@ describe("paceLine", () => {
     const now = new Date("2026-11-21T10:00:00Z"); // 17:00 Bangkok on 21 Nov
     const p = paceLine(rows, 4, now);
     expect(p.toNext).toEqual({ perDay: 8, seats: 50, by: "2026-11-26" });
-    expect(p.toTarget).toEqual({ perDay: 27, seats: 350, by: "2026-12-03" });
+    expect(p.toTarget).toEqual({ perDay: 25, seats: 350, by: "2026-12-04" });
     expect(p.rate3d).toBe(4);
     expect(p.paidToday).toBe(4);
     expect(p.paidLast24h).toBe(4);
-    expect(p.forecast).toBe(4 + Math.floor(4 * (12 + 7 / 24)));
-    expect(p.days).toHaveLength(13);
+    expect(p.forecast).toBe(4 + Math.floor(4 * (13 + 7 / 24)));
+    expect(p.days).toHaveLength(14);
   });
 
   it("has no next checkpoint or target after the close", () => {
-    const p = paceLine([], 300, new Date("2026-12-04T05:00:00Z"));
+    const p = paceLine([], 300, new Date("2026-12-05T05:00:00Z"));
     expect(p.toNext).toBeNull();
     expect(p.toTarget).toBeNull();
   });
