@@ -403,7 +403,7 @@ function RegisterQrArt({ cell, fire = false, label = true }: { cell: number; fir
 }
 
 /** The line (Angpao, 2026-11-23, replacing the wording of 2026-11-21), in two halves for layouts that break it. */
-const LINE = ["งานแข่งหาทางออกให้ธรรมชาติ", "ก่อนธรรมชาติจะให้เราออก"] as const;
+const LINE = ELEMENTAL.taglineTh;
 /** A question, then its answer (Angpao, 2026-11-23: "add ? to มือใหม่ไม่เคยแข่ง"). */
 const BEGINNER = ["มือใหม่ไม่เคยแข่ง?", "มี workshop สอน"] as const;
 /** Who it is for, as a tag in the facts row (Angpao, 2026-11-24: "add tag for มัธยมเท่านั้น", then "m3-m6 เท่านั้น"). */

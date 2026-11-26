@@ -18,6 +18,7 @@ import {
   registrationBody,
   stepForServerPath,
   stepsFor,
+  suggestTeamName,
   validateStep,
   type Draft,
   type Errors,
@@ -117,6 +118,8 @@ export function JoinFlow({ source, utm, team, notice, backHref, demo }: Props) {
   // Count each step once, and put the cursor in its first box.
   useEffect(() => {
     if (!restored) return;
+    // The team name starts as "ทีม<nickname>", so starting a team is one tap; they can type over it.
+    if (step === "team") setDraft((d) => (d.teamName.trim() ? d : { ...d, teamName: suggestTeamName(d) }));
     trackElemental({ step: `step:${step}`, mode: draft.mode ?? undefined, source });
     if (step === "review") setEditing(false);
     const el = body.current?.querySelector<HTMLElement>("[data-autofocus]");
@@ -236,7 +239,7 @@ export function JoinFlow({ source, utm, team, notice, backHref, demo }: Props) {
   const choose = (mode: Mode) => {
     set({ mode });
     const after = { ...draft, mode };
-    const target: StepKey = mode === "create" ? "team" : editing ? (firstInvalidStep(after) ?? "review") : "name";
+    const target: StepKey = editing ? (firstInvalidStep(after) ?? "review") : "name";
     // Let the tap register visually, then move on.
     window.setTimeout(() => goTo(target), 160);
   };

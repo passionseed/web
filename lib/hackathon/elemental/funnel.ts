@@ -14,9 +14,9 @@ export const FUNNEL_EVENT_TYPE = "elemental_funnel";
 export const FUNNEL_STEPS = [
   { key: "landing", label: "Saw the landing page" },
   { key: "join", label: "Opened sign-up" },
-  { key: "step:mode", label: "Chose alone or with friends" },
-  { key: "step:team", label: "Named a team", optional: true },
+  { key: "step:mode", label: "Saw the first question (alone or with friends)" },
   { key: "step:name", label: "Name" },
+  { key: "step:team", label: "Named a team", optional: true },
   { key: "step:school", label: "Age and school" },
   { key: "step:parent", label: "Parent consent", optional: true },
   { key: "step:contact", label: "Contact" },
@@ -110,7 +110,7 @@ export type FunnelStage = {
 
 export type FunnelSummary = {
   stages: FunnelStage[];
-  /** Field keys people got wrong, most common first. */
+  /** Field keys people got wrong, by people (not attempts), most common first. */
   invalidFields: { field: string; count: number }[];
   /** Slip results (paid, review, retry, rejected:amount, ...), most common first. */
   slipResults: { result: string; count: number }[];
@@ -138,7 +138,7 @@ function ranked(counts: Map<string, number>): [string, number][] {
 
 export function summarizeFunnel(rows: FunnelRow[]): FunnelSummary {
   const people = new Map<string, Set<string>>();
-  const invalid = new Map<string, number>();
+  const invalid = new Map<string, Set<string>>();
   const slip = new Map<string, number>();
   const invites = new Map<string, number>();
   const bySource = new Map<string, Set<string>>();
@@ -147,7 +147,10 @@ export function summarizeFunnel(rows: FunnelRow[]): FunnelSummary {
     const e = parse(row.event_data);
     if (!e) continue;
     if (e.step === "invalid") {
-      for (const f of (e.detail ?? "").split(",").filter(Boolean)) invalid.set(f, (invalid.get(f) ?? 0) + 1);
+      for (const f of (e.detail ?? "").split(",").filter(Boolean)) {
+        if (!invalid.has(f)) invalid.set(f, new Set());
+        invalid.get(f)!.add(e.sid);
+      }
       continue;
     }
     if (e.step === "slip_result" || e.step === "invite_shared") {
@@ -181,7 +184,7 @@ export function summarizeFunnel(rows: FunnelRow[]): FunnelSummary {
 
   return {
     stages,
-    invalidFields: ranked(invalid).map(([field, count]) => ({ field, count })),
+    invalidFields: ranked(new Map([...invalid].map(([f, ids]) => [f, ids.size]))).map(([field, count]) => ({ field, count })),
     slipResults: ranked(slip).map(([result, count]) => ({ result, count })),
     invitesShared: ranked(invites).map(([how, count]) => ({ how, count })),
     sources: [...bySource.entries()]

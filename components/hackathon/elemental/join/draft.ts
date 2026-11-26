@@ -51,11 +51,15 @@ export type Errors = Partial<Record<keyof Draft, string>>;
 
 export const isMinor = (d: Draft) => d.age !== "" && Number(d.age) < ADULT_AGE;
 
-/** The steps this person sees: a team name only when starting a team, a parent only under ADULT_AGE. */
+/**
+ * The steps this person sees: a team name only when starting a team, a parent only under ADULT_AGE.
+ * The team name comes after the person's own name, so it can start filled in (suggestTeamName):
+ * half the people who met an empty team-name box first left there (funnel, 24 to 25 Nov 2026).
+ */
 export function stepsFor(d: Draft): StepKey[] {
-  const steps: StepKey[] = ["mode"];
+  const steps: StepKey[] = ["mode", "name"];
   if (d.mode === "create") steps.push("team");
-  steps.push("name", "school");
+  steps.push("school");
   if (d.age === "" || isMinor(d)) steps.push("parent");
   steps.push("contact", "review");
   return steps;
@@ -72,6 +76,12 @@ export function formatPhone(raw: string): string {
   if (d.length <= 3) return d;
   if (d.length <= 6) return `${d.slice(0, 3)}-${d.slice(3)}`;
   return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
+}
+
+/** "ทีมชาย" from the nickname, or the first word of the full name; empty when there's neither. */
+export function suggestTeamName(d: Pick<Draft, "nickname" | "fullName">): string {
+  const who = d.nickname.trim() || d.fullName.trim().split(/\s+/)[0] || "";
+  return who ? `ทีม${who}`.slice(0, 80) : "";
 }
 
 export const TEAM_NAME_RUDE = "ชื่อนี้ใช้ไม่ได้ ลองชื่ออื่น";

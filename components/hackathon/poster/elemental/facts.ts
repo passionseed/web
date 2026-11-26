@@ -56,6 +56,8 @@ export const ELEMENTAL = {
    * "Environmental negligence").
    */
   theme: "แก้ปัญหาสิ่งแวดล้อม",
+  /** The key poster's line (PR #378), in its two printed halves. Also opens the sign-up for invited friends. */
+  taglineTh: ["งานแข่งหาทางออกให้ธรรมชาติ", "ก่อนธรรมชาติจะให้เราออก"],
   /** The permanent link. /hackathon redirects here while Elemental is current. */
   url: "passionseed.org/hackathon/elemental",
   /** Database key for registrations. */
