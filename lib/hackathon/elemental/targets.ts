@@ -40,7 +40,7 @@ export const ELEMENTAL_TARGETS = {
     ] satisfies SeatCheckpoint[],
   },
 
-  sponsors: { signed: 3, by: "2026-11-26" },
+  sponsors: { signed: 3, by: "2026-11-30" },
   prizePoolBaht: 20000,
   /** One voice (speaker) with a yes for each of the five elements. */
   voices: { perElement: 1, elements: 5, by: "2026-11-30" },
