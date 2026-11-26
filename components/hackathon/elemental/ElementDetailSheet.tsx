@@ -238,6 +238,20 @@ export function ElementDetailSheet({
             >
               {detail.howMightWeTh}
             </p>
+            {detail.owner ? (
+              <p className="mt-3 text-sm text-[#cfc9bd]" style={{ fontFamily: BODY_FONT }}>
+                เจ้าของโจทย์:{" "}
+                <a
+                  href={detail.owner.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#faf8f4] underline underline-offset-4 hover:opacity-80"
+                >
+                  {detail.owner.name}
+                </a>{" "}
+                ({detail.owner.detailTh})
+              </p>
+            ) : null}
             <LearnDeeper
               prompt={buildLearnPrompt(chapter.key, elementLabel(chapter.th))}
               keywords={ELEMENT_KEYWORDS[chapter.key]}
