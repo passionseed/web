@@ -15,6 +15,7 @@ export interface HomeLink {
 
 export const SITE_NAV_LINKS: HomeLink[] = [
   { href: "/shift", label: "SHIFT" },
+  { href: "/hackathon", label: "Hackathon" },
   { href: "/techseed", label: "TechSeed" },
   { href: "/radar", label: "Career Radar" },
   { href: "/about", label: "เกี่ยวกับเรา" },
@@ -160,7 +161,7 @@ export const HOME_EXPLORE: (HomeLink & { body: string })[] = [
   {
     href: "/map",
     label: "PathLab",
-    body: "ลองทำงานจริงของสายอาชีพแบบสั้นๆ ก่อนตัดสินใจ",
+    body: "ลองทำโจทย์จากงานจริงของสายอาชีพที่สนใจ ก่อนตัดสินใจ",
   },
   {
     href: "/hackathon",
@@ -168,6 +169,28 @@ export const HOME_EXPLORE: (HomeLink & { body: string })[] = [
     body: "แข่งสร้างของจริงเป็นทีม กับโจทย์จากคนทำงานจริง",
   },
 ];
+
+/**
+ * The hero and last call while the Elemental Hackathon leads (no SHIFT round
+ * open). Dates, prices and the deadline come from ELEMENTAL, never from here.
+ */
+export const HOME_HACKATHON = {
+  tag: "งานแข่ง",
+  pitch:
+    "3 วันช่วงหยุดยาว แข่งแก้ปัญหาสิ่งแวดล้อม เลือกโจทย์เองจาก 5 ธาตุ ลงมือสร้างจริง แล้วส่งเป็นคลิปผลงาน",
+  finalHeading: ["มีไอเดียดิบอยู่ในหัว?", "หยุดยาวนี้ทำให้มันเป็นของจริง"],
+  shiftLink: "ลงชื่อรอ SHIFT รอบถัดไป",
+  note: "มือใหม่แข่งได้ มีพี่เลี้ยง",
+};
+
+/** The hero and last call when nothing is on sale: the next round's free sign-up. */
+export const HOME_SHIFT_NEXT = {
+  status: "รอบถัดไปยังไม่กำหนดวัน",
+  /** The rule, said once: shown under the status and in the last call. */
+  howItOpens: "เลือกสัปดาห์ที่ว่าง พอมี {min} คนว่างสัปดาห์เดียวกันก็เปิดรอบ",
+  free: "ลงชื่อฟรี",
+  finalHeading: ["มีไอเดียดิบอยู่ในหัว?", "รอบหน้าทำให้มันเป็นของจริง"],
+};
 
 /** Basecamp-style margin notes, one per section. */
 export const HOME_NOTES = {
