@@ -37,6 +37,8 @@ export const ELEMENTAL = {
   days: 6,
   /** 5 to 10 Dec is longer than the long weekend (Sat 5 to Mon 7 Dec). */
   longWeekend: false,
+  /** Days off school in the run: 5 to 7 and 10 Dec (Angpao, 2026-11-26: "5-7 and 10 is holliday"). */
+  holidays: ["2026-12-05", "2026-12-06", "2026-12-07", "2026-12-10"],
   /**
    * The Demo Day, in person, Sat 12 Dec, only for invited projects (Angpao,
    * 2026-11-26: "demo day only for ผลงานที่ได้รับเชิญ"). If date is null,

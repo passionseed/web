@@ -4,7 +4,7 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
 import { PassionSeedWordmark } from "@/components/hackathon/PassionSeedWordmark";
 
 import { EL, EL_FONT } from "../brand";
-import { Chula, EditionWord, ICON, Pixels, RegisterQr } from "../ElementalKeyPoster";
+import { CHULA_PINK, Chula, EditionWord, ICON, Pixels, RegisterQr } from "../ElementalKeyPoster";
 import { ELEMENTAL, thaiDayRange } from "../facts";
 
 /**
@@ -13,20 +13,18 @@ import { ELEMENTAL, thaiDayRange } from "../facts";
  * it ends with a Demo Day at CSII, Chulalongkorn, with CSII as partner
  * (Angpao, 2026-11-26).
  *
- * Built the way the key poster (slide 1) is, because that is why it works
- * (Angpao, same day: "look at our main poster why is it good replicate it
- * not put text all screen with no design"):
- * - one picture fills the sheet, at full brightness, with one bright object
- *   in a calm photo. Here a pink pixel sun coming up behind the ridge, with
- *   pixel clouds; pink is Chula's colour on these posters;
- * - three sizes of type only: the title on the sky, the date change under
- *   it, one big yellow line on the dark foot;
- * - type sits on calm parts of the picture, never on a box;
- * - the same anchors: names top left, QR code bottom right, one line at the
- *   bottom.
- * The plate is made by scripts/render-elemental-news-plate.mjs (the pixel
- * kit the key poster uses) from a photo
- * slides 1 and 2 don't use. Facts come from ../facts.ts only.
+ * Built the way the key poster (slide 1) is (Angpao, same day: "look at our
+ * main poster why is it good replicate it not put text all screen with no
+ * design"): one photo fills the sheet at full brightness, type sits on its
+ * calm parts, and the anchors are the same (names top left, QR code bottom
+ * right, one line at the bottom).
+ *
+ * The middle is a calendar, not pixel art (Angpao, same day: "remove the
+ * pixel background but make it visualize date what day did what and what
+ * day is the holliday cause 5-7 and 10 is holliday"): Fri 4 to Sat 12 Dec,
+ * the days off school in red, the six days of the hackathon on one yellow
+ * mark, what happens under each day, and the Demo Day on Chula's pink.
+ * The photo is one slides 1 and 2 don't use. Facts come from ../facts.ts.
  */
 
 const trirong = Trirong({
@@ -38,20 +36,44 @@ const trirong = Trirong({
 
 export const W = 1080;
 export const H = 1350;
-const PLATE = "/hackathon/poster/elemental/plate-news-valley.png";
+/** A valley under a cloudy sky. Set larger than the sheet, so the ridge sits below the calendar. */
+const PHOTO = "/hackathon/poster/elemental/bg/valley-sergei-gussev-stocksnap.jpg";
 const HIGHLIGHT = "#ffd067";
+/** Holidays, as on a Thai wall calendar: red. Deep enough to read on the grey sky. */
+const HOLIDAY = "#a8200e";
 /** The dates before the change (Angpao, 2026-11-19), shown crossed out. */
 const OLD_RANGE = "5–7";
-
 /** "ธ.ค.", taken from the new range so the two always match. */
 const MONTH = thaiDayRange().split(" ").slice(1).join(" ");
 
+/** Every day from the opening to the Demo Day, with what happens on it. */
+function calendarDays() {
+  const first = ELEMENTAL.schedule[0].date;
+  const last = ELEMENTAL.demoDay.date ?? ELEMENTAL.endDate;
+  const days: { iso: string; weekday: string; day: string; holiday: boolean; inRun: boolean; demo: boolean; label: string | null; times: string | null; dot: string }[] = [];
+  for (let d = Number(first.slice(8)); d <= Number(last.slice(8)); d++) {
+    const iso = `${first.slice(0, 8)}${String(d).padStart(2, "0")}`;
+    const [weekday, day] = formatThaiDate(iso).split(" ");
+    const slots = ELEMENTAL.schedule.filter((s) => s.date === iso);
+    const demo = iso === ELEMENTAL.demoDay.date;
+    const workshops = slots.filter((s) => s.kind === "workshop").length;
+    const label = demo ? "Demo Day" : slots.some((s) => s.kind === "open") ? "เปิดงาน" : slots.some((s) => s.kind === "due") ? "ส่งคลิป" : workshops ? `เวิร์กช็อป${workshops > 1 ? ` ×${workshops}` : ""}` : null;
+    // Times as told (the hand-in's time isn't confirmed, and the Demo Day's is in the foot, so neither prints here).
+    const times = demo ? null : slots.filter((s) => s.kind !== "due").map((s) => s.time.split("–")[0]).join(", ") || null;
+    const dot = demo ? CHULA_PINK : slots.some((s) => s.kind === "due") ? EL.flame : workshops ? "#0f8f8a" : EL.ink;
+    days.push({ iso, weekday, day, holiday: (ELEMENTAL.holidays as readonly string[]).includes(iso), inRun: iso >= ELEMENTAL.startDate && iso <= ELEMENTAL.endDate, demo, label, times, dot });
+  }
+  return days;
+}
+
 export function ElementalNewsPoster({ id = "elemental-news" }: { id?: string }) {
   const demo = ELEMENTAL.demoDay;
+  const days = calendarDays();
   return (
     <div id={id} className={`${trirong.variable} relative overflow-hidden`} style={{ width: W, height: H, backgroundColor: "#2a2b26" }}>
+      {/* The photo, 1.08 times the sheet's height and anchored so the ridge runs below the calendar on both sides. Nothing is laid over it but the foot. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={PLATE} alt="" width={W} height={H} className="absolute inset-0 h-full w-full" />
+      <img src={PHOTO} alt="" className="absolute max-w-none" style={{ left: -600, top: 0, width: 2160, height: 1620, filter: "saturate(0.92)" }} />
 
       {/* The dark foot, as on slide 1: only the bottom fades, the picture stays bright. */}
       <svg className="absolute inset-0" width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
@@ -109,6 +131,45 @@ export function ElementalNewsPoster({ id = "elemental-news" }: { id?: string }) 
           </span>
           <span style={{ fontWeight: 300, fontSize: 50, lineHeight: "64px", color: EL.ink }}>→</span>
           <span style={{ fontWeight: 600, fontSize: 84, lineHeight: "92px", letterSpacing: "-0.01em", background: `linear-gradient(transparent 52%, ${HIGHLIGHT} 52%, ${HIGHLIGHT} 92%, transparent 92%)`, padding: "0 10px" }}>{thaiDayRange()}</span>
+        </div>
+
+        {/* The calendar: what happens on each day, and which days are days off. */}
+        <div style={{ width: 968, marginTop: 30, fontFamily: EL_FONT.display }}>
+          <div className="flex items-end justify-between" style={{ marginBottom: 8, fontSize: 27, lineHeight: "36px" }}>
+            <span style={{ fontWeight: 500 }}>แข่งออนไลน์ {ELEMENTAL.days} วัน แล้วปิดท้ายด้วย Demo Day</span>
+            <span className="flex items-center" style={{ gap: 8, fontWeight: 500, color: HOLIDAY }}>
+              <span style={{ width: 16, height: 16, background: HOLIDAY }} />
+              วันหยุด
+            </span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(${days.length}, 1fr)`, borderTop: `2px solid ${EL.ink}` }}>
+            {days.map((d) => (
+              <div key={d.iso} className="flex flex-col items-center" style={{ paddingTop: 10 }}>
+                <span style={{ fontWeight: d.holiday ? 500 : 400, fontSize: 28, lineHeight: "34px", color: d.holiday ? HOLIDAY : EL.inkSoft }}>{d.weekday}</span>
+                {/* The six days of the hackathon share one yellow mark; the Demo Day stands on pink. */}
+                <span
+                  className="flex w-full items-center justify-center"
+                  style={{
+                    marginTop: 2,
+                    fontWeight: d.holiday || d.demo ? 500 : 300,
+                    fontSize: 78,
+                    lineHeight: "92px",
+                    color: d.demo ? "#ffffff" : d.holiday ? HOLIDAY : EL.ink,
+                    background: d.inRun ? `linear-gradient(transparent 50%, ${HIGHLIGHT} 50%, ${HIGHLIGHT} 94%, transparent 94%)` : undefined,
+                  }}
+                >
+                  <span style={d.demo ? { background: CHULA_PINK, padding: "0 10px" } : undefined}>{d.day}</span>
+                </span>
+                {d.label ? (
+                  <span className="flex flex-col items-center text-center" style={{ marginTop: 10, fontWeight: 500, fontSize: 23, lineHeight: "28px", whiteSpace: "nowrap" }}>
+                    <span style={{ width: 12, height: 12, background: d.dot, marginBottom: 6 }} />
+                    {d.label}
+                    {d.times ? <span style={{ fontWeight: 400, fontSize: 20, lineHeight: "26px", color: EL.inkSoft }}>{d.times}</span> : null}
+                  </span>
+                ) : null}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
