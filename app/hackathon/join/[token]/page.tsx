@@ -5,6 +5,7 @@ import { trirong } from "@/components/hackathon/elemental/fonts";
 import { PayView } from "@/components/hackathon/elemental/PayView";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { elementalCommunityLinks } from "@/lib/hackathon/elemental/community-links";
+import { parseElementalDiscordOutcome } from "@/lib/hackathon/elemental/discordLink";
 import { elementalPayQr } from "@/lib/hackathon/elemental/pay-qr";
 import { getRegistrationByToken } from "@/lib/supabase/hackathon-event-registrations";
 
@@ -18,8 +19,16 @@ export const metadata: Metadata = {
 };
 
 /** The pay page for one sign-up. The token in the URL is the only key. */
-export default async function ElementalPayPage({ params }: { params: Promise<{ token: string }> }) {
+export default async function ElementalPayPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ token: string }>;
+  searchParams: Promise<{ discord?: string | string[] }>;
+}) {
   const { token } = await params;
+  const { discord } = await searchParams;
+  const discordOutcome = parseElementalDiscordOutcome(Array.isArray(discord) ? discord[0] : discord);
   const reg = await getRegistrationByToken(token, ELEMENTAL.maxGroupSize);
   if (!reg) notFound();
   const pending = reg.status === "pending";
@@ -29,7 +38,7 @@ export default async function ElementalPayPage({ params }: { params: Promise<{ t
 
   return (
     <div className={trirong.variable}>
-      <PayView token={token} reg={reg} qrSrc={qrSrc} links={links} />
+      <PayView token={token} reg={reg} qrSrc={qrSrc} links={links} discordOutcome={discordOutcome} />
     </div>
   );
 }

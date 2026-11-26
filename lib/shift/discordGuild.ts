@@ -8,22 +8,20 @@
  * is still set by hand in Discord.
  */
 
-import { isDiscordOAuthJoinError } from "@/lib/shift/discordErrors";
+import {
+  describeFailure,
+  discordBotToken,
+  guildFetch,
+  joinGuildWithRoles,
+  type GuildConfig,
+  type GuildJoinResult,
+} from "@/lib/discord/guildJoin";
 import { guildAvatarUrl, userAvatarUrl } from "@/lib/supabase/shift-quests/avatar";
 
-const DISCORD_API = "https://discord.com/api/v10";
-
-export type GuildJoinResult =
-  | { ok: true; state: "joined" | "already_member" }
-  | { ok: false; state: "not_member" | "not_configured" | "error"; message: string };
-
-interface GuildConfig {
-  botToken: string;
-  guildId: string;
-}
+export type { GuildJoinResult };
 
 function guildConfig(): GuildConfig | null {
-  const botToken = process.env.DISCORD_SHIFT_BOT_TOKEN || process.env.DISCORD_BOT_TOKEN;
+  const botToken = discordBotToken();
   const guildId = process.env.DISCORD_SHIFT_GUILD_ID;
   return botToken && guildId ? { botToken, guildId } : null;
 }
@@ -52,20 +50,7 @@ async function discordFetch(
   init: RequestInit,
   reason = "SHIFT join link",
 ) {
-  return fetch(`${DISCORD_API}/guilds/${config.guildId}${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bot ${config.botToken}`,
-      "Content-Type": "application/json",
-      "X-Audit-Log-Reason": reason,
-    },
-    cache: "no-store",
-  });
-}
-
-async function describeFailure(res: Response): Promise<string> {
-  const body = await res.text().catch(() => "");
-  return `Discord ${res.status}: ${body.slice(0, 200)}`;
+  return guildFetch(config, path, init, reason);
 }
 
 /** Role IDs by name, so one lookup per warm instance instead of per join. */
@@ -107,25 +92,7 @@ async function shiftRoleIds(config: GuildConfig, cohortName: string): Promise<st
   return [...new Set([await cohortRoleId(config, cohortName), ...extra])];
 }
 
-async function addRoles(config: GuildConfig, discordUserId: string, roleIds: string[]) {
-  for (const roleId of roleIds) {
-    const res = await discordFetch(config, `/members/${discordUserId}/roles/${roleId}`, {
-      method: "PUT",
-    });
-    if (res.status === 404) return { ok: false as const, notMember: true, message: await describeFailure(res) };
-    if (!res.ok) return { ok: false as const, notMember: false, message: await describeFailure(res) };
-  }
-  return { ok: true as const };
-}
-
-/**
- * Puts a Discord user into the SHIFT server with roles.
- *
- * With an OAuth `accessToken` carrying the `guilds.join` scope, the bot adds
- * them directly (roles + nickname applied on join). That token must come from
- * the bot's own OAuth application. Without a usable token, it can still assign
- * roles to someone who already joined through the invite.
- */
+/** Puts a Discord user into the SHIFT server with their round's role (lib/discord/guildJoin.ts). */
 export async function joinShiftGuild(input: {
   discordUserId: string;
   cohortName: string;
@@ -136,49 +103,15 @@ export async function joinShiftGuild(input: {
   if (!config) {
     return { ok: false, state: "not_configured", message: "DISCORD_SHIFT_GUILD_ID or Discord bot token missing" };
   }
-
-  try {
-    // Existing members only need the bot's role permissions. Do not send their
-    // OAuth token through Add Guild Member, which has extra scope requirements.
-    const member = await discordFetch(config, `/members/${input.discordUserId}`, { method: "GET" });
-    const isMember = member.ok;
-    if (!isMember) {
-      const body = await member.clone().json().catch(() => null) as { code?: unknown } | null;
-      const message = await describeFailure(member);
-      if (member.status !== 404 || body?.code !== 10007) {
-        return { ok: false, state: "error", message };
-      }
-      if (!input.accessToken) return { ok: false, state: "not_member", message };
-    }
-    const roleIds = await shiftRoleIds(config, input.cohortName);
-    if (!isMember && input.accessToken) {
-      const res = await discordFetch(config, `/members/${input.discordUserId}`, {
-        method: "PUT",
-        body: JSON.stringify({
-          access_token: input.accessToken,
-          roles: roleIds,
-          ...(input.nickname ? { nick: input.nickname.slice(0, 32) } : {}),
-        }),
-      });
-      if (res.status === 201) return { ok: true, state: "joined" };
-      // 204: already in the server, and Discord ignores roles in that case.
-      if (res.status !== 204) {
-        const message = await describeFailure(res);
-        if (!isDiscordOAuthJoinError(message)) {
-          return { ok: false, state: "error", message };
-        }
-        // A rejected OAuth token does not prevent bot-only role assignment.
-        // If they are absent, addRoles returns not_member for the invite flow.
-        console.warn("[shift-join] Discord OAuth join rejected. Check that the bot and Supabase Discord provider use the same application and guilds.join scope.");
-      }
-    }
-
-    const roles = await addRoles(config, input.discordUserId, roleIds);
-    if (roles.ok) return { ok: true, state: "already_member" };
-    return { ok: false, state: roles.notMember ? "not_member" : "error", message: roles.message };
-  } catch (error) {
-    return { ok: false, state: "error", message: error instanceof Error ? error.message : "Discord request failed" };
-  }
+  return joinGuildWithRoles({
+    config,
+    discordUserId: input.discordUserId,
+    roleIds: () => shiftRoleIds(config, input.cohortName),
+    accessToken: input.accessToken,
+    nickname: input.nickname,
+    reason: "SHIFT join link",
+    logTag: "shift-join",
+  });
 }
 
 export type ShiftGuildMemberResult =

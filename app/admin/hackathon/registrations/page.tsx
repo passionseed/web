@@ -28,6 +28,15 @@ function slipNote(check: unknown): string | null {
   return `${name}: ${c.kind}${c.code ? ` (${c.code})` : ""}${account}`;
 }
 
+function discordNote(d: AdminRegistration["discord"]): string {
+  if (!d) return "Discord: not linked yet";
+  const who = d.username ? `@${d.username}` : "linked";
+  if (d.joinedAt) return `Discord: ${who}, in the server since ${formatBangkokDateTime(d.joinedAt, { year: false })}`;
+  if (d.error === "not_in_server") return `Discord: ${who}, not in the server (bot could not add them)`;
+  if (d.error) return `Discord: ${who}, not in the server (${d.error})`;
+  return `Discord: ${who}, not in the server`;
+}
+
 function RegistrationCard({ r }: { r: AdminRegistration }) {
   return (
     <li className="space-y-3 rounded-lg border bg-muted/30 p-4">
@@ -68,6 +77,7 @@ function RegistrationCard({ r }: { r: AdminRegistration }) {
         {r.paidAt && ` · paid ${formatBangkokDateTime(r.paidAt, { year: false })} by ${r.paidBy}`}
       </p>
       {slipNote(r.slipCheck) && <p className="text-xs text-muted-foreground">{slipNote(r.slipCheck)}</p>}
+      {r.status === "paid" && <p className="text-xs text-muted-foreground">{discordNote(r.discord)}</p>}
 
       <div className="flex flex-wrap items-start gap-4">
         {r.slipUrl && (
@@ -119,6 +129,10 @@ export default async function AdminHackathonRegistrationsPage() {
         <p>
           <span className="font-medium">{ELEMENTAL.edition}:</span> {seats} paid seats in {paid.length} sign-ups,
           ฿{baht.toLocaleString()} in total. {rows.filter((r) => r.status === "review").length} slips need a check.
+        </p>
+        <p className="mt-1 text-muted-foreground">
+          Discord: {paid.filter((r) => r.discord?.joinedAt).length} of {paid.length} paid sign-ups are in the server
+          through their sign-up page.
         </p>
         {sources.length > 0 && (
           <p className="mt-1 text-muted-foreground">
