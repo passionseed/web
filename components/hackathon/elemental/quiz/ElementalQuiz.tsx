@@ -131,10 +131,10 @@ function Intro({ onStart }: { onStart: () => void }) {
         [ELEMENTAL QUIZ]
       </p>
       <h1 className="mt-3 text-balance text-6xl sm:text-7xl" style={{ fontFamily: EL_FONT.display, fontWeight: 200, lineHeight: 1.1 }}>
-        เธอคือธาตุอะไร
+        คุณคือธาตุอะไร
       </h1>
       <p className="mt-5 text-pretty text-lg" style={{ color: EL.creamSoft }}>
-        ดิน น้ำ ลม ไฟ หรือธาตุที่มองไม่เห็น 8 ข้อ 1 นาที แล้วดูว่าทีมของเธอยังขาดธาตุไหน
+        ดิน น้ำ ลม ไฟ หรือธาตุที่มองไม่เห็น 8 ข้อ 1 นาที แล้วดูว่าทีมของคุณยังขาดธาตุไหน
       </p>
       <button
         type="button"
@@ -183,7 +183,7 @@ function Reveal() {
         ))}
       </div>
       <p className="mt-8 text-xl" style={{ fontFamily: EL_FONT.display }}>
-        กำลังอ่านธาตุของเธอ
+        กำลังอ่านธาตุของคุณ
       </p>
     </section>
   );

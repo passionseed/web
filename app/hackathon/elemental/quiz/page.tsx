@@ -6,8 +6,8 @@ import { EL } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { normalizeSource } from "@/lib/hackathon/elemental/registration";
 
-const TITLE = "เธอคือธาตุอะไร | Elemental quiz";
-const DESCRIPTION = `ดิน น้ำ ลม ไฟ หรือธาตุที่มองไม่เห็น 8 ข้อ 1 นาที แล้วดูว่าทีมของเธอยังขาดธาตุไหน จาก ${ELEMENTAL.edition} Hackathon`;
+const TITLE = "คุณคือธาตุอะไร | Elemental quiz";
+const DESCRIPTION = `ดิน น้ำ ลม ไฟ หรือธาตุที่มองไม่เห็น 8 ข้อ 1 นาที แล้วดูว่าทีมของคุณยังขาดธาตุไหน จาก ${ELEMENTAL.edition} Hackathon`;
 
 export const metadata: Metadata = {
   title: TITLE,

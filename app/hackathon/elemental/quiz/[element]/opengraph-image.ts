@@ -1,7 +1,7 @@
 import { QUIZ_ELEMENTS, isQuizElement } from "@/lib/hackathon/elemental/quiz";
 import { QUIZ_OG_SIZE, renderQuizOg } from "@/lib/og/elemental-quiz";
 
-export const alt = "Elemental quiz: เธอคือธาตุอะไร";
+export const alt = "Elemental quiz: คุณคือธาตุอะไร";
 export const size = QUIZ_OG_SIZE;
 export const contentType = "image/png";
 export const runtime = "nodejs";

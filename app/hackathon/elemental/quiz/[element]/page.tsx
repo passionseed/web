@@ -26,8 +26,8 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const { element } = await params;
   if (!isQuizElement(element)) return {};
   const r = QUIZ_RESULTS[element];
-  const title = `ฉันคือ${r.th} | เธอคือธาตุอะไร`;
-  const description = `“${r.roastTh}” ทำแบบทดสอบ 8 ข้อ แล้วดูว่าเธอคือธาตุไหน`;
+  const title = `ฉันคือ${r.th} | คุณคือธาตุอะไร`;
+  const description = `“${r.roastTh}” ทำแบบทดสอบ 8 ข้อ แล้วดูว่าคุณคือธาตุไหน`;
   return {
     title,
     description,
@@ -54,7 +54,7 @@ export default async function QuizResultPage({ params, searchParams }: { params:
   const need = QUIZ_RESULTS[r.needs];
   const brief = ELEMENT_DETAILS[element];
   const open = elementalRegistrationOpen();
-  const shareText = `ฉันคือ${r.th} “${r.roastTh}” เธอคือธาตุอะไร`;
+  const shareText = `ฉันคือ${r.th} “${r.roastTh}” คุณคือธาตุอะไร`;
 
   return (
     <main className={`${trirong.variable} min-h-[100dvh]`} style={{ backgroundColor: p.bg, color: p.ink }}>
@@ -65,7 +65,7 @@ export default async function QuizResultPage({ params, searchParams }: { params:
             <p className={tag} style={{ fontFamily: EL_FONT.mono, color: p.soft }}>
               [{r.en.toUpperCase()}]
             </p>
-            <p className="mt-6 text-xl">{me ? "เธอคือ" : "เพื่อนเธอคือ"}</p>
+            <p className="mt-6 text-xl">{me ? "คุณคือ" : "เพื่อนคุณคือ"}</p>
           </div>
           <div className="shrink-0 pt-1">
             <ElementIcon element={element} size={112} id="hero" />
@@ -117,7 +117,7 @@ export default async function QuizResultPage({ params, searchParams }: { params:
               className="inline-flex w-full items-center justify-center gap-2 rounded-full px-7 py-4 text-lg font-semibold"
               style={{ backgroundColor: EL.flame, color: EL.char }}
             >
-              เธอคือธาตุอะไร ลองทำดู <ArrowRight className="h-5 w-5" />
+              คุณคือธาตุอะไร ลองทำดู <ArrowRight className="h-5 w-5" />
             </Link>
           )}
         </div>
@@ -136,7 +136,7 @@ export default async function QuizResultPage({ params, searchParams }: { params:
             <strong style={{ color: p.ink }}>เริ่มจากตรงนี้ได้เลย:</strong> {brief.starterTh}
           </p>
           <p className="mt-3 text-sm" style={{ color: p.soft }}>
-            ธาตุของเธอไม่ได้บังคับโจทย์ {ANY_PROBLEM_NOTE}
+            ธาตุของคุณไม่ได้บังคับโจทย์ {ANY_PROBLEM_NOTE}
           </p>
         </section>
 

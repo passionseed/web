@@ -147,13 +147,13 @@ export function renderQuizStory(key: ElementKey): Buffer {
   ctx.fillText(`${r.th}ต้องการ${need.th}`, x + 44, boxTop + 96);
   ctx.font = `40px "${REGULAR}"`;
   ctx.fillStyle = p.soft;
-  ctx.fillText(`แท็ก${need.th}ของเธอตรงนี้`, x + 44, boxTop + 170);
+  ctx.fillText(`แท็ก${need.th}ของคุณตรงนี้`, x + 44, boxTop + 170);
   drawIcon(ctx, r.needs, x + maxW - 44 - 9 * 12, boxTop + 40, 12);
 
   const footY = boxTop + boxH + 70;
   ctx.font = `34px "${REGULAR}"`;
   ctx.fillStyle = p.ink;
-  ctx.fillText("เธอคือธาตุอะไร?", x, footY);
+  ctx.fillText("คุณคือธาตุอะไร?", x, footY);
   ctx.font = `28px "${MONO}"`;
   ctx.fillStyle = p.soft;
   ctx.fillText(QUIZ_SHORT_URL, x, footY + 48);
@@ -178,7 +178,7 @@ export function renderQuizOg(key: ElementKey): Buffer {
   ctx.fillStyle = p.soft;
   ctx.fillText("[ELEMENTAL QUIZ]", x, 186);
   ctx.font = `26px "${REGULAR}"`;
-  ctx.fillText("เธอคือธาตุอะไร?", x + 270, 186);
+  ctx.fillText("คุณคือธาตุอะไร?", x + 270, 186);
 
   drawIcon(ctx, key, W - x - 9 * 30, 190, 30);
   const size = nameFont(ctx, r.th, 200, W - x * 2 - 9 * 30 - 40);

@@ -3,7 +3,7 @@ import { EL } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENT_ICON_COLOR } from "@/components/hackathon/poster/elemental/element-icons";
 
 /**
- * The Elemental quiz: "เธอคือธาตุอะไร". Eight questions, five answers each,
+ * The Elemental quiz: "คุณคือธาตุอะไร". Eight questions, five answers each,
  * one answer per element, so every element can win equally often.
  *
  * The model is the Big Five, not MBTI (MBTI gives many people a different
@@ -31,7 +31,7 @@ export type QuizQuestion = { th: string; answers: readonly QuizAnswer[] };
 /** Answer order is mixed per question so the first answer isn't always the same element. */
 export const QUIZ_QUESTIONS: readonly QuizQuestion[] = [
   {
-    th: "งานกลุ่มเพิ่งเริ่ม ทุกคนเงียบ เธอ...",
+    th: "งานกลุ่มเพิ่งเริ่ม ทุกคนเงียบ คุณ...",
     answers: [
       { element: "fire", th: "เปิดปากก่อน “เอาไงดี มาโหวตกัน”" },
       { element: "earth", th: "เปิดโน้ต แบ่งว่าใครทำอะไร ส่งวันไหน" },
@@ -41,7 +41,7 @@ export const QUIZ_QUESTIONS: readonly QuizQuestion[] = [
     ],
   },
   {
-    th: "ว่างๆ เปิดโทรศัพท์ เธอมักจะ...",
+    th: "ว่างๆ เปิดโทรศัพท์ คุณมักจะ...",
     answers: [
       { element: "air", th: "เซฟรูป เก็บไอเดีย ทำมู้ดบอร์ด" },
       { element: "aether", th: "สงสัยว่าทำไมฟีดป้อนคลิปนี้มาให้" },
@@ -51,7 +51,7 @@ export const QUIZ_QUESTIONS: readonly QuizQuestion[] = [
     ],
   },
   {
-    th: "เพื่อนชมเธอบ่อยที่สุดว่า...",
+    th: "เพื่อนชมคุณบ่อยที่สุดว่า...",
     answers: [
       { element: "water", th: "คุยด้วยแล้วสบายใจ" },
       { element: "earth", th: "ฝากอะไรไว้ ไม่เคยหลุด" },
@@ -61,7 +61,7 @@ export const QUIZ_QUESTIONS: readonly QuizQuestion[] = [
     ],
   },
   {
-    th: "คืนก่อนส่งงาน เธอคือคนที่...",
+    th: "คืนก่อนส่งงาน คุณคือคนที่...",
     answers: [
       { element: "earth", th: "ทำส่วนของตัวเองเสร็จตั้งแต่เมื่อวาน" },
       { element: "fire", th: "เปิดเพลง ปลุกใจทีม สั่งชาไข่มุก" },
@@ -71,7 +71,7 @@ export const QUIZ_QUESTIONS: readonly QuizQuestion[] = [
     ],
   },
   {
-    th: "ต้องไปคุยกับป้าที่อยู่ริมแม่น้ำ เรื่องน้ำเสีย เธอ...",
+    th: "ต้องไปคุยกับป้าที่อยู่ริมแม่น้ำ เรื่องน้ำเสีย คุณ...",
     answers: [
       { element: "aether", th: "อยากรู้ว่าน้ำเสียมาจากไหน ใครปล่อย" },
       { element: "water", th: "นั่งฟังป้าเล่ายาวๆ ได้เป็นชั่วโมง" },
@@ -81,7 +81,7 @@ export const QUIZ_QUESTIONS: readonly QuizQuestion[] = [
     ],
   },
   {
-    th: "สิ่งที่เธอกลัวที่สุดในงานกลุ่ม...",
+    th: "สิ่งที่คุณกลัวที่สุดในงานกลุ่ม...",
     answers: [
       { element: "fire", th: "พรีเซนต์แล้วทั้งห้องเงียบ" },
       { element: "aether", th: "ทำมาทั้งหมด แต่แก้ผิดปัญหา" },
@@ -91,7 +91,7 @@ export const QUIZ_QUESTIONS: readonly QuizQuestion[] = [
     ],
   },
   {
-    th: "วันหยุดในฝันของเธอ...",
+    th: "วันหยุดในฝันของคุณ...",
     answers: [
       { element: "air", th: "ไปที่ใหม่ ถ่ายรูป วาดรูป" },
       { element: "earth", th: "ทำโปรเจกต์ของตัวเองให้จบ" },
@@ -101,7 +101,7 @@ export const QUIZ_QUESTIONS: readonly QuizQuestion[] = [
     ],
   },
   {
-    th: "ได้ 3 วันแก้ปัญหาสิ่งแวดล้อมหนึ่งเรื่อง เธออยากเป็นคน...",
+    th: "ได้ 3 วันแก้ปัญหาสิ่งแวดล้อมหนึ่งเรื่อง คุณอยากเป็นคน...",
     answers: [
       { element: "water", th: "ไปคุยกับคนที่เจอปัญหาจริงๆ" },
       { element: "air", th: "ออกแบบให้คนอยากใช้" },
@@ -138,8 +138,8 @@ export const QUIZ_RESULTS: Record<ElementKey, QuizResult> = {
     th: "ไฟ",
     en: "Fire",
     roleTh: "คนพูด คนพรีเซนต์ คนจุดไฟให้ทีม",
-    roastTh: "ไมค์อยู่ไหน เธออยู่นั่น",
-    strengthTh: "ทีมเงียบเมื่อไหร่ เธอคือคนที่ทำให้มันเดินต่อ และคนที่ทำให้กรรมการจำทีมได้",
+    roastTh: "ไมค์อยู่ไหน คุณอยู่นั่น",
+    strengthTh: "ทีมเงียบเมื่อไหร่ คุณคือคนที่ทำให้มันเดินต่อ และคนที่ทำให้กรรมการจำทีมได้",
     needs: "water",
     needsWhyTh: "ไฟพูดเก่ง แต่น้ำคือคนที่ไปฟังคนที่เจอปัญหาจริง ไม่มีน้ำ ไฟก็พูดเรื่องที่ไม่มีใครเจอ",
   },
@@ -149,7 +149,7 @@ export const QUIZ_RESULTS: Record<ElementKey, QuizResult> = {
     en: "Water",
     roleTh: "คนฟัง คนไปคุยกับคนที่เจอปัญหาจริง",
     roastTh: "นักจิตวิทยาประจำกลุ่ม ที่ไม่เคยได้เงินเดือน",
-    strengthTh: "เธอได้เรื่องจริงจากคนจริง ซึ่งเป็นส่วนที่ทีมส่วนใหญ่ข้าม และเป็นหลักฐานที่กรรมการให้คะแนน",
+    strengthTh: "คุณได้เรื่องจริงจากคนจริง ซึ่งเป็นส่วนที่ทีมส่วนใหญ่ข้าม และเป็นหลักฐานที่กรรมการให้คะแนน",
     needs: "earth",
     needsWhyTh: "น้ำรู้ว่าคนเจอปัญหาอะไร แต่ดินคือคนที่สร้างของให้เขาใช้ได้จริง",
   },
@@ -158,8 +158,8 @@ export const QUIZ_RESULTS: Record<ElementKey, QuizResult> = {
     th: "ดิน",
     en: "Earth",
     roleTh: "คนสร้าง คนทำให้เสร็จ",
-    roastTh: "แชทกลุ่มเงียบ แต่ไฟล์ของเธอเสร็จแล้ว",
-    strengthTh: "ไอเดียไม่มีค่าถ้าไม่มีใครทำให้มันเกิด เธอคือคนนั้น",
+    roastTh: "แชทกลุ่มเงียบ แต่ไฟล์ของคุณเสร็จแล้ว",
+    strengthTh: "ไอเดียไม่มีค่าถ้าไม่มีใครทำให้มันเกิด คุณคือคนนั้น",
     needs: "air",
     needsWhyTh: "ดินสร้างได้ทุกอย่าง แต่ลมคือคนที่ทำให้คนอยากใช้มัน",
   },
@@ -169,7 +169,7 @@ export const QUIZ_RESULTS: Record<ElementKey, QuizResult> = {
     en: "Air",
     roleTh: "คนคิดไอเดีย คนออกแบบ",
     roastTh: "มีไอเดีย 47 อัน ทำจริงครึ่งอัน",
-    strengthTh: "ในขณะที่ทุกทีมทำแบบเดียวกัน เธอคือคนที่ทำให้ทีมไม่เหมือนใคร",
+    strengthTh: "ในขณะที่ทุกทีมทำแบบเดียวกัน คุณคือคนที่ทำให้ทีมไม่เหมือนใคร",
     needs: "aether",
     needsWhyTh: "ลมคิดได้ไกล แต่ธาตุที่มองไม่เห็นคือคนที่เช็กว่าเรากำลังแก้ต้นเหตุจริงๆ",
   },
@@ -179,7 +179,7 @@ export const QUIZ_RESULTS: Record<ElementKey, QuizResult> = {
     en: "Aether",
     roleTh: "คนขุด คนเห็นสิ่งที่คนอื่นมองข้าม",
     roastTh: "เปิดคลิปเดียว จบที่บทความเรื่องเหมืองตอนตีสาม",
-    strengthTh: "เธอถามว่า “ทำไม” จนเจอต้นเหตุ ทีมที่มีเธอจะไม่แก้ผิดปัญหา",
+    strengthTh: "คุณถามว่า “ทำไม” จนเจอต้นเหตุ ทีมที่มีคุณจะไม่แก้ผิดปัญหา",
     needs: "fire",
     needsWhyTh: "ธาตุที่มองไม่เห็นรู้ความจริง แต่ไฟคือคนที่ทำให้คนอื่นฟังมัน",
   },
