@@ -192,7 +192,7 @@ web_allow(sig) AS (VALUES
   ('shift_quest_admin_away_reveal(text,uuid)')
 )
 -- The schema: 24 is every migration on this branch (the bot's DMs on by
--- default, 20261125100000). run-local.sh runs this file on its
+-- default, 20261126100000). run-local.sh runs this file on its
 -- single pass, so a new migration that moves the version fails there until
 -- this line follows.
 SELECT 'schema: shift_quest_schema_version() is ' || coalesce(v::text, 'missing') || ', expected 24' AS problem

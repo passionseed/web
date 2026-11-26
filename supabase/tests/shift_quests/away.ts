@@ -3,7 +3,7 @@
  * 20261121090000_shift_quest_away, schema 23).
  *   * consent: away_dm null means never asked, set only by the student
  *     (staff 'not_allowed'), audited; no drops what is queued. From schema
- *     24 (20261125100000) a new member starts with it on (the default is
+ *     24 (20261126100000) a new member starts with it on (the default is
  *     true; nudges.ts covers that): this suite sets its students back to
  *     null so the never-asked path stays covered;
  *   * the switch: /admin feature away (shift_quest_admin_set key 'away'), off
@@ -326,7 +326,7 @@ async function main(): Promise<void> {
     "or (table_name = 'shift_quest_settings' and column_name like 'away\\_%'))",
   )).rows.sort((x, y) => (x.col < y.col ? -1 : 1));
   check(JSON.stringify(cols) === JSON.stringify([
-    // Schema 24 (20261125100000_shift_quest_nudges_on): on unless the student turns it off.
+    // Schema 24 (20261126100000_shift_quest_nudges_on): on unless the student turns it off.
     { col: "shift_quest_members.away_dm", data_type: "boolean", is_nullable: "YES", column_default: "true" },
     { col: "shift_quest_members.away_dm_at", data_type: "timestamp with time zone", is_nullable: "YES", column_default: null },
     { col: "shift_quest_settings.away_after_days", data_type: "smallint", is_nullable: "NO", column_default: "7" },

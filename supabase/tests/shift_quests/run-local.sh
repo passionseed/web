@@ -93,7 +93,7 @@
 #             audited reveal; erasure, /data and the admin reset; 90-day
 #             lines; the grants), with consent off
 #   nudges    every migration applied twice, then nudges.ts (schema 24,
-#             20261125100000: the bot's DMs on by default, a start with no
+#             20261126100000: the bot's DMs on by default, a start with no
 #             choice, a choice kept across starts, the update DM's whitelisted
 #             fields and never the mentor's words, three days to the come-back
 #             DM)

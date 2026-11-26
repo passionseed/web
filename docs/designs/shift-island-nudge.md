@@ -1,7 +1,7 @@
 # SHIFT High Island: the bot nudges by default
 
 Status: built on `feat/shift-nudge`, 2026-11-25. Migration
-`20261125100000_shift_quest_nudges_on.sql` (schema 24) is **not applied**: it
+`20261126100000_shift_quest_nudges_on.sql` (schema 24) is **not applied**: it
 waits for the founder's go, and is applied before the bot that reads it
 deploys. Thai copy is DRAFT for the three-model review in the root
 `AGENTS.md`.

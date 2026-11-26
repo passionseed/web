@@ -1,5 +1,5 @@
 /**
- * SHIFT High Island: the bot's DMs on by default (20261125100000_shift_quest_nudges_on,
+ * SHIFT High Island: the bot's DMs on by default (20261126100000_shift_quest_nudges_on,
  * schema 24).
  *   * the defaults: notify_dm and away_dm default to true; the come-back DM
  *     starts after 3 days (the old default of 7 replaced, an admin's own

@@ -80,7 +80,7 @@ BEGIN
     PERFORM public.shift_quest__fail('not_started');
   END IF;
 
-  -- 20261125100000: on unless the caller says otherwise (was false).
+  -- 20261126100000: on unless the caller says otherwise (was false).
   INSERT INTO public.shift_quest_members (discord_user_id, display_name, onboarded_at, notify_dm)
   VALUES (p_actor, left(p_display_name, 80), now(), COALESCE(p_notify_dm, true))
   ON CONFLICT (discord_user_id) DO UPDATE
@@ -99,7 +99,7 @@ $$;
 
 /**
  * A private notice for one member, plus a DM if they have the update DM on.
- * From 20261125100000 the DM row carries the notice kind ('notice') and a
+ * From 20261126100000 the DM row carries the notice kind ('notice') and a
  * whitelist of its fields, so the bot can say what happened. Never the
  * mentor's words (feedback, note, reason) and never an internal id.
  */

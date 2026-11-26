@@ -780,7 +780,7 @@ export const TREE_GREW = {
 /**
  * The come-back DM (kind 'away', schema 23, 20261121090000_shift_quest_away),
  * sent after a stretch away from the island. On by default since schema 24
- * (20261125100000_shift_quest_nudges_on); off in /settings or on the island.
+ * (20261126100000_shift_quest_nudges_on); off in /settings or on the island.
  * It names the student's own next quest when the bot can read their board at
  * send time (outbox.ts awayParams): the open quest to carry on, or the first
  * main quest to start. Safeguarding section 4: broadcast only, so it asks
