@@ -8,6 +8,7 @@ import type { ElementalDiscordOutcome } from "@/lib/hackathon/elemental/discordL
 import { teamLabel } from "@/lib/hackathon/elemental/team-name";
 import type { PublicRegistration } from "@/lib/supabase/hackathon-event-registrations";
 
+import { BuddyPass, IouSlip } from "./BuddyPass";
 import { ConnectDiscord } from "./ConnectDiscord";
 import { PayWithSlip } from "./PayWithSlip";
 import { placeFor, ticketNumber } from "./places";
@@ -22,7 +23,8 @@ import { TrackStep } from "./TrackStep";
 
 type Props = {
   token: string;
-  reg: Pick<PublicRegistration, "status" | "teamName" | "memberCount" | "amountBaht" | "memberNicknames" | "team" | "isTeamStarter" | "teamPosition" | "discordJoined">;
+  reg: Pick<PublicRegistration, "status" | "teamName" | "memberCount" | "amountBaht" | "memberNicknames" | "team" | "isTeamStarter" | "teamPosition" | "discordJoined"> &
+    Partial<Pick<PublicRegistration, "buddyPass" | "buddyOf">>;
   qrSrc: string | null;
   links: { line: string | null; discord: string | null };
   /** How the last Discord sign-in from this page went (?discord=…). */
@@ -53,7 +55,18 @@ function LineButton({ label, style }: { label: string; style: typeof filled | ty
 function whoAndPeople(reg: Props["reg"]): { who: string; people: string } {
   const who = reg.team ? reg.memberNicknames.join(", ") : (reg.teamName ?? reg.memberNicknames.join(", "));
   if (reg.team) return { who, people: teamLabel(reg.team.name) };
+  if (reg.buddyOf) return { who, people: `บัตรเพื่อนจาก ${reg.buddyOf.name}` };
   return { who, people: reg.memberCount > 1 ? `${reg.memberCount} คน` : "มาคนเดียว" };
+}
+
+/** The buddy pass (for a ฿199 solo payer) or joke receipt (for a friend on a pass). */
+function BuddySection({ reg }: { reg: Props["reg"] }) {
+  return (
+    <>
+      {reg.buddyPass && <BuddyPass pass={reg.buddyPass} />}
+      {reg.buddyOf && <IouSlip debt={`คุณติด ${reg.buddyOf.name}`} owe={reg.buddyOf.owe} />}
+    </>
+  );
 }
 
 /** The team card; the person who started the team can rename it from here. */
@@ -132,6 +145,7 @@ function PaidSection(props: Props) {
         )}
       </div>
       <Team {...props} />
+      <BuddySection reg={reg} />
       <p className="text-sm" style={{ color: EL.inkSoft }}>
         มีคำถามทักไลน์ {SHIFT_PAYMENT.lineId} ·{" "}
         <Link href="/hackathon/elemental" className="underline underline-offset-4">
@@ -152,6 +166,7 @@ function ReviewSection(props: Props) {
       <p style={{ color: EL.inkSoft }}>ลิงก์กลุ่ม LINE และ Discord ของงานขึ้นที่หน้านี้เมื่อสลิปผ่าน</p>
       <LineButton label={`มีคำถาม ทักไลน์ ${SHIFT_PAYMENT.lineId}`} style={outline} />
       <Team {...props} />
+      <BuddySection reg={props.reg} />
     </section>
   );
 }
@@ -175,9 +190,19 @@ function PendingSection(props: Props) {
       <p className="mt-3 text-pretty text-lg" style={{ color: EL.inkSoft }}>
         โอนแล้วส่งสลิป ที่นั่งยืนยันทันทีที่สลิปผ่าน
       </p>
+      {reg.buddyOf && (
+        <div className="mt-8">
+          <IouSlip debt={`คุณติด ${reg.buddyOf.name}`} owe={reg.buddyOf.owe} />
+        </div>
+      )}
       <div className="mt-8">
         <PayWithSlip token={token} amountBaht={reg.amountBaht} qrSrc={qrSrc} demo={demo} />
       </div>
+      {reg.buddyPass && (
+        <div className="mt-10">
+          <BuddyPass pass={reg.buddyPass} />
+        </div>
+      )}
       {reg.team && (
         <div className="mt-10">
           <Team {...props} />

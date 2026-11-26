@@ -102,6 +102,17 @@ describe("registrationBody", () => {
     expect(body.members[0].parentName).toBeUndefined();
     expect(registrationSchema.safeParse(body).success).toBe(true);
   });
+
+  it("sends passCode and buddyOwe in buddy mode", () => {
+    const body = registrationBody(filled({ mode: "buddy" }), undefined, undefined, undefined, {
+      code: "0123456789ab",
+      senderName: "บิ๊ก",
+      owe: "mookata",
+    });
+    expect(body.passCode).toBe("0123456789ab");
+    expect(body.buddyOwe).toBe("mookata");
+    expect(registrationSchema.safeParse(body).success).toBe(true);
+  });
 });
 
 describe("suggestTeamName", () => {

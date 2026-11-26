@@ -1,5 +1,13 @@
 import { createAdminClient } from "@/utils/supabase/admin";
 import { INVITE_CODE_RE, type Registration } from "@/lib/hackathon/elemental/registration";
+import {
+  BUDDY_PASS_CODE_RE,
+  buddyPassState,
+  holdsBuddyPass,
+  parseBuddyOwe,
+  type BuddyOwe,
+  type BuddyPassState,
+} from "@/lib/hackathon/elemental/buddy-pass";
 import type { RegistrationTotalsRow } from "@/lib/hackathon/elemental/seats";
 
 /**
@@ -28,7 +36,32 @@ export type PublicRegistration = {
   discordLinked: boolean;
   /** The bot put them in the hackathon Discord server with the event role. */
   discordJoined: boolean;
+  /** The pass this sign-up holds, if it is a solo sign-up at the solo price. */
+  buddyPass: PublicBuddyPass | null;
+  /** First name of whoever's pass this sign-up used. */
+  buddyOf: { name: string; owe: BuddyOwe } | null;
   createdAt: string;
+};
+
+/**
+ * A pass as its holder sees it. The code is only here once the holder has
+ * paid; before that the pass is "locked". The friend shows by first name only.
+ */
+export type PublicBuddyPass =
+  | { state: "locked" }
+  | { state: "available"; code: string }
+  | { state: "claimed" | "paid"; code: string; friendName: string; owe: BuddyOwe };
+
+/**
+ * A pass as the sign-up form sees it, looked up by its code. The contacts
+ * stay on the server (the route compares them); pages pass on the rest.
+ */
+export type BuddyPassLookup = {
+  state: BuddyPassState;
+  registrationId: string | null;
+  senderName: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
 };
 
 /** What an invite link shows: the team's name and who is in it (first names only). */
@@ -60,6 +93,9 @@ export type AdminRegistration = {
   adminNote: string | null;
   /** Discord linked from the sign-up page, and whether the bot got them into the server. */
   discord: { username: string | null; joinedAt: string | null; error: string | null } | null;
+  /** On a friend's sign-up: the registration whose buddy pass it used. */
+  buddyPassFromId: string | null;
+  buddyPassOwe: string | null;
   createdAt: string;
   members: {
     position: number;
@@ -81,6 +117,61 @@ export function isPayToken(token: string): boolean {
 
 const firstName = (m: { nickname: string | null; full_name: string }) =>
   m.nickname || m.full_name.split(" ")[0];
+
+type MemberName = { position: number; nickname: string | null; full_name: string };
+const leadName = (members: MemberName[] | null | undefined) => {
+  const m = [...(members ?? [])].sort((a, b) => a.position - b.position)[0];
+  return m ? firstName(m) : "";
+};
+
+/** The friend's sign-up that holds a registration's pass, if any. */
+async function loadBuddyClaim(registrationId: string) {
+  const { data, error } = await createAdminClient()
+    .from("hackathon_event_registrations")
+    .select("status, buddy_pass_owe, hackathon_event_registration_members(position, nickname, full_name)")
+    .eq("buddy_pass_from_registration_id", registrationId)
+    .neq("status", "cancelled")
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+/** Look up a pass by its code, for the sign-up form and the API route. */
+export async function getBuddyPass(eventSlug: string, code: string): Promise<BuddyPassLookup> {
+  const none: BuddyPassLookup = { state: "invalid", registrationId: null, senderName: null, contactEmail: null, contactPhone: null };
+  if (!BUDDY_PASS_CODE_RE.test(code)) return none;
+  const { data, error } = await createAdminClient()
+    .from("hackathon_event_registrations")
+    .select(
+      "id, status, member_count, amount_baht, team_id, buddy_pass_from_registration_id, contact_email, contact_phone, hackathon_event_registration_members(position, nickname, full_name)",
+    )
+    .eq("event_slug", eventSlug)
+    .eq("buddy_pass_code", code)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return none;
+  const sender = {
+    status: data.status as RegistrationStatus,
+    memberCount: data.member_count,
+    amountBaht: data.amount_baht,
+    teamId: data.team_id,
+    fromRegistrationId: data.buddy_pass_from_registration_id,
+  };
+  const claimed = data.status === "paid" ? Boolean(await loadBuddyClaim(data.id)) : false;
+  return {
+    state: buddyPassState(sender, claimed),
+    registrationId: data.id,
+    senderName: leadName(data.hackathon_event_registration_members) || null,
+    contactEmail: data.contact_email,
+    contactPhone: data.contact_phone,
+  };
+}
+
+/** Postgres unique violation: a second friend lost the race for a pass. */
+export function isUniqueViolation(error: unknown): boolean {
+  return (error as { code?: string } | null)?.code === "23505";
+}
 
 /** Start a team. Returns its id and invite code. */
 export async function createTeam(eventSlug: string, name: string): Promise<{ id: string; inviteCode: string }> {
@@ -145,6 +236,7 @@ export async function createRegistration(
   input: Registration,
   amountBaht: number,
   team: { id: string; name: string } | null = null,
+  buddy: { fromRegistrationId: string; owe: BuddyOwe } | null = null,
 ): Promise<{ id: string; payToken: string }> {
   const db = createAdminClient();
   const { data, error } = await db
@@ -160,6 +252,8 @@ export async function createRegistration(
       contact_line_id: input.contactLineId ?? null,
       // A person alone is matched with a team unless they say otherwise.
       wants_team_matching: input.members.length === 1 && !team ? input.wantsTeamMatching : false,
+      buddy_pass_from_registration_id: buddy?.fromRegistrationId ?? null,
+      buddy_pass_owe: buddy?.owe ?? null,
       no_refund_ack: input.noRefundAck,
       contact_after_consent: input.contactAfterConsent,
       source: input.source ?? null,
@@ -199,7 +293,7 @@ export async function getRegistrationByToken(
   const { data, error } = await db
     .from("hackathon_event_registrations")
     .select(
-      "id, status, team_id, team_name, member_count, amount_baht, created_at, linked_at, discord_joined_at, hackathon_event_registration_members(position, nickname, full_name)",
+      "id, status, team_id, team_name, member_count, amount_baht, created_at, linked_at, discord_joined_at, buddy_pass_code, buddy_pass_from_registration_id, buddy_pass_owe, hackathon_event_registration_members(position, nickname, full_name)",
     )
     .eq("pay_token", token)
     .maybeSingle();
@@ -221,8 +315,52 @@ export async function getRegistrationByToken(
     teamPosition,
     discordLinked: Boolean(data.linked_at),
     discordJoined: Boolean(data.discord_joined_at),
+    buddyPass: await loadOwnBuddyPass(data),
+    buddyOf: data.buddy_pass_from_registration_id
+      ? await loadBuddySender(data.buddy_pass_from_registration_id, data.buddy_pass_owe)
+      : null,
     createdAt: data.created_at,
   };
+}
+
+async function loadOwnBuddyPass(r: {
+  id: string;
+  status: string;
+  member_count: number;
+  amount_baht: number;
+  team_id: string | null;
+  buddy_pass_code: string | null;
+  buddy_pass_from_registration_id: string | null;
+}): Promise<PublicBuddyPass | null> {
+  const sender = {
+    status: r.status as RegistrationStatus,
+    memberCount: r.member_count,
+    amountBaht: r.amount_baht,
+    teamId: r.team_id,
+    fromRegistrationId: r.buddy_pass_from_registration_id,
+  };
+  if (!r.buddy_pass_code || r.status === "cancelled" || !holdsBuddyPass(sender)) return null;
+  // Never hand out the code before the holder has paid.
+  if (r.status !== "paid") return { state: "locked" };
+  const claim = await loadBuddyClaim(r.id);
+  if (!claim) return { state: "available", code: r.buddy_pass_code };
+  return {
+    state: claim.status === "paid" ? "paid" : "claimed",
+    code: r.buddy_pass_code,
+    friendName: leadName(claim.hackathon_event_registration_members),
+    owe: parseBuddyOwe(claim.buddy_pass_owe),
+  };
+}
+
+async function loadBuddySender(id: string, owe: string | null): Promise<{ name: string; owe: BuddyOwe } | null> {
+  const { data, error } = await createAdminClient()
+    .from("hackathon_event_registrations")
+    .select("hackathon_event_registration_members(position, nickname, full_name)")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return { name: leadName(data.hackathon_event_registration_members), owe: parseBuddyOwe(owe) };
 }
 
 /** Where a sign-up falls in its team's sign-up order (0 = started the team). */
@@ -366,6 +504,8 @@ export async function listRegistrations(eventSlug: string): Promise<AdminRegistr
     discord: r.linked_at
       ? { username: r.discord_username, joinedAt: r.discord_joined_at, error: r.discord_error }
       : null,
+    buddyPassFromId: r.buddy_pass_from_registration_id ?? null,
+    buddyPassOwe: r.buddy_pass_owe ?? null,
     createdAt: r.created_at,
     members: [...(r.hackathon_event_registration_members ?? [])]
       .sort((a: { position: number }, b: { position: number }) => a.position - b.position)

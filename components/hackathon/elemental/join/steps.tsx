@@ -8,7 +8,8 @@ import { HEARD_FROM, heardFromLabel } from "@/lib/hackathon/elemental/heard-from
 import { teamLabel } from "@/lib/hackathon/elemental/team-name";
 import type { PublicTeam } from "@/lib/supabase/hackathon-event-registrations";
 
-import { formatPhone, type Draft, type Errors, type Mode, type StepKey } from "./draft";
+import { IouSlip, PixelEdge } from "../BuddyPass";
+import { formatPhone, type BuddyPassOffer, type Draft, type Errors, type Mode, type StepKey } from "./draft";
 import { CheckRow, Field, TextInput } from "./fields";
 import styles from "./join.module.css";
 
@@ -19,6 +20,7 @@ export type StepProps = {
   set: (patch: Partial<Draft>) => void;
   errors: Errors;
   team?: PublicTeam;
+  buddyPass?: BuddyPassOffer;
   /** Pick a mode and move on, for the one step that's a single tap. */
   choose: (mode: Mode) => void;
   goTo: (step: StepKey) => void;
@@ -50,7 +52,7 @@ export function StepTitle({ children, sub }: { children: ReactNode; sub?: ReactN
 
 const baht = (n: number) => `฿${n.toLocaleString("en-US")}`;
 
-function ModeStep({ draft, team, choose }: StepProps) {
+function ModeStep({ draft, team, buddyPass, choose }: StepProps) {
   if (team && draft.mode === "join") {
     return (
       <>
@@ -92,9 +94,53 @@ function ModeStep({ draft, team, choose }: StepProps) {
     );
   }
 
+  if (buddyPass && draft.mode === "buddy") {
+    return (
+      <>
+        <StepTitle sub={`จ่ายเต็ม ${baht(ELEMENTAL.priceBaht)} ไปแล้ว เลยส่งบัตรเพื่อนมาให้ 1 ใบ ทีมงานจับเข้าทีมเดียวกับ ${buddyPass.senderName} ให้`}>
+          {buddyPass.senderName} ชวนมา จ่ายแค่ <span style={{ fontStyle: "italic", fontWeight: 300 }}>{baht(ELEMENTAL.buddyPriceBaht)}</span>
+        </StepTitle>
+        <WhatItIs />
+        <section className="overflow-hidden rounded-2xl border bg-white/60" style={{ borderColor: "rgba(29,33,31,0.18)" }}>
+          <PixelEdge />
+          <div className="space-y-4 p-5">
+            <p className="text-xs" style={{ fontFamily: EL_FONT.mono, color: EL.inkSoft }}>
+              [บัตรเพื่อน จาก {buddyPass.senderName}]
+            </p>
+            <IouSlip debt={`คุณติด ${buddyPass.senderName}`} owe={buddyPass.owe} />
+          </div>
+        </section>
+        <button
+          type="button"
+          onClick={() => choose("buddy")}
+          className={`${styles.choice} mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full px-7 py-4 text-lg font-semibold`}
+          style={{ backgroundColor: EL.flame, color: EL.flameWhite }}
+        >
+          ใช้บัตรเพื่อน {baht(ELEMENTAL.buddyPriceBaht)} <ArrowRight className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => choose("create")}
+          className="mt-4 w-full text-center text-sm underline underline-offset-4"
+          style={{ color: EL.inkSoft }}
+        >
+          ไม่ใช้บัตรนี้? สมัครแบบปกติ
+        </button>
+      </>
+    );
+  }
+
   const options = [
-    { value: "create", icon: Users, title: "มากับเพื่อน", price: ELEMENTAL.groupPriceBaht, note: "สร้างทีม แล้วส่งลิงก์ให้เพื่อนสมัครเอง แต่ละคนจ่ายเอง", unit: "ต่อคน" },
-    { value: "solo", icon: User, title: "มาคนเดียว", price: ELEMENTAL.priceBaht, note: "เราช่วยจับคู่เข้าทีมให้ได้", unit: "" },
+    { value: "create", icon: Users, title: "มากับเพื่อน", price: ELEMENTAL.groupPriceBaht, note: "สร้างทีม แล้วส่งลิงก์ให้เพื่อนสมัครเอง แต่ละคนจ่ายเอง", unit: "ต่อคน", extra: null },
+    {
+      value: "solo",
+      icon: User,
+      title: "มาคนเดียว",
+      price: ELEMENTAL.priceBaht,
+      note: "เราช่วยจับคู่เข้าทีมให้ได้",
+      unit: "",
+      extra: `[+] จ่ายแล้วได้บัตรเพื่อน ${baht(ELEMENTAL.buddyPriceBaht)} ชวนเพื่อนมาได้อีก 1 คน`,
+    },
   ] as const;
 
   return (
@@ -125,6 +171,11 @@ function ModeStep({ draft, team, choose }: StepProps) {
                 </span>
               </span>
               <span className="mt-2 block text-sm" style={{ color: EL.inkSoft }}>{o.note}</span>
+              {o.extra && (
+                <span className="mt-2 block text-xs" style={{ fontFamily: EL_FONT.mono, color: EL.flame }}>
+                  {o.extra}
+                </span>
+              )}
             </button>
           );
         })}
@@ -137,6 +188,16 @@ function ModeStep({ draft, team, choose }: StepProps) {
           style={{ color: EL.inkSoft }}
         >
           กลับไปเข้า{teamLabel(team.name)}
+        </button>
+      )}
+      {buddyPass && (
+        <button
+          type="button"
+          onClick={() => choose("buddy")}
+          className="mt-5 w-full text-center text-sm underline underline-offset-4"
+          style={{ color: EL.inkSoft }}
+        >
+          กลับไปใช้บัตรเพื่อนจาก {buddyPass.senderName} ({baht(ELEMENTAL.buddyPriceBaht)})
         </button>
       )}
     </>
@@ -394,10 +455,21 @@ function SummaryRow({ label, value, onEdit }: { label: string; value: ReactNode;
   );
 }
 
-function ReviewStep({ draft, set, errors, team, goTo }: StepProps) {
+function ReviewStep({ draft, set, errors, team, buddyPass, goTo }: StepProps) {
   const mode = draft.mode ?? "solo";
-  const total = elementalPriceBaht(1, mode !== "solo");
-  const how = { solo: "มาคนเดียว", create: `สร้าง${teamLabel(draft.teamName)}`, join: `เข้า${teamLabel(team?.name ?? "")}` }[mode];
+  const total = mode === "buddy" ? ELEMENTAL.buddyPriceBaht : elementalPriceBaht(1, mode !== "solo");
+  const how = {
+    solo: "มาคนเดียว",
+    create: `สร้าง${teamLabel(draft.teamName)}`,
+    join: `เข้า${teamLabel(team?.name ?? "")}`,
+    buddy: `บัตรเพื่อนจาก ${buddyPass?.senderName ?? "เพื่อน"}`,
+  }[mode];
+  const priceLabel =
+    mode === "buddy"
+      ? `บัตรเพื่อน (จาก ${buddyPass?.senderName ?? "เพื่อน"})`
+      : mode === "solo"
+        ? "มาคนเดียว"
+        : "ราคาในทีม ต่อคน";
   return (
     <>
       <StepTitle>ตรวจอีกครั้ง</StepTitle>
@@ -424,9 +496,15 @@ function ReviewStep({ draft, set, errors, team, goTo }: StepProps) {
         </div>
       )}
 
+      {mode === "buddy" && buddyPass && (
+        <div className="mt-4">
+          <IouSlip debt={`คุณติด ${buddyPass.senderName}`} owe={buddyPass.owe} />
+        </div>
+      )}
+
       <section className="mt-6 space-y-4 rounded-2xl p-5 sm:p-6" style={{ backgroundColor: EL.char, color: EL.cream }}>
         <div className="flex items-baseline justify-between gap-4">
-          <span>{mode === "solo" ? "มาคนเดียว" : "ราคาในทีม ต่อคน"}</span>
+          <span>{priceLabel}</span>
           <span className="text-4xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
             {baht(total)}
           </span>

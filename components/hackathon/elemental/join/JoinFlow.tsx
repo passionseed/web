@@ -20,6 +20,7 @@ import {
   stepsFor,
   suggestTeamName,
   validateStep,
+  type BuddyPassOffer,
   type Draft,
   type Errors,
   type Mode,
@@ -39,6 +40,7 @@ type Props = {
   source?: string;
   utm?: Record<string, string>;
   team?: PublicTeam;
+  buddyPass?: BuddyPassOffer;
   /** Shown above the first step, e.g. "this team is full". */
   notice?: string;
   backHref: string;
@@ -48,11 +50,12 @@ type Props = {
 
 type Saved = { draft: Draft; step: StepKey };
 
-const storageKey = (team?: PublicTeam) => `elemental-join:${team?.inviteCode ?? "new"}`;
+const storageKey = (team?: PublicTeam, buddyPass?: BuddyPassOffer) =>
+  `elemental-join:${team?.inviteCode ?? (buddyPass ? `pass:${buddyPass.code}` : "new")}`;
 
-function load(team?: PublicTeam): Saved | null {
+function load(team?: PublicTeam, buddyPass?: BuddyPassOffer): Saved | null {
   try {
-    const raw = sessionStorage.getItem(storageKey(team));
+    const raw = sessionStorage.getItem(storageKey(team, buddyPass));
     return raw ? (JSON.parse(raw) as Saved) : null;
   } catch {
     return null;
@@ -63,18 +66,23 @@ const SERVER_ERRORS: Record<string, string> = {
   closed: "ปิดรับสมัครแล้ว",
   team_full: `ทีมนี้ครบ ${ELEMENTAL.maxGroupSize} คนแล้ว สมัครคนเดียวหรือสร้างทีมใหม่ได้`,
   team_not_found: "ไม่เจอทีมนี้ ขอลิงก์ใหม่จากเพื่อน หรือสมัครคนเดียวก่อน",
+  pass_used: "บัตรเพื่อนใบนี้มีคนใช้ไปแล้ว ใบนึงใช้ได้คนเดียว ย้อนกลับไปเลือกสมัครแบบปกติได้เลย",
+  pass_locked: "บัตรเพื่อนใบนี้ยังไม่ปลดล็อก เพื่อนยังจ่ายไม่เสร็จ รอสลิปผ่านแล้วค่อยลองใหม่",
+  pass_invalid: "บัตรเพื่อนจากลิงก์นี้ใช้ไม่ได้ ย้อนกลับไปเลือกสมัครแบบปกติได้เลย",
+  pass_self: "บัตรนี้ให้เพื่อนใช้ ใช้เองไม่ได้นะ ส่งต่อให้เพื่อนเลย",
 };
 
 function buttonLabel(step: StepKey, mode: Mode, saving: boolean, teamName = ""): string {
   if (step !== "review") return saving ? "บันทึก" : "ต่อไป";
   if (mode === "create") return "สร้างทีมและสมัคร";
   if (mode === "join") return `เข้า${teamLabel(teamName)}`;
+  if (mode === "buddy") return `สมัครด้วยบัตรเพื่อน ฿${ELEMENTAL.buddyPriceBaht}`;
   return "สมัคร";
 }
 
-export function JoinFlow({ source, utm, team, notice, backHref, demo }: Props) {
+export function JoinFlow({ source, utm, team, buddyPass, notice, backHref, demo }: Props) {
   const router = useRouter();
-  const initialMode: Mode | null = team ? "join" : null;
+  const initialMode: Mode | null = team ? "join" : buddyPass ? "buddy" : null;
   const [draft, setDraft] = useState<Draft>(() => emptyDraft(initialMode));
   const [step, setStep] = useState<StepKey>("mode");
   const [dir, setDir] = useState<"forward" | "back">("forward");
@@ -95,7 +103,7 @@ export function JoinFlow({ source, utm, team, notice, backHref, demo }: Props) {
 
   // Restore this tab's answers once, after hydration.
   useEffect(() => {
-    const saved = load(team);
+    const saved = load(team, buddyPass);
     if (saved) {
       setDraft({ ...emptyDraft(initialMode), ...saved.draft });
       setStep(saved.step);
@@ -109,11 +117,11 @@ export function JoinFlow({ source, utm, team, notice, backHref, demo }: Props) {
   useEffect(() => {
     if (!restored) return;
     try {
-      sessionStorage.setItem(storageKey(team), JSON.stringify({ draft, step } satisfies Saved));
+      sessionStorage.setItem(storageKey(team, buddyPass), JSON.stringify({ draft, step } satisfies Saved));
     } catch {
       // Private mode: the flow still works, it just won't survive a refresh.
     }
-  }, [draft, step, restored, team]);
+  }, [draft, step, restored, team, buddyPass]);
 
   // Count each step once, and put the cursor in its first box.
   useEffect(() => {
@@ -193,14 +201,14 @@ export function JoinFlow({ source, utm, team, notice, backHref, demo }: Props) {
     try {
       if (demo) {
         await new Promise((r) => setTimeout(r, 700));
-        sessionStorage.removeItem(storageKey(team));
+        sessionStorage.removeItem(storageKey(team, buddyPass));
         router.push(`/hackathon/join/demo?state=pending&mode=${draft.mode ?? "solo"}`);
         return;
       }
       const res = await fetch("/api/hackathon/elemental/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(registrationBody(draft, team?.inviteCode, source, utm)),
+        body: JSON.stringify(registrationBody(draft, team?.inviteCode, source, utm, buddyPass)),
       });
       const data = (await res.json().catch(() => ({}))) as {
         payToken?: string;
@@ -209,7 +217,7 @@ export function JoinFlow({ source, utm, team, notice, backHref, demo }: Props) {
       };
       if (res.ok && data.payToken) {
         trackElemental({ step: "submitted", mode: draft.mode ?? undefined, source });
-        sessionStorage.removeItem(storageKey(team));
+        sessionStorage.removeItem(storageKey(team, buddyPass));
         router.push(`/hackathon/join/${data.payToken}`);
         return; // keep the spinner until the pay page opens
       }
@@ -268,7 +276,9 @@ export function JoinFlow({ source, utm, team, notice, backHref, demo }: Props) {
   const detour = editing && steps.slice(index + 1).some((s) => s !== "review" && Object.keys(validateStep(s, draft)).length > 0);
   const View = STEP_VIEWS[step];
   const isFirst = index === 0;
-  const showContinue = step !== "mode" || (draft.mode !== null && !(team && draft.mode === "join"));
+  const showContinue =
+    step !== "mode" ||
+    (draft.mode !== null && !(team && draft.mode === "join") && !(buddyPass && draft.mode === "buddy"));
   const cta = buttonLabel(step, draft.mode ?? "solo", editing && !detour, team?.name);
 
   return (
@@ -319,7 +329,7 @@ export function JoinFlow({ source, utm, team, notice, backHref, demo }: Props) {
         )}
         <div key={step} ref={body} className={dir === "forward" ? styles.stepForward : styles.stepBack}>
           <div ref={shaker}>
-            <View draft={draft} set={set} errors={errors} team={team} choose={choose} goTo={edit} />
+            <View draft={draft} set={set} errors={errors} team={team} buddyPass={buddyPass} choose={choose} goTo={edit} />
           </div>
         </div>
         {serverError && (
