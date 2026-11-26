@@ -57,7 +57,7 @@ function calendarDays() {
     const slots = ELEMENTAL.schedule.filter((s) => s.date === iso);
     const demo = iso === ELEMENTAL.demoDay.date;
     const workshops = slots.filter((s) => s.kind === "workshop").length;
-    const label = demo ? "Demo Day" : slots.some((s) => s.kind === "open") ? "เปิดงาน" : slots.some((s) => s.kind === "due") ? "ส่งคลิป" : workshops ? `เวิร์กช็อป${workshops > 1 ? ` ×${workshops}` : ""}` : null;
+    const label = demo ? "Demo Day" : slots.some((s) => s.kind === "open") ? "เปิดงาน" : slots.some((s) => s.kind === "due") ? "ส่งผลงาน" : workshops ? `เวิร์กช็อป${workshops > 1 ? ` ×${workshops}` : ""}` : null;
     // Times as told (the hand-in's time isn't confirmed, and the Demo Day's is in the foot, so neither prints here).
     const times = demo ? null : slots.filter((s) => s.kind !== "due").map((s) => s.time.split("–")[0]).join(", ") || null;
     const dot = demo ? CHULA_PINK : slots.some((s) => s.kind === "due") ? EL.flame : workshops ? "#0f8f8a" : EL.ink;
@@ -103,8 +103,6 @@ export function ElementalNewsPoster({ id = "elemental-news" }: { id?: string }) 
             <img src="/passion-seed-logo.png" alt="" width={50} height={50} />
             <PassionSeedWordmark height={26} style={{ color: EL.ink }} />
           </span>
-          {/* What kind of post it is. */}
-          <span style={{ marginLeft: 8, fontFamily: EL_FONT.display, fontWeight: 500, fontSize: 24, lineHeight: "34px", background: EL.ink, color: HIGHLIGHT, padding: "0 14px" }}>อัปเดตใหม่</span>
         </div>
         {/* The event × CSII as the title, the two sides equal: the name on two lines, the CSII logo as tall as its letters need to match, centred on it (Angpao, 2026-11-26: "use Elemental Hackathon X CSII logo at the top make it stand out", then "the CSII logo is not equal as elemental hackathon"). */}
         <div className="flex items-center" style={{ marginTop: 22, gap: 30 }}>
