@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { PARTNER_NAV_LINKS } from "@/lib/content/pathlab-partner";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 /**
  * Cream-page top bar for the EE co-creator pitch: logo home link plus
@@ -19,7 +20,7 @@ export function PartnerNav() {
           priority
           className="pathlab-nav__logo"
         />
-        <span className="pathlab-nav__name">Passion Seed</span>
+        <Wordmark className="pathlab-nav__name" />
       </Link>
 
       <nav className="pathlab-nav__links" aria-label="Pathlab Partner">

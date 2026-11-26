@@ -9,6 +9,7 @@ import {
 } from "@/lib/content/pathlab-teachers";
 import { PosterScaler } from "@/components/plans/PosterScaler";
 import { SocialCardDownload } from "@/components/pathlab/SocialCardDownload";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 /**
  * "ใครออกแบบ PathLab?" — IG Feed variant, 4:5 (1080×1350).
@@ -197,7 +198,7 @@ export function TeachersPosterClient() {
             alt="Passion Seed"
             className="pathlab-teachers__logo"
           />
-          <span className="pathlab-teachers__brand-name">Passion Seed</span>
+          <Wordmark className="pathlab-teachers__brand-name" />
           <span className="pathlab-teachers__brand-path">{HERO.title}</span>
         </header>
 

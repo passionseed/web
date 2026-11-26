@@ -2,6 +2,7 @@ import Image from "next/image";
 import { useId, type CSSProperties, type ReactNode } from "react";
 
 import { SHIFT_COHORT, SHIFT_TRACKS, type ShiftCohort } from "@/lib/content/shift-cohort";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 /**
  * Riso print kit for the SHIFT posters.
@@ -415,12 +416,7 @@ export function PassionSeedMark({ size = 40, label = true }: { size?: number; la
         className="shrink-0 drop-shadow-[0_2px_6px_rgba(8,2,20,0.45)]"
       />
       {label && (
-        <span
-          className="font-kodchasan font-bold tracking-tight"
-          style={{ fontSize: size * 0.5, color: INK.paper }}
-        >
-          PassionSeed
-        </span>
+        <Wordmark style={{ fontSize: size * 0.55, color: INK.paper }} />
       )}
     </span>
   );

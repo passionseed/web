@@ -2,6 +2,7 @@ import { Trirong } from "next/font/google";
 import QRCode from "qrcode";
 import { EL, EL_FONT } from "./brand";
 import { ELEMENTAL, prizeTotal, thaiDayRange } from "./facts";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 /**
  * Elemental Hackathon key visual, 1080x1350.
@@ -687,8 +688,8 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
                 <span className="flex items-center gap-[10px]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/passion-seed-logo.png" alt="" width={50} height={50} />
-                  {/* The site's font for the name, Libre Franklin, in regular weight (Angpao, 2026-11-23: Libre Franklin, not bold). */}
-              <span style={{ fontFamily: "var(--font-libre-franklin), sans-serif", fontWeight: 400, fontSize: 26, letterSpacing: "-0.01em", color: EL.ink }}>PassionSeed</span>
+                  {/* The PassionSeed wordmark (Big, 2026-11-26). It replaces the plain Libre Franklin name (Angpao, 2026-11-23). */}
+              <Wordmark style={{ fontSize: 26, color: EL.ink }} />
                 </span>
               </div>
               <div className="mt-[14px]" style={{ fontFamily: EL_FONT.display, fontWeight: 500, fontSize: 30, lineHeight: "36px" }}>สแกนเพื่อสมัคร</div>
@@ -703,8 +704,8 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
             <span className="flex items-center gap-[10px]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/passion-seed-logo.png" alt="" width={50} height={50} />
-              {/* The site's font for the name, Libre Franklin, in regular weight (Angpao, 2026-11-23: Libre Franklin, not bold). */}
-              <span style={{ fontFamily: "var(--font-libre-franklin), sans-serif", fontWeight: 400, fontSize: 26, letterSpacing: "-0.01em", color: EL.ink }}>PassionSeed</span>
+              {/* The PassionSeed wordmark (Big, 2026-11-26). It replaces the plain Libre Franklin name (Angpao, 2026-11-23). */}
+              <Wordmark style={{ fontSize: 26, color: EL.ink }} />
             </span>
           </div>
         )}

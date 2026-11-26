@@ -9,6 +9,7 @@ import {
   SiInstagram,
   SiFacebook,
 } from "@icons-pack/react-simple-icons";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 export function LavaFooter() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -145,7 +146,7 @@ export function LavaFooter() {
       <div className="container px-4 py-8 md:px-6">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           <div className="space-y-4">
-            <h3 className="text-lg font-bold">Passion Seed</h3>
+            <h3 className="text-xl"><Wordmark /></h3>
             <p className="text-sm text-white/80">
               Discover your passion, ignite your potential, and grow with a
               supportive community.
