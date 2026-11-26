@@ -125,8 +125,8 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
           </span>
           <span>{ELEMENTAL.edition.toUpperCase()} HACKATHON</span>
         </div>
-        <h1 style={{ margin: "8px 0 0", fontFamily: EL_FONT.display, fontWeight: 200, fontSize: 76, lineHeight: "88px" }}>รายละเอียดการแข่งขัน</h1>
-        <p style={{ margin: "2px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 28, lineHeight: "36px", color: EL.creamSoft }}>
+        <h1 style={{ margin: "6px 0 0", fontFamily: EL_FONT.display, fontWeight: 200, fontSize: 76, lineHeight: "88px" }}>รายละเอียดการแข่งขัน</h1>
+        <p style={{ margin: 0, fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 28, lineHeight: "36px", color: EL.creamSoft }}>
           มือใหม่ก็ร่วมได้ ไม่ต้องมีพื้นฐานมาก่อน เราสอนให้ตั้งแต่ต้น
         </p>
 
@@ -141,7 +141,7 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
         </div>
 
         {/* The prize, as on slide 1 (trophy, the number in yellow), then who gets what. */}
-        <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 14, borderTop: `1px solid rgba(243,239,230,0.28)`, borderBottom: `1px solid rgba(243,239,230,0.28)`, padding: "8px 0" }}>
+        <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 14, borderTop: `1px solid rgba(243,239,230,0.28)`, borderBottom: `1px solid rgba(243,239,230,0.28)`, padding: "8px 0" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14, flex: "none" }}>
             <Trophy cell={6} />
             <span style={{ fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 84, lineHeight: "88px", letterSpacing: "-0.01em", color: HIGHLIGHT }}>{prizeTotal()}</span>
@@ -203,8 +203,8 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
         </div>
 
         {/* Foot. The sign-up QR code stands where "สมัครที่ลิงก์ในไบโอ" was (Angpao, 2026-11-23), the same plain cream block as on slide 1, with one thin line under it. */}
-        <div style={{ marginTop: "auto", marginRight: QR + 28, borderTop: `1px solid rgba(243,239,230,0.28)`, paddingTop: 4 }}>
-          {/* The Demo Day, in person (Angpao, 2026-11-26), big enough that people see there's a day at Chula ("ปิดท้าย make it bigger so people know we have demo day at Chula"). Its day isn't told yet, so only the place and time print. It fits because of tighter gaps above (title, facts, prize band). */}
+        <div style={{ marginTop: "auto", marginRight: QR + 28, borderTop: `1px solid rgba(243,239,230,0.28)`, paddingTop: 14 }}>
+          {/* The Demo Day, in person (Angpao, 2026-11-26), big enough that people see there's a day at Chula ("ปิดท้าย make it bigger so people know we have demo day at Chula"). Its day isn't told yet, so only the place and time print. It fits because of tighter gaps above (title, facts, prize band). The text sits 14px under the line (Angpao, same day: "move ปิดท้าย text and all those down abit it too close to the line"). */}
           <p style={{ margin: 0, fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 40, lineHeight: "48px", color: EL.cream }}>
             ปิดท้ายด้วย <span style={{ fontWeight: 400, color: HIGHLIGHT }}>Demo Day</span> ที่จุฬาฯ
           </p>
