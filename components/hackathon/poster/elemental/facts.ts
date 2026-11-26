@@ -64,6 +64,11 @@ export const ELEMENTAL = {
   slug: "elemental-2026",
   /** Last day to sign up, Bangkok time (inclusive). */
   registrationClosesOn: "2026-12-04",
+  /**
+   * The time sign-up closes that day, Bangkok time: 23:59, after the 19:00
+   * opening (Big, 2026-11-26; company-brain decisions/log.md).
+   */
+  registrationClosesAt: "23:59",
   /** Where it happens. */
   venueTh: "ออนไลน์ทาง Discord",
   /** The same, short enough for a ticket stub. */
