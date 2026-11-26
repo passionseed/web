@@ -120,7 +120,8 @@ export function ElementalNewsPoster({ id = "elemental-news" }: { id?: string }) 
             <span style={{ fontWeight: 200, fontSize: 92, lineHeight: "96px", letterSpacing: "-0.01em", color: HIGHLIGHT }}>Demo Day</span>
             <span style={{ marginBottom: 8, fontWeight: 400, fontSize: 23, lineHeight: "31px" }}>
               <span className="block" style={{ fontWeight: 600, fontSize: 30, lineHeight: "40px" }}>
-                @<Chula />
+                {/* The place is the CSII building at Chula, not just Chula (Angpao, 2026-11-26). */}
+                @ ตึก CSII<Chula />
               </span>
               <span className="block">
                 {demo.date ? `${formatThaiDate(demo.date)} · ` : ""}
@@ -134,7 +135,7 @@ export function ElementalNewsPoster({ id = "elemental-news" }: { id?: string }) 
           </div>
         </div>
         <div className="whitespace-nowrap" style={{ marginTop: 12, fontWeight: 500, fontSize: 40, lineHeight: "52px" }}>
-          แข่งนานขึ้นเป็น {ELEMENTAL.days} วัน แล้วไปโชว์ผลงานที่จุฬาฯ
+          แข่งนานขึ้นเป็น {ELEMENTAL.days} วัน แล้วไปโชว์ผลงานที่ตึก CSII จุฬา
         </div>
       </div>
 
