@@ -4,7 +4,7 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
 import { PassionSeedWordmark } from "@/components/hackathon/PassionSeedWordmark";
 
 import { EL, EL_FONT } from "../brand";
-import { Chula, EditionWord, Fact, ICON, Pixels, RegisterQr } from "../ElementalKeyPoster";
+import { Chula, EditionWord, ICON, Pixels, RegisterQr } from "../ElementalKeyPoster";
 import { ELEMENTAL, thaiDayRange } from "../facts";
 
 /**
@@ -19,8 +19,8 @@ import { ELEMENTAL, thaiDayRange } from "../facts";
  * - one picture fills the sheet, at full brightness, with one bright object
  *   in a calm photo. Here a pink pixel sun coming up behind the ridge, with
  *   pixel clouds; pink is Chula's colour on these posters;
- * - three sizes of type only: the title on the sky, one row of small facts
- *   with pixel icons, one big yellow line on the dark foot;
+ * - three sizes of type only: the title on the sky, the date change under
+ *   it, one big yellow line on the dark foot;
  * - type sits on calm parts of the picture, never on a box;
  * - the same anchors: names top left, QR code bottom right, one line at the
  *   bottom.
@@ -43,7 +43,8 @@ const HIGHLIGHT = "#ffd067";
 /** The dates before the change (Angpao, 2026-11-19), shown crossed out. */
 const OLD_RANGE = "5–7";
 
-const due = ELEMENTAL.schedule.find((s) => s.kind === "due");
+/** "ธ.ค.", taken from the new range so the two always match. */
+const MONTH = thaiDayRange().split(" ").slice(1).join(" ");
 
 export function ElementalNewsPoster({ id = "elemental-news" }: { id?: string }) {
   const demo = ELEMENTAL.demoDay;
@@ -98,19 +99,16 @@ export function ElementalNewsPoster({ id = "elemental-news" }: { id?: string }) 
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/hackathon/partners/csii.png" alt="CSII, Chulalongkorn School of Integrated Innovation" width={368} height={120} />
         </div>
-        {/* The facts as one row under the title, in ink on the sky. The date leads, with the old one crossed out. */}
-        <div className="flex flex-wrap items-center gap-x-[18px] gap-y-[6px]" style={{ width: 700, marginLeft: 4, marginTop: 16, fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 23, lineHeight: "32px" }}>
-          <Fact icon="date" color={EL.ink}>
-            <span className="relative" style={{ color: EL.inkSoft, marginRight: 10 }}>
-              {OLD_RANGE}
-              <span className="absolute" style={{ left: -2, right: -2, top: "48%", height: 3, background: EL.ember, transform: "rotate(-32deg)" }} />
-            </span>
-            <span style={{ fontWeight: 600, background: `linear-gradient(transparent 55%, ${HIGHLIGHT} 55%, ${HIGHLIGHT} 92%, transparent 92%)`, padding: "0 4px" }}>{thaiDayRange()}</span>
-          </Fact>
-          <Fact icon="online" color={EL.ink}>ออนไลน์</Fact>
-          <Fact icon="school" color={EL.ink}>{`${ELEMENTAL.gradesTh} เท่านั้น`}</Fact>
-          {due ? <Fact icon="workshop" color={EL.ink}>{`ส่งคลิป ${formatThaiDate(due.date)} ${due.time} น.`}</Fact> : null}
-          <Fact icon="friends" color={EL.ink}>{`สมัครได้ถึง ${formatThaiDate(ELEMENTAL.registrationClosesOn)}`}</Fact>
+        {/* Under the title, only the date change, big (Angpao, 2026-11-26: "the only one needed is date change so remove everything else and make it more clear and bigger"): the old dates crossed out, an arrow, the new ones on a highlighter mark. */}
+        <div className="flex items-center whitespace-nowrap" style={{ marginLeft: 4, marginTop: 22, gap: 22, fontFamily: EL_FONT.display }}>
+          <Pixels rows={ICON.date} fill={{ "#": EL.ink }} cell={6} />
+          <span className="relative" style={{ fontWeight: 300, fontSize: 50, lineHeight: "64px", color: EL.inkSoft }}>
+            {OLD_RANGE} {MONTH}
+            {/* A slanted cross-out, so it can't merge with the dash in "5–7". */}
+            <span className="absolute" style={{ left: -6, right: -6, top: "50%", height: 5, background: EL.ember, transform: "rotate(-9deg)" }} />
+          </span>
+          <span style={{ fontWeight: 300, fontSize: 50, lineHeight: "64px", color: EL.ink }}>→</span>
+          <span style={{ fontWeight: 600, fontSize: 84, lineHeight: "92px", letterSpacing: "-0.01em", background: `linear-gradient(transparent 52%, ${HIGHLIGHT} 52%, ${HIGHLIGHT} 92%, transparent 92%)`, padding: "0 10px" }}>{thaiDayRange()}</span>
         </div>
       </div>
 
