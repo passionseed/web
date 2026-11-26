@@ -292,17 +292,8 @@ describe("KPIs", () => {
   const shiftPrice = getShiftCohortByName("SHIFT[3]")!.priceBaht;
 
   function kpiReplies(call: Call): Reply {
-    if (call.options?.head) return { count: 7 };
     if (!firstPageOnly(call)) return { data: [] };
     switch (call.table) {
-      case "profiles":
-        return {
-          data: [
-            { created_at: "2026-10-26T01:00:00Z" },
-            { created_at: "2026-10-25T01:00:00Z" },
-            { created_at: "2026-10-15T01:00:00Z" },
-          ],
-        };
       case "trial_accesses":
         return { data: [{ price_amount: 1490, paid_at: "2026-10-20T03:00:00Z", verified_at: null }] };
       case "user_roles":
@@ -320,66 +311,81 @@ describe("KPIs", () => {
           ],
         };
       case "shift_applications":
-        return call.select === "cohort, paid_at"
-          ? { data: [{ cohort: "SHIFT[3]", paid_at: "2026-10-22T03:00:00Z" }] }
-          : { data: [{ paid_at: "2026-10-26T02:00:00Z" }] };
-      case "student_node_progress":
+        return { data: [{ cohort: "SHIFT[3]", paid_at: "2026-10-22T03:00:00Z" }] };
+      case "hackathon_event_registrations":
+        // Revenue reads amounts; the seat KPIs read one row per sign-up.
+        return call.select === "amount_baht, paid_at, created_at"
+          ? { data: [{ amount_baht: 199, paid_at: "2026-10-25T03:00:00Z", created_at: "2026-10-25T02:00:00Z" }] }
+          : {
+              data: [
+                { status: "paid", member_count: 1, source: null, created_at: "2026-10-25T02:00:00Z", paid_at: "2026-10-25T03:00:00Z" },
+                { status: "paid", member_count: 3, source: "ig", created_at: "2026-10-26T01:00:00Z", paid_at: "2026-10-26T02:00:00Z" },
+                { status: "pending", member_count: 2, source: null, created_at: "2026-10-26T01:00:00Z", paid_at: null },
+                { status: "cancelled", member_count: 5, source: null, created_at: "2026-10-24T01:00:00Z", paid_at: null },
+              ],
+            };
+      case "hackathon_pipeline":
         return {
           data: [
-            { user_id: "u1", arrived_at: "2026-10-25T01:00:00Z", started_at: "2026-10-26T01:00:00Z", submitted_at: null },
+            { kind: "sponsor", stage: "signed", element: null, amount_thb: 5000, in_kind: false },
+            { kind: "sponsor", stage: "talking", element: null, amount_thb: null, in_kind: false },
+            { kind: "speaker", stage: "yes", element: "water", amount_thb: null, in_kind: false },
           ],
         };
-      case "shift_round_evidence":
-        return { data: [{ user_id: "u2", submitted_at: "2026-10-24T01:00:00Z" }] };
-      case "shift_round_checkins":
-        return { data: [{ submitted_at: "2026-10-26T02:00:00Z", shift_round_entries: { user_id: "u2" } }] };
-      case "path_activity_progress":
-        return { error: { message: "permission denied" } };
       case "dm_conversations":
         return { error: { message: "timeout" } };
-      case "user_map_enrollments":
-        return { data: [{ enrolled_at: "2026-10-26T01:00:00Z" }] };
-      case "path_enrollments":
-        return { data: [{ enrolled_at: "2026-10-19T01:00:00Z" }] };
       default:
         return { data: [] };
     }
   }
 
-  test("computes value, previous window and a 30-day Bangkok series", async () => {
+  test("leads with the Elemental hackathon: seats, pace, sponsors and voices", async () => {
+    mockReply = kpiReplies;
+    const kpis = await computeAdminKpis(NOW);
+    expect(kpis.map((k) => k.key)).toEqual([
+      "elemental_seats",
+      "elemental_seats_per_day",
+      "elemental_sponsors",
+      "elemental_voices",
+      "revenue_30d",
+      "new_leads_7d",
+    ]);
+    const byKey = Object.fromEntries(kpis.map((k) => [k.key, k]));
+
+    // Paid sign-ups count every member; pending and cancelled ones count nothing.
+    expect(byKey.elemental_seats).toMatchObject({ value: 4, total: 350, format: "ratio", href: "/admin/hackathon/elemental" });
+    expect(byKey.elemental_seats.series).toHaveLength(30);
+    expect(byKey.elemental_seats.series!.slice(-2)).toEqual([1, 3]);
+
+    // 26 Oct to the 50-seat checkpoint on 26 Nov: 46 seats over 32 selling days.
+    expect(byKey.elemental_seats_per_day).toMatchObject({ value: 2, label: "Seats a day needed for 50 by 26 Nov" });
+
+    expect(byKey.elemental_sponsors).toMatchObject({ value: 1, total: 3 });
+    expect(byKey.elemental_sponsors.hint).toContain("1 talking");
+    expect(byKey.elemental_voices).toMatchObject({ value: 1, total: 5 });
+    expect(byKey.elemental_voices.hint).toContain("Missing: earth, air, fire, aether.");
+
+    // Sign-ups are read once and shared by both seat KPIs.
+    const seatReads = mockCalls.filter(
+      (c) => c.table === "hackathon_event_registrations" && c.select !== "amount_baht, paid_at, created_at",
+    );
+    expect(seatReads).toHaveLength(1);
+  });
+
+  test("revenue adds paid hackathon sign-ups to trials, manual payments and SHIFT seats", async () => {
     mockReply = kpiReplies;
     const kpis = Object.fromEntries((await computeAdminKpis(NOW)).map((k) => [k.key, k]));
 
-    expect(kpis.signups_7d).toMatchObject({ value: 2, previous: 1, format: "number", href: "/admin/users" });
-    expect(kpis.signups_7d.series).toHaveLength(30);
-    expect(kpis.signups_7d.series!.slice(-2)).toEqual([1, 1]);
-
-    // 1490 trial + 500 THB manual + one SHIFT seat; USD skipped; Sep 10 is the previous window.
+    // 1490 trial + 500 THB manual + one SHIFT seat + one ฿199 sign-up; USD skipped; Sep 10 is the previous window.
     // Rows not recorded by an admin, and non-positive amounts, add nothing.
-    expect(kpis.revenue_30d).toMatchObject({ value: 1490 + 500 + shiftPrice, previous: 1000, format: "baht" });
+    expect(kpis.revenue_30d).toMatchObject({ value: 1490 + 500 + shiftPrice + 199, previous: 1000, format: "baht" });
     const roles = mockCalls.find((c) => c.table === "user_roles")!;
     expect(op(roles, "eq", "role")).toEqual(["eq", "role", "admin"]);
     expect(kpis.revenue_30d.hint).toContain("estimate");
-
-    const cohort = focusCohort("2026-10-26");
-    expect(kpis.shift_seats).toMatchObject({ value: 7, total: cohort.seats, format: "ratio" });
-    expect(kpis.shift_seats.series!.at(-1)).toBe(1);
-
-    expect(kpis.active_learners_7d.value).toBe(2);
-    expect(kpis.active_learners_7d.series!.at(-1)).toBe(2);
-    expect(kpis.active_learners_7d.hint).toContain("Not counted (could not read): PathLab activities.");
+    const hackathon = mockCalls.find((c) => c.table === "hackathon_event_registrations" && c.select?.startsWith("amount_baht"))!;
+    expect(op(hackathon, "eq", "status")).toEqual(["eq", "status", "paid"]);
 
     expect(kpis.new_leads_7d.value).toBeNull();
-    expect(kpis.pathlab_enrollments_7d).toMatchObject({ value: 1, previous: 1 });
-  });
-
-  test("reads timestamps only, paged, from the start of the window", async () => {
-    mockReply = kpiReplies;
-    await computeAdminKpis(NOW);
-    const signups = mockCalls.find((c) => c.table === "profiles")!;
-    expect(signups.select).toBe("created_at");
-    expect(op(signups, "gte", "created_at")?.[2]).toBe("2026-09-26T17:00:00.000Z");
-    expect(op(signups, "range")).toEqual(["range", 0, 999]);
     const leads = mockCalls.find((c) => c.table === "dm_conversations")!;
     expect(op(leads, "not", "admin_tags")).toEqual(["not", "admin_tags", "cs", "{internal}"]);
   });

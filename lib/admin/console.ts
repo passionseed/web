@@ -243,12 +243,12 @@ export function totalAttention(snapshot: AdminQueueSnapshot | null): number {
 // ---------------------------------------------------------------------------
 
 export type AdminKpiKey =
+  | "elemental_seats"
+  | "elemental_seats_per_day"
+  | "elemental_sponsors"
+  | "elemental_voices"
   | "revenue_30d"
-  | "shift_seats"
-  | "signups_7d"
-  | "active_learners_7d"
-  | "new_leads_7d"
-  | "pathlab_enrollments_7d";
+  | "new_leads_7d";
 
 export interface AdminKpi {
   key: AdminKpiKey;
