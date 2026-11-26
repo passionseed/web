@@ -148,10 +148,10 @@ export default async function QuizResultPage({ params, searchParams }: { params:
               ))}
             </div>
             <p className="mt-4 text-2xl" style={{ fontFamily: EL_FONT.display, lineHeight: 1.4 }}>
-              ทำมันจริงใน 3 วัน กับเพื่อนอีก 1 ถึง 4 คน
+              ทำมันจริงใน {ELEMENTAL.days} วัน กับเพื่อนอีก 1 ถึง 4 คน
             </p>
             <p className="mt-2" style={{ color: EL.inkSoft }}>
-              {ELEMENTAL.edition} Hackathon {thaiDateLine()} ออนไลน์ สำหรับ {ELEMENTAL.gradesTh} รางวัลรวม {prizeTotal()} บาท
+              {ELEMENTAL.edition} Hackathon {thaiDateLine()} {ELEMENTAL.venueTh} สำหรับ {ELEMENTAL.gradesTh} รางวัลรวม {prizeTotal()} บาท
             </p>
             <p className="mt-4 text-lg">
               มากับเพื่อน ฿{ELEMENTAL.groupPriceBaht} ต่อคน <span style={{ color: EL.inkSoft }}>(คนเดียว ฿{ELEMENTAL.priceBaht})</span>

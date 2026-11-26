@@ -1,6 +1,7 @@
 import type { ElementKey } from "@/components/hackathon/elemental/media";
 import { EL } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENT_ICON_COLOR } from "@/components/hackathon/poster/elemental/element-icons";
+import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 
 /**
  * The Elemental quiz: "เธอคือธาตุอะไร". Eight questions, five answers each,
@@ -101,7 +102,7 @@ export const QUIZ_QUESTIONS: readonly QuizQuestion[] = [
     ],
   },
   {
-    th: "ได้ 3 วันแก้ปัญหาสิ่งแวดล้อมหนึ่งเรื่อง เธออยากเป็นคน...",
+    th: `ได้ ${ELEMENTAL.days} วันแก้ปัญหาสิ่งแวดล้อมหนึ่งเรื่อง เธออยากเป็นคน...`,
     answers: [
       { element: "water", th: "ไปคุยกับคนที่เจอปัญหาจริงๆ" },
       { element: "air", th: "ออกแบบให้คนอยากใช้" },

@@ -4,15 +4,24 @@ import { useRef } from "react";
 import { motion, useReducedMotion, useTransform } from "framer-motion";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
-import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
+import { ELEMENTAL, type ElementalSlotKind } from "@/components/hackathon/poster/elemental/facts";
 import { formatThaiDate } from "@/lib/content/shift-cohort";
 import { useSectionScroll } from "./use-section-scroll";
 
-const SCHEDULE_TIME_COLOR = {
+const SCHEDULE_TIME_COLOR: Record<ElementalSlotKind, string> = {
   open: EL.creamSoft,
   workshop: EL.toxicCyan,
+  build: EL.toxicCyan,
   due: EL.flame,
-} as const;
+  demo: EL.flameCore,
+};
+
+/**
+ * The workshops are still on, but which of their old times (Sat 5 Dec 10:00
+ * and 19:00, Sun 6 Dec 19:00) still hold after the 12 Dec extension is
+ * (fill in) in company-brain, so no time is shown until it's decided.
+ */
+const WORKSHOP_TIME_SOON = "ประกาศเวลาเร็ว ๆ นี้";
 
 const BEGINNER_JOURNEY = [
   {
@@ -21,7 +30,7 @@ const BEGINNER_JOURNEY = [
     fear: "ยังไม่มีทีม ยังไม่มีไอเดีย",
     answer:
       "มาคนเดียวได้เลย เราช่วยจับคู่ทีมให้ก่อนเริ่ม แล้วเข้าเวิร์กช็อปแรก ฝึกสัมภาษณ์คนจริงจนเจอปัญหาที่ใช่",
-    session: "เสาร์ 5 ธ.ค. · 10:00–11:00 น. · เวิร์กช็อปสัมภาษณ์และหากลุ่มลูกค้า",
+    session: `เวิร์กช็อปสัมภาษณ์และหากลุ่มลูกค้า · ${WORKSHOP_TIME_SOON}`,
   },
   {
     step: "02",
@@ -29,15 +38,15 @@ const BEGINNER_JOURNEY = [
     fear: "ไม่เคยแข่ง เขียนโค้ดไม่เก่ง",
     answer:
       "มีเวิร์กช็อปพาลงมือสร้างจริง พร้อมพี่เลี้ยงช่วยแก้จุดติดขัดตลอดงาน",
-    session: "เสาร์ 5 ธ.ค. · 19:00–20:00 น. · เวิร์กช็อปสร้างผลงาน",
+    session: `เวิร์กช็อปสร้างผลงาน · ${WORKSHOP_TIME_SOON}`,
   },
   {
     step: "03",
     color: EL.flameCore,
     fear: "ไม่เคยพรีเซนต์งานแข่งมาก่อน",
     answer:
-      "ก่อนถึงคืนส่งงาน มีเวิร์กช็อปช่วยเรียบเรียงเรื่องและวิธีเล่า ให้คลิปผลงานของคุณชัด คม และตรงประเด็น",
-    session: "อาทิตย์ 6 ธ.ค. · 19:00–20:00 น. · เวิร์กช็อปการนำเสนอ",
+      "ก่อนส่งงานรอบสุดท้าย มีเวิร์กช็อปช่วยเรียบเรียงเรื่องและวิธีเล่า ให้ผลงานของคุณเล่าได้ชัด คม และตรงประเด็น",
+    session: `เวิร์กช็อปการนำเสนอ · ${WORKSHOP_TIME_SOON}`,
   },
 ] as const;
 
@@ -95,7 +104,7 @@ function JourneyRow({
 }
 
 /**
- * Beginner-friendly pitch + guided 3-day workshop & mentor journey + full schedule.
+ * Beginner-friendly pitch + guided workshop & mentor journey + full schedule.
  * Sharp editorial lines, zero cards, zero icons, Apple scroll-driven reveal.
  */
 export function BeginnerJourneySection() {
@@ -137,7 +146,7 @@ export function BeginnerJourneySection() {
             className="mt-6 max-w-2xl text-base leading-relaxed text-[#e8e3d9] sm:text-xl"
             style={{ fontFamily: "var(--font-bai-jamjuree), sans-serif" }}
           >
-            เริ่มจากศูนย์ได้เลย ใน {ELEMENTAL.days} วันบน Discord มีเวิร์กช็อปและพี่เลี้ยงช่วยจนส่งงาน
+            เริ่มจากศูนย์ได้เลย ทำงานบน Discord มีเวิร์กช็อปและพี่เลี้ยงช่วยจนส่งงาน
           </p>
         </motion.div>
 
@@ -148,20 +157,20 @@ export function BeginnerJourneySection() {
           ))}
         </ol>
 
-        {/* Full 3-Day Schedule */}
+        {/* Full schedule */}
         <div className="mt-20 sm:mt-24">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-baseline">
             <h3
               className="text-3xl text-[#faf8f4] sm:text-4xl"
               style={{ fontFamily: EL_FONT.display, fontWeight: 200 }}
             >
-              ตาราง {ELEMENTAL.days} วัน {ELEMENTAL.venueTh}
+              ตาราง {ELEMENTAL.days} วัน
             </h3>
             <p
               className="text-sm text-[#d4cec2]"
               style={{ fontFamily: "var(--font-bai-jamjuree), sans-serif" }}
             >
-              ทีมละ {ELEMENTAL.teamMin}–{ELEMENTAL.teamMax} คน · เริ่มปฐมนิเทศเย็นวันศุกร์
+              ทีมละ {ELEMENTAL.teamMin}–{ELEMENTAL.teamMax} คน · {ELEMENTAL.venueTh}
             </p>
           </div>
 
@@ -170,7 +179,7 @@ export function BeginnerJourneySection() {
               const isDue = slot.kind === "due";
               return (
                 <li
-                  key={`${slot.date}-${slot.time}`}
+                  key={`${slot.date}-${slot.time}-${slot.kind}`}
                   className="grid grid-cols-1 gap-1 border-b border-[#f3efe6]/16 py-5 sm:grid-cols-[160px_140px_1fr] sm:items-baseline sm:gap-6"
                 >
                   <span
@@ -183,7 +192,7 @@ export function BeginnerJourneySection() {
                     className="text-xs tracking-[0.06em]"
                     style={{ fontFamily: EL_FONT.mono, color: SCHEDULE_TIME_COLOR[slot.kind] }}
                   >
-                    {slot.time} น.
+                    {slot.time ? `${slot.time} น.` : null}
                   </span>
                   <span
                     className="text-base sm:text-lg"

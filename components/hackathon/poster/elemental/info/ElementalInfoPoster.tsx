@@ -6,7 +6,7 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
 import { EL, EL_FONT } from "../brand";
 import { AetherPixels, ELEMENT_ICON_ROWS, Pixels, type ElementIconKey } from "../element-icons";
 import { RegisterQr } from "../ElementalKeyPoster";
-import { ELEMENTAL, prizeTotal, thaiDayRange } from "../facts";
+import { ELEMENTAL, prizeTotal, thaiDayRange, type ElementalSlotKind } from "../facts";
 
 /**
  * Elemental Hackathon, Instagram slide 2 (1080x1350): every fact in one
@@ -49,7 +49,7 @@ const TROPHY = ["###########", "#.#h#####.#", "#.#h#####.#", ".#.h####.#.", "...
 const HIGHLIGHT = "#ffd067";
 const baht = (n: number) => `฿${n.toLocaleString("en-US")}`;
 
-const SLOT_COLOR = { open: EL.ash, workshop: EL.toxicCyan, due: EL.flame } as const;
+const SLOT_COLOR: Record<ElementalSlotKind, string> = { open: EL.ash, workshop: EL.toxicCyan, build: EL.toxicCyan, due: EL.flame, demo: HIGHLIGHT };
 
 function Trophy({ cell }: { cell: number }) {
   return (
@@ -132,8 +132,8 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
 
         {/* Facts, 3 x 2 */}
         <div style={{ marginTop: 18, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", columnGap: 36, rowGap: 12 }}>
-          <Fact tag="วันแข่ง" big={thaiDayRange()} below={`${YEAR_TH} · หยุดยาว ${ELEMENTAL.days} วัน`} />
-          <Fact tag="รูปแบบ" big="ออนไลน์" below={`${ELEMENTAL.venueTh.replace("ออนไลน์", "").trim()} อยู่ที่ไหนก็ร่วมได้`} />
+          <Fact tag="วันแข่ง" big={thaiDayRange()} below={`${YEAR_TH} · ${ELEMENTAL.days} วัน`} />
+          <Fact tag="รูปแบบ" big="ออนไลน์" below="Demo Day ที่ BAScii" />
           <Fact tag="ใครสมัครได้" big={ELEMENTAL.gradesTh} below="นักเรียนจากทั่วประเทศ" />
           <Fact tag="ทีม" big={`${ELEMENTAL.teamMin}–${ELEMENTAL.teamMax} คน`} below="มาคนเดียวได้ เราหาทีมให้" />
           <Fact tag="ค่าสมัคร" big={`฿${ELEMENTAL.groupPriceBaht} / คน`} below={`มากับเพื่อน · คนเดียว ฿${ELEMENTAL.priceBaht}`} />
@@ -192,8 +192,8 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
                 {ELEMENTAL.schedule
                   .filter((s) => s.date === d)
                   .map((s) => (
-                    <div key={s.time + s.th} style={{ marginTop: 8, paddingLeft: 12, borderLeft: `4px solid ${SLOT_COLOR[s.kind]}` }}>
-                      <p style={{ margin: 0, fontFamily: EL_FONT.mono, fontSize: 18, color: SLOT_COLOR[s.kind] }}>{s.time}</p>
+                    <div key={`${s.time}${s.th}`} style={{ marginTop: 8, paddingLeft: 12, borderLeft: `4px solid ${SLOT_COLOR[s.kind]}` }}>
+                      {s.time ? <p style={{ margin: 0, fontFamily: EL_FONT.mono, fontSize: 18, color: SLOT_COLOR[s.kind] }}>{s.time}</p> : null}
                       <p style={{ margin: "2px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 21, lineHeight: "28px" }}>{s.th}</p>
                     </div>
                   ))}
