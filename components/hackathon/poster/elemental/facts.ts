@@ -73,6 +73,8 @@ export const ELEMENTAL = {
   longWeekend: false,
   priceBaht: 199,
   groupPriceBaht: 149,
+  /** One friend invited by a paid solo (฿199) payer: 199 + 99 = 2 × 149 (Big, 2026-11-26). */
+  buddyPriceBaht: 99,
   prizeTotalBaht: 20000,
   /**
    * The three prizes: cash and Claude credit, in baht. With the five element

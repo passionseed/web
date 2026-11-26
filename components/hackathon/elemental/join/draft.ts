@@ -1,4 +1,5 @@
 import { ADULT_AGE } from "@/lib/hackathon/elemental/registration";
+import type { BuddyOwe } from "@/lib/hackathon/elemental/buddy-pass";
 import { HEARD_FROM_VALUES } from "@/lib/hackathon/elemental/heard-from";
 import { isRudeTeamName } from "@/lib/hackathon/elemental/team-name";
 
@@ -8,7 +9,13 @@ import { isRudeTeamName } from "@/lib/hackathon/elemental/team-name";
  * (lib/hackathon/elemental/registration.ts).
  */
 
-export type Mode = "solo" | "create" | "join";
+export type Mode = "solo" | "create" | "join" | "buddy";
+
+export type BuddyPassOffer = {
+  code: string;
+  senderName: string;
+  owe: BuddyOwe;
+};
 
 export type Draft = {
   mode: Mode | null;
@@ -148,13 +155,21 @@ export function stepForServerPath(path: (string | number)[]): StepKey {
 }
 
 /** The body for POST /api/hackathon/elemental/register. */
-export function registrationBody(d: Draft, inviteCode: string | undefined, source?: string, utm?: Record<string, string>) {
+export function registrationBody(
+  d: Draft,
+  inviteCode: string | undefined,
+  source?: string,
+  utm?: Record<string, string>,
+  buddyPass?: BuddyPassOffer,
+) {
   const minor = isMinor(d);
   const mode = d.mode ?? "solo";
   return {
     teamMode: mode,
     teamName: mode === "create" ? d.teamName : undefined,
     inviteCode: mode === "join" ? inviteCode : undefined,
+    passCode: mode === "buddy" ? buddyPass?.code : undefined,
+    buddyOwe: mode === "buddy" ? buddyPass?.owe : undefined,
     members: [
       {
         fullName: d.fullName,

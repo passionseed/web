@@ -103,3 +103,33 @@ describe("registrationSchema heardFrom", () => {
     expect(registrationSchema.safeParse({ ...base, members: [adult] }).success).toBe(true);
   });
 });
+
+describe("registrationSchema buddy mode", () => {
+  it("needs a well-formed pass code", () => {
+    expect(registrationSchema.safeParse({ ...base, members: [adult], teamMode: "buddy" }).success).toBe(false);
+    expect(
+      registrationSchema.safeParse({ ...base, members: [adult], teamMode: "buddy", passCode: "x" }).success,
+    ).toBe(false);
+    expect(
+      registrationSchema.safeParse({ ...base, members: [adult], teamMode: "buddy", passCode: "0123456789ab" }).success,
+    ).toBe(true);
+  });
+
+  it("is for exactly one person", () => {
+    expect(
+      registrationSchema.safeParse({ ...base, members: [adult, adult], teamMode: "buddy", passCode: "0123456789ab" })
+        .success,
+    ).toBe(false);
+  });
+
+  it("turns an unknown owe into boba", () => {
+    const r = registrationSchema.parse({
+      ...base,
+      members: [adult],
+      teamMode: "buddy",
+      passCode: "0123456789ab",
+      buddyOwe: "gold",
+    });
+    expect(r.buddyOwe).toBe("boba");
+  });
+});
