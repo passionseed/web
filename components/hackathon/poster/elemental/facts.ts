@@ -2,9 +2,11 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
 
 /**
  * Facts the Elemental posters print. Source: passionseed/company-brain.
- * - Dates: 5 to 7 December 2026, 3 days over the long weekend (told by
- *   Angpao, 2026-11-19). This changes the 5 to 8 December in
- *   decisions/log.md, which needs a new entry there.
+ * - Dates: 5 to 10 December 2026, with a Demo Day at CSII, Chulalongkorn
+ *   University, 13:00 to 17:00, where sponsors and people from each field
+ *   come to see the work (told by Angpao, 2026-11-26). It replaces 5 to 7
+ *   December, 3 days over the long weekend (Angpao, 2026-11-19). Which day
+ *   the Demo Day is: not told yet.
  * - Prices: ฿199 alone (told by Angpao, 2026-11-20; it replaces ฿190) and
  *   ฿149 a person with others (company-brain numbers.md).
  * - Elements and theme: private/hackathon-december-2026.md (PR #87) and
@@ -30,10 +32,15 @@ export const ELEMENTAL = {
   series: "The Next Decade",
   edition: "Elemental",
   startDate: "2026-12-05",
-  endDate: "2026-12-07",
-  days: 3,
-  /** The dates fall on a 3-day long weekend (Sat 5 to Mon 7 Dec). */
-  longWeekend: true,
+  endDate: "2026-12-10",
+  days: 6,
+  /** 5 to 10 Dec is longer than the long weekend (Sat 5 to Mon 7 Dec). */
+  longWeekend: false,
+  /**
+   * The Demo Day, in person (Angpao, 2026-11-26). date is null until it is
+   * told: print the place, not a day.
+   */
+  demoDay: { date: null as string | null, time: "13:00–17:00", placeTh: "CSII จุฬาฯ", placeFull: "Chulalongkorn School of Integrated Innovation (CSII), จุฬาลงกรณ์มหาวิทยาลัย" },
   priceBaht: 199,
   groupPriceBaht: 149,
   prizeTotalBaht: 20000,

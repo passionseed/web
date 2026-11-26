@@ -292,6 +292,8 @@ const ICON = {
   friends: [".##...##.", "####.####", ".##...##.", ".........", "###...###", "####.####", "####.####", ".........", "........."],
   workshop: ["#########", "#.......#", "#.##....#", "#....##.#", "#.###...#", "#.......#", "#########", "...#.#...", "..#...#.."],
   /** A graduation cap with its tassel: who the hackathon is for. */
+  /** A map pin: the Demo Day's place. */
+  pin: ["..#####..", ".##...##.", ".#.....#.", ".##...##.", "..#####..", "...###...", "....#....", ".........", "#########"],
   school: ["....#....", "...###...", ".#######.", "#########", ".#######.", "#..###...", "#.#...#..", "#..###...", "........."],
 } as const;
 
@@ -724,9 +726,11 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
           <div className="flex flex-wrap items-center gap-x-[24px] gap-y-[6px]" style={{ width: 660, marginLeft: 4, marginTop: 4, fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 23, lineHeight: "32px" }}>
             <Fact icon="date" color={EL.ink}>{thaiDayRange()}</Fact>
             <Fact icon="online" color={EL.ink}>ออนไลน์</Fact>
+            <Fact icon="pin" color={EL.ink}>{`Demo Day ที่ ${ELEMENTAL.demoDay.placeTh}`}</Fact>
             <Fact icon="friends" color={EL.ink}>{`มากับเพื่อน ฿${ELEMENTAL.groupPriceBaht} ต่อคน`}</Fact>
-            <Fact icon="workshop" color={EL.ink}>{`${BEGINNER[0]} ${BEGINNER[1]}`}</Fact>
             <Fact icon="school" color={EL.ink}>{who}</Fact>
+            {/* Last, so the longest fact takes the third line alone (three lines since the Demo Day joined, 2026-11-26). */}
+            <Fact icon="workshop" color={EL.ink}>{`${BEGINNER[0]} ${BEGINNER[1]}`}</Fact>
           </div>
         ) : null}
       </div>
