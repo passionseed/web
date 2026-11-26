@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
 import { SHIFT_PAYMENT } from "@/lib/content/shift-cohort";
+import { SHARE } from "@/lib/hackathon/elemental/share";
 import type { ElementalDiscordOutcome } from "@/lib/hackathon/elemental/discordLink";
 import { teamLabel } from "@/lib/hackathon/elemental/team-name";
 import type { PublicRegistration } from "@/lib/supabase/hackathon-event-registrations";
@@ -29,7 +30,17 @@ type Props = {
   links: { line: string | null; discord: string | null };
   /** How the last Discord sign-in from this page went (?discord=…). */
   discordOutcome?: ElementalDiscordOutcome | null;
+  /** Share-for-a-free-seat card, when sharing is open and this sign-up hasn't paid. */
+  share?: ShareCardData | null;
   demo?: boolean;
+};
+
+export type ShareCardData = {
+  href: string;
+  seatsLeft: number;
+  /** The school this sign-up holds, if it picked one. */
+  schoolName: string | null;
+  status: "held" | "sent" | null;
 };
 
 function Title({ children }: { children: ReactNode }) {
@@ -181,8 +192,35 @@ function CancelledSection() {
   );
 }
 
+/**
+ * Share the poster in a school group, get a free seat (decisions/log.md,
+ * 2026-11-26). Under the payment, so paying stays the first thing.
+ * Thai copy: Claude's placeholder until Angpao writes it.
+ */
+function ShareCard({ share }: { share: ShareCardData }) {
+  if (!share.schoolName && share.seatsLeft <= 0) return null;
+  return (
+    <section className="space-y-3 rounded-2xl border p-5 sm:p-6" style={{ borderColor: "rgba(29,33,31,0.2)" }}>
+      <h2 className="text-xl font-semibold">แชร์ให้ทั้งโรงเรียน ได้ที่นั่งฟรี</h2>
+      {share.schoolName ? (
+        <p style={{ color: EL.inkSoft }}>
+          โรงเรียน{share.schoolName} · {share.status === "sent" ? "ส่งแคปแล้ว ทีมงานกำลังตรวจ" : "โพสต์แล้วส่งแคปภายใน 24 ชั่วโมง"}
+        </p>
+      ) : (
+        <p style={{ color: EL.inkSoft }}>
+          โพสต์โปสเตอร์ของตัวเองในกลุ่ม LINE ของทั้งโรงเรียนหรือทั้งระดับชั้น สมาชิก {SHARE.minMembers} คนขึ้นไป ได้ที่นั่งฟรี 1 ที่
+          โรงเรียนละ 1 คน เหลือ {share.seatsLeft} ที่
+        </p>
+      )}
+      <Link href={share.href} className={`${primary} w-full`} style={outline}>
+        {share.schoolName ? "ดูโปสเตอร์ของฉัน" : "เลือกโรงเรียน รับโปสเตอร์"}
+      </Link>
+    </section>
+  );
+}
+
 function PendingSection(props: Props) {
-  const { token, reg, qrSrc, demo } = props;
+  const { token, reg, qrSrc, demo, share } = props;
   return (
     <section className="mt-6">
       {!demo && <TrackStep step="pay" />}
@@ -206,6 +244,11 @@ function PendingSection(props: Props) {
       {reg.team && (
         <div className="mt-10">
           <Team {...props} />
+        </div>
+      )}
+      {share && (
+        <div className="mt-10">
+          <ShareCard share={share} />
         </div>
       )}
     </section>

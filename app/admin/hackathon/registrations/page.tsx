@@ -1,13 +1,16 @@
 import { Badge } from "@/components/ui/badge";
 import { RegistrationActions } from "@/components/admin/hackathon/RegistrationActions";
+import { ShareClaimActions } from "@/components/admin/hackathon/ShareClaimActions";
 import { AdminEmptyState, AdminErrorState } from "@/components/admin/shared/AdminStates";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { formatBangkokDateTime } from "@/lib/admin/queue-tools/format";
 import { requireAdmin } from "@/lib/admin/requireAdmin";
+import { SHARE } from "@/lib/hackathon/elemental/share";
 import {
   listRegistrations,
   type AdminRegistration,
 } from "@/lib/supabase/hackathon-event-registrations";
+import { listShareClaims, releaseExpiredHolds, type ShareClaim } from "@/lib/supabase/hackathon-share-claims";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -56,7 +59,30 @@ function buddyLinks(rows: AdminRegistration[]): BuddyLinks {
   return { from, usedBy };
 }
 
-function RegistrationCard({ r, buddy }: { r: AdminRegistration; buddy: BuddyLinks }) {
+const CLAIM_LABEL: Record<ShareClaim["status"], string> = {
+  held: "picked, not sent yet",
+  sent: "says the screenshot is sent: check IG",
+  won: "free seat given",
+  released: "released",
+};
+
+/** The school this sign-up picked on the share page, and the approve / reject buttons. */
+function ShareClaimLine({ c }: { c: ShareClaim }) {
+  const custom = c.schoolKey.startsWith("custom:");
+  return (
+    <div className={cn("flex flex-wrap items-center gap-3 rounded-md border p-3 text-sm", c.status === "sent" && "border-primary/50 bg-primary/10")}>
+      <span>
+        <span className="font-medium">Share:</span> {c.schoolName}
+        {c.province && `, ${c.province}`}
+        {custom && " (typed, not on the list: check the name)"} · code {c.code.toUpperCase()} · {CLAIM_LABEL[c.status]}
+        {c.status === "held" && ` until ${formatBangkokDateTime(c.heldUntil, { year: false })}`}
+      </span>
+      {(c.status === "held" || c.status === "sent") && <ShareClaimActions id={c.id} />}
+    </div>
+  );
+}
+
+function RegistrationCard({ r, buddy, claim }: { r: AdminRegistration; buddy: BuddyLinks; claim?: ShareClaim }) {
   return (
     <li className="space-y-3 rounded-lg border bg-muted/30 p-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -104,6 +130,8 @@ function RegistrationCard({ r, buddy }: { r: AdminRegistration; buddy: BuddyLink
       </p>
       {slipNote(r.slipCheck) && <p className="text-xs text-muted-foreground">{slipNote(r.slipCheck)}</p>}
       {r.status === "paid" && <p className="text-xs text-muted-foreground">{discordNote(r.discord)}</p>}
+      {r.adminNote && <p className="text-xs text-muted-foreground">Note: {r.adminNote}</p>}
+      {claim && <ShareClaimLine c={claim} />}
 
       <div className="flex flex-wrap items-start gap-4">
         {r.slipUrl && (
@@ -127,6 +155,17 @@ export default async function AdminHackathonRegistrationsPage() {
     console.error("[admin/hackathon/registrations] failed to load", error);
   }
 
+  // The share claims load on their own, so a missing table (migration not applied) can't break this page.
+  let claims: ShareClaim[] = [];
+  try {
+    await releaseExpiredHolds(ELEMENTAL.slug);
+    claims = await listShareClaims(ELEMENTAL.slug);
+  } catch (error) {
+    console.error("[admin/hackathon/registrations] share claims did not load", error);
+  }
+  const claimFor = new Map<string, ShareClaim>();
+  for (const c of claims) if (c.status !== "released" && !claimFor.has(c.registrationId)) claimFor.set(c.registrationId, c);
+
   if (rows === null) {
     return (
       <AdminErrorState
@@ -138,7 +177,10 @@ export default async function AdminHackathonRegistrationsPage() {
 
   const buddy = buddyLinks(rows);
   const order = { review: 0, pending: 1, paid: 2, cancelled: 3 } as const;
-  const sorted = [...rows].sort((a, b) => order[a.status] - order[b.status]);
+  // A share waiting for a check goes to the top.
+  const waiting = (r: AdminRegistration) => (claimFor.get(r.id)?.status === "sent" ? -1 : 0);
+  const sorted = [...rows].sort((a, b) => waiting(a) - waiting(b) || order[a.status] - order[b.status]);
+  const shareCount = (s: ShareClaim["status"]) => claims.filter((c) => c.status === s).length;
   const paid = rows.filter((r) => r.status === "paid");
   const seats = paid.reduce((n, r) => n + r.memberCount, 0);
   const baht = paid.reduce((n, r) => n + r.amountBaht, 0);
@@ -161,6 +203,12 @@ export default async function AdminHackathonRegistrationsPage() {
           Discord: {paid.filter((r) => r.discord?.joinedAt).length} of {paid.length} paid sign-ups are in the server
           through their sign-up page.
         </p>
+        {claims.length > 0 && (
+          <p className="mt-1 text-muted-foreground">
+            School-group shares: {shareCount("won")} of {SHARE.seats} free seats given · {shareCount("sent")} waiting for a
+            check · {shareCount("held")} picked a school, not sent yet.
+          </p>
+        )}
         {sources.length > 0 && (
           <p className="mt-1 text-muted-foreground">
             Paid seats by link: {sources.map(([k, n]) => `${k} ${n}`).join(" · ")}
@@ -172,7 +220,7 @@ export default async function AdminHackathonRegistrationsPage() {
       ) : (
         <ul className="space-y-3">
           {sorted.map((r) => (
-            <RegistrationCard key={r.id} r={r} buddy={buddy} />
+            <RegistrationCard key={r.id} r={r} buddy={buddy} claim={claimFor.get(r.id)} />
           ))}
         </ul>
       )}

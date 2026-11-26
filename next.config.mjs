@@ -77,6 +77,8 @@ const nextConfig = {
     "/api/shift/cert-health": ["./lib/shift-round/certificate/fonts/*.ttf"],
     // Code-authored Career Radar guides read clips.json and captions from disk (registry.server).
     "/radar/**": ["./lib/radar-guides/**/clips.json", "./lib/radar-guides/**/clips/*.vtt"],
+    // Elemental share page: the school list (search) and the poster without its QR code (poster maker).
+    "/api/hackathon/elemental/**": ["./lib/hackathon/elemental/schools/schools.json", "./lib/hackathon/elemental/share/poster-base.*"],
   },
   // Native Skia binding for the SHIFT certificate renderer: load from node_modules, never bundle.
   serverExternalPackages: ["@napi-rs/canvas"],

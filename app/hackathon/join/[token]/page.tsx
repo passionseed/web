@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { trirong } from "@/components/hackathon/elemental/fonts";
-import { PayView } from "@/components/hackathon/elemental/PayView";
+import { PayView, type ShareCardData } from "@/components/hackathon/elemental/PayView";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { elementalCommunityLinks } from "@/lib/hackathon/elemental/community-links";
 import { parseElementalDiscordOutcome } from "@/lib/hackathon/elemental/discordLink";
 import { elementalPayQr } from "@/lib/hackathon/elemental/pay-qr";
+import { shareOpen } from "@/lib/hackathon/elemental/share";
 import { getRegistrationByToken } from "@/lib/supabase/hackathon-event-registrations";
+import { getLiveClaim, releaseExpiredHolds, seatsLeft } from "@/lib/supabase/hackathon-share-claims";
 
 export const dynamic = "force-dynamic";
 
@@ -35,10 +37,29 @@ export default async function ElementalPayPage({
   const qrSrc = pending ? await elementalPayQr(reg.amountBaht) : null;
   // Only a paid page renders these.
   const links = reg.status === "paid" ? elementalCommunityLinks() : { line: null, discord: null };
+  const share = pending && shareOpen() ? await shareCard(token, reg.id) : null;
 
   return (
     <div className={trirong.variable}>
-      <PayView token={token} reg={reg} qrSrc={qrSrc} links={links} discordOutcome={discordOutcome} />
+      <PayView token={token} reg={reg} qrSrc={qrSrc} links={links} discordOutcome={discordOutcome} share={share} />
     </div>
   );
+}
+
+/** The share card's state. Never breaks the pay page: on any error there is no card. */
+async function shareCard(token: string, registrationId: string): Promise<ShareCardData | null> {
+  try {
+    await releaseExpiredHolds(ELEMENTAL.slug);
+    const [claim, left] = await Promise.all([getLiveClaim(registrationId), seatsLeft(ELEMENTAL.slug)]);
+    const live = claim && (claim.status === "held" || claim.status === "sent") ? claim : null;
+    return {
+      href: `/hackathon/join/${token}/share`,
+      seatsLeft: left,
+      schoolName: live?.schoolName ?? null,
+      status: live ? (live.status as "held" | "sent") : null,
+    };
+  } catch (error) {
+    console.error("[elemental share] no share card", error);
+    return null;
+  }
 }
