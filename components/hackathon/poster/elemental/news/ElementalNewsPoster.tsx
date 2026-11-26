@@ -179,11 +179,8 @@ export function ElementalNewsPoster({ id = "elemental-news" }: { id?: string }) 
         </div>
       </div>
 
-      {/* The foot: the QR code at the bottom left, level with the last sentence (Angpao, 2026-11-26: "put the qr at buttom left same level as แข่งนานขึ้น…"), and beside it one big yellow line with a small label, then the sentence. */}
-      <div className="absolute inset-x-[56px] bottom-[48px] flex items-end" style={{ gap: 24, fontFamily: EL_FONT.display, color: EL.cream }}>
-        <div style={{ background: EL.cream, padding: 9, flex: "none" }}>
-          <RegisterQr size={148} />
-        </div>
+      {/* The foot: one big yellow line with a small label, then the sentence, and the QR code at the bottom right, its foot level with that sentence (Angpao, 2026-11-26: "put the qr at buttom … same level as แข่งนานขึ้น…", then "I mean buttom right"). */}
+      <div className="absolute inset-x-[56px] bottom-[48px] flex items-end justify-between" style={{ gap: 24, fontFamily: EL_FONT.display, color: EL.cream }}>
         <div style={{ minWidth: 0 }}>
           <div className="flex items-end whitespace-nowrap" style={{ gap: 14 }}>
             <span style={{ marginBottom: 14 }}>
@@ -208,6 +205,9 @@ export function ElementalNewsPoster({ id = "elemental-news" }: { id?: string }) 
           <div className="whitespace-nowrap" style={{ marginTop: 8, fontWeight: 500, fontSize: 38, lineHeight: "50px" }}>
             แข่งนานขึ้น แล้วไปโชว์ผลงานที่ตึก CSII จุฬา
           </div>
+        </div>
+        <div style={{ background: EL.cream, padding: 9, flex: "none" }}>
+          <RegisterQr size={148} />
         </div>
       </div>
 
