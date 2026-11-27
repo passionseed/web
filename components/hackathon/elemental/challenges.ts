@@ -61,6 +61,16 @@ export interface ElementDetail {
   stretchTh: string;
   cases: readonly ElementCase[];
   cover?: CaseImage;
+  /** The organisation that owns this element's problem (เจ้าของโจทย์), once one has agreed. */
+  owner?: ProblemOwner;
+}
+
+/** A problem owner: an outside organisation that brings the real problem to the teams. */
+export interface ProblemOwner {
+  name: string;
+  /** Thai name and place, shown after the name. */
+  detailTh: string;
+  url: string;
 }
 
 /** Under each challenge: the cases are examples, not the only problems (Angpao, 2026-11-20). */
@@ -68,6 +78,12 @@ export const ANY_PROBLEM_NOTE = "ทีมเลือกปัญหาใด�
 
 export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
   water: {
+    // Big, 2026-11-26, after Angpao's call with them the same day.
+    owner: {
+      name: "The Mekong School",
+      detailTh: "โรงเรียนแม่น้ำโขง เชียงของ",
+      url: "https://mekongschool.org/",
+    },
     ctaTh: "ทำไมน้ำประปาแม่สายต้องหยุดจ่าย",
     problemTh:
       "แม่น้ำทางภาคเหนือมีสารหนูจากเหมืองต้นน้ำ ครอบครัวที่ดื่ม ทำนา และหาปลาจากแม่น้ำมักรู้ตัวช้า และตัวเลขผลตรวจในข่าวก็อ่านยาก",

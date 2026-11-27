@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
+import { BUDDY_OWE_KEYS, BUDDY_PASS_CODE_RE, DEFAULT_BUDDY_OWE } from "./buddy-pass";
 import { HEARD_FROM_VALUES } from "./heard-from";
 import { isRudeTeamName } from "./team-name";
 
@@ -71,10 +72,15 @@ export const memberSchema = z
   });
 
 export const registrationSchema = z.object({
-  /** solo: alone (maybe matched); create: start a team; join: join one by its invite code. */
-  teamMode: z.enum(["solo", "create", "join"]).default("solo"),
+  /**
+   * solo: alone (maybe matched); create: start a team; join: join one by its
+   * invite code; buddy: one friend on a paid solo sign-up's buddy pass.
+   */
+  teamMode: z.enum(["solo", "create", "join", "buddy"]).default("solo"),
   teamName: optionalTrimmed(80),
   inviteCode: z.string().regex(INVITE_CODE_RE).optional(),
+  passCode: z.string().regex(BUDDY_PASS_CODE_RE).optional(),
+  buddyOwe: z.enum(BUDDY_OWE_KEYS).catch(DEFAULT_BUDDY_OWE).optional(),
   members: z.array(memberSchema).min(1).max(ELEMENTAL.maxGroupSize),
   contactEmail: z.string().trim().toLowerCase().email().max(200),
   contactPhone: thaiPhone,
@@ -95,6 +101,11 @@ export const registrationSchema = z.object({
   }
   if (r.teamMode === "join" && !r.inviteCode) {
     ctx.addIssue({ code: "custom", path: ["inviteCode"], message: "required" });
+  }
+  if (r.teamMode === "buddy") {
+    if (!r.passCode) ctx.addIssue({ code: "custom", path: ["passCode"], message: "required" });
+    // A pass is for one friend.
+    if (r.members.length !== 1) ctx.addIssue({ code: "custom", path: ["members"], message: "one" });
   }
 });
 

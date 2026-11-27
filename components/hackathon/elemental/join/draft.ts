@@ -1,4 +1,5 @@
 import { ADULT_AGE } from "@/lib/hackathon/elemental/registration";
+import type { BuddyOwe } from "@/lib/hackathon/elemental/buddy-pass";
 import { HEARD_FROM_VALUES } from "@/lib/hackathon/elemental/heard-from";
 import { isRudeTeamName } from "@/lib/hackathon/elemental/team-name";
 
@@ -8,7 +9,13 @@ import { isRudeTeamName } from "@/lib/hackathon/elemental/team-name";
  * (lib/hackathon/elemental/registration.ts).
  */
 
-export type Mode = "solo" | "create" | "join";
+export type Mode = "solo" | "create" | "join" | "buddy";
+
+export type BuddyPassOffer = {
+  code: string;
+  senderName: string;
+  owe: BuddyOwe;
+};
 
 export type Draft = {
   mode: Mode | null;
@@ -48,21 +55,20 @@ export const emptyDraft = (mode: Mode | null = null): Draft => ({
   contactAfter: false,
 });
 
-export type StepKey = "mode" | "team" | "name" | "school" | "parent" | "contact" | "heard" | "review";
+export type StepKey = "mode" | "name" | "school" | "parent" | "contact" | "heard" | "review";
 
 export type Errors = Partial<Record<keyof Draft, string>>;
 
 export const isMinor = (d: Draft) => d.age !== "" && Number(d.age) < ADULT_AGE;
 
 /**
- * The steps this person sees: a team name only when starting a team, a parent only under ADULT_AGE.
- * The team name comes after the person's own name, so it can start filled in (suggestTeamName):
- * half the people who met an empty team-name box first left there (funnel, 24 to 25 Nov 2026).
+ * The steps this person sees: a parent only under ADULT_AGE. There is no team-name step: a new
+ * team is named "ทีม<nickname>" (suggestTeamName) and renamed on the pay page. The team-name
+ * screen lost more people than any other, even after it moved behind the name step and started
+ * filled in (funnel, 24 to 26 Nov 2026).
  */
 export function stepsFor(d: Draft): StepKey[] {
-  const steps: StepKey[] = ["mode", "name"];
-  if (d.mode === "create") steps.push("team");
-  steps.push("school");
+  const steps: StepKey[] = ["mode", "name", "school"];
   if (d.age === "" || isMinor(d)) steps.push("parent");
   steps.push("contact", "heard", "review");
   return steps;
@@ -87,6 +93,9 @@ export function suggestTeamName(d: Pick<Draft, "nickname" | "fullName">): string
   return who ? `ทีม${who}`.slice(0, 80) : "";
 }
 
+/** The name a new team is created with: what they typed, else "ทีม<nickname>". */
+export const teamNameFor = (d: Pick<Draft, "teamName" | "nickname" | "fullName">) => d.teamName.trim() || suggestTeamName(d);
+
 export const TEAM_NAME_RUDE = "ชื่อนี้ใช้ไม่ได้ ลองชื่ออื่น";
 
 /** What's wrong on one step, in Thai, keyed by field. Empty means the step is done. */
@@ -96,12 +105,10 @@ export function validateStep(step: StepKey, d: Draft): Errors {
     case "mode":
       if (!d.mode) e.mode = "เลือกแบบที่จะสมัครก่อน";
       break;
-    case "team":
-      if (!d.teamName.trim()) e.teamName = "ใส่ชื่อทีมก่อน";
-      else if (isRudeTeamName(d.teamName)) e.teamName = TEAM_NAME_RUDE;
-      break;
     case "name":
       if (!d.fullName.trim()) e.fullName = "ใส่ชื่อ-นามสกุล";
+      // A new team is named after the nickname, so the team-name check happens here.
+      else if (d.mode === "create" && isRudeTeamName(teamNameFor(d))) e.nickname = TEAM_NAME_RUDE;
       break;
     case "school": {
       const age = Number(d.age);
@@ -138,7 +145,9 @@ export function firstInvalidStep(d: Draft): StepKey | null {
 /** Which step owns a field the server rejected (zod issue path), e.g. ["members", 0, "age"] → school. */
 export function stepForServerPath(path: (string | number)[]): StepKey {
   const key = String(path[path.length - 1] ?? "");
-  if (key === "teamName" || key === "inviteCode") return "team";
+  if (key === "inviteCode") return "mode";
+  // The team name comes from the nickname, so a rejected one is fixed there.
+  if (key === "teamName") return "name";
   if (key === "fullName" || key === "nickname") return "name";
   if (key === "age" || key === "school") return "school";
   if (key.startsWith("parent")) return "parent";
@@ -148,13 +157,21 @@ export function stepForServerPath(path: (string | number)[]): StepKey {
 }
 
 /** The body for POST /api/hackathon/elemental/register. */
-export function registrationBody(d: Draft, inviteCode: string | undefined, source?: string, utm?: Record<string, string>) {
+export function registrationBody(
+  d: Draft,
+  inviteCode: string | undefined,
+  source?: string,
+  utm?: Record<string, string>,
+  buddyPass?: BuddyPassOffer,
+) {
   const minor = isMinor(d);
   const mode = d.mode ?? "solo";
   return {
     teamMode: mode,
-    teamName: mode === "create" ? d.teamName : undefined,
+    teamName: mode === "create" ? teamNameFor(d) : undefined,
     inviteCode: mode === "join" ? inviteCode : undefined,
+    passCode: mode === "buddy" ? buddyPass?.code : undefined,
+    buddyOwe: mode === "buddy" ? buddyPass?.owe : undefined,
     members: [
       {
         fullName: d.fullName,

@@ -6,7 +6,7 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
 import { EL, EL_FONT } from "../brand";
 import { AetherPixels, ELEMENT_ICON_ROWS, Pixels, type ElementIconKey } from "../element-icons";
 import { RegisterQr } from "../ElementalKeyPoster";
-import { ELEMENTAL, prizeTotal, thaiDayRange } from "../facts";
+import { ELEMENTAL, prizeTotal, thaiDayRange, type ElementalSlotKind } from "../facts";
 
 /**
  * Elemental Hackathon, Instagram slide 2 (1080x1350): every fact in one
@@ -49,7 +49,7 @@ const TROPHY = ["###########", "#.#h#####.#", "#.#h#####.#", ".#.h####.#.", "...
 const HIGHLIGHT = "#ffd067";
 const baht = (n: number) => `฿${n.toLocaleString("en-US")}`;
 
-const SLOT_COLOR = { open: EL.ash, workshop: EL.toxicCyan, due: EL.flame } as const;
+const SLOT_COLOR: Record<ElementalSlotKind, string> = { open: EL.ash, workshop: EL.toxicCyan, build: EL.toxicCyan, due: EL.flame, demo: HIGHLIGHT };
 
 function Trophy({ cell }: { cell: number }) {
   return (
@@ -88,7 +88,6 @@ function Fact({ tag, big, below }: { tag: string; big: ReactNode; below: ReactNo
 
 export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) {
   const el = (k: string) => ELEMENTAL.elements.find((e) => e.key === k);
-  const days = Array.from(new Set(ELEMENTAL.schedule.map((s) => s.date)));
   return (
     <div
       id={id}
@@ -132,8 +131,8 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
 
         {/* Facts, 3 x 2 */}
         <div style={{ marginTop: 18, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", columnGap: 36, rowGap: 12 }}>
-          <Fact tag="วันแข่ง" big={thaiDayRange()} below={`${YEAR_TH} · หยุดยาว ${ELEMENTAL.days} วัน`} />
-          <Fact tag="รูปแบบ" big="ออนไลน์" below={`${ELEMENTAL.venueTh.replace("ออนไลน์", "").trim()} อยู่ที่ไหนก็ร่วมได้`} />
+          <Fact tag="วันแข่ง" big={thaiDayRange()} below={`${YEAR_TH} · ${ELEMENTAL.days} วัน`} />
+          <Fact tag="รูปแบบ" big="ออนไลน์" below={`Demo Day ที่ ${ELEMENTAL.demoDay.venueTh}`} />
           <Fact tag="ใครสมัครได้" big={ELEMENTAL.gradesTh} below="นักเรียนจากทั่วประเทศ" />
           <Fact tag="ทีม" big={`${ELEMENTAL.teamMin}–${ELEMENTAL.teamMax} คน`} below="มาคนเดียวได้ เราหาทีมให้" />
           <Fact tag="ค่าสมัคร" big={`฿${ELEMENTAL.groupPriceBaht} / คน`} below={`มากับเพื่อน · คนเดียว ฿${ELEMENTAL.priceBaht}`} />
@@ -182,22 +181,24 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
           </div>
         </div>
 
-        {/* Schedule */}
-        <div style={{ marginTop: 10 }}>
+        {/*
+          Schedule: one line per slot, the day printed on its first slot only.
+          It was a column per day, which fit the old three days but not the
+          nine-day programme: the columns wrapped and ran under the QR code.
+          The list stays left of the QR code.
+        */}
+        <div style={{ marginTop: 10, marginRight: QR + 28 }}>
           <Head>กำหนดการ</Head>
-          <div style={{ marginTop: 9, display: "grid", gridTemplateColumns: `repeat(${days.length}, 1fr)`, columnGap: 14 }}>
-            {days.map((d) => (
-              <div key={d} style={{ borderTop: `2px solid ${EL.cream}`, paddingTop: 9 }}>
-                <p style={{ margin: 0, fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 25, lineHeight: "32px" }}>{formatThaiDate(d)}</p>
-                {ELEMENTAL.schedule
-                  .filter((s) => s.date === d)
-                  .map((s) => (
-                    <div key={s.time + s.th} style={{ marginTop: 8, paddingLeft: 12, borderLeft: `4px solid ${SLOT_COLOR[s.kind]}` }}>
-                      <p style={{ margin: 0, fontFamily: EL_FONT.mono, fontSize: 18, color: SLOT_COLOR[s.kind] }}>{s.time}</p>
-                      <p style={{ margin: "2px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 21, lineHeight: "28px" }}>{s.th}</p>
-                    </div>
-                  ))}
-              </div>
+          <div style={{ marginTop: 9, borderTop: `2px solid ${EL.cream}`, paddingTop: 8, display: "grid", gridTemplateColumns: "136px 4px 74px 1fr", columnGap: 12, rowGap: 2 }}>
+            {ELEMENTAL.schedule.map((s, i) => (
+              <Fragment key={`${s.date}${s.time}${s.th}`}>
+                <span style={{ fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 21, lineHeight: "28px", whiteSpace: "nowrap" }}>
+                  {i === 0 || ELEMENTAL.schedule[i - 1].date !== s.date ? formatThaiDate(s.date) : ""}
+                </span>
+                <span style={{ background: SLOT_COLOR[s.kind] }} />
+                <span style={{ fontFamily: EL_FONT.mono, fontSize: 18, lineHeight: "28px", color: SLOT_COLOR[s.kind] }}>{s.time ?? ""}</span>
+                <span style={{ fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 21, lineHeight: "28px", whiteSpace: "nowrap" }}>{s.th}</span>
+              </Fragment>
             ))}
           </div>
         </div>

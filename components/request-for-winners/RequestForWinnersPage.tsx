@@ -7,8 +7,8 @@ import {
   RFW,
   SOON_TH,
   maybeThaiDate,
+  opensLine,
   priceLine,
-  thaiDateWithYear,
   weekLines,
 } from "./facts";
 
@@ -107,7 +107,7 @@ function TimelineRow({
 }
 
 function ApplyAction() {
-  const opens = thaiDateWithYear(RFW.opensOn);
+  const opens = opensLine();
   if (RFW.applyUrl) {
     return (
       <Link
@@ -131,7 +131,7 @@ function ApplyAction() {
 
 function Hero() {
   const details: [string, string | null][] = [
-    ["เปิดรับสมัคร", thaiDateWithYear(RFW.opensOn)],
+    ["เปิดรับสมัคร", opensLine()],
     ["ระยะเวลา", `${RFW.weeks} สัปดาห์`],
     ["Demo Day", maybeThaiDate(RFW.demoDayOn)],
     ["ค่าเข้าร่วม", priceLine(RFW.priceBaht)],
