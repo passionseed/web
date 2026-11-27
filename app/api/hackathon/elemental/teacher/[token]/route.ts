@@ -3,12 +3,12 @@ import { z } from "zod";
 
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { sharePhase } from "@/lib/hackathon/elemental/share";
-import { TEACHER_TOKEN_RE } from "@/lib/hackathon/elemental/share-rules";
+import { SEAT_RULE, TEACHER_TOKEN_RE } from "@/lib/hackathon/elemental/share-rules";
 import { safeServerError } from "@/lib/security/route-guards";
 import { isTrustedAdminRequest } from "@/lib/security/request-origin";
 import { getTeacherLink, linkView, nameRecipient, type ShareLink } from "@/lib/supabase/hackathon-share-links";
 
-const studentBody = z.object({ studentCode: z.string().trim().min(8).max(20) });
+const studentBody = z.object({ seatIndex: z.number().int().min(1).max(SEAT_RULE.maxSeatsPerLink), studentCode: z.string().trim().min(8).max(20) });
 const noStore = { "Cache-Control": "no-store" };
 
 type Guarded = { ok: true; link: ShareLink } | { ok: false; response: NextResponse };
@@ -23,7 +23,7 @@ async function guard(request: NextRequest, token: string): Promise<Guarded> {
   return { ok: true, link };
 }
 
-/** The teacher link's live numbers, invite and school seat, for the page to refresh. */
+/** The teacher link's live numbers, invite and seats, for the page to refresh. */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   try {
     const { token } = await params;
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-/** The teacher names the unpaid student who gets the school's free seat (by the student's code). */
+/** The teacher names the unpaid student who gets one of the link's seats (by seat index and the student's code). */
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   try {
     const { token } = await params;
@@ -43,7 +43,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (!g.ok) return g.response;
     const parsed = studentBody.safeParse(await request.json().catch(() => null));
     if (!parsed.success) return NextResponse.json({ error: "invalid" }, { status: 400 });
-    const result = await nameRecipient(ELEMENTAL.slug, g.link, null, parsed.data.studentCode);
+    const result = await nameRecipient(ELEMENTAL.slug, g.link, null, parsed.data.seatIndex, parsed.data.studentCode);
     if (!result.ok) return NextResponse.json({ error: result.reason }, { status: 409 });
     return NextResponse.json({ link: result.view }, { headers: noStore });
   } catch (error) {

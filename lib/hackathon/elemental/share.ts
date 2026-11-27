@@ -3,21 +3,10 @@ import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { elementalRegistrationOpen } from "./registration";
 
 /**
- * Share links for a free seat (Big, 2026-11-27, replacing the one-claim-per-
- * school rules of 2026-11-26):
- * - any signed-up student, paid or not, and any teacher can make a link for
- *   their school; many links per school are fine;
- * - a link qualifies at 50 real devices and 3 paid seats from it;
- * - each school has one free seat: the first link there to qualify gets it,
- *   and staff confirm it (a quick fraud check) before it is given;
- * - a teacher whose link reaches 50 devices is invited to Demo Day.
- * Rules and their tests: ./share-rules.ts.
+ * Share links for free seats. The seat rule (50 devices + 1 paid per seat, up
+ * to 2 per link) lives in SEAT_RULE in ./share-rules.ts, with its tests.
  */
 export const SHARE = {
-  /** Real devices that opened the link (lib/hackathon/elemental/link-views.ts). */
-  devicesGoal: 50,
-  /** Paid seats from sign-ups that came through the link. */
-  paidGoal: 3,
   /** How often an open share page refreshes its numbers. */
   pollMs: 20_000,
 } as const;

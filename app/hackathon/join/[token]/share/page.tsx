@@ -37,9 +37,8 @@ export default async function ElementalSharePage({ params }: { params: Promise<{
       const [own, v] = await Promise.all([getStudentLink(reg.id), posterVersion()]);
       link = own ? await linkView(ELEMENTAL.slug, own, reg) : null;
       version = v;
-      // Once the school's seat is out of reach (taken, turned down, or closed short), the team's board row
-      // is the next goal. Null on any error.
-      if (link && (link.seat.state === "taken" || link.seat.state === "rejected" || (state === "after-close" && link.seat.state === "open"))) {
+      // Once the link has all its seats, or sign-up closed, the team's board row is the next goal. Null on any error.
+      if (link && (link.seats.maxed || state === "after-close")) {
         const style = await loadTeamStyleCard(ELEMENTAL.slug, { id: reg.id, team: reg.teamId ? { id: reg.teamId } : null }, `/hackathon/join/${token}/share`);
         if (style) teamRow = <TeamStyleRow token={token} data={style} />;
       }

@@ -6,15 +6,13 @@ import { Check, Copy, Share2 } from "lucide-react";
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { formatThaiDate } from "@/lib/content/shift-cohort";
-import { SHARE } from "@/lib/hackathon/elemental/share";
-import { progressPhase, reachedDevicesGoal, type ShareLinkView } from "@/lib/hackathon/elemental/share-rules";
+import { progressPhase, reachedInvite, SEAT_RULE, TEACHER_INVITE_DEVICES, type ShareLinkView } from "@/lib/hackathon/elemental/share-rules";
 
-import { CodeEntry } from "./CodeEntry";
 import { recipientError } from "./copy-shared";
 import { PosterBlock, ShareBar, usePosterShare } from "./PosterBlock";
-import { meterModeFor, SeatMeter } from "./Progress";
-import { SeatMessage, SeatNote } from "./SeatNote";
-import { btn, CodeText, filled, Lead, outline, Page, schoolLabel, TextButton, TextLink, Title } from "./ui";
+import { SeatMeter } from "./Progress";
+import { SeatList, SeatNote } from "./SeatNote";
+import { btn, CodeText, filled, Lead, outline, Page, schoolLabel, TextLink, Title } from "./ui";
 import { usePollLink } from "./usePoll";
 
 /**
@@ -39,13 +37,11 @@ const COPY = {
     start: "ส่งลิงก์ให้นักเรียนเลย",
     early: "แชร์ต่อเลย",
     close: "อีกนิดเดียว",
-    done: "ครบแล้ว รอทีมงานเช็ก",
+    done: "ครบแล้ว",
     invited: "คุณครูได้รับเชิญมา Demo Day",
-    seat: "เลือกนักเรียนรับที่นั่งฟรี",
-    named: "รอทีมงานเช็ก",
-    given: "ให้ที่นั่งฟรีแล้ว",
-    taken: "ที่นั่งฟรีของโรงเรียนนี้มีคนได้แล้ว",
-    rejected: "ลิงก์นี้ไม่ได้ที่นั่งฟรี",
+    naming: "เลือกนักเรียนรับที่นั่งฟรี",
+    checking: "รอทีมงานเช็ก",
+    given: (n: number) => `ให้ที่นั่งฟรีแล้ว ${n} ที่`,
     closed: "ปิดนับแล้ว",
   },
   barLine: "ส่งให้นักเรียนใน LINE",
@@ -54,11 +50,7 @@ const COPY = {
   invitePending: "ทีมงานจะยืนยันกับโรงเรียนก่อน แล้วส่งคำเชิญทางอีเมลหรือ LINE ที่ให้ไว้",
   inviteVerified: "ยืนยันกับโรงเรียนแล้ว ทีมงานจะส่งคำเชิญทางอีเมลหรือ LINE ที่ให้ไว้",
   inviteSent: "ทีมงานส่งคำเชิญแล้ว เช็กอีเมลหรือ LINE ที่ให้ไว้",
-  studentLabel: "รหัสนักเรียน",
-  studentHint: "นักเรียนดูรหัส 8 ตัวได้ที่หน้าที่นั่งของตัวเอง ต้องเป็นคนที่สมัครแล้วแต่ยังไม่จ่าย",
-  studentSubmit: "ให้ที่นั่งฟรี",
   student: "นักเรียน",
-  rename: "ใส่รหัสผิด เปลี่ยนรหัส",
   posterHeading: "โปสเตอร์ของคุณครู",
   posterLead: "QR บนโปสเตอร์คือลิงก์ของคุณครู ใครสแกนหรือกดลิงก์ ตัวเลขด้านบนจะขึ้น",
   frozenNote: "ปิดรับสมัครแล้ว ตัวเลขหยุดนับตอนปิด หน้านี้เปิดดูได้ถึงวัน Demo Day",
@@ -66,8 +58,8 @@ const COPY = {
   rules: [
     "นับเป็นเครื่อง เปิดซ้ำจากเครื่องเดิมนับครั้งเดียว",
     "นับคนจ่ายจากนักเรียนที่สแกน QR หรือกดลิงก์ของคุณครู แล้วสมัครและจ่าย",
-    `ครบ ${SHARE.devicesGoal} เครื่อง ได้รับเชิญมา Demo Day ทีมงานยืนยันกับโรงเรียนก่อนส่งคำเชิญ`,
-    `ที่นั่งฟรีมีโรงเรียนละ 1 ที่ ลิงก์แรกที่ครบ ${SHARE.devicesGoal} เครื่องและ ${SHARE.paidGoal} คนจ่ายได้ นับทั้งลิงก์ครูและลิงก์นักเรียน`,
+    `ครบ ${TEACHER_INVITE_DEVICES} เครื่อง ได้รับเชิญมา Demo Day ทีมงานยืนยันกับโรงเรียนก่อนส่งคำเชิญ`,
+    `ทุก ${SEAT_RULE.devicesPerSeat} เครื่อง + ${SEAT_RULE.paidPerSeat} คนจ่าย = ที่นั่งฟรี 1 ที่ ให้นักเรียนที่คุณครูเลือก ได้สูงสุด ${SEAT_RULE.maxSeatsPerLink} ที่`,
     "ทีมงานเช็กก่อนให้ที่นั่งทุกครั้ง",
     `แชร์ได้ถึงวันปิดรับสมัคร ${formatThaiDate(ELEMENTAL.registrationClosesOn)}`,
   ],
@@ -78,15 +70,15 @@ const COPY = {
 
 function titleFor(link: ShareLinkView, open: boolean): string {
   const t = COPY.titles;
-  const s = link.seat;
-  const invited = reachedDevicesGoal(link.progress);
-  if (!open && s.state === "open") return invited ? t.invited : t.closed;
-  if (s.state === "checking") return s.recipient.who === "other" ? t.named : t.seat;
-  if (s.state === "given") return t.given;
-  if (s.state === "rejected") return t.rejected;
+  const v = link.seats;
+  const invited = reachedInvite(v);
+  if (v.seats.some((x) => x.status === "needs_recipient")) return t.naming;
+  if (v.seats.some((x) => x.status === "qualified")) return t.checking;
   if (invited) return t.invited;
-  if (s.state === "taken") return t.taken;
-  return t[progressPhase(link.progress)];
+  if (!open) return t.closed;
+  const given = v.seats.filter((x) => x.status === "confirmed").length;
+  if (given) return t.given(given);
+  return t[progressPhase(v, v.seats.length)];
 }
 
 /** The Demo Day invite. Its own title only when the page's title is about something else. */
@@ -108,49 +100,31 @@ function InviteBlock({ link, main }: { link: ShareLinkView; main: boolean }) {
   );
 }
 
-function SeatBlock({ token, link, demo, onLink }: { token: string; link: ShareLinkView; demo?: boolean; onLink: (l: ShareLinkView) => void }) {
-  const [renaming, setRenaming] = useState(false);
-  const s = link.seat;
-  if (s.state === "open") return null;
-
-  const nameStudent = async (code: string): Promise<string | null> => {
+/** The link's earned seats, each given to a student the teacher names by code. */
+function Seats({ token, link, demo, onLink }: { token: string; link: ShareLinkView; demo?: boolean; onLink: (l: ShareLinkView) => void }) {
+  const nameStudent = async (index: number, code: string): Promise<string | null> => {
     if (demo) {
-      onLink({ ...link, seat: { state: "checking", recipient: { who: "other", code } } });
-      setRenaming(false);
+      onLink({
+        ...link,
+        seats: { ...link.seats, seats: link.seats.seats.map((x) => (x.index === index ? { index, status: "qualified" as const, recipientCode: code } : x)) },
+      });
       return null;
     }
     try {
       const res = await fetch(`/api/hackathon/elemental/teacher/${token}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentCode: code }),
+        body: JSON.stringify({ seatIndex: index, studentCode: code }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) return recipientError(data.error, COPY.student);
       onLink(data.link as ShareLinkView);
-      setRenaming(false);
       return null;
     } catch {
       return recipientError(undefined, COPY.student);
     }
   };
-
-  const naming = s.state === "checking" && (s.recipient.who === "none" || renaming);
-  return (
-    <SeatNote tone={s.state === "checking" || s.state === "given" ? "flame" : "plain"}>
-      <SeatMessage kind="teacher" seat={s} />
-      {naming && (
-        <div className="mt-5">
-          <CodeEntry label={COPY.studentLabel} hint={COPY.studentHint} submitLabel={COPY.studentSubmit} onSubmit={nameStudent} />
-        </div>
-      )}
-      {!naming && s.state === "checking" && s.recipient.who === "other" && (
-        <div className="mt-3">
-          <TextButton onClick={() => setRenaming(true)}>{COPY.rename}</TextButton>
-        </div>
-      )}
-    </SeatNote>
-  );
+  return <SeatList kind="teacher" view={link.seats} onName={nameStudent} />;
 }
 
 /**
@@ -216,8 +190,8 @@ function TeacherLink({
 }) {
   const open = phase === "open";
   const poster = usePosterShare(link.code, "teacher", posterVersion);
-  const mode = meterModeFor(link, open);
-  const invited = reachedDevicesGoal(link.progress) && link.seat.state !== "rejected";
+  const v = link.seats;
+  const invited = reachedInvite(v);
   const title = titleFor(link, open);
   // Right after the link is made, the keep-this-page block has its own LINE button: no second one pinned below it.
   const keepRef = useRef<HTMLDivElement>(null);
@@ -229,7 +203,7 @@ function TeacherLink({
     io.observe(el);
     return () => io.disconnect();
   }, [fresh]);
-  const start = open && link.seat.state === "open" && progressPhase(link.progress) === "start";
+  const start = open && v.seats.length === 0 && progressPhase(v) === "start";
 
   const posterSection = open && (
     <section className="space-y-3">
@@ -243,7 +217,7 @@ function TeacherLink({
       <PosterBlock poster={poster} />
     </section>
   );
-  const meter = <SeatMeter progress={link.progress} kind="teacher" mode={mode} race={link.race} live={open && !demo} frozen={!open} />;
+  const meter = <SeatMeter view={v} kind="teacher" live={open && !demo} />;
 
   return (
     <Page
@@ -253,7 +227,7 @@ function TeacherLink({
           <TextLink href="/hackathon/elemental">{COPY.more}</TextLink>
         </div>
       }
-      bar={open && link.seat.state === "open" && !keepVisible ? <ShareBar poster={poster} lineLabel={COPY.barLine} /> : undefined}
+      bar={open && !v.maxed && !keepVisible ? <ShareBar poster={poster} lineLabel={COPY.barLine} /> : undefined}
     >
       {fresh && (
         <div className="mb-8" ref={keepRef}>
@@ -265,9 +239,8 @@ function TeacherLink({
       {!open && <p className="mt-2 text-sm" style={{ color: EL.inkSoft }}>{COPY.frozenNote}</p>}
 
       <div className="mt-6 space-y-6">
-        {link.seat.state !== "taken" && <SeatBlock token={token} link={link} demo={demo} onLink={onLink} />}
+        <Seats token={token} link={link} demo={demo} onLink={onLink} />
         {invited && <InviteBlock link={link} main={title === COPY.titles.invited} />}
-        {link.seat.state === "taken" && <SeatBlock token={token} link={link} demo={demo} onLink={onLink} />}
         {start ? posterSection : meter}
       </div>
 

@@ -6,7 +6,7 @@ import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { formatBangkokDateTime } from "@/lib/admin/queue-tools/format";
 import { requireAdmin } from "@/lib/admin/requireAdmin";
 import { linkSource } from "@/lib/hackathon/elemental/share";
-import { GOALS } from "@/lib/hackathon/elemental/share-rules";
+import { SEAT_RULE, TEACHER_INVITE_DEVICES } from "@/lib/hackathon/elemental/share-rules";
 import {
   listRegistrations,
   type AdminRegistration,
@@ -62,11 +62,11 @@ function buddyLinks(rows: AdminRegistration[]): BuddyLinks {
 
 /** This sign-up's share link, in one line: the full row is in the Share links list above. */
 function ShareLinkLine({ l }: { l: AdminShareLink }) {
-  const status = l.status === "rejected" ? "rejected" : l.seat ? `free seat ${l.seat.status}` : l.schoolTaken ? "school seat taken" : "sharing";
+  const seats = l.seats.map((x) => `seat ${x.index} ${x.status.replace("_", " ")}`).join(", ");
   return (
     <p className="text-xs text-muted-foreground">
-      Share link {linkSource(l.kind, l.code)} · {l.schoolName} · {l.progress.devices}/{GOALS.devices} devices ·{" "}
-      {l.progress.paid}/{GOALS.paid} paid · {status}
+      Share link {linkSource(l.kind, l.code)} · {l.schoolName} · {l.progress.devices} devices · {l.progress.paid} paid ·{" "}
+      {l.seats.length}/{SEAT_RULE.maxSeatsPerLink} seats{seats && ` (${seats})`}
     </p>
   );
 }
@@ -195,9 +195,10 @@ export default async function AdminHackathonRegistrationsPage() {
         </p>
         {links.length > 0 && (
           <p className="mt-1 text-muted-foreground">
-            Share links: {share.links} ({share.students} students, {share.teachers} teachers) · {share.qualified} qualified,
-            waiting for a check · {share.confirmed} free seats confirmed · teachers at {GOALS.devices} devices: {share.teachersAtGoal},
-            verified {share.verified}, invited {share.invited}.
+            Share links: {share.links} ({share.students} students, {share.teachers} teachers) · free seats earned {share.seats}:{" "}
+            {share.waitingCheck} qualified (waiting for a check), {share.waitingName} waiting for a name, {share.confirmed} confirmed and given
+            {share.rejected > 0 && `, ${share.rejected} rejected`} · teachers at {TEACHER_INVITE_DEVICES} devices: {share.teachersAtGoal}, verified{" "}
+            {share.verified}, invited {share.invited}.
           </p>
         )}
         {sources.length > 0 && (

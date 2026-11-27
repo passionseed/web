@@ -7,24 +7,23 @@ import { Loader2 } from "lucide-react";
 import { EL } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { formatThaiDate } from "@/lib/content/shift-cohort";
-import { SHARE, SHARE_DEMO_CODE } from "@/lib/hackathon/elemental/share";
-import { progressPhase, type ShareLinkView } from "@/lib/hackathon/elemental/share-rules";
+import { SHARE_DEMO_CODE } from "@/lib/hackathon/elemental/share";
+import { progressPhase, SEAT_RULE, seatProgressView, type ShareLinkView } from "@/lib/hackathon/elemental/share-rules";
 
-import { CodeEntry } from "./CodeEntry";
 import { lineHelp, recipientError } from "./copy-shared";
 import { PosterBlock, ShareBar, usePosterShare } from "./PosterBlock";
-import { meterModeFor, SeatMeter } from "./Progress";
+import { SeatMeter } from "./Progress";
 import { SchoolPicker, type SchoolChoice } from "./SchoolPicker";
-import { SeatMessage, SeatNote } from "./SeatNote";
+import { SeatList } from "./SeatNote";
 import { btn, CodeText, ErrorLine, filled, hairline, Lead, outline, Page, schoolLabel, TextButton, TextLink, Title } from "./ui";
 import { usePollLink } from "./usePoll";
 
 /**
- * A signed-up student's share page (Big, 2026-11-27): pick your school, get
- * your own poster and link, watch the numbers fill. 50 devices and 3 paid
- * sign-ups from your link, first at your school: the school's free seat.
- * Paid or not, anyone signed up can share; a paid student gives the seat to
- * an unpaid friend by the friend's code.
+ * A signed-up student's share page: pick your school, get your own poster and
+ * link, watch the numbers fill. Every 50 devices + 1 paid sign-up from your
+ * link earns a free seat, up to 2 (SEAT_RULE). An unpaid student's first seat
+ * is their own sign-up; any other seat goes to an unpaid friend, named by the
+ * friend's code. Staff confirm each seat.
  */
 
 // copy: placeholder — Angpao rewrites
@@ -35,9 +34,9 @@ const COPY = {
   steps: [
     "เลือกโรงเรียน ได้โปสเตอร์ที่มี QR ของคุณเอง",
     "ส่งในกลุ่ม LINE ของโรงเรียน หรือให้เพื่อนช่วยส่งต่อ",
-    `ครบ ${SHARE.devicesGoal} เครื่อง และ ${SHARE.paidGoal} คนจ่าย ได้ที่นั่งฟรี 1 ที่ โรงเรียนละ 1 ที่ ใครครบก่อนได้ก่อน`,
+    `ทุก ${SEAT_RULE.devicesPerSeat} เครื่อง + ${SEAT_RULE.paidPerSeat} คนจ่าย ได้ที่นั่งฟรี 1 ที่ ได้สูงสุด ${SEAT_RULE.maxSeatsPerLink} ที่`,
   ],
-  paidNote: "จ่ายแล้วก็แชร์ได้ ถ้าครบก่อน ยกที่นั่งฟรีให้เพื่อนที่ยังไม่จ่าย",
+  paidNote: "จ่ายแล้วก็แชร์ได้ ที่นั่งฟรีที่ได้ ยกให้เพื่อนที่ยังไม่จ่าย",
   pickHeading: "โรงเรียนของคุณ",
   confirm: "ยืนยัน แล้วรับโปสเตอร์",
   confirmChange: "เปลี่ยนเป็นโรงเรียนนี้",
@@ -48,29 +47,23 @@ const COPY = {
     start: "ส่งโปสเตอร์ของคุณเลย",
     early: "แชร์ต่อเลย",
     close: "อีกนิดเดียว",
-    done: "ครบแล้ว รอทีมงานเช็ก",
-    checkingSelf: "ครบแล้ว รอทีมงานเช็ก",
-    checkingNone: "ครบแล้ว ยกที่นั่งให้เพื่อน",
-    checkingOther: "รอทีมงานเช็ก",
-    givenSelf: "ได้ที่นั่งฟรีแล้ว",
-    givenOther: "ยกที่นั่งให้เพื่อนแล้ว",
-    taken: "ที่นั่งฟรีของโรงเรียนนี้มีคนได้แล้ว",
-    rejected: "ลิงก์นี้ไม่ได้ที่นั่งฟรี",
+    done: "ครบแล้ว",
+    naming: "ได้ที่นั่งฟรีแล้ว ใส่รหัสเพื่อน",
+    checking: "ได้ที่นั่งฟรีแล้ว รอทีมงานเช็ก",
+    more: (n: number) => `ได้ ${n} ที่แล้ว แชร์ต่อได้อีก`,
+    maxed: (n: number) => `ได้ครบ ${n} ที่แล้ว`,
     closed: "ปิดนับแล้ว",
+    closedWith: (n: number) => `ปิดนับแล้ว · ได้ ${n} ที่`,
   },
-  friendLabel: "รหัสของเพื่อน",
-  friendHint: "ขอรหัส 8 ตัวจากหน้าที่นั่งของเพื่อน ต้องเป็นคนที่สมัครแล้วแต่ยังไม่จ่าย",
-  friendSubmit: "ยกที่นั่งให้เพื่อน",
   friend: "เพื่อน",
-  rename: "ใส่รหัสผิด เปลี่ยนรหัส",
-  mySeat: "ดูที่นั่งของฉัน",
   posterHeading: "โปสเตอร์ของคุณ",
   posterLead: "QR บนโปสเตอร์คือลิงก์ของคุณ ใครสแกนหรือกดลิงก์ ตัวเลขด้านบนจะขึ้น",
   rulesHeading: "กติกา",
   rules: [
     "นับเป็นเครื่อง เปิดซ้ำจากเครื่องเดิมนับครั้งเดียว",
     "นับคนจ่ายจากคนที่สแกน QR หรือกดลิงก์ของคุณ แล้วสมัครและจ่าย",
-    "โรงเรียนละ 1 ที่ ลิงก์แรกที่ครบได้ ทั้งลิงก์นักเรียนและลิงก์ครู",
+    `ทุก ${SEAT_RULE.devicesPerSeat} เครื่อง + ${SEAT_RULE.paidPerSeat} คนจ่าย = ที่นั่งฟรี 1 ที่ ลิงก์ละไม่เกิน ${SEAT_RULE.maxSeatsPerLink} ที่ ที่นั่งไม่เกินจำนวนคนจ่าย`,
+    "ที่นั่งแรกของคนที่ยังไม่จ่ายเป็นของตัวเอง ที่เหลือยกให้เพื่อนที่ยังไม่จ่าย",
     "ทีมงานเช็กก่อนให้ที่นั่งทุกครั้ง",
     `แชร์ได้ถึงวันปิดรับสมัคร ${formatThaiDate(ELEMENTAL.registrationClosesOn)}`,
   ],
@@ -85,7 +78,6 @@ const COPY = {
   board: "ดูกระดาน",
   cancelled: "การสมัครนี้ถูกยกเลิก แชร์รับที่นั่งไม่ได้",
   schoolError: {
-    locked: `เปลี่ยนโรงเรียนไม่ได้แล้ว เพราะลิงก์เริ่มมีเครื่องเปิดแล้ว ${lineHelp}`,
     code_taken: `สร้างลิงก์ไม่ได้ ${lineHelp}`,
     invalid: "ใช้ชื่อโรงเรียนนี้ไม่ได้ ลองพิมพ์ใหม่",
     closed: "ตอนนี้ปิดแล้ว",
@@ -103,20 +95,21 @@ type Props = {
   /** The school typed at sign-up, to start the search with. */
   startQuery: string;
   posterVersion: string;
-  /** The team's row on the board (builder B's TeamStyleRow), shown once the school's seat is out of reach. */
+  /** The team's row on the board (builder B's TeamStyleRow), shown once the link has all its seats or sign-up closed. */
   teamRow?: React.ReactNode;
   demo?: boolean;
 };
 
 function titleFor(link: ShareLinkView, open: boolean): string {
   const t = COPY.titles;
-  const s = link.seat;
-  if (!open && s.state === "open") return t.closed;
-  if (s.state === "taken") return t.taken;
-  if (s.state === "rejected") return t.rejected;
-  if (s.state === "checking") return s.recipient.who === "self" ? t.checkingSelf : s.recipient.who === "none" ? t.checkingNone : t.checkingOther;
-  if (s.state === "given") return s.recipient.who === "self" ? t.givenSelf : t.givenOther;
-  return t[progressPhase(link.progress)];
+  const v = link.seats;
+  const n = v.seats.length;
+  if (!open) return n ? t.closedWith(n) : t.closed;
+  if (v.seats.some((x) => x.status === "needs_recipient")) return t.naming;
+  if (v.seats.some((x) => x.status === "qualified")) return t.checking;
+  if (v.maxed) return t.maxed(n);
+  if (n) return t.more(n);
+  return t[progressPhase(v, n)];
 }
 
 /** Steps for a student with no link yet. */
@@ -171,13 +164,11 @@ function PickSchool({
           kind: "student",
           code: SHARE_DEMO_CODE,
           school: { name: pick.name, province: pick.province || null },
-          progress: { devices: 0, paid: 0 },
-          seat: { state: "open" },
           canChangeSchool: true,
           selfPaid: false,
           verified: false,
           invited: false,
-          race: { links: 1, leader: { devices: 0, paid: 0 }, youLead: true },
+          seats: seatProgressView({ progress: { devices: 0, paid: 0 }, rows: [], ownRegistrationId: null, selfPaid: false, phase: "open" }),
         });
       }
       const res = await fetch(`/api/hackathon/elemental/${token}/share`, {
@@ -213,56 +204,31 @@ function PickSchool({
   );
 }
 
-/** What happens with the school's seat, when there's news: checking, given, taken, or turned down. */
-function SeatBlock({ token, link, demo, onLink }: { token: string; link: ShareLinkView; demo?: boolean; onLink: (l: ShareLinkView) => void }) {
-  const [renaming, setRenaming] = useState(false);
-  const s = link.seat;
-  const backHref = `/hackathon/join/${token}`;
-
-  const nameFriend = async (code: string): Promise<string | null> => {
+/** The link's earned seats, with a code box where a friend still needs to be named. */
+function Seats({ token, link, demo, onLink }: { token: string; link: ShareLinkView; demo?: boolean; onLink: (l: ShareLinkView) => void }) {
+  const nameFriend = async (index: number, code: string): Promise<string | null> => {
     if (demo) {
-      onLink({ ...link, seat: { state: "checking", recipient: { who: "other", code } } });
-      setRenaming(false);
+      onLink({
+        ...link,
+        seats: { ...link.seats, seats: link.seats.seats.map((x) => (x.index === index ? { index, status: "qualified" as const, recipientCode: code } : x)) },
+      });
       return null;
     }
     try {
       const res = await fetch(`/api/hackathon/elemental/${token}/share`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ friendCode: code }),
+        body: JSON.stringify({ seatIndex: index, friendCode: code }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) return recipientError(data.error, COPY.friend);
       onLink(data.link as ShareLinkView);
-      setRenaming(false);
       return null;
     } catch {
       return recipientError(undefined, COPY.friend);
     }
   };
-
-  if (s.state === "open") return null;
-  const naming = s.state === "checking" && (s.recipient.who === "none" || renaming);
-  return (
-    <SeatNote tone={s.state === "given" || s.state === "checking" ? "flame" : "plain"}>
-      <SeatMessage kind="student" seat={s} />
-      {naming && (
-        <div className="mt-5">
-          <CodeEntry label={COPY.friendLabel} hint={COPY.friendHint} submitLabel={COPY.friendSubmit} onSubmit={nameFriend} />
-        </div>
-      )}
-      {!naming && s.state === "checking" && s.recipient.who === "other" && (
-        <div className="mt-3">
-          <TextButton onClick={() => setRenaming(true)}>{COPY.rename}</TextButton>
-        </div>
-      )}
-      {s.state === "given" && s.recipient.who === "self" && (
-        <Link href={backHref} className={`${btn} mt-4 w-full`} style={filled}>
-          {COPY.mySeat}
-        </Link>
-      )}
-    </SeatNote>
-  );
+  return <SeatList kind="student" view={link.seats} backHref={`/hackathon/join/${token}`} onName={nameFriend} />;
 }
 
 function Rules() {
@@ -300,9 +266,10 @@ function StudentLink(props: Props & { link: ShareLinkView; onLink: (l: ShareLink
   const { token, link, demo, onLink, state } = props;
   const open = state === "open";
   const poster = usePosterShare(link.code, "student", props.posterVersion);
-  const mode = meterModeFor(link, open);
-  const start = open && link.seat.state === "open" && progressPhase(link.progress) === "start";
-  const seatOpen = link.seat.state === "open";
+  const v = link.seats;
+  const start = open && v.seats.length === 0 && progressPhase(v) === "start";
+  // Seats still to earn: keep the share actions pinned. All earned, or closed: the team's board row is the next goal.
+  const stillEarning = open && !v.maxed;
 
   const posterSection = open && (
     <section className="space-y-3">
@@ -316,9 +283,7 @@ function StudentLink(props: Props & { link: ShareLinkView; onLink: (l: ShareLink
       <PosterBlock poster={poster} />
     </section>
   );
-  const meter = (
-    <SeatMeter progress={link.progress} kind="student" mode={mode} race={link.race} live={open && !demo} frozen={!open} showTitle={mode === "open"} />
-  );
+  const meter = <SeatMeter view={v} kind="student" live={open && !demo} />;
 
   return (
     <Page
@@ -328,7 +293,7 @@ function StudentLink(props: Props & { link: ShareLinkView; onLink: (l: ShareLink
           <TextLink href={`/hackathon/join/${token}`}>{COPY.back}</TextLink>
         </div>
       }
-      bar={open && seatOpen ? <ShareBar poster={poster} /> : undefined}
+      bar={stillEarning ? <ShareBar poster={poster} /> : undefined}
     >
       <Title>{titleFor(link, open)}</Title>
       <p className="mt-3 text-lg">
@@ -345,9 +310,8 @@ function StudentLink(props: Props & { link: ShareLinkView; onLink: (l: ShareLink
       {!open && <p className="mt-2 text-sm" style={{ color: EL.inkSoft }}>{COPY.frozenNote}</p>}
 
       <div className="mt-6 space-y-6">
-        <SeatBlock token={token} link={link} demo={demo} onLink={onLink} />
-        {/* Seat out of reach (taken, turned down, closed short): the team's board row is the next goal, above the grey meter. */}
-        {mode !== "open" && <TeamNext teamRow={props.teamRow} />}
+        <Seats token={token} link={link} demo={demo} onLink={onLink} />
+        {!stillEarning && <TeamNext teamRow={props.teamRow} />}
         {/* Nothing shared yet: the poster is the one thing to do, so it comes first. */}
         {start ? posterSection : meter}
       </div>

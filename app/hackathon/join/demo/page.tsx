@@ -27,9 +27,9 @@ const STATES: RegistrationStatus[] = ["pending", "review", "paid", "cancelled"];
  * /hackathon/join/demo?state=pending|review|paid|cancelled&mode=solo|create|join&n=0..4
  * (n: the place in sign-up order inside the team, so each teammate's ticket can be seen)
  * &discord=joined|not_member|taken|error shows each Discord state on the paid page.
- * &share=1|<state> shows the share card (1: no school yet; a state from lib/hackathon/elemental/share-demo.ts,
- *   like early, close, qualified, taken, given or friend) on the pending, review or paid page;
- *   &phase=after-close shows it read-only, as after sign-up closes.
+ * &share=1|<state> shows the share card (1: no school yet; a state from lib/hackathon/elemental/share-demo.ts:
+ *   start, early, seat1-ready, seat1-given, seat2-progress, maxed, paid-naming-friend, after-close)
+ *   on the pending, review or paid page; &phase=after-close shows it read-only.
  * &style=unnamed|locked|colors|fonts|all|final gives the share card the team's board row at that level
  * (unnamed: no board name yet; final: after sign-up close); &edit=1 opens its editor.
  */
@@ -75,7 +75,7 @@ export default async function PayDemoPage({ searchParams }: { searchParams: Sear
                 code: SHARE_DEMO_CODE,
                 selfPaid: state === "paid" || state === "review",
                 link: studentDemo(first(params.share)),
-                phase: first(params.phase) === "after-close" ? "after-close" : "open",
+                phase: first(params.phase) === "after-close" || studentDemo(first(params.share))?.seats.phase === "after-close" ? "after-close" : "open",
               }
             : null
         }

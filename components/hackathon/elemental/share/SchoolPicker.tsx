@@ -15,17 +15,16 @@ import { btnSmall, hairline, inlineTap, line, outline, schoolLabel } from "./ui"
  */
 
 export type SchoolChoice =
-  | { key: string; name: string; province: string; seatTaken: boolean }
+  | { key: string; name: string; province: string }
   | { custom: true; name: string; province: string };
 
-type Found = { key: string; name: string; province: string; seatTaken: boolean };
+type Found = { key: string; name: string; province: string };
 
 // copy: placeholder — Angpao rewrites
 const COPY = {
   search: "พิมพ์ชื่อโรงเรียน",
   label: "ชื่อโรงเรียน",
   none: "ไม่เจอในรายชื่อ ลองพิมพ์สั้นลง หรือพิมพ์ชื่อเองด้านล่าง",
-  seatTaken: "ที่นั่งฟรีมีคนได้แล้ว",
   missing: "ไม่มีโรงเรียนของฉันในรายชื่อ",
   customName: "ชื่อโรงเรียน",
   customProvince: "จังหวัด",
@@ -179,11 +178,6 @@ export function SchoolPicker({
                     {s.province}
                   </span>
                 </span>
-                {s.seatTaken && (
-                  <span className="shrink-0 text-xs" style={{ color: EL.inkSoft }}>
-                    {COPY.seatTaken}
-                  </span>
-                )}
               </button>
             </li>
           ))}

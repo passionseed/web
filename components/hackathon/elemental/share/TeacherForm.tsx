@@ -7,8 +7,7 @@ import { Loader2 } from "lucide-react";
 import { Field, TextInput } from "@/components/hackathon/elemental/join/fields";
 import { EL } from "@/components/hackathon/poster/elemental/brand";
 import { demoDayLine, ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
-import { SHARE } from "@/lib/hackathon/elemental/share";
-import { parseOptionalPhone, parseTeacherContact } from "@/lib/hackathon/elemental/share-rules";
+import { parseOptionalPhone, parseTeacherContact, SEAT_RULE, TEACHER_INVITE_DEVICES } from "@/lib/hackathon/elemental/share-rules";
 import { isRudeTeamName } from "@/lib/hackathon/elemental/team-name";
 
 import { lineHelp } from "./copy-shared";
@@ -20,7 +19,7 @@ import { btn, ErrorLine, filled, hairline, Lead, Page, Title } from "./ui";
  * The public teacher page (Big, 2026-11-27): no sign-up. A teacher gives a
  * name, picks the school and leaves an email or LINE ID; they get a private
  * page with their own poster and link. 50 devices: invited to Demo Day.
- * 3 paid as well, first at the school: the school's free seat, for a student
+ * Every 50 devices + 1 paid: a free seat (up to 2, SEAT_RULE) for students
  * they choose. Teachers are adults; their name and contact are for staff only.
  */
 
@@ -30,12 +29,12 @@ const COPY = {
   title: "ลิงก์แชร์ของคุณครู",
   lead: "สร้างโปสเตอร์และลิงก์ของคุณครูเอง ส่งให้นักเรียนในกลุ่ม LINE ไม่ต้องสมัครสมาชิก",
   rewardsTitle: "สิ่งที่คุณครูได้",
-  rewardDevices: `${SHARE.devicesGoal} เครื่อง → Demo Day`,
+  rewardDevices: `${TEACHER_INVITE_DEVICES} เครื่อง → Demo Day`,
   rewardDevicesGet: `เชิญคุณครูมา ${demoDayLine()} ทีมงานยืนยันกับโรงเรียนก่อนส่งคำเชิญ`,
-  rewardPaid: `${SHARE.paidGoal} คนจ่าย → ที่นั่งฟรีของโรงเรียน`,
-  rewardPaidGet: `ครบ ${SHARE.devicesGoal} เครื่องด้วย ได้ที่นั่งฟรี 1 ที่ ให้นักเรียนที่คุณครูเลือก`,
+  rewardPaid: `ทุก ${SEAT_RULE.devicesPerSeat} เครื่อง + ${SEAT_RULE.paidPerSeat} คนจ่าย → ที่นั่งฟรี 1 ที่`,
+  rewardPaidGet: `ให้นักเรียนที่คุณครูเลือก ได้สูงสุด ${SEAT_RULE.maxSeatsPerLink} ที่`,
   wifi: "นับเป็นเครื่อง เปิดซ้ำจากเครื่องเดิมนับครั้งเดียว",
-  seatRule: "ที่นั่งฟรีมีโรงเรียนละ 1 ที่ ลิงก์แรกในโรงเรียนที่ครบได้ นับทั้งลิงก์ครูและลิงก์นักเรียน",
+  seatRule: "ทีมงานเช็กก่อนให้ที่นั่งทุกครั้ง",
   formHeading: "สร้างลิงก์",
   name: "ชื่อ-นามสกุล",
   school: "โรงเรียน",
@@ -76,7 +75,7 @@ function Rewards() {
       </div>
       <div className="space-y-2 border-t pt-5" style={{ borderColor: hairline }}>
         <p className="text-base font-semibold">{COPY.rewardPaid}</p>
-        <PaidBlocks value={0} small />
+        <PaidBlocks value={0} goal={SEAT_RULE.paidPerSeat} small />
         <p className="text-sm" style={{ color: EL.inkSoft }}>
           {COPY.rewardPaidGet}
         </p>

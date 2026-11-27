@@ -1,12 +1,12 @@
 import { after } from "next/server";
 
 import { linkSource, type ShareKind } from "./share";
-import { GOALS } from "./share-rules";
+import { SEAT_RULE } from "./share-rules";
 import { postHackathonWebhook } from "./notify-discord";
 
 /**
- * Pings the team's Discord when a school's free seat needs a staff check:
- * a link qualified first at its school, or its owner named who gets the seat.
+ * Pings the team's Discord when a free seat needs staff: a link earned a seat
+ * (1 or 2), or its owner named who gets one.
  * Codes and the school only: no names (most students are minors).
  * Only on the live site (VERCEL_ENV=production), so previews and local runs
  * never post. Best effort, after the response.
@@ -19,6 +19,8 @@ export type ShareSeatNotice = {
   school: string;
   devices: number;
   paid: number;
+  /** Which of the link's seats (1 or 2). */
+  seatIndex: number;
   /** "named": the code that gets the seat. */
   recipientCode?: string;
 };
@@ -34,16 +36,16 @@ export function buildShareSeatPayload(n: ShareSeatNotice) {
   const who = n.kind === "teacher" ? "Teacher link" : "Student link";
   const title =
     n.event === "qualified"
-      ? `${who} qualified first at ${n.school}`
-      : `Free seat at ${n.school}: ${n.kind === "teacher" ? "the teacher" : "the student"} named code ${n.recipientCode?.toUpperCase()}`;
+      ? `${who} earned free seat ${n.seatIndex} (${n.school})`
+      : `Free seat ${n.seatIndex} (${n.school}): ${n.kind === "teacher" ? "the teacher" : "the student"} named code ${n.recipientCode?.toUpperCase()}`;
   return {
     embeds: [
       {
         title,
         color: COLOR,
         description: [
-          `${linkSource(n.kind, n.code)} · ${n.devices}/${GOALS.devices} devices · ${n.paid}/${GOALS.paid} paid`,
-          n.event === "qualified" ? "Check it, then Confirm or Reject." : "Ready to confirm.",
+          `${linkSource(n.kind, n.code)} · ${n.devices} devices · ${n.paid} paid (seat ${n.seatIndex} needs ${n.seatIndex * SEAT_RULE.devicesPerSeat} + ${n.seatIndex * SEAT_RULE.paidPerSeat})`,
+          n.event === "qualified" ? "Check it, then Confirm or Reject (or wait for a name)." : "Ready to confirm.",
           adminUrl(),
         ].join("\n"),
       },

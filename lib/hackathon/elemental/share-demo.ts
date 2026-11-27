@@ -1,71 +1,85 @@
 import { SHARE_DEMO_CODE, TEACHER_DEMO_CODE } from "./share";
-import type { Race, SeatView, ShareLinkView } from "./share-rules";
+import { seatProgressView, type SeatRow, type SeatSlotStatus, type SeatProgressView, type ShareLinkView } from "./share-rules";
 
 /**
- * Made-up states for the demo pages (development and PR previews only):
- * /hackathon/join/demo/share?s=<state>, /hackathon/join/demo?share=<state>
- * and /hackathon/elemental/teacher/demo?s=<state>. Nothing here is real.
+ * Made-up states for the demo pages (development and PR previews only).
+ * Nothing here is real; the numbers follow SEAT_RULE (50 devices + 1 paid
+ * per seat, up to 2 per link).
+ *
+ * Student share page: /hackathon/join/demo/share?s=<state>
+ *   (none)               picking a school
+ *   start                link made, nothing yet
+ *   early                12 devices, 0 paid
+ *   seat1-ready          seat 1 earned (53 + 1), the unpaid student's own, staff checking
+ *   seat1-given          seat 1 confirmed: their sign-up is free; heading for seat 2
+ *   seat2-progress       76 devices + 1 paid, seat 1 given, 24 devices + 1 paid to seat 2
+ *   maxed                both seats: own given, a friend's given
+ *   paid-naming-friend   a paid student earned seat 1: types a friend's code
+ *   after-close          sign-up closed with seat 1 given (read-only)
+ * Pay page card: /hackathon/join/demo?share=<same state> (&share=1: no school yet)
+ * Teacher page: /hackathon/elemental/teacher/demo?s=<state>
+ *   start · sharing · invited · invite-sent · seat-naming · named · given
  */
 
-const FRIEND_CODE = "5e6f7a8b";
+const OWN_ID = `${SHARE_DEMO_CODE}-0000-4000-8000-000000000001`;
+const FRIEND_ID = "5e6f7a8b-0000-4000-8000-000000000002";
+const FRIEND2_ID = "9c0d1e2f-0000-4000-8000-000000000003";
 const school = { name: "เตรียมอุดมศึกษา", province: "กรุงเทพมหานคร" };
 
-/** Made-up races: 4 links at the school, someone else ahead, unless you lead. */
-const race = (devices: number, paid: number, lead = { devices: 31, paid: 1 }): Race =>
-  devices + paid * 17 >= lead.devices + lead.paid * 17
-    ? { links: 4, leader: { devices, paid }, youLead: true }
-    : { links: 4, leader: lead, youLead: false };
+const row = (index: number, status: SeatSlotStatus, recipient: string | null = null): SeatRow => ({ id: `demo-${index}`, index, status, recipientRegistrationId: recipient });
 
-const student = (devices: number, paid: number, seat: SeatView, selfPaid = false): ShareLinkView => ({
+function seats(devices: number, paid: number, rows: SeatRow[], opts: { own?: string | null; selfPaid?: boolean; phase?: SeatProgressView["phase"] } = {}) {
+  return seatProgressView({
+    progress: { devices, paid },
+    rows,
+    ownRegistrationId: opts.own ?? null,
+    selfPaid: opts.selfPaid ?? false,
+    phase: opts.phase ?? "open",
+  });
+}
+
+const student = (view: SeatProgressView, selfPaid = false): ShareLinkView => ({
   kind: "student",
   code: SHARE_DEMO_CODE,
   school,
-  progress: { devices, paid },
-  seat,
-  canChangeSchool: devices < 5 && paid === 0 && (seat.state === "open" || seat.state === "taken"),
+  canChangeSchool: view.phase === "open",
   selfPaid,
   verified: false,
   invited: false,
-  race: race(devices, paid),
+  seats: view,
 });
 
 export const STUDENT_DEMO_STATES = {
-  start: () => student(0, 0, { state: "open" }),
-  early: () => student(12, 0, { state: "open" }),
-  close: () => student(44, 2, { state: "open" }),
-  qualified: () => student(53, 3, { state: "checking", recipient: { who: "self" } }),
-  taken: () => student(31, 1, { state: "taken" }),
-  given: () => student(58, 4, { state: "given", recipient: { who: "self" } }, false),
-  friend: () => student(51, 3, { state: "checking", recipient: { who: "none" } }, true),
-  "friend-named": () => student(51, 3, { state: "checking", recipient: { who: "other", code: FRIEND_CODE } }, true),
-  "friend-given": () => student(55, 3, { state: "given", recipient: { who: "other", code: FRIEND_CODE } }, true),
-  rejected: () => student(50, 3, { state: "rejected" }),
+  start: () => student(seats(0, 0, [], { own: OWN_ID })),
+  early: () => student(seats(12, 0, [], { own: OWN_ID })),
+  "seat1-ready": () => student(seats(53, 1, [row(1, "qualified", OWN_ID)], { own: OWN_ID })),
+  "seat1-given": () => student(seats(58, 1, [row(1, "confirmed", OWN_ID)], { own: OWN_ID, selfPaid: true }), true),
+  "seat2-progress": () => student(seats(76, 1, [row(1, "confirmed", OWN_ID)], { own: OWN_ID, selfPaid: true }), true),
+  maxed: () => student(seats(112, 3, [row(1, "confirmed", OWN_ID), row(2, "confirmed", FRIEND_ID)], { own: OWN_ID, selfPaid: true }), true),
+  "paid-naming-friend": () => student(seats(51, 1, [row(1, "needs_recipient")], { own: OWN_ID, selfPaid: true }), true),
+  "after-close": () => student(seats(74, 1, [row(1, "confirmed", OWN_ID)], { own: OWN_ID, selfPaid: true, phase: "after-close" }), true),
 } as const;
 export type StudentDemoState = keyof typeof STUDENT_DEMO_STATES;
 
-const teacher = (devices: number, paid: number, seat: SeatView, invited = false, verified = invited): ShareLinkView => ({
+const teacher = (view: SeatProgressView, invited = false, verified = invited): ShareLinkView => ({
   kind: "teacher",
   code: TEACHER_DEMO_CODE,
   school,
-  progress: { devices, paid },
-  seat,
   canChangeSchool: false,
   selfPaid: false,
   verified,
   invited,
-  race: race(devices, paid),
+  seats: view,
 });
 
 export const TEACHER_DEMO_STATES = {
-  start: () => teacher(0, 0, { state: "open" }),
-  sharing: () => teacher(23, 1, { state: "open" }),
-  invited: () => teacher(57, 2, { state: "open" }),
-  verified: () => teacher(60, 2, { state: "open" }, false, true),
-  "invite-sent": () => teacher(64, 2, { state: "open" }, true),
-  seat: () => teacher(61, 3, { state: "checking", recipient: { who: "none" } }, true),
-  named: () => teacher(61, 3, { state: "checking", recipient: { who: "other", code: FRIEND_CODE } }, true),
-  given: () => teacher(70, 4, { state: "given", recipient: { who: "other", code: FRIEND_CODE } }, true),
-  taken: () => teacher(52, 1, { state: "taken" }),
+  start: () => teacher(seats(0, 0, [])),
+  sharing: () => teacher(seats(23, 0, [])),
+  invited: () => teacher(seats(57, 0, [])),
+  "invite-sent": () => teacher(seats(64, 0, []), true),
+  "seat-naming": () => teacher(seats(61, 1, [row(1, "needs_recipient")]), true),
+  named: () => teacher(seats(61, 1, [row(1, "qualified", FRIEND_ID)]), true),
+  given: () => teacher(seats(108, 2, [row(1, "confirmed", FRIEND_ID), row(2, "confirmed", FRIEND2_ID)]), true),
 } as const;
 export type TeacherDemoState = keyof typeof TEACHER_DEMO_STATES;
 

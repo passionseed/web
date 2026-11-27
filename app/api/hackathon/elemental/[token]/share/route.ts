@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { sharePhase, type SharePhase } from "@/lib/hackathon/elemental/share";
+import { SEAT_RULE } from "@/lib/hackathon/elemental/share-rules";
 import { resolveSchool, schoolBody } from "@/lib/hackathon/elemental/share-school";
 import { safeServerError } from "@/lib/security/route-guards";
 import { isTrustedAdminRequest } from "@/lib/security/request-origin";
@@ -15,7 +16,7 @@ import {
   type ShareContext,
 } from "@/lib/supabase/hackathon-share-links";
 
-const friendBody = z.object({ friendCode: z.string().trim().min(8).max(20) });
+const friendBody = z.object({ seatIndex: z.number().int().min(1).max(SEAT_RULE.maxSeatsPerLink), friendCode: z.string().trim().min(8).max(20) });
 
 type Guarded = { ok: true; reg: ShareContext } | { ok: false; response: NextResponse };
 
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-/** Pick a school (makes the link), or change it while the link has barely started. Only while sign-up is open. */
+/** Pick a school (makes the link), or change it. Only while sign-up is open. */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   try {
     const { token } = await params;
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 }
 
-/** A paid student names the unpaid friend who gets their school's free seat (by the friend's code). */
+/** Name the unpaid friend who gets one of this link's seats (by seat index and the friend's code). */
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   try {
     const { token } = await params;
@@ -80,7 +81,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const link = await getStudentLink(g.reg.id);
     if (!link) return NextResponse.json({ error: "not_allowed" }, { status: 409 });
 
-    const result = await nameRecipient(ELEMENTAL.slug, link, g.reg, parsed.data.friendCode);
+    const result = await nameRecipient(ELEMENTAL.slug, link, g.reg, parsed.data.seatIndex, parsed.data.friendCode);
     if (!result.ok) return NextResponse.json({ error: result.reason }, { status: 409 });
     return NextResponse.json({ link: result.view }, { headers: noStore });
   } catch (error) {

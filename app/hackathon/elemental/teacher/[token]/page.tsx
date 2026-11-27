@@ -24,8 +24,8 @@ const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v
 
 /**
  * A teacher's private page. /hackathon/elemental/teacher/demo?s=<state> shows
- * made-up states where demo pages are on: start · sharing · invited · verified ·
- * invite-sent · seat · named · given · taken (lib/hackathon/elemental/share-demo.ts);
+ * made-up states where demo pages are on: start · sharing · invited · invite-sent ·
+ * seat-naming · named · given (lib/hackathon/elemental/share-demo.ts);
  * &new=1 as right after the link was made, &phase=after-close after sign-up closes.
  */
 export default async function TeacherLinkPage({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: SearchParams }) {

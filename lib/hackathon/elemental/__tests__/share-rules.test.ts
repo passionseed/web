@@ -2,29 +2,27 @@ import { countDevices, TRACKED_SOURCE_RE } from "../link-views";
 import { freeSeatOutcome, linkSource, linkUrl, SHARE_CODE_RE, shareCode } from "../share";
 import { newTeacherCode, newTeacherToken } from "../share-codes";
 import {
-  canChangeSchool,
-  canNameRecipient,
+  canNameSeat,
   codeIdRange,
+  defaultRecipient,
   deviceCount,
-  GOALS,
   hasPaid,
   linkProgress,
+  nextSeat,
   paidAt,
   paidCount,
-  phonesMatch,
   parseOptionalPhone,
   parseShareCode,
   parseTeacherContact,
-  pickSeatWinner,
-  qualifies,
-  reachedDevicesGoal,
-  recipientProblem,
-  remaining,
-  schoolMatch,
-  schoolRace,
-  seatRecipientId,
-  seatView,
+  phonesMatch,
   progressPhase,
+  reachedInvite,
+  recipientProblem,
+  schoolMatch,
+  SEAT_RULE,
+  seatGoal,
+  seatProgressView,
+  seatsEarned,
   TEACHER_TOKEN_RE,
   trafficStats,
   type SeatRow,
@@ -37,34 +35,148 @@ const at = (minute: number) => new Date(Date.UTC(2026, 11, 1, 3, minute)).toISOS
 const devices = (n: number, start = 0, net = "n"): ViewEvent[] =>
   Array.from({ length: n }, (_, i) => ({ ipHash: `${net}${i}`, at: at(start + i) }));
 
-describe("the goals", () => {
-  it("are 50 devices and 3 paid seats", () => {
-    expect(GOALS).toEqual({ devices: 50, paid: 3 });
+describe("SEAT_RULE: 50 devices + 1 paid per seat, up to 2 per link", () => {
+  it("is the one setting everything reads", () => {
+    expect(SEAT_RULE).toEqual({ devicesPerSeat: 50, paidPerSeat: 1, maxSeatsPerLink: 2, onePerSchool: false });
   });
 
-  it("qualify only when both are met", () => {
-    expect(qualifies({ devices: 50, paid: 3 })).toBe(true);
-    expect(qualifies({ devices: 80, paid: 5 })).toBe(true);
-    expect(qualifies({ devices: 49, paid: 3 })).toBe(false);
-    expect(qualifies({ devices: 50, paid: 2 })).toBe(false);
+  it("earns 0, 1 or 2 seats", () => {
+    expect(seatsEarned({ devices: 49, paid: 5 })).toBe(0);
+    expect(seatsEarned({ devices: 120, paid: 0 })).toBe(0);
+    expect(seatsEarned({ devices: 50, paid: 1 })).toBe(1);
+    expect(seatsEarned({ devices: 99, paid: 2 })).toBe(1);
+    expect(seatsEarned({ devices: 100, paid: 1 })).toBe(1);
+    expect(seatsEarned({ devices: 100, paid: 2 })).toBe(2);
   });
 
-  it("invite a teacher to Demo Day on devices alone", () => {
-    expect(reachedDevicesGoal({ devices: 50, paid: 0 })).toBe(true);
-    expect(reachedDevicesGoal({ devices: 49, paid: 3 })).toBe(false);
+  it("never goes past the cap", () => {
+    expect(seatsEarned({ devices: 400, paid: 9 })).toBe(2);
   });
 
-  it("say what's left, never below zero", () => {
-    expect(remaining({ devices: 12, paid: 1 })).toEqual({ devices: 38, paid: 2 });
-    expect(remaining({ devices: 70, paid: 4 })).toEqual({ devices: 0, paid: 0 });
+  it("never gives more seats than the paid sign-ups brought, whatever the rule says", () => {
+    const loose = { devicesPerSeat: 10, paidPerSeat: 0.5, maxSeatsPerLink: 5, onePerSchool: false };
+    expect(seatsEarned({ devices: 100, paid: 2 }, loose)).toBe(2);
+    expect(seatsEarned({ devices: 100, paid: 0 }, loose)).toBe(0);
   });
 
-  it("pick the words: start, early, close (70% of the way), done", () => {
+  it("says what each seat needs and what's left for the next one", () => {
+    expect(seatGoal(1)).toEqual({ devices: 50, paid: 1 });
+    expect(seatGoal(2)).toEqual({ devices: 100, paid: 2 });
+    expect(nextSeat({ devices: 12, paid: 0 }, 0)).toEqual({ index: 1, devicesLeft: 38, paidLeft: 1 });
+    expect(nextSeat({ devices: 76, paid: 1 }, 1)).toEqual({ index: 2, devicesLeft: 24, paidLeft: 1 });
+    expect(nextSeat({ devices: 130, paid: 3 }, 2)).toBeNull();
+  });
+
+  it("invites a teacher to Demo Day at 50 devices, paid or not", () => {
+    expect(reachedInvite({ devices: 50, paid: 0 })).toBe(true);
+    expect(reachedInvite({ devices: 49, paid: 3 })).toBe(false);
+  });
+
+  it("picks the words for the seat in progress", () => {
     expect(progressPhase({ devices: 0, paid: 0 })).toBe("start");
     expect(progressPhase({ devices: 12, paid: 0 })).toBe("early");
-    expect(progressPhase({ devices: 44, paid: 2 })).toBe("close");
-    expect(progressPhase({ devices: 50, paid: 1 })).toBe("early");
-    expect(progressPhase({ devices: 50, paid: 3 })).toBe("done");
+    expect(progressPhase({ devices: 44, paid: 1 })).toBe("close");
+    expect(progressPhase({ devices: 60, paid: 1 }, 1)).toBe("early");
+    expect(progressPhase({ devices: 100, paid: 2 }, 2)).toBe("done");
+  });
+});
+
+describe("linkProgress", () => {
+  it("counts devices and paid, and when each seat was earned (the later of its two goals)", () => {
+    const paid = [{ seats: 1, at: at(5) }, { seats: 1, at: at(200) }];
+    const p = linkProgress(devices(110), paid);
+    expect(p.devices).toBe(110);
+    expect(p.paid).toBe(2);
+    expect(p.earnedAt).toEqual([at(49), at(200)]);
+  });
+
+  it("earns nothing until both parts are there", () => {
+    expect(linkProgress(devices(80), []).earnedAt).toEqual([]);
+    expect(linkProgress(devices(30), [{ seats: 3, at: at(1) }]).earnedAt).toEqual([]);
+  });
+});
+
+describe("who gets each seat", () => {
+  const me = "aaaaaaaa-0000-4000-8000-000000000001";
+  const friend = "5e6f7a8b-0000-4000-8000-000000000002";
+
+  it("an unpaid student's first seat is their own sign-up; every other seat waits for a name", () => {
+    expect(defaultRecipient({ kind: "student", index: 1, ownRegistrationId: me, ownStatus: "pending" })).toBe(me);
+    expect(defaultRecipient({ kind: "student", index: 2, ownRegistrationId: me, ownStatus: "pending" })).toBeNull();
+    expect(defaultRecipient({ kind: "student", index: 1, ownRegistrationId: me, ownStatus: "paid" })).toBeNull();
+    expect(defaultRecipient({ kind: "student", index: 1, ownRegistrationId: me, ownStatus: "review" })).toBeNull();
+    expect(defaultRecipient({ kind: "teacher", index: 1, ownRegistrationId: null, ownStatus: null })).toBeNull();
+  });
+
+  it("makes the recipient's sign-up free (one seat off a group's)", () => {
+    expect(freeSeatOutcome(199, 1)).toEqual({ amountBaht: 0, paid: true });
+    expect(freeSeatOutcome(149, 1)).toEqual({ amountBaht: 0, paid: true });
+    expect(freeSeatOutcome(447, 3)).toEqual({ amountBaht: 298, paid: false });
+  });
+
+  it("counts a slip waiting for a check as paid", () => {
+    expect(hasPaid("paid")).toBe(true);
+    expect(hasPaid("review")).toBe(true);
+    expect(hasPaid("pending")).toBe(false);
+  });
+
+  it("only accepts an unpaid sign-up that isn't your own", () => {
+    expect(recipientProblem([], me)).toBe("not_found");
+    expect(recipientProblem([{ id: me, status: "pending" }], me)).toBe("self");
+    expect(recipientProblem([{ id: friend, status: "paid" }], me)).toBe("paid");
+    expect(recipientProblem([{ id: friend, status: "review" }], me)).toBe("paid");
+    expect(recipientProblem([{ id: friend, status: "cancelled" }], me)).toBe("cancelled");
+    expect(recipientProblem([{ id: friend, status: "pending" }, { id: me, status: "pending" }], me)).toBe("ambiguous");
+    expect(recipientProblem([{ id: friend, status: "pending" }], me)).toBeNull();
+    expect(recipientProblem([{ id: friend, status: "pending" }], null)).toBeNull();
+  });
+});
+
+describe("seatProgressView: the view model the share pages draw", () => {
+  const me = "aaaaaaaa-0000-4000-8000-000000000001";
+  const friend = "5e6f7a8b-0000-4000-8000-000000000002";
+  const row = (index: number, status: SeatRow["status"], recipient: string | null = null): SeatRow => ({ id: `s${index}`, index, status, recipientRegistrationId: recipient });
+  const view = (devicesN: number, paidN: number, rows: SeatRow[], selfPaid = false, phase: "open" | "after-close" | "off" = "open") =>
+    seatProgressView({ progress: { devices: devicesN, paid: paidN }, rows, ownRegistrationId: me, selfPaid, phase });
+
+  it("before any seat: what's left for seat 1", () => {
+    expect(view(12, 0, [])).toEqual({ rule: SEAT_RULE, phase: "open", devices: 12, paid: 0, seats: [], next: { index: 1, devicesLeft: 38, paidLeft: 1 }, maxed: false });
+  });
+
+  it("seat 1 for an unpaid student is theirs; staff are checking", () => {
+    const v = view(53, 1, [row(1, "qualified", me)]);
+    expect(v.seats).toEqual([{ index: 1, status: "qualified", mine: true }]);
+    expect(v.next).toEqual({ index: 2, devicesLeft: 47, paidLeft: 1 });
+    expect(canNameSeat(v.seats[0], v.phase)).toBe(false);
+  });
+
+  it("if they paid before staff confirmed, their seat waits for a friend's name instead", () => {
+    const v = view(53, 1, [row(1, "qualified", me)], true);
+    expect(v.seats).toEqual([{ index: 1, status: "needs_recipient" }]);
+    expect(canNameSeat(v.seats[0], v.phase)).toBe(true);
+  });
+
+  it("shows a friend by code only, and lets the name change until staff confirm", () => {
+    const v = view(110, 2, [row(1, "confirmed", me), row(2, "qualified", friend)], true);
+    expect(v.seats).toEqual([
+      { index: 1, status: "confirmed", mine: true },
+      { index: 2, status: "qualified", recipientCode: "5e6f7a8b" },
+    ]);
+    expect(v.maxed).toBe(true);
+    expect(v.next).toBeNull();
+    expect(canNameSeat(v.seats[1], v.phase)).toBe(true);
+    expect(canNameSeat(v.seats[0], v.phase)).toBe(false);
+  });
+
+  it("a teacher's seats always wait for a student's name", () => {
+    const v = seatProgressView({ progress: { devices: 61, paid: 1 }, rows: [row(1, "needs_recipient")], ownRegistrationId: null, selfPaid: false, phase: "open" });
+    expect(v.seats).toEqual([{ index: 1, status: "needs_recipient" }]);
+    expect(canNameSeat(v.seats[0], "after-close")).toBe(true);
+    expect(canNameSeat(v.seats[0], "off")).toBe(false);
+  });
+
+  it("counts a rejected seat as used", () => {
+    expect(view(120, 3, [row(1, "rejected"), row(2, "confirmed", friend)]).maxed).toBe(true);
   });
 });
 
@@ -100,137 +212,6 @@ describe("paidCount", () => {
   });
 });
 
-describe("linkProgress", () => {
-  it("qualifies when the later of the two goals is met", () => {
-    const paid = [1, 2, 3].map((m) => ({ seats: 1, at: at(m) }));
-    expect(linkProgress(devices(50, 10), paid)).toEqual({ devices: 50, paid: 3, qualifiedAt: at(59) });
-    expect(linkProgress(devices(50), [{ seats: 3, at: at(58) }]).qualifiedAt).toBe(at(58));
-  });
-
-  it("isn't qualified until both goals are met", () => {
-    expect(linkProgress(devices(49), [{ seats: 3, at: at(1) }]).qualifiedAt).toBeNull();
-    expect(linkProgress(devices(60), [{ seats: 2, at: at(1) }]).qualifiedAt).toBeNull();
-  });
-});
-
-describe("pickSeatWinner: one seat per school, first to qualify", () => {
-  it("picks the link that qualified first, not the one that opened its page first", () => {
-    const w = pickSeatWinner([
-      { linkId: "teacher", qualifiedAt: at(30), createdAt: at(0) },
-      { linkId: "student", qualifiedAt: at(20), createdAt: at(5) },
-      { linkId: "slow", qualifiedAt: null, createdAt: at(1) },
-    ]);
-    expect(w?.linkId).toBe("student");
-  });
-
-  it("breaks a tie with the older link", () => {
-    expect(pickSeatWinner([{ linkId: "b", qualifiedAt: at(9), createdAt: at(3) }, { linkId: "a", qualifiedAt: at(9), createdAt: at(1) }])?.linkId).toBe("a");
-  });
-
-  it("skips the link of a cancelled sign-up", () => {
-    expect(pickSeatWinner([{ linkId: "a", qualifiedAt: at(1), createdAt: at(0), cancelled: true }, { linkId: "b", qualifiedAt: at(2), createdAt: at(0) }])?.linkId).toBe("b");
-  });
-
-  it("skips links staff turned down, and gives nothing when nobody qualified", () => {
-    expect(pickSeatWinner([{ linkId: "a", qualifiedAt: at(1), createdAt: at(0), rejected: true }, { linkId: "b", qualifiedAt: at(2), createdAt: at(0) }])?.linkId).toBe("b");
-    expect(pickSeatWinner([{ linkId: "a", qualifiedAt: null, createdAt: at(0) }])).toBeNull();
-  });
-});
-
-describe("seatView: what a link's owner sees", () => {
-  const me = "aaaaaaaa-0000-4000-8000-000000000001";
-  const friend = "5e6f7a8b-0000-4000-8000-000000000002";
-  const seat = (over: Partial<SeatRow> = {}): SeatRow => ({ id: "s", linkId: "L", status: "qualified", recipientRegistrationId: null, ...over });
-  const view = (over: Partial<Parameters<typeof seatView>[0]> = {}) =>
-    seatView({ linkId: "L", kind: "student", linkRejected: false, ownRegistrationId: me, selfPaid: false, seat: seat(), ...over });
-
-  it("is open until someone at the school qualifies, or after a seat was turned down", () => {
-    expect(view({ seat: null })).toEqual({ state: "open" });
-    expect(view({ seat: seat({ status: "rejected" }) })).toEqual({ state: "open" });
-  });
-
-  it("says honestly when another link at the school got it first", () => {
-    expect(view({ seat: seat({ linkId: "other" }) })).toEqual({ state: "taken" });
-  });
-
-  it("says when staff turned this link down", () => {
-    expect(view({ linkRejected: true })).toEqual({ state: "rejected" });
-  });
-
-  it("gives an unpaid student's seat to themselves", () => {
-    expect(view()).toEqual({ state: "checking", recipient: { who: "self" } });
-    expect(view({ seat: seat({ status: "confirmed", recipientRegistrationId: me }) })).toEqual({ state: "given", recipient: { who: "self" } });
-  });
-
-  it("asks a paid student to name a friend, then shows the friend by code only", () => {
-    expect(view({ selfPaid: true })).toEqual({ state: "checking", recipient: { who: "none" } });
-    expect(view({ selfPaid: true, seat: seat({ recipientRegistrationId: friend }) })).toEqual({
-      state: "checking",
-      recipient: { who: "other", code: "5e6f7a8b" },
-    });
-    expect(view({ selfPaid: true, seat: seat({ status: "confirmed", recipientRegistrationId: friend }) })).toEqual({
-      state: "given",
-      recipient: { who: "other", code: "5e6f7a8b" },
-    });
-  });
-
-  it("asks a teacher to name a student", () => {
-    expect(view({ kind: "teacher", ownRegistrationId: null })).toEqual({ state: "checking", recipient: { who: "none" } });
-  });
-});
-
-describe("who gets the free seat", () => {
-  const me = "aaaaaaaa-0000-4000-8000-000000000001";
-  const friend = "5e6f7a8b-0000-4000-8000-000000000002";
-
-  it("an unpaid student: their own sign-up, which becomes free", () => {
-    expect(seatRecipientId({ kind: "student", ownRegistrationId: me, ownStatus: "pending", namedRecipientId: null })).toBe(me);
-    expect(freeSeatOutcome(199, 1)).toEqual({ amountBaht: 0, paid: true });
-  });
-
-  it("a paid student: nobody until they name a friend; then the friend's seat becomes free", () => {
-    expect(seatRecipientId({ kind: "student", ownRegistrationId: me, ownStatus: "paid", namedRecipientId: null })).toBeNull();
-    expect(seatRecipientId({ kind: "student", ownRegistrationId: me, ownStatus: "review", namedRecipientId: null })).toBeNull();
-    expect(seatRecipientId({ kind: "student", ownRegistrationId: me, ownStatus: "paid", namedRecipientId: friend })).toBe(friend);
-    expect(freeSeatOutcome(149, 1)).toEqual({ amountBaht: 0, paid: true });
-  });
-
-  it("a teacher: the student they named", () => {
-    expect(seatRecipientId({ kind: "teacher", ownRegistrationId: null, ownStatus: null, namedRecipientId: null })).toBeNull();
-    expect(seatRecipientId({ kind: "teacher", ownRegistrationId: null, ownStatus: null, namedRecipientId: friend })).toBe(friend);
-  });
-
-  it("a group sign-up: one seat comes off, the rest still to pay", () => {
-    expect(freeSeatOutcome(447, 3)).toEqual({ amountBaht: 298, paid: false });
-  });
-
-  it("counts a slip waiting for a check as paid", () => {
-    expect(hasPaid("paid")).toBe(true);
-    expect(hasPaid("review")).toBe(true);
-    expect(hasPaid("pending")).toBe(false);
-  });
-
-  it("lets a teacher or a paid student name someone only while staff are checking", () => {
-    const checking = { state: "checking", recipient: { who: "none" } } as const;
-    expect(canNameRecipient("teacher", false, checking)).toBe(true);
-    expect(canNameRecipient("student", true, checking)).toBe(true);
-    expect(canNameRecipient("student", false, checking)).toBe(false);
-    expect(canNameRecipient("teacher", false, { state: "given", recipient: { who: "other", code: "5e6f7a8b" } })).toBe(false);
-    expect(canNameRecipient("teacher", false, { state: "open" })).toBe(false);
-  });
-
-  it("only accepts an unpaid sign-up that isn't your own", () => {
-    expect(recipientProblem([], me)).toBe("not_found");
-    expect(recipientProblem([{ id: me, status: "pending" }], me)).toBe("self");
-    expect(recipientProblem([{ id: friend, status: "paid" }], me)).toBe("paid");
-    expect(recipientProblem([{ id: friend, status: "review" }], me)).toBe("paid");
-    expect(recipientProblem([{ id: friend, status: "cancelled" }], me)).toBe("cancelled");
-    expect(recipientProblem([{ id: friend, status: "pending" }, { id: me, status: "pending" }], me)).toBe("ambiguous");
-    expect(recipientProblem([{ id: friend, status: "pending" }], me)).toBeNull();
-    expect(recipientProblem([{ id: friend, status: "pending" }], null)).toBeNull();
-  });
-});
-
 describe("codes", () => {
   it("reads a code however it's typed", () => {
     for (const typed of ["1a2b3c4d", "1A2B3C4D", " 1a2b 3c4d ", "No. 1A2B3C4D", "1a2b-3c4d"]) expect(parseShareCode(typed)).toBe("1a2b3c4d");
@@ -262,16 +243,6 @@ describe("codes", () => {
   });
 });
 
-describe("canChangeSchool", () => {
-  it("only before the link has really started, and never once it holds a seat", () => {
-    expect(canChangeSchool({ devices: 0, paid: 0 }, { state: "open" })).toBe(true);
-    expect(canChangeSchool({ devices: 4, paid: 0 }, { state: "taken" })).toBe(true);
-    expect(canChangeSchool({ devices: 5, paid: 0 }, { state: "open" })).toBe(false);
-    expect(canChangeSchool({ devices: 0, paid: 1 }, { state: "open" })).toBe(false);
-    expect(canChangeSchool({ devices: 0, paid: 0 }, { state: "checking", recipient: { who: "self" } })).toBe(false);
-  });
-});
-
 describe("teacher contact", () => {
   it("takes an email or a LINE ID, with one key per contact", () => {
     expect(parseTeacherContact(" Kru.Somchai@School.ac.th ")).toEqual({ kind: "email", value: "Kru.Somchai@School.ac.th", key: "email:kru.somchai@school.ac.th" });
@@ -298,26 +269,6 @@ describe("paidAt: when a payment counts for the race", () => {
   it("is the sign-up time when there's no slip (marked paid by hand)", () => {
     expect(paidAt({ slipPath: null, createdAt: at(7) })).toBe(at(7));
     expect(paidAt({ slipPath: "odd/name.jpg", createdAt: at(7) })).toBe(at(7));
-  });
-});
-
-describe("schoolRace: the anonymous race at a school", () => {
-  it("counts the links still in it and shows the leader's numbers", () => {
-    const r = schoolRace(
-      [
-        { id: "me", progress: { devices: 12, paid: 0 } },
-        { id: "b", progress: { devices: 31, paid: 1 } },
-        { id: "c", progress: { devices: 40, paid: 0 } },
-        { id: "gone", progress: { devices: 50, paid: 3 }, out: true },
-      ],
-      "me",
-    );
-    expect(r).toEqual({ links: 3, leader: { devices: 31, paid: 1 }, youLead: false });
-  });
-
-  it("says when you lead, and when you're alone", () => {
-    expect(schoolRace([{ id: "me", progress: { devices: 9, paid: 2 } }, { id: "b", progress: { devices: 30, paid: 0 } }], "me").youLead).toBe(true);
-    expect(schoolRace([{ id: "me", progress: { devices: 0, paid: 0 } }], "me")).toEqual({ links: 1, leader: { devices: 0, paid: 0 }, youLead: true });
   });
 });
 

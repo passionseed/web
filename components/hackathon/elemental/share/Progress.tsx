@@ -1,36 +1,26 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { Armchair, Check, Ticket } from "lucide-react";
+import { Armchair, Check, Ticket, X } from "lucide-react";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { PER_NETWORK_CAP } from "@/lib/hackathon/elemental/link-views-shared";
 import { SHARE } from "@/lib/hackathon/elemental/share";
-import {
-  GOALS,
-  qualifies,
-  reachedDevicesGoal,
-  remaining,
-  type Goals,
-  type Progress,
-  type Race,
-  type ShareLinkView,
-} from "@/lib/hackathon/elemental/share-rules";
+import { reachedInvite, SEAT_RULE, seatGoal, TEACHER_INVITE_DEVICES, type SeatProgressView } from "@/lib/hackathon/elemental/share-rules";
 
 import { hairline } from "./ui";
 
 /**
- * The house meter for share links, on the share pages and the pay-page card:
- * devices as a strip of 50 pixels (one per device, filled column by column),
- * "และ", the 3 paid seats as blocks, then a status line for the reward that
- * turns peach once it's earned. A 15-year-old should get it in three
- * seconds: the title says what's left.
+ * The house meter for share links, on the share pages and the pay-page card,
+ * drawn from SeatProgressView (lib/hackathon/elemental/share-rules.ts):
+ * devices toward the next seat as a strip of 50 pixels (filled column by
+ * column), "และ", the paid sign-ups it needs as blocks, then one status line
+ * per seat (SEAT_RULE: every 50 devices + 1 paid = 1 seat, up to 2) that
+ * turns peach once earned. The title says what's left in words a
+ * 15-year-old gets in three seconds: "อีก 38 เครื่อง + 1 คนจ่าย = ที่นั่งฟรีที่ 1".
  *
- * mode "gone": the school's seat went to another link. The seat meters turn
- * grey and say so (a teacher's devices still count for Demo Day).
- * mode "rejected": staff turned the link down; everything is neutral grey.
- * mode "closed": sign-up closed before this link reached the goal. Grey, like
- * "gone"; a teacher's Demo Day invite still shows if it was earned.
+ * After close with no seat earned, it greys out under "ปิดนับแล้ว".
+ * The UX designer is rebuilding these visuals; the logic lives in the view model.
  */
 
 // copy: placeholder — Angpao rewrites
@@ -41,36 +31,31 @@ const COPY = {
   paidUnit: "คน",
   and: "และ",
   wifi: `wifi เดียวกันนับได้ไม่เกิน ${PER_NETWORK_CAP} เครื่อง`,
-  seat: "= ที่นั่งฟรี 1 ที่",
-  seatTeacher: "= ที่นั่งฟรีของโรงเรียน",
+  seat: (i: number) => `= ที่นั่งฟรีที่ ${i}`,
+  seatRejected: (i: number) => `ที่นั่งฟรีที่ ${i}: ทีมงานเช็กแล้วไม่ผ่าน`,
   demoDay: "= เชิญคุณครูมา Demo Day",
-  gone: "ที่นั่งโรงเรียนนี้มีคนได้แล้ว",
-  titleLeft: (r: Progress) =>
-    `ที่นั่งฟรี: ${[r.devices > 0 && `อีก ${r.devices} เครื่อง`, r.paid > 0 && `${r.devices > 0 ? "+" : "อีก"} ${r.paid} คนจ่าย`].filter(Boolean).join(" ")}`,
-  titleDone: "ที่นั่งฟรี: ครบแล้ว",
-  titleTeacherDevices: (n: number) => `Demo Day: อีก ${n} เครื่อง`,
-  titleTeacherPaid: (n: number) => `ที่นั่งฟรี: อีก ${n} คนจ่าย`,
-  titleRejected: "ลิงก์นี้ไม่ได้ที่นั่งฟรี",
+  left: (d: number, p: number) => [d > 0 && `อีก ${d} เครื่อง`, p > 0 && `${d > 0 ? "+" : "อีก"} ${p} คนจ่าย`].filter(Boolean).join(" "),
+  titleFirst: (left: string) => `${left} = ที่นั่งฟรีที่ 1`,
+  titleMore: (have: number, left: string, next: number) => `ได้ ${have} ที่ · ${left} = ที่ ${next}`,
+  titleReady: (next: number) => `ครบแล้ว = ที่นั่งฟรีที่ ${next}`,
+  titleMaxed: (n: number) => `ได้ครบ ${n} ที่แล้ว`,
   titleClosed: "ปิดนับแล้ว",
-  race: (r: Race) =>
-    r.links <= 1
-      ? "ตอนนี้มีลิงก์เดียวในโรงเรียนนี้"
-      : `โรงเรียนนี้มี ${r.links} ลิงก์ · ${r.youLead ? "ลิงก์ของคุณนำอยู่" : `ลิงก์ที่นำอยู่ ${r.leader?.devices ?? 0}/${GOALS.devices} · ${r.leader?.paid ?? 0}/${GOALS.paid}`}`,
+  titleClosedWith: (n: number) => `ปิดนับแล้ว · ได้ ${n} ที่`,
   live: `อัปเดตเองทุก ${SHARE.pollMs / 1000} วินาที`,
   frozen: "ตัวเลขนับถึงวันปิดรับสมัคร",
 };
 
-export type MeterMode = "open" | "gone" | "rejected" | "closed";
+const EMPTY = "rgba(29,33,31,0.09)";
+const GREY = "rgba(29,33,31,0.32)";
 
-/**
- * Which way to draw a link's meter: turned down, seat taken by another link,
- * or (after close, with no seat for this link) stopped short.
- */
-export function meterModeFor(link: Pick<ShareLinkView, "seat">, open: boolean): MeterMode {
-  if (link.seat.state === "rejected") return "rejected";
-  if (link.seat.state === "taken") return "gone";
-  if (!open && link.seat.state === "open") return "closed";
-  return "open";
+/** The meter's headline (what's left for the next seat), also the pay-page card's title. */
+export function meterTitle(view: SeatProgressView): string {
+  const have = view.seats.length;
+  if (view.phase === "after-close") return have ? COPY.titleClosedWith(have) : COPY.titleClosed;
+  if (view.maxed || !view.next) return COPY.titleMaxed(have);
+  const left = COPY.left(view.next.devicesLeft, view.next.paidLeft);
+  if (!left) return COPY.titleReady(view.next.index);
+  return have ? COPY.titleMore(have, left, view.next.index) : COPY.titleFirst(left);
 }
 
 /**
@@ -78,30 +63,9 @@ export function meterModeFor(link: Pick<ShareLinkView, "seat">, open: boolean): 
  * by column (device n is in column ceil(n/2) of 25), so ticks for 10, 25 and
  * 50 devices land at 20%, 52% and 100%. For labels under the strip.
  */
-export function deviceTickLeft(n: number, goal: number = GOALS.devices): string {
+export function deviceTickLeft(n: number, goal: number = SEAT_RULE.devicesPerSeat): string {
   const columns = Math.ceil(goal / 2);
   return `${(Math.min(columns, Math.ceil(n / 2)) / columns) * 100}%`;
-}
-
-const EMPTY = "rgba(29,33,31,0.09)";
-const GREY = "rgba(29,33,31,0.32)";
-
-/**
- * The meter's headline (what's left), also the pay-page card's title. Null
- * when there's nothing left to aim for that the page doesn't already say
- * (a teacher who is invited and whose school's seat is gone).
- */
-export function meterTitle(progress: Progress, kind: "student" | "teacher", mode: MeterMode = "open", goals: Goals = GOALS): string | null {
-  const left = remaining(progress, goals);
-  if (mode === "rejected") return COPY.titleRejected;
-  if (mode === "closed") return COPY.titleClosed;
-  if (kind === "teacher") {
-    if (left.devices > 0) return COPY.titleTeacherDevices(left.devices);
-    if (mode === "gone") return null;
-    return left.paid > 0 ? COPY.titleTeacherPaid(left.paid) : COPY.titleDone;
-  }
-  if (mode === "gone") return COPY.gone;
-  return qualifies(progress, goals) ? COPY.titleDone : COPY.titleLeft(left);
 }
 
 /** Cells that just filled colour in one after another; nothing moves for people who turned motion off. */
@@ -113,8 +77,8 @@ function usePrevious(n: number) {
   return ref.current;
 }
 
-/** "12/50", or once the goal no longer applies just "12 เครื่อง". */
-function Count({ value, goal, unit, grey, plain }: { value: number; goal: number; unit: string; grey?: boolean; plain?: boolean }) {
+/** "62/100", or once nothing more counts just "62 เครื่อง". */
+function Count({ value, goal, unit, plain }: { value: number; goal: number; unit: string; plain?: boolean }) {
   if (plain) {
     return (
       <span className="whitespace-nowrap tabular-nums" style={{ color: EL.inkSoft }}>
@@ -126,7 +90,7 @@ function Count({ value, goal, unit, grey, plain }: { value: number; goal: number
     );
   }
   return (
-    <span className="whitespace-nowrap tabular-nums" aria-label={`${value} จาก ${goal} ${unit}`} style={{ color: grey ? EL.inkSoft : undefined }}>
+    <span className="whitespace-nowrap tabular-nums" aria-label={`${value} จาก ${goal} ${unit}`}>
       <span className="text-4xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
         {value}
       </span>
@@ -142,7 +106,7 @@ function Count({ value, goal, unit, grey, plain }: { value: number; goal: number
  * the next column), so the strip reads left to right like a bar. Past the goal
  * the strip stays full.
  */
-export function DeviceStrip({ value, goal = GOALS.devices, grey }: { value: number; goal?: number; grey?: boolean }) {
+export function DeviceStrip({ value, goal = SEAT_RULE.devicesPerSeat, grey }: { value: number; goal?: number; grey?: boolean }) {
   const prev = usePrevious(value);
   const filled = Math.min(value, goal);
   return (
@@ -166,11 +130,11 @@ export function DeviceStrip({ value, goal = GOALS.devices, grey }: { value: numb
   );
 }
 
-/** 3 paid seats as three blocks. */
-export function PaidBlocks({ value, goal = GOALS.paid, grey, small }: { value: number; goal?: number; grey?: boolean; small?: boolean }) {
+/** Paid sign-ups as blocks, one per paid sign-up the next seat needs. */
+export function PaidBlocks({ value, goal = SEAT_RULE.paidPerSeat, grey, small }: { value: number; goal?: number; grey?: boolean; small?: boolean }) {
   return (
-    <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${goal}, minmax(0, 1fr))` }} aria-hidden="true">
-      {Array.from({ length: goal }, (_, i) => {
+    <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.max(goal, 1)}, minmax(0, 1fr))` }} aria-hidden="true">
+      {Array.from({ length: Math.max(goal, 1) }, (_, i) => {
         const on = i < value;
         return (
           <span
@@ -198,17 +162,20 @@ function And() {
 }
 
 /**
- * What the meters add up to, as a status line (never a button): a dashed
- * hairline until it's earned, then a pale peach fill with orange text and a check.
+ * A reward as a status line (never a button): a dashed hairline until it's
+ * earned, then a pale peach fill with orange text and a check.
  */
-function Reward({ done, icon, children }: { done: boolean; icon: ReactNode; children: ReactNode }) {
+function Reward({ state, icon, children }: { state: "todo" | "done" | "no"; icon: ReactNode; children: ReactNode }) {
+  const style =
+    state === "done"
+      ? { backgroundColor: "rgba(236,100,36,0.10)", color: EL.ember }
+      : state === "no"
+        ? { backgroundColor: EMPTY, color: EL.inkSoft }
+        : { border: "1px dashed rgba(29,33,31,0.28)", color: EL.inkSoft };
   return (
-    <div
-      className="flex items-center gap-2 rounded-lg px-3 py-2 text-base"
-      style={done ? { backgroundColor: "rgba(236,100,36,0.10)", color: EL.ember } : { border: "1px dashed rgba(29,33,31,0.28)", color: EL.inkSoft }}
-    >
+    <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-base" style={style}>
       <span className="flex h-5 w-5 shrink-0 items-center justify-center" aria-hidden="true">
-        {done ? <Check className="h-4 w-4" strokeWidth={2.5} /> : icon}
+        {state === "done" ? <Check className="h-4 w-4" strokeWidth={2.5} /> : state === "no" ? <X className="h-4 w-4" /> : icon}
       </span>
       {children}
     </div>
@@ -216,62 +183,50 @@ function Reward({ done, icon, children }: { done: boolean; icon: ReactNode; chil
 }
 
 export function SeatMeter({
-  progress,
+  view,
   kind,
-  mode = "open",
-  race,
   live = false,
-  frozen = false,
   showTitle = true,
   framed = true,
-  goals = GOALS,
 }: {
-  progress: Progress;
+  view: SeatProgressView;
   kind: "student" | "teacher";
-  mode?: MeterMode;
-  /** The anonymous race at the school. */
-  race?: Race | null;
   /** It refreshes itself (say so). */
   live?: boolean;
-  /** Sign-up has closed: the numbers stopped at close. */
-  frozen?: boolean;
   showTitle?: boolean;
   /** In its own bordered box (share pages) or bare (inside the pay-page card). */
   framed?: boolean;
-  goals?: Goals;
 }) {
-  const rejected = mode === "rejected";
-  const seatGone = mode !== "open";
-  // A teacher's devices still earn the Demo Day invite when the school's seat is gone (until close).
-  const devicesGrey = rejected || mode === "closed" || (seatGone && kind === "student");
-  const done = qualifies(progress, goals);
-  const invited = reachedDevicesGoal(progress, goals);
+  const { rule } = view;
+  const frozen = view.phase === "after-close";
+  const grey = frozen && view.seats.length === 0;
+  // The seat in progress: the next one, or the last one once maxed.
+  const target = view.next?.index ?? rule.maxSeatsPerLink;
+  const goal = seatGoal(target, rule);
+  const from = seatGoal(target - 1, rule);
+  const stripValue = Math.max(0, view.devices - from.devices);
+  const invited = reachedInvite(view);
 
   const body = (
     <>
-      {showTitle && meterTitle(progress, kind, mode, goals) && <p className="mb-5 text-xl font-semibold">{meterTitle(progress, kind, mode, goals)}</p>}
+      {showTitle && <p className="mb-5 text-xl font-semibold">{meterTitle(view)}</p>}
 
       <div className="flex items-end justify-between gap-3">
         <span className="pb-1.5 text-base">{COPY.devices}</span>
-        <Count
-          value={progress.devices}
-          goal={goals.devices}
-          unit={COPY.devicesUnit}
-          grey={devicesGrey}
-          plain={devicesGrey}
-        />
+        <Count value={view.devices} goal={goal.devices} unit={COPY.devicesUnit} plain={grey} />
       </div>
       <div className="mt-2">
-        <DeviceStrip value={progress.devices} goal={goals.devices} grey={devicesGrey} />
+        <DeviceStrip value={stripValue} goal={rule.devicesPerSeat} grey={grey} />
       </div>
       <p className="mt-1.5 text-xs" style={{ color: EL.inkSoft }}>
         {COPY.wifi}
       </p>
-      {kind === "teacher" && !rejected && (mode !== "closed" || invited) && (
+      {kind === "teacher" && (!frozen || invited) && (
         <div className="mt-3">
-          <Reward done={invited} icon={<Ticket className="h-4 w-4" />}>
+          <Reward state={invited ? "done" : "todo"} icon={<Ticket className="h-4 w-4" />}>
             {COPY.demoDay}
           </Reward>
+          <span className="sr-only">{`${TEACHER_INVITE_DEVICES} ${COPY.devicesUnit}`}</span>
         </div>
       )}
 
@@ -279,29 +234,30 @@ export function SeatMeter({
 
       <div className="flex items-end justify-between gap-3">
         <span className="pb-1.5 text-base">{COPY.paid}</span>
-        <Count value={progress.paid} goal={goals.paid} unit={COPY.paidUnit} grey={seatGone} plain={seatGone} />
+        <Count value={view.paid} goal={goal.paid} unit={COPY.paidUnit} plain={grey} />
       </div>
       <div className="mt-2">
-        <PaidBlocks value={Math.min(progress.paid, goals.paid)} goal={goals.paid} grey={seatGone} />
+        <PaidBlocks value={Math.min(view.paid, goal.paid)} goal={goal.paid} grey={grey} />
       </div>
-      {!seatGone && (
-        <div className="mt-4">
-          <Reward done={done} icon={<Armchair className="h-4 w-4" />}>
-            {kind === "teacher" ? COPY.seatTeacher : COPY.seat}
-          </Reward>
+
+      {!grey && (
+        <div className="mt-4 space-y-2">
+          {Array.from({ length: rule.maxSeatsPerLink }, (_, i) => i + 1).map((index) => {
+            const seat = view.seats.find((x) => x.index === index);
+            if (!seat && frozen) return null;
+            return (
+              <Reward key={index} state={seat ? (seat.status === "rejected" ? "no" : "done") : "todo"} icon={<Armchair className="h-4 w-4" />}>
+                {seat?.status === "rejected" ? COPY.seatRejected(index) : COPY.seat(index)}
+              </Reward>
+            );
+          })}
         </div>
-      )}
-      {kind === "teacher" && mode === "gone" && (
-        <p className="mt-2 text-sm" style={{ color: EL.inkSoft }}>
-          {COPY.gone}
-        </p>
       )}
 
-      {(race && !seatGone) || live || frozen ? (
-        <div className="mt-4 space-y-1 border-t pt-3 text-sm" style={{ borderColor: hairline, color: EL.inkSoft }}>
-          {race && !seatGone && <p>{COPY.race(race)}</p>}
-          {(live || frozen) && <p>{frozen ? COPY.frozen : COPY.live}</p>}
-        </div>
+      {live || frozen ? (
+        <p className="mt-4 border-t pt-3 text-sm" style={{ borderColor: hairline, color: EL.inkSoft }}>
+          {frozen ? COPY.frozen : COPY.live}
+        </p>
       ) : null}
     </>
   );

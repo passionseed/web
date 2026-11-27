@@ -97,8 +97,8 @@ function Team({ token, reg, demo, share }: Props) {
  */
 function ShareSlot({ token, reg, share, teamStyle, demo, className }: Props & { className?: string }) {
   if (!share) return null;
-  // Solo, with the seat still in play, the team meter would count the same link twice: show it once the seat is out of reach.
-  const seatInPlay = share.phase === "open" && (!share.link || share.link.seat.state === "open");
+  // Solo, with seats still to earn, the team meter would count the same link twice: show it once the link is maxed or closed.
+  const seatInPlay = share.phase === "open" && (!share.link || !share.link.seats.maxed);
   const hideMeter = !reg.team && seatInPlay;
   return (
     <div className={className}>
