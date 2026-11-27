@@ -17,7 +17,7 @@ import { placeFor, ticketNumber } from "./places";
 import { TeamInvite } from "./TeamInvite";
 import { Ticket } from "./Ticket";
 import { ShareCard, type ShareCardData } from "./share/ShareCard";
-import { TeamStyleRow } from "./team-style/TeamStyleRow";
+import { TeamLine } from "./team-style/TeamLine";
 import { TrackStep } from "./TrackStep";
 
 /**
@@ -37,8 +37,8 @@ type Props = {
   share?: ShareCardData | null;
   /**
    * The team's board name, style and rank, once the board has launched. Rendered as
-   * <TeamStyleRow token={token} data={teamStyle} demo={demo} /> (./team-style/TeamStyleRow)
-   * inside the share card.
+   * <TeamLine token={token} data={teamStyle} demo={demo} /> (./team-style/TeamLine)
+   * inside the share slab.
    */
   teamStyle?: TeamStyleCardData | null;
   demo?: boolean;
@@ -92,17 +92,14 @@ function Team({ token, reg, demo, share }: Props) {
 }
 
 /**
- * "ลิงก์ของฉัน": the one card for the link, its meter and the team's board
- * row, under the payment so paying stays the first thing.
+ * "ลิงก์ของฉัน": the dark share slab (the link, its SeatCard and the team's
+ * one-line TeamLine), under the payment so paying stays the first thing.
  */
-function ShareSlot({ token, reg, share, teamStyle, demo, className }: Props & { className?: string }) {
+function ShareSlot({ token, share, teamStyle, demo, className }: Props & { className?: string }) {
   if (!share) return null;
-  // Solo, with seats still to earn, the team meter would count the same link twice: show it once the link is maxed or closed.
-  const seatInPlay = share.phase === "open" && (!share.link || !share.link.seats.maxed);
-  const hideMeter = !reg.team && seatInPlay;
   return (
     <div className={className}>
-      <ShareCard share={share} teamRow={teamStyle ? <TeamStyleRow token={token} data={teamStyle} demo={demo} hideMeter={hideMeter} /> : undefined} />
+      <ShareCard share={share} teamRow={teamStyle ? <TeamLine token={token} data={teamStyle} demo={demo} /> : undefined} />
     </div>
   );
 }

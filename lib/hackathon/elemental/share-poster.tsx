@@ -98,3 +98,41 @@ export async function renderSharePoster(code: string, kind: ShareKind = "student
     .jpeg({ quality: 88, mozjpeg: true })
     .toBuffer();
 }
+
+/** Link previews (og:image) are 1200×630. */
+export const OG_SIZE = { width: 1200, height: 630 } as const;
+
+/**
+ * This sharer's poster as a link preview: the poster's top (the wordmark,
+ * the dates, the sky with the fire's smoke) cropped to 1200×630, with their
+ * "No. CODE" stamp, so a share link pasted in LINE shows their own poster.
+ * The QR code stays off: a preview card is tapped, not scanned.
+ */
+export async function renderSharePosterOg(code: string, kind: ShareKind = "student"): Promise<Buffer> {
+  const { meta, image, mono, thai } = await load();
+  const s = meta.scale;
+  const { width, height } = OG_SIZE;
+  const cropHeight = Math.round((meta.width * s * height) / width);
+  const plate = { width: 290, height: 48 };
+  const label = await new ImageResponse(
+    (
+      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(12,13,12,0.82)" }}>
+        <span style={{ fontFamily: "Space Mono, Trirong", fontSize: 24, lineHeight: "30px", letterSpacing: "0.04em", color: EL.cream }}>{posterLabel(code, kind)}</span>
+      </div>
+    ),
+    {
+      ...plate,
+      fonts: [
+        { name: "Space Mono", data: mono, weight: 400, style: "normal" },
+        { name: "Trirong", data: thai, weight: 400, style: "normal" },
+      ],
+    },
+  ).arrayBuffer();
+
+  return sharp(image)
+    .extract({ left: 0, top: 0, width: meta.width * s, height: cropHeight })
+    .resize(width, height)
+    .composite([{ input: Buffer.from(label), left: width - plate.width - 40, top: height - plate.height - 36 }])
+    .jpeg({ quality: 86, mozjpeg: true })
+    .toBuffer();
+}

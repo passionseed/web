@@ -1,17 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Search, X } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
 
-import { EL } from "@/components/hackathon/poster/elemental/brand";
+import { EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 
-import { btnSmall, hairline, inlineTap, line, outline, schoolLabel } from "./ui";
+import { Body, EditorialLink, Fine, PixelIcon, SecondaryButton, TextInput, v } from "./ui";
 
 /**
  * Search the 11,246-school open-data list, or type the name when the school
  * isn't on it. Controlled: the parent holds the choice and decides what
- * "confirm" means (the student page saves it, the teacher form sends it with
- * the rest).
+ * "confirm" means (the student page saves it from its sticky bar, the
+ * teacher form sends it with the rest). Colours come from the surface.
  */
 
 export type SchoolChoice =
@@ -23,8 +22,9 @@ type Found = { key: string; name: string; province: string };
 // copy: placeholder — Angpao rewrites
 const COPY = {
   search: "พิมพ์ชื่อโรงเรียน",
-  label: "ชื่อโรงเรียน",
-  none: "ไม่เจอในรายชื่อ ลองพิมพ์สั้นลง หรือพิมพ์ชื่อเองด้านล่าง",
+  label: "โรงเรียน",
+  results: "โรงเรียนที่ตรงกับคำค้น",
+  none: "ไม่เจอในรายชื่อ ลองพิมพ์สั้นลง หรือพิมพ์ชื่อเอง",
   missing: "ไม่มีโรงเรียนของฉันในรายชื่อ",
   customName: "ชื่อโรงเรียน",
   customProvince: "จังหวัด",
@@ -39,11 +39,14 @@ export function SchoolPicker({
   startQuery,
   value,
   onChange,
+  label = COPY.label,
 }: {
   startQuery: string;
   value: SchoolChoice | null;
   onChange: (choice: SchoolChoice | null) => void;
+  label?: string;
 }) {
+  const id = useId();
   const [query, setQuery] = useState(startQuery);
   const [schools, setSchools] = useState<Found[] | null>(null);
   const [custom, setCustom] = useState(false);
@@ -74,118 +77,94 @@ export function SchoolPicker({
 
   if (value) {
     return (
-      <div className="flex items-center justify-between gap-3 rounded-xl border bg-white px-4 py-3" style={{ borderColor: EL.flame }}>
-        <span className="min-w-0">
-          {schoolLabel(value.name)}
-          {value.province && (
-            <span className="block text-sm" style={{ color: EL.inkSoft }}>
-              {value.province}
-            </span>
-          )}
-        </span>
-        <button type="button" onClick={() => onChange(null)} className={`${inlineTap} shrink-0 px-2`} style={{ color: EL.inkSoft }}>
-          {COPY.change}
-        </button>
+      <div>
+        <p className="mb-2" style={{ fontFamily: EL_FONT.body, fontSize: 16, lineHeight: "26px" }}>
+          {label}
+        </p>
+        <div className="flex items-center justify-between gap-3 py-3 pl-4 pr-1" style={{ boxShadow: `inset 2px 0 0 ${v.action}`, backgroundColor: "var(--el-input)" }}>
+          <span className="min-w-0">
+            <Body as="span" className="block">
+              โรงเรียน{value.name}
+            </Body>
+            {value.province && <Fine as="span">{value.province}</Fine>}
+          </span>
+          <EditorialLink size="sm" arrow={false} onClick={() => onChange(null)} className="shrink-0 px-3">
+            {COPY.change}
+          </EditorialLink>
+        </div>
       </div>
     );
   }
 
   if (custom) {
+    const name = customName.trim().replace(/^(โรงเรียน|รร\.?)\s*/, "");
     return (
-      <div className="space-y-3">
-        <input
-          value={customName}
-          onChange={(e) => setCustomName(e.target.value)}
-          placeholder={COPY.customName}
-          aria-label={COPY.customName}
-          maxLength={120}
-          className="w-full rounded-xl border bg-white px-4 py-3.5 text-lg outline-none"
-          style={{ borderColor: line, color: EL.ink }}
-        />
-        <input
-          value={customProvince}
-          onChange={(e) => setCustomProvince(e.target.value)}
-          placeholder={COPY.customProvince}
-          aria-label={COPY.customProvince}
-          maxLength={60}
-          className="w-full rounded-xl border bg-white px-4 py-3.5 text-lg outline-none"
-          style={{ borderColor: line, color: EL.ink }}
-        />
-        <div className="flex flex-wrap items-center gap-4">
-          <button
-            type="button"
-            disabled={customName.trim().length < 2}
-            onClick={() => onChange({ custom: true, name: customName.trim().replace(/^(โรงเรียน|รร\.?)\s*/, ""), province: customProvince.trim() })}
-            className={btnSmall}
-            style={outline}
-          >
+      <div className="space-y-4">
+        <TextInput id={`${id}-name`} label={COPY.customName} value={customName} onChange={(e) => setCustomName(e.target.value)} maxLength={120} autoComplete="off" />
+        <TextInput id={`${id}-province`} label={COPY.customProvince} value={customProvince} onChange={(e) => setCustomProvince(e.target.value)} maxLength={60} autoComplete="off" />
+        <Fine>{COPY.customNote}</Fine>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          <SecondaryButton disabled={name.length < 2} onClick={() => onChange({ custom: true, name, province: customProvince.trim() })}>
             {COPY.useName}
-          </button>
-          <button type="button" onClick={() => setCustom(false)} className={inlineTap} style={{ color: EL.inkSoft }}>
+          </SecondaryButton>
+          <EditorialLink size="sm" arrow={false} onClick={() => setCustom(false)}>
             {COPY.backToSearch}
-          </button>
+          </EditorialLink>
         </div>
-        <p className="text-sm" style={{ color: EL.inkSoft }}>
-          {COPY.customNote}
-        </p>
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      {/* Stays on screen while the results scroll under it. */}
-      <div className="sticky top-0 z-10 -mx-1 px-1 py-1" style={{ backgroundColor: EL.cream }}>
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2" style={{ color: EL.inkSoft }} aria-hidden="true" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={COPY.search}
-            aria-label={COPY.label}
-            type="search"
-            enterKeyHint="search"
-            className="w-full rounded-xl bg-white py-3.5 pl-12 pr-12 text-lg outline-none [&::-webkit-search-cancel-button]:hidden"
-            style={{ boxShadow: `inset 0 0 0 1.5px ${EL.ink}`, color: EL.ink }}
-          />
-          {query && (
-            <button
-              type="button"
-              onClick={() => setQuery("")}
-              aria-label={COPY.clear}
-              className="absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full"
-              style={{ color: EL.inkSoft }}
-            >
-              <X className="h-5 w-5" />
-            </button>
-          )}
-        </div>
+      <div className="relative">
+        <TextInput
+          id={`${id}-search`}
+          label={label}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={COPY.search}
+          type="search"
+          enterKeyHint="search"
+          autoComplete="off"
+          leading={<PixelIcon name="search" />}
+          className="[&_input::-webkit-search-cancel-button]:hidden"
+        />
+        {query && (
+          <button
+            type="button"
+            onClick={() => setQuery("")}
+            aria-label={COPY.clear}
+            className="absolute bottom-1 right-1 flex h-11 w-11 items-center justify-center"
+            style={{ color: v.secondary, fontFamily: EL_FONT.mono, fontSize: 18 }}
+          >
+            <span aria-hidden="true">×</span>
+          </button>
+        )}
       </div>
-      {schools && schools.length === 0 && <p style={{ color: EL.inkSoft }}>{COPY.none}</p>}
+      {schools && schools.length === 0 && <Body secondary>{COPY.none}</Body>}
       {schools && schools.length > 0 && (
-        <ul className="overflow-hidden rounded-xl border bg-white" style={{ borderColor: line }} aria-label="โรงเรียน">
-          {schools.map((s, i) => (
-            <li key={s.key} style={i > 0 ? { borderTop: `1px solid ${hairline}` } : undefined}>
-              <button
-                type="button"
-                onClick={() => onChange(s)}
-                className="flex min-h-14 w-full items-center justify-between gap-3 px-4 py-3 text-left"
-                style={{ color: EL.ink }}
-              >
+        <ul aria-label={COPY.results} className="border-b" style={{ borderColor: v.rule }}>
+          {schools.map((s) => (
+            <li key={s.key} className="border-t" style={{ borderColor: v.rule }}>
+              <button type="button" onClick={() => onChange(s)} className="flex min-h-14 w-full items-center justify-between gap-3 py-3 text-left active:opacity-70">
                 <span className="min-w-0">
-                  โรงเรียน{s.name}
-                  <span className="block text-sm" style={{ color: EL.inkSoft }}>
-                    {s.province}
-                  </span>
+                  <Body as="span" className="block">
+                    โรงเรียน{s.name}
+                  </Body>
+                  <Fine as="span">{s.province}</Fine>
+                </span>
+                <span aria-hidden="true" style={{ color: v.secondary }}>
+                  <PixelIcon name="arrow" />
                 </span>
               </button>
             </li>
           ))}
         </ul>
       )}
-      <button type="button" onClick={() => setCustom(true)} className={inlineTap} style={{ color: EL.inkSoft }}>
+      <EditorialLink size="sm" arrow={false} onClick={() => setCustom(true)}>
         {COPY.missing}
-      </button>
+      </EditorialLink>
     </div>
   );
 }

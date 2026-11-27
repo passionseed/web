@@ -10,6 +10,8 @@ import { seatProgressView, type SeatRow, type SeatSlotStatus, type SeatProgressV
  *   (none)               picking a school
  *   start                link made, nothing yet
  *   early                12 devices, 0 paid
+ *   close                44 devices, 0 paid (the last 10 cells)
+ *   devices-done         53 devices, 0 paid (the grid is clean, the paid sign-up isn't in)
  *   seat1-ready          seat 1 earned (53 + 1), the unpaid student's own, staff checking
  *   seat1-given          seat 1 confirmed: their sign-up is free; heading for seat 2
  *   seat2-progress       76 devices + 1 paid, seat 1 given, 24 devices + 1 paid to seat 2
@@ -52,6 +54,8 @@ const student = (view: SeatProgressView, selfPaid = false): ShareLinkView => ({
 export const STUDENT_DEMO_STATES = {
   start: () => student(seats(0, 0, [], { own: OWN_ID })),
   early: () => student(seats(12, 0, [], { own: OWN_ID })),
+  close: () => student(seats(44, 0, [], { own: OWN_ID })),
+  "devices-done": () => student(seats(53, 0, [], { own: OWN_ID })),
   "seat1-ready": () => student(seats(53, 1, [row(1, "qualified", OWN_ID)], { own: OWN_ID })),
   "seat1-given": () => student(seats(58, 1, [row(1, "confirmed", OWN_ID)], { own: OWN_ID, selfPaid: true }), true),
   "seat2-progress": () => student(seats(76, 1, [row(1, "confirmed", OWN_ID)], { own: OWN_ID, selfPaid: true }), true),

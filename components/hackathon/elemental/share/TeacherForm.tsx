@@ -2,47 +2,42 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
 
-import { Field, TextInput } from "@/components/hackathon/elemental/join/fields";
-import { EL } from "@/components/hackathon/poster/elemental/brand";
-import { demoDayLine, ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
-import { parseOptionalPhone, parseTeacherContact, SEAT_RULE, TEACHER_INVITE_DEVICES } from "@/lib/hackathon/elemental/share-rules";
+import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
+import { formatThaiDate } from "@/lib/content/shift-cohort";
+import { parseTeacherContact, SEAT_RULE, TEACHER_INVITE_DEVICES } from "@/lib/hackathon/elemental/share-rules";
 import { isRudeTeamName } from "@/lib/hackathon/elemental/team-name";
 
 import { lineHelp } from "./copy-shared";
-import { DeviceStrip, PaidBlocks } from "./Progress";
 import { SchoolPicker, type SchoolChoice } from "./SchoolPicker";
-import { btn, ErrorLine, filled, hairline, Lead, Page, Title } from "./ui";
+import { EditorialLink, Fine, H1, Page, PrimaryButton, SkyBand, StickyBar, TextInput, v } from "./ui";
 
 /**
- * The public teacher page (Big, 2026-11-27): no sign-up. A teacher gives a
- * name, picks the school and leaves an email or LINE ID; they get a private
- * page with their own poster and link. 50 devices: invited to Demo Day.
- * Every 50 devices + 1 paid: a free seat (up to 2, SEAT_RULE) for students
- * they choose. Teachers are adults; their name and contact are for staff only.
+ * The public teacher page, on the dark ground (merged direction §8): no
+ * sign-up. A teacher gives a name, picks the school and leaves an email or
+ * LINE ID; they get a private page with their own poster and link. The sky
+ * band's fact strip says what it earns: 50 devices, Demo Day; every 50
+ * devices + 1 paid, a free seat for a student (up to 2, SEAT_RULE). Teachers
+ * are adults; their name and contact are for staff only.
  */
 
 // copy: placeholder — Angpao rewrites
 const COPY = {
-  top: `${ELEMENTAL.edition} Hackathon · สำหรับคุณครู`,
   title: "ลิงก์แชร์ของคุณครู",
   lead: "สร้างโปสเตอร์และลิงก์ของคุณครูเอง ส่งให้นักเรียนในกลุ่ม LINE ไม่ต้องสมัครสมาชิก",
-  rewardsTitle: "สิ่งที่คุณครูได้",
-  rewardDevices: `${TEACHER_INVITE_DEVICES} เครื่อง → Demo Day`,
-  rewardDevicesGet: `เชิญคุณครูมา ${demoDayLine()} ทีมงานยืนยันกับโรงเรียนก่อนส่งคำเชิญ`,
-  rewardPaid: `ทุก ${SEAT_RULE.devicesPerSeat} เครื่อง + ${SEAT_RULE.paidPerSeat} คนจ่าย → ที่นั่งฟรี 1 ที่`,
-  rewardPaidGet: `ให้นักเรียนที่คุณครูเลือก ได้สูงสุด ${SEAT_RULE.maxSeatsPerLink} ที่`,
-  wifi: "นับเป็นเครื่อง เปิดซ้ำจากเครื่องเดิมนับครั้งเดียว",
-  seatRule: "ทีมงานเช็กก่อนให้ที่นั่งทุกครั้ง",
-  formHeading: "สร้างลิงก์",
+  factInvite: { tag: `${TEACHER_INVITE_DEVICES} เครื่อง`, value: "Demo Day", note: formatThaiDate(ELEMENTAL.demoDay.date, false) },
+  // The tag stays one short line in a half-width cell; the paid part goes in the note.
+  factSeat: {
+    tag: `ทุก ${SEAT_RULE.devicesPerSeat} เครื่อง`,
+    value: "ที่นั่งฟรีให้นักเรียน",
+    note: `+ ${SEAT_RULE.paidPerSeat} คนจ่าย · สูงสุด ${SEAT_RULE.maxSeatsPerLink} ที่`,
+  },
   name: "ชื่อ-นามสกุล",
   school: "โรงเรียน",
   contact: "อีเมล หรือ LINE ID",
   contactHint: "ทีมงานใช้ติดต่อเรื่อง Demo Day",
-  phone: "เบอร์โทร (ไม่บังคับ)",
   privacy: "ชื่อและช่องทางติดต่อของคุณครูเห็นเฉพาะทีมงาน ไม่แสดงบนหน้าไหน",
-  submit: "สร้างลิงก์ของฉัน",
+  submit: "สร้างลิงก์ →",
   busy: "กำลังสร้าง…",
   closedTitle: "ลิงก์แชร์ของคุณครู",
   closed: "ตอนนี้ยังไม่เปิด",
@@ -50,7 +45,6 @@ const COPY = {
     name: "ใส่ชื่อ-นามสกุล",
     school: "เลือกโรงเรียน",
     contact: "ใส่อีเมล หรือ LINE ID ให้ถูก",
-    phone: "เบอร์โทรไม่ถูก ใส่ตัวเลข 9 ถึง 15 หลัก หรือเว้นว่างไว้",
     invalid: "เช็กชื่ออีกครั้ง",
     exists: `อีเมลหรือ LINE ID นี้มีลิงก์แล้ว ${lineHelp} เพื่อขอลิงก์เดิม`,
     rate_limited: "สร้างลิงก์ถี่เกินไป ลองใหม่ในอีก 1 ชั่วโมง",
@@ -59,31 +53,15 @@ const COPY = {
   } as Record<string, string>,
 };
 
-type Errors = Partial<Record<"name" | "school" | "contact" | "phone" | "form", string>>;
+const FORM_ID = "elemental-teacher-form";
 
-/** The same meter the teacher will watch later, empty: what each goal earns. */
-function Rewards() {
+type Errors = Partial<Record<"name" | "school" | "contact" | "form", string>>;
+
+function ErrorText({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mt-8 space-y-5 rounded-2xl border p-5" style={{ borderColor: hairline }}>
-      <p className="text-xl font-semibold">{COPY.rewardsTitle}</p>
-      <div className="space-y-2">
-        <p className="text-base font-semibold">{COPY.rewardDevices}</p>
-        <DeviceStrip value={0} />
-        <p className="text-sm" style={{ color: EL.inkSoft }}>
-          {COPY.rewardDevicesGet}
-        </p>
-      </div>
-      <div className="space-y-2 border-t pt-5" style={{ borderColor: hairline }}>
-        <p className="text-base font-semibold">{COPY.rewardPaid}</p>
-        <PaidBlocks value={0} goal={SEAT_RULE.paidPerSeat} small />
-        <p className="text-sm" style={{ color: EL.inkSoft }}>
-          {COPY.rewardPaidGet}
-        </p>
-      </div>
-      <p className="border-t pt-4 text-sm" style={{ borderColor: hairline, color: EL.inkSoft }}>
-        {COPY.wifi} · {COPY.seatRule}
-      </p>
-    </div>
+    <p role="alert" style={{ fontSize: 14, lineHeight: "22px", color: v.error }}>
+      {children}
+    </p>
   );
 }
 
@@ -92,15 +70,28 @@ export function TeacherForm({ open, demo }: { open: boolean; demo?: boolean }) {
   const [name, setName] = useState("");
   const [school, setSchool] = useState<SchoolChoice | null>(null);
   const [contact, setContact] = useState("");
-  const [phone, setPhone] = useState("");
   const [errors, setErrors] = useState<Errors>({});
   const [busy, setBusy] = useState(false);
 
+  const sky = (
+    <SkyBand
+      title={<H1>{open ? COPY.title : COPY.closedTitle}</H1>}
+      lead={open ? COPY.lead : COPY.closed}
+      facts={
+        open
+          ? [
+              { icon: "ticket", ...COPY.factInvite },
+              { icon: "school", ...COPY.factSeat },
+            ]
+          : undefined
+      }
+    />
+  );
+
   if (!open) {
     return (
-      <Page top={COPY.top}>
-        <Title>{COPY.closedTitle}</Title>
-        <Lead>{COPY.closed}</Lead>
+      <Page surface="ground" sky={sky}>
+        <EditorialLink href="/hackathon/elemental">{ELEMENTAL.edition} Hackathon</EditorialLink>
       </Page>
     );
   }
@@ -112,7 +103,6 @@ export function TeacherForm({ open, demo }: { open: boolean; demo?: boolean }) {
     else if (isRudeTeamName(name)) next.name = COPY.errors.invalid;
     if (!school) next.school = COPY.errors.school;
     if (!parseTeacherContact(contact)) next.contact = COPY.errors.contact;
-    if (!parseOptionalPhone(phone).ok) next.phone = COPY.errors.phone;
     setErrors(next);
     if (Object.keys(next).length > 0 || !school) return;
 
@@ -128,7 +118,6 @@ export function TeacherForm({ open, demo }: { open: boolean; demo?: boolean }) {
         body: JSON.stringify({
           name: name.trim(),
           contact: contact.trim(),
-          phone: phone.trim() || undefined,
           school: "custom" in school ? { customName: school.name, province: school.province || undefined } : { schoolKey: school.key },
         }),
       });
@@ -137,7 +126,7 @@ export function TeacherForm({ open, demo }: { open: boolean; demo?: boolean }) {
         router.push(`/hackathon/elemental/teacher/${data.token}?new=1`);
         return;
       }
-      const field = data.error === "contact" || data.error === "phone" || data.error === "school" ? data.error : null;
+      const field = data.error === "contact" || data.error === "school" ? data.error : null;
       setErrors(field ? { [field]: COPY.errors[field] } : { form: COPY.errors[data.error] ?? COPY.errors.other });
       setBusy(false);
     } catch {
@@ -147,39 +136,40 @@ export function TeacherForm({ open, demo }: { open: boolean; demo?: boolean }) {
   };
 
   return (
-    <Page top={COPY.top}>
-      <Title>{COPY.title}</Title>
-      <Lead>{COPY.lead}</Lead>
-      <Rewards />
-
-      <form onSubmit={submit} className="mt-10 space-y-6" noValidate>
-        <h2 className="text-xl font-semibold">{COPY.formHeading}</h2>
-        <Field label={COPY.name} error={errors.name}>
-          <TextInput value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" maxLength={80} invalid={!!errors.name} />
-        </Field>
+    <Page
+      surface="ground"
+      sky={sky}
+      bar={
+        <StickyBar>
+          <PrimaryButton type="submit" form={FORM_ID} disabled={busy} full>
+            {busy ? COPY.busy : COPY.submit}
+          </PrimaryButton>
+        </StickyBar>
+      }
+    >
+      <form id={FORM_ID} onSubmit={submit} className="space-y-7" noValidate>
+        <TextInput id="teacher-name" label={COPY.name} value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" maxLength={80} error={errors.name} />
         <div>
-          <p className="mb-2 text-sm font-medium">{COPY.school}</p>
-          <SchoolPicker startQuery="" value={school} onChange={setSchool} />
+          <SchoolPicker label={COPY.school} startQuery="" value={school} onChange={setSchool} />
           {errors.school && (
             <div className="mt-1.5">
-              <ErrorLine>{errors.school}</ErrorLine>
+              <ErrorText>{errors.school}</ErrorText>
             </div>
           )}
         </div>
-        <Field label={COPY.contact} hint={COPY.contactHint} error={errors.contact}>
-          <TextInput value={contact} onChange={(e) => setContact(e.target.value)} autoComplete="email" autoCapitalize="none" maxLength={120} invalid={!!errors.contact} />
-        </Field>
-        <Field label={COPY.phone} error={errors.phone}>
-          <TextInput value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" autoComplete="tel" maxLength={30} invalid={!!errors.phone} />
-        </Field>
-        <p className="text-sm" style={{ color: EL.inkSoft }}>
-          {COPY.privacy}
-        </p>
-        {errors.form && <ErrorLine>{errors.form}</ErrorLine>}
-        <button type="submit" disabled={busy} className={`${btn} w-full`} style={filled}>
-          {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-          {busy ? COPY.busy : COPY.submit}
-        </button>
+        <TextInput
+          id="teacher-contact"
+          label={COPY.contact}
+          hint={COPY.contactHint}
+          value={contact}
+          onChange={(e) => setContact(e.target.value)}
+          autoComplete="email"
+          autoCapitalize="none"
+          maxLength={120}
+          error={errors.contact}
+        />
+        <Fine>{COPY.privacy}</Fine>
+        {errors.form && <ErrorText>{errors.form}</ErrorText>}
       </form>
     </Page>
   );

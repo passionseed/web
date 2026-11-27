@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { demoPagesOn, SHARE_CODE_RE, SHARE_DEMO_CODE, TEACHER_DEMO_CODE, type ShareKind } from "@/lib/hackathon/elemental/share";
-import { renderSharePoster } from "@/lib/hackathon/elemental/share-poster";
+import { renderSharePoster, renderSharePosterOg } from "@/lib/hackathon/elemental/share-poster";
 import { safeServerError } from "@/lib/security/route-guards";
 import { findLinkKind } from "@/lib/supabase/hackathon-share-links";
 
@@ -22,6 +22,8 @@ function demoKind(code: string): ShareKind | null {
  * code that has a share link. ?v= is the base image's version, so a new
  * export gets new links and the CDN keeps each one for good.
  * ?download=1 asks the browser to save it as a file.
+ * ?format=og is the 1200×630 link preview (the landing page's og:image for
+ * ?src=share-<code> and ?src=t-<code>), cached the same way.
  */
 export async function GET(request: Request, { params }: { params: Promise<{ code: string }> }) {
   try {
@@ -29,13 +31,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ code
     if (!SHARE_CODE_RE.test(code)) return NextResponse.json({ error: "not_found" }, { status: 404 });
     const kind = demoKind(code) ?? (await findLinkKind(ELEMENTAL.slug, code));
     if (!kind) return NextResponse.json({ error: "not_found" }, { status: 404 });
-    const jpg = await renderSharePoster(code, kind);
-    const download = new URL(request.url).searchParams.get("download") === "1";
+    const query = new URL(request.url).searchParams;
+    const og = query.get("format") === "og";
+    const jpg = og ? await renderSharePosterOg(code, kind) : await renderSharePoster(code, kind);
+    const download = query.get("download") === "1";
     return new NextResponse(new Uint8Array(jpg), {
       headers: {
         "Content-Type": "image/jpeg",
         "Cache-Control": "public, max-age=86400, s-maxage=31536000, immutable",
-        "Content-Disposition": `${download ? "attachment" : "inline"}; filename="elemental-${code}.jpg"`,
+        "Content-Disposition": `${download ? "attachment" : "inline"}; filename="elemental-${code}${og ? "-og" : ""}.jpg"`,
       },
     });
   } catch (error) {

@@ -4,9 +4,9 @@ import { notFound } from "next/navigation";
 import { trirong } from "@/components/hackathon/elemental/fonts";
 import { ShareView } from "@/components/hackathon/elemental/share/ShareView";
 import { teamStyleFonts } from "@/components/hackathon/elemental/team-style/fonts";
-import { TeamStyleRow } from "@/components/hackathon/elemental/team-style/TeamStyleRow";
+import { TeamLine } from "@/components/hackathon/elemental/team-style/TeamLine";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
-import { sharePhase } from "@/lib/hackathon/elemental/share";
+import { shareCode, sharePhase } from "@/lib/hackathon/elemental/share";
 import { hasPaid, type ShareLinkView } from "@/lib/hackathon/elemental/share-rules";
 import { posterVersion } from "@/lib/hackathon/elemental/share-poster";
 import { getShareContext, getStudentLink, linkView } from "@/lib/supabase/hackathon-share-links";
@@ -40,7 +40,7 @@ export default async function ElementalSharePage({ params }: { params: Promise<{
       // Once the link has all its seats, or sign-up closed, the team's board row is the next goal. Null on any error.
       if (link && (link.seats.maxed || state === "after-close")) {
         const style = await loadTeamStyleCard(ELEMENTAL.slug, { id: reg.id, team: reg.teamId ? { id: reg.teamId } : null }, `/hackathon/join/${token}/share`);
-        if (style) teamRow = <TeamStyleRow token={token} data={style} />;
+        if (style) teamRow = <TeamLine token={token} data={style} />;
       }
     } catch (error) {
       // No share tables yet, or the database is down: show "not open" rather than break.
@@ -55,6 +55,7 @@ export default async function ElementalSharePage({ params }: { params: Promise<{
         token={token}
         state={state}
         link={link}
+        code={shareCode(reg.id)}
         selfPaid={hasPaid(reg.status)}
         startQuery={reg.school ?? ""}
         posterVersion={version}

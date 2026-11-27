@@ -28,10 +28,10 @@ const STATES: RegistrationStatus[] = ["pending", "review", "paid", "cancelled"];
  * (n: the place in sign-up order inside the team, so each teammate's ticket can be seen)
  * &discord=joined|not_member|taken|error shows each Discord state on the paid page.
  * &share=1|<state> shows the share card (1: no school yet; a state from lib/hackathon/elemental/share-demo.ts:
- *   start, early, seat1-ready, seat1-given, seat2-progress, maxed, paid-naming-friend, after-close)
+ *   start, early, close, devices-done, seat1-ready, seat1-given, seat2-progress, maxed, paid-naming-friend, after-close)
  *   on the pending, review or paid page; &phase=after-close shows it read-only.
  * &style=unnamed|locked|colors|fonts|all|final gives the share card the team's board row at that level
- * (unnamed: no board name yet; final: after sign-up close); &edit=1 opens its editor.
+ * (unnamed: no board name yet; final: after sign-up close). Editing is its own page: /hackathon/join/demo/team?style=…
  */
 export default async function PayDemoPage({ searchParams }: { searchParams: SearchParams }) {
   if (!demoPagesOn()) notFound();
