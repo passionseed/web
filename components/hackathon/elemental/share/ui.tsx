@@ -190,7 +190,7 @@ export function Tag({
   return (
     <span
       className={`whitespace-nowrap ${className ?? ""}`}
-      style={{ fontFamily: EL_FONT.mono, fontSize: 13, lineHeight: "20px", color: tone === "action" ? v.action : tone === "text" ? v.text : v.secondary }}
+      style={{ fontFamily: EL_FONT.mono, fontSize: 13, fontWeight: 400, lineHeight: "20px", color: tone === "action" ? v.action : tone === "text" ? v.text : v.secondary }}
     >
       {bracket ? <>[{children}]</> : children}
     </span>
