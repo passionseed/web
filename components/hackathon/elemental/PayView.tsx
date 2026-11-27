@@ -13,6 +13,7 @@ import { ConnectDiscord } from "./ConnectDiscord";
 import { PayWithSlip } from "./PayWithSlip";
 import { placeFor, ticketNumber } from "./places";
 import { TeamInvite } from "./TeamInvite";
+import { TeamJoin } from "./TeamJoin";
 import { Ticket } from "./Ticket";
 import { TrackStep } from "./TrackStep";
 
@@ -24,7 +25,7 @@ import { TrackStep } from "./TrackStep";
 type Props = {
   token: string;
   reg: Pick<PublicRegistration, "status" | "teamName" | "memberCount" | "amountBaht" | "memberNicknames" | "team" | "isTeamStarter" | "teamPosition" | "discordJoined"> &
-    Partial<Pick<PublicRegistration, "buddyPass" | "buddyOf">>;
+    Partial<Pick<PublicRegistration, "buddyPass" | "buddyOf" | "onBuddyPass">>;
   qrSrc: string | null;
   links: { line: string | null; discord: string | null };
   /** The find-a-team OpenChat, set only on an unpaid page that still needs teammates. */
@@ -71,10 +72,43 @@ function BuddySection({ reg }: { reg: Props["reg"] }) {
   );
 }
 
-/** The team card; the person who started the team can rename it from here. */
+/**
+ * The team card. In a team: the roster, the invite link and team code, a way
+ * to leave, and for the person who started it, a way to rename it. Without a
+ * team: join one with its code, or start one. The lines about money follow
+ * amountAfterTeamChange (lib/hackathon/elemental/team-change.ts): only a
+ * sign-up that hasn't paid changes price, and a buddy pass price never does.
+ */
 function Team({ token, reg, demo }: Props) {
-  if (!reg.team) return null;
-  return <TeamInvite team={reg.team} renameToken={reg.isTeamStarter ? token : undefined} demo={demo} />;
+  const priceFollows = reg.status === "pending" && !reg.onBuddyPass && !reg.buddyOf;
+  const alone = reg.memberCount === 1;
+  if (!reg.team) {
+    const priceNote = !priceFollows
+      ? reg.status === "pending"
+        ? "ค่าสมัครของหน้านี้ไม่เปลี่ยน"
+        : "ค่าสมัครที่จ่ายแล้วไม่เปลี่ยน ไม่มีคืนเงินและไม่ต้องจ่ายเพิ่ม"
+      : alone
+        ? `เข้าทีมแล้ว ค่าสมัครเป็น ฿${ELEMENTAL.groupPriceBaht} เท่ากับเพื่อนในทีม`
+        : `ค่าสมัครยังเป็นคนละ ฿${ELEMENTAL.groupPriceBaht}`;
+    const holdsUnusedPass = reg.buddyPass?.state === "locked" || reg.buddyPass?.state === "available";
+    return (
+      <TeamJoin
+        token={token}
+        priceNote={priceNote}
+        buddyPassNote={holdsUnusedPass ? "บัตรเพื่อนของหน้านี้ใช้ได้เฉพาะตอนยังไม่มีทีม ออกจากทีมแล้วกลับมาใช้ได้" : undefined}
+        demo={demo}
+      />
+    );
+  }
+  const leaveNote = priceFollows && alone ? `ออกแล้ว ค่าสมัครกลับเป็น ฿${ELEMENTAL.priceBaht} ราคามาคนเดียว` : undefined;
+  return (
+    <TeamInvite
+      team={reg.team}
+      renameToken={reg.isTeamStarter ? token : undefined}
+      leave={{ token, note: leaveNote }}
+      demo={demo}
+    />
+  );
 }
 
 /**
@@ -225,13 +259,11 @@ function PendingSection(props: Props) {
           <BuddyPass pass={reg.buddyPass} />
         </div>
       )}
-      {reg.team && (
-        <div className="mt-10">
-          <Team {...props} />
-        </div>
-      )}
+      <div className="mt-10">
+        <Team {...props} />
+      </div>
       {teamUpUrl && (
-        <div className={reg.team ? "mt-4" : "mt-10"}>
+        <div className="mt-4">
           <TeamUp url={teamUpUrl} />
         </div>
       )}

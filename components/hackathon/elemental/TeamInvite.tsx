@@ -6,21 +6,36 @@ import { Check, Copy, Loader2, Share2 } from "lucide-react";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
+import { formatTeamCode } from "@/lib/hackathon/elemental/team-change";
 import { isRudeTeamName, teamLabel } from "@/lib/hackathon/elemental/team-name";
 import type { PublicTeam } from "@/lib/supabase/hackathon-event-registrations";
 
 import { TEAM_NAME_RUDE } from "./join/draft";
+import { changeTeam } from "./TeamJoin";
 import { trackElemental } from "./track";
 import { TextInput } from "./join/fields";
 
 /**
- * The team on a person's own page: who has joined and paid, and the invite
- * link to send friends (copy, the phone's share sheet, or LINE).
+ * The team on a person's own page: who has joined and paid, the invite link
+ * to send friends (copy, the phone's share sheet, or LINE), the team code for
+ * friends who already signed up, and a way out of the team.
  */
-export function TeamInvite({ team, renameToken, demo }: { team: PublicTeam; renameToken?: string; demo?: boolean }) {
+export function TeamInvite({
+  team,
+  renameToken,
+  leave,
+  demo,
+}: {
+  team: PublicTeam;
+  renameToken?: string;
+  /** Lets this page leave the team. note: what leaving does to the price, if anything. */
+  leave?: { token: string; note?: string };
+  demo?: boolean;
+}) {
   const [name, setName] = useState(team.name);
   const [origin, setOrigin] = useState("https://passionseed.org");
   const [copied, setCopied] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
   const [canShare, setCanShare] = useState(false);
 
   useEffect(() => {
@@ -38,6 +53,13 @@ export function TeamInvite({ team, renameToken, demo }: { team: PublicTeam; rena
     await navigator.clipboard.writeText(url).catch(() => undefined);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const copyCode = async () => {
+    trackElemental({ step: "invite_shared", detail: "code" }, { once: false });
+    await navigator.clipboard.writeText(formatTeamCode(team.inviteCode)).catch(() => undefined);
+    setCodeCopied(true);
+    setTimeout(() => setCodeCopied(false), 2000);
   };
 
   return (
@@ -94,9 +116,106 @@ export function TeamInvite({ team, renameToken, demo }: { team: PublicTeam; rena
               </a>
             )}
           </div>
+          {/* A friend who has already signed up (alone, say) types this on their own page instead of signing up again. */}
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-xl px-4 py-3" style={{ backgroundColor: "rgba(29,33,31,0.05)" }}>
+            <div className="min-w-0">
+              <p className="text-xs" style={{ color: EL.inkSoft }}>
+                รหัสทีม สำหรับเพื่อนที่สมัครแล้ว
+              </p>
+              <p className="whitespace-nowrap text-xl tracking-wide" style={{ fontFamily: EL_FONT.mono }}>
+                {formatTeamCode(team.inviteCode)}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={copyCode}
+              className="inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold"
+              style={outline}
+            >
+              {codeCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} {codeCopied ? "คัดลอกแล้ว" : "คัดลอกรหัส"}
+            </button>
+          </div>
         </div>
       )}
+
+      {leave && <LeaveTeam token={leave.token} note={leave.note} demo={demo} />}
     </section>
+  );
+}
+
+/** Leave the team: a quiet link, then one question before anything changes. */
+function LeaveTeam({ token, note, demo }: { token: string; note?: string; demo?: boolean }) {
+  const router = useRouter();
+  const [asking, setAsking] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  const leave = async () => {
+    setBusy(true);
+    setError(null);
+    const failed = await changeTeam(token, { action: "leave" }, demo);
+    setBusy(false);
+    if (failed) return setError(failed);
+    setAsking(false);
+    if (demo) return setDone(true);
+    router.refresh();
+  };
+
+  if (done) {
+    return (
+      <p role="status" className="border-t pt-4 text-sm" style={{ borderColor: "rgba(29,33,31,0.12)" }}>
+        ออกจากทีมแล้ว (เดโม ไม่ได้บันทึก)
+      </p>
+    );
+  }
+
+  if (!asking) {
+    return (
+      <div className="border-t pt-4" style={{ borderColor: "rgba(29,33,31,0.12)" }}>
+        <button type="button" onClick={() => setAsking(true)} className="text-sm underline underline-offset-4" style={{ color: EL.inkSoft }}>
+          ออกจากทีม
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3 border-t pt-4" style={{ borderColor: "rgba(29,33,31,0.12)" }}>
+      <p className="text-sm">ออกจากทีมนี้ใช่ไหม กลับเข้าได้ด้วยรหัสทีม ถ้าทีมยังมีที่ว่าง</p>
+      {note && (
+        <p className="text-sm" style={{ color: EL.inkSoft }}>
+          {note}
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="text-sm" style={{ color: EL.ember }}>
+          {error}
+        </p>
+      )}
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={leave}
+          disabled={busy}
+          className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold disabled:opacity-70"
+          style={{ backgroundColor: EL.ink, color: EL.cream }}
+        >
+          {busy && <Loader2 className="h-4 w-4 animate-spin" />} ออกจากทีม
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setError(null);
+            setAsking(false);
+          }}
+          className="rounded-full px-5 py-2.5 text-sm font-semibold"
+          style={outline}
+        >
+          ยกเลิก
+        </button>
+      </div>
+    </div>
   );
 }
 
