@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { trirong } from "@/components/hackathon/elemental/fonts";
 import { PayView } from "@/components/hackathon/elemental/PayView";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
+import { needsTeammates } from "@/lib/hackathon/elemental/community-links";
 import { parseElementalDiscordOutcome } from "@/lib/hackathon/elemental/discordLink";
 import { elementalPayQr } from "@/lib/hackathon/elemental/pay-qr";
 import { elementalPriceBaht } from "@/lib/hackathon/elemental/registration";
@@ -22,6 +23,7 @@ const STATES: RegistrationStatus[] = ["pending", "review", "paid", "cancelled"];
  * /hackathon/join/demo?state=pending|review|paid|cancelled&mode=solo|create|join&n=0..4
  * (n: the place in sign-up order inside the team, so each teammate's ticket can be seen)
  * &discord=joined|not_member|taken|error shows each Discord state on the paid page.
+ * &alone=1 leaves only the starter in the team, so the find-a-team OpenChat shows under it.
  */
 export default async function PayDemoPage({ searchParams }: { searchParams: SearchParams }) {
   if (process.env.NODE_ENV !== "development") notFound();
@@ -39,9 +41,9 @@ export default async function PayDemoPage({ searchParams }: { searchParams: Sear
         inviteCode: "0123456789ab",
         roster: [
           { name: "มิว", paid: state === "paid" },
-          { name: "ต้น", paid: true },
+          ...(first(params.alone) === "1" ? [] : [{ name: "ต้น", paid: true }]),
         ],
-        spotsLeft: ELEMENTAL.maxGroupSize - 2,
+        spotsLeft: ELEMENTAL.maxGroupSize - (first(params.alone) === "1" ? 1 : 2),
       }
     : null;
 
@@ -53,6 +55,7 @@ export default async function PayDemoPage({ searchParams }: { searchParams: Sear
         reg={{ status: state, teamName: team?.name ?? null, memberCount: 1, amountBaht, memberNicknames: ["มิว"], team, isTeamStarter: mode === "create", teamPosition, discordJoined: first(params.discord) === "joined" }}
         qrSrc={state === "pending" ? await elementalPayQr(amountBaht) : null}
         links={{ line: "https://line.me/ti/g/demo", discord: "https://discord.gg/demo" }}
+        teamUpUrl={state === "pending" && needsTeammates({ memberCount: 1, team }, ELEMENTAL.teamMin) ? "https://line.me/ti/g2/demo" : null}
         discordOutcome={parseElementalDiscordOutcome(first(params.discord))}
       />
     </div>
