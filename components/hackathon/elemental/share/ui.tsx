@@ -127,7 +127,7 @@ function weightDigits(children: ReactNode): ReactNode {
   return children.split(/(\d[\d,]*)/).map((part, i) => (i % 2 ? <span key={i} style={{ fontWeight: 400 }}>{part}</span> : part));
 }
 
-/** The meter's headline: what's left ("อีก 38 เครื่อง ได้ที่นั่งฟรี"). */
+/** The meter's headline ("รวม 12 เครื่อง"). */
 export function MeterTitle({ children, as: El = "p", className }: { children: ReactNode; as?: "p" | "h2" | "h3"; className?: string }) {
   return (
     <El className={`text-balance ${className ?? ""}`} style={display(300, 24, 1.3)}>
@@ -431,7 +431,7 @@ export function TextInput({
 
 export { PixelEdge, PixelIcon, type PixelIconName };
 
-/** A polled number that rolls when it changes (board rows, SeatCard's live count). A client component. */
+/** A polled number that rolls when it changes (board rows, MeterCard's live count). A client component. */
 export { RollingNumber } from "./RollingNumber";
 export { Arrow };
 

@@ -24,8 +24,8 @@ const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v
 
 /**
  * A teacher's private page. /hackathon/elemental/teacher/demo?s=<state> shows
- * made-up states where demo pages are on: start · sharing · invited · invite-sent ·
- * seat-naming · named · given (lib/hackathon/elemental/share-demo.ts);
+ * made-up states where demo pages are on: start · sharing · many
+ * (lib/hackathon/elemental/share-demo.ts);
  * &new=1 as right after the link was made, &phase=after-close after sign-up closes.
  */
 export default async function TeacherLinkPage({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: SearchParams }) {
@@ -55,7 +55,7 @@ export default async function TeacherLinkPage({ params, searchParams }: { params
   try {
     const own = await getTeacherLink(token);
     found = !!own;
-    if (own) [link, version] = await Promise.all([linkView(ELEMENTAL.slug, own, null), posterVersion()]);
+    if (own) [link, version] = await Promise.all([linkView(ELEMENTAL.slug, own), posterVersion()]);
   } catch (error) {
     // No share tables yet, or the database is down: show "closed" rather than break.
     console.error("[elemental teacher] could not load the link", error);

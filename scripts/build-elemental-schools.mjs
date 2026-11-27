@@ -3,7 +3,7 @@
  * Builds lib/hackathon/elemental/schools/schools.json: the schools an
  * Elemental sharer can pick on the share page (M.3 to M.6, anywhere in
  * Thailand). Big, 2026-11-26: "let them pick their school name, get a school
- * name list from open data", one free seat per school.
+ * name list from open data".
  *
  * Sources, all Thai government open data:
  * - obec: OBEC (สพฐ.) schools, school year 2563 (data.go.th obec-school-007).

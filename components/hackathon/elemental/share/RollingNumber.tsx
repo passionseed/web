@@ -9,7 +9,7 @@ import shell from "./shell.module.css";
  * (120ms snap), the new one comes in (240ms tension), and "+2" shows under it
  * in flameCore for 2.4s. Under prefers-reduced-motion nothing moves (the "+2"
  * still shows, then goes). The first render never animates.
- * Shared by the board rows and SeatCard's live count; import it from ./ui.
+ * Shared by the board rows and MeterCard's live count; import it from ./ui.
  */
 export function RollingNumber({
   value,

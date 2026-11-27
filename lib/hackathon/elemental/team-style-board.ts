@@ -13,8 +13,8 @@ import { clampStyle, readStyle, type TeamNameStyle } from "./team-style";
  *   (?src=share-<shareCode(registration id)>). A sign-up without a team is a
  *   one-person team.
  * - Only what happened up to sign-up close counts: views by then, and paid
- *   sign-ups whose slip came in by then (paidAt), and free seats never count
- *   as paid. So the final board really is final.
+ *   sign-ups whose slip came in by then (paidAt). So the final board really
+ *   is final.
  * - Students are mostly minors: a team is listed only under a board name a
  *   member typed (never the sign-up's "ทีม<nickname>" default), with its
  *   schools. Never a person's name, nickname or contact.
@@ -31,8 +31,6 @@ export type BoardRegistrationRow = {
   memberCount: number;
   /** The link this sign-up came through. */
   source: string | null;
-  /** A free seat (staff gave it): never counts as paid. */
-  freeSeat: boolean;
   createdAt: string;
   /** The slip's storage path: its file name holds the upload time (paidAt). */
   slipPath: string | null;
@@ -96,9 +94,9 @@ export function teamSchools(raw: string[]): string[] {
 
 const before = (iso: string | undefined, endsAt: Date) => !iso || new Date(iso).getTime() <= endsAt.getTime();
 
-/** A paid seat that counts: paid, not a free seat, and its slip came in by close (not just signed up by then). */
-export function countsAsPaid(r: Pick<BoardRegistrationRow, "status" | "freeSeat" | "createdAt" | "slipPath">, endsAt: Date): boolean {
-  return r.status === "paid" && !r.freeSeat && before(paidAt({ slipPath: r.slipPath, createdAt: r.createdAt }), endsAt);
+/** A paid seat that counts: paid, and its slip came in by close (not just signed up by then). */
+export function countsAsPaid(r: Pick<BoardRegistrationRow, "status" | "createdAt" | "slipPath">, endsAt: Date): boolean {
+  return r.status === "paid" && before(paidAt({ slipPath: r.slipPath, createdAt: r.createdAt }), endsAt);
 }
 
 /** Every team's numbers, hidden and unnamed ones and ones without devices included (the pay page needs them too). */

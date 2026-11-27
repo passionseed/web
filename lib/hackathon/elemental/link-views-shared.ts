@@ -11,7 +11,7 @@ export const DEVICE_COOKIE = "el_vid";
 
 /**
  * Counting stops when sign-up closes (Fri 4 Dec 23:59 Bangkok): views after it,
- * and paid sign-ups created after it, never count toward a link, a seat or the board.
+ * and paid sign-ups created after it, never count toward a link, a style or the board.
  */
 export function elementalCountingEndsAt(): Date {
   return new Date(`${ELEMENTAL.registrationClosesOn}T23:59:59+07:00`);

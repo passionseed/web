@@ -30,7 +30,7 @@ const COPY = {
   customProvince: "จังหวัด",
   useName: "ใช้ชื่อนี้",
   backToSearch: "กลับไปค้นหา",
-  customNote: "ทีมงานจะเช็กชื่อโรงเรียนก่อนให้ที่นั่งฟรี",
+  customNote: "ทีมงานจะเช็กชื่อโรงเรียน",
   change: "เปลี่ยน",
   clear: "ล้างคำค้น",
 };

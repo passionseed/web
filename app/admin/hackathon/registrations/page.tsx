@@ -1,17 +1,18 @@
 import { Badge } from "@/components/ui/badge";
 import { RegistrationActions } from "@/components/admin/hackathon/RegistrationActions";
-import { ShareLinksPanel, shareSummary, type ShareRegInfo } from "@/components/admin/hackathon/ShareLinksPanel";
+import { ShareLinksPanel, shareSummary } from "@/components/admin/hackathon/ShareLinksPanel";
+import { StoryProofsPanel } from "@/components/admin/hackathon/StoryProofsPanel";
 import { AdminEmptyState, AdminErrorState } from "@/components/admin/shared/AdminStates";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { formatBangkokDateTime } from "@/lib/admin/queue-tools/format";
 import { requireAdmin } from "@/lib/admin/requireAdmin";
 import { linkSource } from "@/lib/hackathon/elemental/share";
-import { SEAT_RULE, TEACHER_INVITE_DEVICES } from "@/lib/hackathon/elemental/share-rules";
 import {
   listRegistrations,
   type AdminRegistration,
 } from "@/lib/supabase/hackathon-event-registrations";
-import { listShareLinksForAdmin, loadSharePeople, type AdminShareLink, type SharePerson } from "@/lib/supabase/hackathon-share-links";
+import { listShareLinksForAdmin, type AdminShareLink } from "@/lib/supabase/hackathon-share-links";
+import { listStoryProofsForAdmin, type AdminStoryProof } from "@/lib/supabase/hackathon-story-proofs";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -62,11 +63,9 @@ function buddyLinks(rows: AdminRegistration[]): BuddyLinks {
 
 /** This sign-up's share link, in one line: the full row is in the Share links list above. */
 function ShareLinkLine({ l }: { l: AdminShareLink }) {
-  const seats = l.seats.map((x) => `seat ${x.index} ${x.status.replace("_", " ")}`).join(", ");
   return (
     <p className="text-xs text-muted-foreground">
-      Share link {linkSource(l.kind, l.code)} · {l.schoolName} · {l.progress.devices} devices · {l.progress.paid} paid ·{" "}
-      {l.seats.length}/{SEAT_RULE.maxSeatsPerLink} seats{seats && ` (${seats})`}
+      Share link {linkSource(l.kind, l.code)} · {l.schoolName} · {l.devices} devices · {l.paid} paid
     </p>
   );
 }
@@ -119,7 +118,6 @@ function RegistrationCard({ r, buddy, link }: { r: AdminRegistration; buddy: Bud
       </p>
       {slipNote(r.slipCheck) && <p className="text-xs text-muted-foreground">{slipNote(r.slipCheck)}</p>}
       {r.status === "paid" && <p className="text-xs text-muted-foreground">{discordNote(r.discord)}</p>}
-      {r.adminNote && <p className="text-xs text-muted-foreground">Note: {r.adminNote}</p>}
       {link && <ShareLinkLine l={link} />}
 
       <div className="flex flex-wrap items-start gap-4">
@@ -144,15 +142,18 @@ export default async function AdminHackathonRegistrationsPage() {
     console.error("[admin/hackathon/registrations] failed to load", error);
   }
 
-  // The share links load on their own, so a missing table (migration not applied) can't break this page.
+  // Share links and story proofs load on their own, so a missing table (migration not applied) can't break this page.
   let links: AdminShareLink[] = [];
-  // Read directly, not from the newest-500 list above, so older payers and recipients still show.
-  let people = new Map<string, SharePerson>();
   try {
     links = await listShareLinksForAdmin(ELEMENTAL.slug);
-    people = await loadSharePeople(ELEMENTAL.slug, links);
   } catch (error) {
     console.error("[admin/hackathon/registrations] share links did not load", error);
+  }
+  let proofs: AdminStoryProof[] = [];
+  try {
+    proofs = await listStoryProofsForAdmin(ELEMENTAL.slug);
+  } catch (error) {
+    console.error("[admin/hackathon/registrations] story proofs did not load", error);
   }
   const linkFor = new Map<string, AdminShareLink>();
   for (const l of links) if (l.registrationId) linkFor.set(l.registrationId, l);
@@ -170,7 +171,8 @@ export default async function AdminHackathonRegistrationsPage() {
   const order = { review: 0, pending: 1, paid: 2, cancelled: 3 } as const;
   const sorted = [...rows].sort((a, b) => order[a.status] - order[b.status]);
   const share = shareSummary(links);
-  const regInfo = new Map<string, ShareRegInfo>(people);
+  // Who uploaded each proof, from the sign-ups above (the newest 500); older ones show by code only.
+  const proofNames = new Map(rows.map((r) => [r.id, r.teamName || r.members[0]?.fullName || "Unnamed"]));
   const paid = rows.filter((r) => r.status === "paid");
   const seats = paid.reduce((n, r) => n + r.memberCount, 0);
   const baht = paid.reduce((n, r) => n + r.amountBaht, 0);
@@ -195,10 +197,8 @@ export default async function AdminHackathonRegistrationsPage() {
         </p>
         {links.length > 0 && (
           <p className="mt-1 text-muted-foreground">
-            Share links: {share.links} ({share.students} students, {share.teachers} teachers) · free seats earned {share.seats}:{" "}
-            {share.waitingCheck} qualified (waiting for a check), {share.waitingName} waiting for a name, {share.confirmed} confirmed and given
-            {share.rejected > 0 && `, ${share.rejected} rejected`} · teachers at {TEACHER_INVITE_DEVICES} devices: {share.teachersAtGoal}, verified{" "}
-            {share.verified}, invited {share.invited}.
+            Share links: {share.links} ({share.students} students, {share.teachers} teachers) · {share.devices} devices · {share.paid} paid
+            through links · story proofs: {proofs.filter((p) => !p.revokedAt).length} live.
           </p>
         )}
         {sources.length > 0 && (
@@ -207,7 +207,8 @@ export default async function AdminHackathonRegistrationsPage() {
           </p>
         )}
       </div>
-      <ShareLinksPanel links={links} regs={regInfo} />
+      <StoryProofsPanel proofs={proofs} names={proofNames} />
+      <ShareLinksPanel links={links} />
       {sorted.length === 0 ? (
         <AdminEmptyState title="No sign-ups yet" description="Sign-ups from /hackathon appear here." />
       ) : (

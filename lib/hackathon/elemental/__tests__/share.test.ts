@@ -2,7 +2,6 @@ import {
   customSchoolKey,
   demoPagesOn,
   foldSchoolName,
-  freeSeatOutcome,
   rankSchools,
   SHARE_CODE_RE,
   shareCode,
@@ -21,17 +20,6 @@ describe("shareCode", () => {
 
   it("makes a link the sign-up tracker keeps", () => {
     expect(shareUrl("3f9a2c1d")).toBe("https://www.passionseed.org/hackathon/elemental?src=share-3f9a2c1d");
-  });
-});
-
-describe("freeSeatOutcome", () => {
-  it("makes a one-person sign-up paid at ฿0", () => {
-    expect(freeSeatOutcome(199, 1)).toEqual({ amountBaht: 0, paid: true });
-    expect(freeSeatOutcome(149, 1)).toEqual({ amountBaht: 0, paid: true });
-  });
-
-  it("takes one seat off a group's sign-up", () => {
-    expect(freeSeatOutcome(447, 3)).toEqual({ amountBaht: 298, paid: false });
   });
 });
 

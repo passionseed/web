@@ -73,14 +73,14 @@ function Primitives({ surface }: { surface: Surface }) {
         <H1>แชร์ต่อเลย</H1>
         <H1 board>กระดานทีม</H1>
         <H2>โปสเตอร์ของคุณ</H2>
-        <MeterTitle>อีก 38 เครื่อง ได้ที่นั่งฟรี 1 ที่</MeterTitle>
+        <MeterTitle>รวม 12 เครื่อง</MeterTitle>
         <ItemTitle>ทีม ไฟป่า</ItemTitle>
         <Body>QR บนโปสเตอร์คือลิงก์ของคุณ ใครสแกนหรือกดลิงก์ ตัวเลขด้านบนจะขึ้น</Body>
         <Body secondary>นับเป็นเครื่อง เปิดซ้ำจากเครื่องเดิมนับครั้งเดียว</Body>
         <Fine>wifi เดียวกันนับได้ไม่เกิน 5 เครื่อง</Fine>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <Tag>เครื่อง</Tag>
-          <Tag tone="action">ที่นั่งฟรี</Tag>
+          <Tag tone="action">รวม</Tag>
           <Tag tone="text">ปิดนับ 4 ธ.ค.</Tag>
           <Tag bracket={false}>No. 1A2B 3C4D</Tag>
           <Tag bracket={false}>09:39</Tag>
@@ -117,15 +117,15 @@ function Primitives({ surface }: { surface: Surface }) {
       <Section title="ช่องกรอก">
         <TextInput id={`${surface}-name`} label="ชื่อ-นามสกุล" autoComplete="off" />
         <TextInput id={`${surface}-school`} label="โรงเรียน" placeholder="พิมพ์ชื่อโรงเรียน" leading={<PixelIcon name="search" />} autoComplete="off" />
-        <TextInput id={`${surface}-contact`} label="อีเมล หรือ LINE ID" hint="ทีมงานใช้ติดต่อเรื่อง Demo Day" autoComplete="off" />
+        <TextInput id={`${surface}-contact`} label="อีเมล หรือ LINE ID" hint="ทีมงานใช้ติดต่อ" autoComplete="off" />
         <TextInput id={`${surface}-code`} label="รหัสของเพื่อน" defaultValue="1A2B" error="รหัสนี้ไม่ถูก ลองพิมพ์ใหม่" autoComplete="off" />
       </Section>
 
       <Section title="แถบข้อมูล">
         <FactStrip
           facts={[
-            { icon: "ticket", tag: "50 เครื่อง", value: "Demo Day", note: "12 ธ.ค. ที่ BAScii" },
-            { icon: "school", tag: "3 คนจ่าย", value: "ที่นั่งฟรี", note: "ของโรงเรียน" },
+            { icon: "school", tag: "เครื่อง", value: "12" },
+            { icon: "ticket", tag: "จ่ายแล้ว", value: "1" },
           ]}
         />
       </Section>
@@ -187,7 +187,7 @@ export default async function DesignDemoPage({ searchParams }: { searchParams: S
           หน้าจ่ายเงินอยู่บนกระดาษครีม ชิ้นของงาน (ตั๋ว ลิงก์ของฉัน) เป็นแผ่นสีดำบนกระดาษ
         </Body>
         <DarkSlab className="mt-8">
-          <MeterTitle as="h2">อีก 38 เครื่อง ได้ที่นั่งฟรี</MeterTitle>
+          <MeterTitle as="h2">รวม 12 เครื่อง</MeterTitle>
           <div className="mt-4 flex items-end justify-between gap-3">
             <Tag>เครื่องที่เปิดลิงก์</Tag>
             <BigCount value={12} goal={50} unit="เครื่อง" />
@@ -215,7 +215,7 @@ export default async function DesignDemoPage({ searchParams }: { searchParams: S
       back={{ href: "/hackathon/join/demo" }}
       sky={
         <SkyBand
-          title={<H1>อีก 38 เครื่อง ได้ที่นั่งฟรี</H1>}
+          title={<H1>ส่งโปสเตอร์เข้ากลุ่ม LINE</H1>}
           lead="โรงเรียนเตรียมอุดมศึกษา · กรุงเทพมหานคร"
           facts={[
             { tag: "เครื่อง", value: "12/50" },

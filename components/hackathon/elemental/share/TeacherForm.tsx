@@ -4,8 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
-import { formatThaiDate } from "@/lib/content/shift-cohort";
-import { parseTeacherContact, SEAT_RULE, TEACHER_INVITE_DEVICES } from "@/lib/hackathon/elemental/share-rules";
+import { parseTeacherContact } from "@/lib/hackathon/elemental/share-rules";
 import { isRudeTeamName } from "@/lib/hackathon/elemental/team-name";
 
 import { lineHelp } from "./copy-shared";
@@ -15,27 +14,19 @@ import { EditorialLink, Fine, H1, Page, PrimaryButton, SkyBand, StickyBar, TextI
 /**
  * The public teacher page, on the dark ground (merged direction §8): no
  * sign-up. A teacher gives a name, picks the school and leaves an email or
- * LINE ID; they get a private page with their own poster and link. The sky
- * band's fact strip says what it earns: 50 devices, Demo Day; every 50
- * devices + 1 paid, a free seat for a student (up to 2, SEAT_RULE). Teachers
- * are adults; their name and contact are for staff only.
+ * LINE ID; they get a private page with their own poster, QR code and link,
+ * and a count of the devices that open it. No rewards (Big, 2026-11-27).
+ * Teachers are adults; their name and contact are for staff only.
  */
 
 // copy: placeholder — Angpao rewrites
 const COPY = {
   title: "ลิงก์แชร์ของคุณครู",
   lead: "สร้างโปสเตอร์และลิงก์ของคุณครูเอง ส่งให้นักเรียนในกลุ่ม LINE ไม่ต้องสมัครสมาชิก",
-  factInvite: { tag: `${TEACHER_INVITE_DEVICES} เครื่อง`, value: "Demo Day", note: formatThaiDate(ELEMENTAL.demoDay.date, false) },
-  // The tag stays one short line in a half-width cell; the paid part goes in the note.
-  factSeat: {
-    tag: `ทุก ${SEAT_RULE.devicesPerSeat} เครื่อง`,
-    value: "ที่นั่งฟรีให้นักเรียน",
-    note: `+ ${SEAT_RULE.paidPerSeat} คนจ่าย · สูงสุด ${SEAT_RULE.maxSeatsPerLink} ที่`,
-  },
   name: "ชื่อ-นามสกุล",
   school: "โรงเรียน",
   contact: "อีเมล หรือ LINE ID",
-  contactHint: "ทีมงานใช้ติดต่อเรื่อง Demo Day",
+  contactHint: "ทีมงานใช้ติดต่อ",
   privacy: "ชื่อและช่องทางติดต่อของคุณครูเห็นเฉพาะทีมงาน ไม่แสดงบนหน้าไหน",
   submit: "สร้างลิงก์",
   busy: "กำลังสร้าง…",
@@ -74,18 +65,7 @@ export function TeacherForm({ open, demo }: { open: boolean; demo?: boolean }) {
   const [busy, setBusy] = useState(false);
 
   const sky = (
-    <SkyBand
-      title={<H1>{open ? COPY.title : COPY.closedTitle}</H1>}
-      lead={open ? COPY.lead : COPY.closed}
-      facts={
-        open
-          ? [
-              { icon: "ticket", ...COPY.factInvite },
-              { icon: "school", ...COPY.factSeat },
-            ]
-          : undefined
-      }
-    />
+    <SkyBand title={<H1>{open ? COPY.title : COPY.closedTitle}</H1>} lead={open ? COPY.lead : COPY.closed} />
   );
 
   if (!open) {

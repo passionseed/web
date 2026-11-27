@@ -3,8 +3,9 @@ import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { elementalRegistrationOpen } from "./registration";
 
 /**
- * Share links for free seats. The seat rule (50 devices + 1 paid per seat, up
- * to 2 per link) lives in SEAT_RULE in ./share-rules.ts, with its tests.
+ * Share links: a personal poster and link per student or teacher, counting
+ * the real devices that open it. Sharing earns looks only (team-name styles
+ * and the board), never a free seat (Big, 2026-11-27). Rules: ./share-rules.ts.
  */
 export const SHARE = {
   /** How often an open share page refreshes its numbers. */
@@ -25,8 +26,7 @@ export function shareReadOnlyEndsAt(): Date {
  * Where sharing is, with ELEMENTAL_SHARE_OPEN=1 as the master switch:
  * - "open": until sign-up closes. Links can be made, shared and counted.
  * - "after-close": from sign-up close to the end of Demo Day. Pages stay up
- *   read-only (numbers frozen at close); a seat's recipient can still be
- *   named and staff can still confirm. No new links, no poster actions.
+ *   read-only (numbers frozen at close). No new links, no poster actions.
  * - "off": the switch is off, or Demo Day is over.
  */
 export type SharePhase = "open" | "after-close" | "off";
@@ -65,13 +65,6 @@ export const teacherSource = (code: string) => `t-${code}`;
 export const linkSource = (kind: ShareKind, code: string) => (kind === "teacher" ? teacherSource(code) : shareSource(code));
 export const linkUrl = (kind: ShareKind, code: string) => `https://www.${ELEMENTAL.url}?src=${linkSource(kind, code)}`;
 export const shareUrl = (code: string) => linkUrl("student", code);
-
-/** What a free seat does to a sign-up: one seat's price comes off; at ฿0 it is paid. */
-export function freeSeatOutcome(amountBaht: number, memberCount: number): { amountBaht: number; paid: boolean } {
-  const seat = Math.round(amountBaht / Math.max(1, memberCount));
-  const left = Math.max(0, amountBaht - seat);
-  return { amountBaht: left, paid: left === 0 };
-}
 
 const THAI_DIGITS = "๐๑๒๓๔๕๖๗๘๙";
 

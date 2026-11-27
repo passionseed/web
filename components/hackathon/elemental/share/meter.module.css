@@ -1,5 +1,5 @@
 /*
- * SeatCard motion (merged direction §7); the count rolls in the shared
+ * MeterCard motion (merged direction §7); the count rolls in the shared
  * RollingNumber (shell.module.css). Easings are the landing's:
  * snap cubic-bezier(0.4,0,0.2,1), tension cubic-bezier(0.05,0.7,0.35,0.99).
  * Everything here is off under prefers-reduced-motion.
@@ -27,7 +27,7 @@
   }
 }
 
-/* A seat earned: one wave of light across the clean photo, column by column. */
+/* The grid just came clean: one wave of light across the photo, column by column. */
 .wave {
   animation: wave 520ms cubic-bezier(0.05, 0.7, 0.35, 0.99) both;
 }
@@ -44,26 +44,9 @@
   }
 }
 
-/* A stub steps into the earned row. */
-.stubIn {
-  animation: stubIn 480ms cubic-bezier(0.05, 0.7, 0.35, 0.99) 300ms both;
-}
-
-@keyframes stubIn {
-  from {
-    transform: translateY(10px);
-    opacity: 0;
-  }
-  to {
-    transform: none;
-    opacity: 1;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .clearing,
-  .wave,
-  .stubIn {
+  .wave {
     animation: none;
   }
 

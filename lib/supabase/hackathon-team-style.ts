@@ -27,8 +27,7 @@ export async function teamMemberIds(teamId: string): Promise<string[]> {
 
 /**
  * Devices and paid seats summed over the members' own share links. linkStats
- * counts only up to sign-up close and leaves out free seats, so unlocks
- * freeze at close.
+ * counts only up to sign-up close, so unlocks freeze at close.
  */
 export async function teamLinkNumbers(eventSlug: string, registrationIds: string[]): Promise<{ devices: number; paid: number }> {
   const stats = await linkStats(eventSlug, registrationIds.map((id) => shareSource(shareCode(id))));

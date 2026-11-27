@@ -7,33 +7,30 @@ import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { formatThaiDate } from "@/lib/content/shift-cohort";
 import { PER_NETWORK_CAP } from "@/lib/hackathon/elemental/link-views-shared";
 import { SHARE } from "@/lib/hackathon/elemental/share";
-import { SEAT_RULE, seatProgressView, type ShareLinkView } from "@/lib/hackathon/elemental/share-rules";
+import type { ShareLinkView } from "@/lib/hackathon/elemental/share-rules";
 
-import { lineHelp, recipientError } from "./copy-shared";
+import { lineHelp } from "./copy-shared";
+import { MeterCard } from "./MeterCard";
+import { meterHeadline } from "./meter-model";
 import { Poster, ShareBar, usePosterShare } from "./PosterBlock";
-import { SchoolPicker, type SchoolChoice } from "./SchoolPicker";
-import { SeatCard } from "./SeatCard";
-import { seatHeadline } from "./seat-card-model";
 import { Rules } from "./Rules";
-import { needsName, SeatList } from "./SeatNote";
+import { SchoolPicker, type SchoolChoice } from "./SchoolPicker";
 import { EditorialLink, Fine, H1, Page, PrimaryButton, schoolLabel, SkyBand, StickyBar, v } from "./ui";
 import { usePollLink } from "./usePoll";
 
 /**
  * A signed-up student's share page, on the landing's dark ground (merged
- * direction §8): the sky band says what's left, then the SeatCard, then the
- * poster (poster first before anything has happened). The one action, "ส่งใน
- * LINE →", is pinned at the bottom; while a seat waits for a friend's code,
- * typing it is the action instead. Every 50 devices + 1 paid sign-up from the
- * link earns a free seat, up to 2 (SEAT_RULE).
+ * direction §8): the sky band with the school, then the MeterCard (devices),
+ * then the poster (poster first before anything has happened), then the
+ * team's line on the board. The one action, "ส่งใน LINE →", is pinned at the
+ * bottom. Sharing earns looks only: team-name styles and the board (Big,
+ * 2026-11-27). The view model is ShareLinkView (share-rules.ts).
  */
 
 // copy: placeholder — Angpao rewrites
 const COPY = {
-  pickTitle: "แชร์รับที่นั่งฟรี",
-  pickLead: `ทุก ${SEAT_RULE.devicesPerSeat} เครื่อง + ${SEAT_RULE.paidPerSeat} คนจ่ายผ่านลิงก์ = ที่นั่งฟรี 1 ที่ ได้สูงสุด ${SEAT_RULE.maxSeatsPerLink} ที่`,
+  pickTitle: "แชร์โปสเตอร์",
   changeTitle: "เปลี่ยนโรงเรียน",
-  paidNote: "จ่ายแล้วก็แชร์ได้ ที่นั่งฟรีที่ได้ ยกให้เพื่อนที่ยังไม่จ่าย",
   pickLabel: "โรงเรียนของคุณ",
   confirm: "ยืนยัน รับโปสเตอร์",
   confirmChange: "เปลี่ยนเป็นโรงเรียนนี้",
@@ -42,25 +39,19 @@ const COPY = {
   change: "เปลี่ยน",
   titles: {
     start: "ส่งโปสเตอร์เข้ากลุ่ม LINE",
-    naming: "ได้ที่นั่งฟรีแล้ว ใส่รหัสเพื่อน",
-    checking: "ได้ที่นั่งฟรีแล้ว รอทีมงานเช็ก",
   },
-  friend: "เพื่อน",
   rules: [
-    `ทุก ${SEAT_RULE.devicesPerSeat} เครื่อง + ${SEAT_RULE.paidPerSeat} คนจ่าย = ที่นั่งฟรี 1 ที่ ลิงก์ละไม่เกิน ${SEAT_RULE.maxSeatsPerLink} ที่`,
     "นับเป็นเครื่อง เปิดซ้ำจากเครื่องเดิมนับครั้งเดียว",
     `wifi เดียวกันนับได้ไม่เกิน ${PER_NETWORK_CAP} เครื่อง`,
     "นับคนจ่ายจากคนที่สแกน QR หรือกดลิงก์ของคุณ แล้วสมัครและจ่าย",
-    "ที่นั่งแรกของคนที่ยังไม่จ่ายเป็นของตัวเอง ที่เหลือยกให้เพื่อนที่ยังไม่จ่าย",
-    "ทีมงานเช็กก่อนให้ที่นั่งทุกครั้ง",
     `แชร์ได้ถึงวันปิดรับสมัคร ${formatThaiDate(ELEMENTAL.registrationClosesOn)}`,
     `ตัวเลขอัปเดตเองทุก ${SHARE.pollMs / 1000} วินาที`,
   ],
-  closedTitle: "แชร์รับที่นั่งฟรี",
+  closedTitle: "แชร์โปสเตอร์",
   closed: "ตอนนี้ยังไม่เปิด",
   afterClose: "ปิดรับสมัครแล้ว ลิงก์แชร์ปิดตามไปด้วย",
-  frozenNote: "ปิดรับสมัครแล้ว ตัวเลขหยุดนับตอนปิด ทีมงานยังเช็กและให้ที่นั่งฟรีได้ถึงวัน Demo Day",
-  cancelled: "การสมัครนี้ถูกยกเลิก แชร์รับที่นั่งไม่ได้",
+  frozenNote: "ปิดรับสมัครแล้ว ตัวเลขหยุดนับตอนปิด",
+  cancelled: "การสมัครนี้ถูกยกเลิก",
   back: "กลับหน้าของฉัน",
   schoolError: {
     code_taken: `สร้างลิงก์ไม่ได้ ${lineHelp}`,
@@ -72,36 +63,29 @@ const COPY = {
 
 type Props = {
   token: string;
-  /** "after-close": read-only until the end of Demo Day (a friend can still be named). */
+  /** "after-close": read-only until the end of Demo Day. */
   state: "open" | "after-close" | "closed" | "cancelled";
   link: ShareLinkView | null;
   /** This sign-up's share code (its link's code once made): seeds the empty card before there's a link. */
   code: string;
-  /** Whether this sign-up has paid; for the words before a link exists. */
-  selfPaid: boolean;
   /** The school typed at sign-up, to start the search with. */
   startQuery: string;
   posterVersion: string;
-  /** The team's line on the board (TeamLine), once the link has all its seats or sign-up closed. */
+  /** The team's line on the board (TeamLine), when the board is up. */
   teamRow?: ReactNode;
   /** "← หน้าของฉัน": the pay page. Demos pass the demo pay page in the matching state. */
   backHref?: string;
   demo?: boolean;
 };
 
-const EMPTY_VIEW = seatProgressView({ progress: { devices: 0, paid: 0 }, rows: [], ownRegistrationId: null, selfPaid: false, phase: "open" });
+const EMPTY_METER = { devices: 0, phase: "open" as const };
 
 /** Ink on the pale sky (the lead line's links read the surface's text colour). */
 const ON_SKY = { "--el-text": EL.ink } as CSSProperties;
 
+/** Open: the action. After close: the frozen count. */
 function titleFor(link: ShareLinkView, open: boolean): string {
-  const t = COPY.titles;
-  const view = link.seats;
-  if (!open) return seatHeadline(view);
-  if (needsName(view)) return t.naming;
-  if (view.seats.some((s) => s.status === "qualified" && s.mine)) return t.checking;
-  if (view.seats.length === 0 && view.devices === 0 && view.paid === 0) return t.start;
-  return seatHeadline(view);
+  return open ? COPY.titles.start : meterHeadline(link);
 }
 
 function ErrorText({ children }: { children: ReactNode }) {
@@ -119,7 +103,6 @@ function PickSchool({
   code,
   startQuery,
   changing,
-  selfPaid,
   demo,
   onSaved,
   onCancel,
@@ -129,7 +112,6 @@ function PickSchool({
   code: string;
   startQuery: string;
   changing: boolean;
-  selfPaid: boolean;
   demo?: boolean;
   onSaved: (link: ShareLinkView) => void;
   onCancel?: () => void;
@@ -149,10 +131,10 @@ function PickSchool({
           code,
           school: { name: pick.name, province: pick.province || null },
           canChangeSchool: true,
-          selfPaid,
-          verified: false,
-          invited: false,
-          seats: EMPTY_VIEW,
+          devices: 0,
+          paid: 0,
+          phase: "open",
+          storyProof: "none",
         });
       }
       const res = await fetch(`/api/hackathon/elemental/${token}/share`, {
@@ -174,7 +156,7 @@ function PickSchool({
     <Page
       surface="ground"
       back={{ href: backHref }}
-      sky={<SkyBand title={<H1>{changing ? COPY.changeTitle : COPY.pickTitle}</H1>} lead={changing ? undefined : COPY.pickLead} height={200} />}
+      sky={<SkyBand title={<H1>{changing ? COPY.changeTitle : COPY.pickTitle}</H1>} height={200} />}
       bar={
         pick ? (
           <StickyBar>
@@ -185,7 +167,7 @@ function PickSchool({
         ) : undefined
       }
     >
-      {!changing && <SeatCard view={EMPTY_VIEW} code={code} preview />}
+      {!changing && <MeterCard view={EMPTY_METER} code={code} preview />}
       <div className={changing ? "" : "mt-8"}>
         <SchoolPicker label={COPY.pickLabel} startQuery={startQuery} value={pick} onChange={setPick} />
       </div>
@@ -194,7 +176,6 @@ function PickSchool({
           <ErrorText>{error}</ErrorText>
         </div>
       )}
-      {selfPaid && !changing && <Fine className="mt-6">{COPY.paidNote}</Fine>}
       {onCancel && (
         <div className="mt-6">
           <EditorialLink size="sm" arrow={false} onClick={onCancel}>
@@ -206,51 +187,19 @@ function PickSchool({
   );
 }
 
-/** The link's earned seats, with a code field where a friend still needs to be named. */
-function Seats({ token, backHref, link, demo, onLink }: { token: string; backHref: string; link: ShareLinkView; demo?: boolean; onLink: (l: ShareLinkView) => void }) {
-  const nameFriend = async (index: number, code: string): Promise<string | null> => {
-    if (demo) {
-      onLink({
-        ...link,
-        seats: { ...link.seats, seats: link.seats.seats.map((x) => (x.index === index ? { index, status: "qualified" as const, recipientCode: code } : x)) },
-      });
-      return null;
-    }
-    try {
-      const res = await fetch(`/api/hackathon/elemental/${token}/share`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ seatIndex: index, friendCode: code }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) return recipientError(data.error, COPY.friend);
-      onLink(data.link as ShareLinkView);
-      return null;
-    } catch {
-      return recipientError(undefined, COPY.friend);
-    }
-  };
-  return <SeatList kind="student" view={link.seats} backHref={backHref} onName={nameFriend} />;
-}
-
-function StudentLink(props: Props & { link: ShareLinkView; onLink: (l: ShareLinkView) => void; onChange: () => void }) {
-  const { token, link, demo, onLink, state } = props;
+function StudentLink(props: Props & { link: ShareLinkView; onChange: () => void }) {
+  const { token, link, state } = props;
   const backHref = props.backHref ?? `/hackathon/join/${token}`;
   const open = state === "open";
   const poster = usePosterShare(link.code, "student", props.posterVersion);
   // The page's phase wins (a link loaded just before close still reads as closed).
-  const view = open ? link.seats : { ...link.seats, phase: "after-close" as const };
-  const naming = needsName(view);
-  const start = open && view.seats.length === 0 && view.devices === 0 && view.paid === 0;
+  const view: ShareLinkView = open ? link : { ...link, phase: "after-close" };
+  const start = open && view.devices === 0 && view.paid === 0;
 
-  const card = <SeatCard view={view} code={link.code} kind="student" />;
-  const shown = { ...link, seats: view };
-  const seats = <Seats token={token} backHref={backHref} link={link} demo={demo} onLink={onLink} />;
-  // A link staff shut earns nothing more: no poster, no share bar.
-  const sharing = open && !view.linkRejected;
-  const posterBlock = sharing ? <Poster poster={poster} /> : null;
-  // Nothing yet: the poster is the thing to do. A seat waiting for a code: that comes first. Otherwise the numbers lead.
-  const blocks = naming ? [seats, card, posterBlock] : start ? [posterBlock, card] : [card, seats, posterBlock];
+  const card = <MeterCard view={view} code={link.code} />;
+  const posterBlock = open ? <Poster poster={poster} /> : null;
+  // Nothing yet: the poster is the thing to do. Otherwise the numbers lead.
+  const blocks = start ? [posterBlock, card] : [card, posterBlock];
 
   return (
     <Page
@@ -258,7 +207,7 @@ function StudentLink(props: Props & { link: ShareLinkView; onLink: (l: ShareLink
       back={{ href: backHref }}
       sky={
         <SkyBand
-          title={<H1>{titleFor(shown, open)}</H1>}
+          title={<H1>{titleFor(view, open)}</H1>}
           lead={
             <span style={ON_SKY}>
               {schoolLabel(link.school.name, link.school.province)}
@@ -275,12 +224,12 @@ function StudentLink(props: Props & { link: ShareLinkView; onLink: (l: ShareLink
           height={200}
         />
       }
-      bar={sharing && !naming ? <ShareBar poster={poster} /> : undefined}
+      bar={open ? <ShareBar poster={poster} /> : undefined}
     >
       {!open && <Fine className="mb-6">{COPY.frozenNote}</Fine>}
       <div className="space-y-10">
         {blocks.map((b, i) => (b ? <div key={i}>{b}</div> : null))}
-        {props.teamRow && (view.maxed || !open) && <section className="border-t pt-6" style={{ borderColor: v.rule }}>{props.teamRow}</section>}
+        {props.teamRow && <section className="border-t pt-6" style={{ borderColor: v.rule }}>{props.teamRow}</section>}
       </div>
       <Rules rules={COPY.rules} />
     </Page>
@@ -316,7 +265,6 @@ export function ShareView(props: Props) {
         code={link?.code ?? props.code}
         startQuery={changing ? "" : props.startQuery}
         changing={changing}
-        selfPaid={props.selfPaid}
         demo={demo}
         onSaved={(l) => {
           setLink(l);
@@ -327,5 +275,5 @@ export function ShareView(props: Props) {
     );
   }
 
-  return <StudentLink {...props} link={link} onLink={onLink} onChange={() => setChanging(true)} />;
+  return <StudentLink {...props} link={link} onChange={() => setChanging(true)} />;
 }

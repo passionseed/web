@@ -1,403 +1,31 @@
-import { PER_NETWORK_CAP } from "./link-views-shared";
-import { foldSchoolName, SHARE_CODE_RE, shareCode, type ShareKind } from "./share";
+import type { ShareKind, SharePhase } from "./share";
+import type { StoryProofStatus } from "./story-proof";
 
 /**
  * The rules for Elemental share links. Pure and safe to import in the
  * browser; the database side is lib/supabase/hackathon-share-links.ts.
  *
- * Big, 2026-11-27 ("go with 50 devices + 1 paid, max 2 each"):
- * - every 50 real devices plus 1 paid sign-up through a link earns 1 free
- *   seat, up to 2 per link: seat 1 at 50 devices + 1 paid, seat 2 at 100 + 2;
- *   seats never outnumber the paid sign-ups the link brought;
- * - no one-per-school limit: links don't race each other (the school stays
- *   on the link for the staff fraud check);
- * - an unpaid student's first seat is their own sign-up; every other seat (a
- *   paid student's, an unpaid student's second, any teacher's) goes to an
- *   unpaid friend or student, named by their code;
- * - staff confirm every seat;
- * - a teacher whose link reaches 50 devices is invited to Demo Day (after
- *   staff verify them with the school).
- * Counting: devices and paid sign-ups up to sign-up close, paid by slip time,
- * free seats never count as paid.
+ * Big, 2026-11-27: sharing earns no free seats, for anyone. It earns looks:
+ * team-name styles (unlocked by the devices on the team's links, see
+ * team-style.ts) and the team board. A link counts real devices and paid
+ * sign-ups, both only up to sign-up close, paid by slip time (paidAt).
  */
 
-export type SeatRule = {
-  devicesPerSeat: number;
-  paidPerSeat: number;
-  maxSeatsPerLink: number;
-  /** Kept for the record: one seat per school was dropped on 2026-11-27, and its code with it. */
-  onePerSchool: boolean;
-  /** Free seats across the whole event, every link together; null = no cap. When reached, no new seats are written. */
-  maxSeatsTotal: number | null;
-  /** Whether a sign-up on the sharer's own team counts as paid for their link. Teacher links don't have a team. */
-  countTeammates: boolean;
-  /** Staff must verify a teacher with the school before confirming any seat from the teacher's link. */
-  teacherSeatsNeedVerified: boolean;
-};
-
 /**
- * The one place the seat rule lives. Copy, demos and the engine all read it.
- * maxSeatsTotal, countTeammates and teacherSeatsNeedVerified are defaults
- * waiting for Big's answer (2026-11-27): each is a one-line flip.
- */
-export const SEAT_RULE = {
-  devicesPerSeat: 50,
-  paidPerSeat: 1,
-  maxSeatsPerLink: 2,
-  onePerSchool: false,
-  maxSeatsTotal: null,
-  countTeammates: false,
-  teacherSeatsNeedVerified: true,
-} as const satisfies SeatRule;
-
-/**
- * New seats can be switched off without taking any page down:
- * ELEMENTAL_SEATS_OPEN=0 stops new seats (unset or anything else: open).
- * Seats already earned can still be named and confirmed.
- */
-export function seatsSwitchOpen(env: NodeJS.ProcessEnv = process.env): boolean {
-  return env.ELEMENTAL_SEATS_OPEN !== "0";
-}
-
-export type SeatsClosedReason = "off" | "cap";
-
-/** Why no new seats are being written: switched off, or the event-wide cap is reached. Null while seats are open. */
-export function seatsClosedReason(input: { switchOpen: boolean; liveSeatsTotal: number; rule?: SeatRule }): SeatsClosedReason | null {
-  const rule = input.rule ?? SEAT_RULE;
-  if (!input.switchOpen) return "off";
-  if (rule.maxSeatsTotal !== null && input.liveSeatsTotal >= rule.maxSeatsTotal) return "cap";
-  return null;
-}
-
-/**
- * How many of the missing seats may be written now, given the event-wide cap.
- * The cap is soft: two pages writing at the same moment can each see room and
- * go over it by a seat or two. Staff confirm every seat anyway.
- */
-export function seatsAllowedNow(missing: number, liveSeatsTotal: number, rule: SeatRule = SEAT_RULE): number {
-  if (rule.maxSeatsTotal === null) return missing;
-  return Math.max(0, Math.min(missing, rule.maxSeatsTotal - liveSeatsTotal));
-}
-
-/**
- * Whether a paid sign-up counts toward a link. With countTeammates off, a
- * sign-up on the sharer's own team doesn't count (friends who join your team
- * would pay anyway). Teacher links have no team, so everything counts.
- */
-export function countsForLink(input: { kind: ShareKind; sharerTeamId: string | null; payerTeamId: string | null; rule?: SeatRule }): boolean {
-  const rule = input.rule ?? SEAT_RULE;
-  if (input.kind === "teacher" || rule.countTeammates) return true;
-  return !input.sharerTeamId || !input.payerTeamId || input.sharerTeamId !== input.payerTeamId;
-}
-
-export type ConfirmBlock = "teacher_not_verified" | "link_rejected";
-
-/** Why staff can't confirm a seat yet, beyond its recipient: the teacher isn't verified, or the link was shut. */
-export function confirmBlock(input: { kind: ShareKind; teacherVerified: boolean; linkRejected: boolean; rule?: SeatRule }): ConfirmBlock | null {
-  const rule = input.rule ?? SEAT_RULE;
-  if (input.linkRejected) return "link_rejected";
-  if (input.kind === "teacher" && rule.teacherSeatsNeedVerified && !input.teacherVerified) return "teacher_not_verified";
-  return null;
-}
-
-/** A teacher's Demo Day invite: this many devices (staff verify the teacher first). */
-export const TEACHER_INVITE_DEVICES = 50;
-
-export type Progress = { devices: number; paid: number };
-
-/** Seats a link has earned: one per (50 devices + 1 paid), capped, and never more than the paid sign-ups it brought. */
-export function seatsEarned(p: Progress, rule: SeatRule = SEAT_RULE): number {
-  const byDevices = Math.floor(p.devices / rule.devicesPerSeat);
-  const byPaid = Math.floor(p.paid / rule.paidPerSeat);
-  return Math.max(0, Math.min(rule.maxSeatsPerLink, byDevices, byPaid, p.paid));
-}
-
-/** What seat `index` (1-based) needs in total. */
-export function seatGoal(index: number, rule: SeatRule = SEAT_RULE): Progress {
-  return { devices: index * rule.devicesPerSeat, paid: index * rule.paidPerSeat };
-}
-
-export type NextSeat = { index: number; devicesLeft: number; paidLeft: number };
-
-/** The next seat to earn and what's missing for it; null once the link has its maximum. */
-export function nextSeat(p: Progress, seatsSoFar: number, rule: SeatRule = SEAT_RULE): NextSeat | null {
-  const index = Math.max(seatsSoFar, seatsEarned(p, rule)) + 1;
-  if (index > rule.maxSeatsPerLink) return null;
-  const goal = seatGoal(index, rule);
-  return { index, devicesLeft: Math.max(0, goal.devices - p.devices), paidLeft: Math.max(0, goal.paid - p.paid) };
-}
-
-/** A teacher's Demo Day invite needs only devices. */
-export function reachedInvite(p: Progress): boolean {
-  return p.devices >= TEACHER_INVITE_DEVICES;
-}
-
-export type ProgressPhase = "start" | "early" | "close" | "done";
-
-/**
- * Which words the page uses for the seat in progress: nothing yet, under way,
- * nearly there (70% of the way on both parts together), or earned.
- */
-export function progressPhase(p: Progress, seatsSoFar = 0, rule: SeatRule = SEAT_RULE): ProgressPhase {
-  const next = nextSeat(p, seatsSoFar, rule);
-  if (!next) return "done";
-  if (p.devices === 0 && p.paid === 0) return "start";
-  const goal = seatGoal(next.index, rule);
-  const from = seatGoal(next.index - 1, rule);
-  const part = (have: number, lo: number, hi: number) => Math.min(1, Math.max(0, (have - lo) / Math.max(1, hi - lo)));
-  const share = (part(p.devices, from.devices, goal.devices) + part(p.paid, from.paid, goal.paid)) / 2;
-  return share >= 0.7 ? "close" : "early";
-}
-
-/** One device that opened a link (a row of hackathon_link_views). */
-export type ViewEvent = { ipHash: string; at: string };
-/** One paid sign-up that came through a link: its seats, and when it paid (see paidAt). */
-export type PaidEvent = { seats: number; at: string };
-
-/**
- * When a sign-up paid, for the seat race: when its slip was uploaded (the
- * slip's file name starts with the upload time in ms), or else when it signed
- * up. Never when staff happened to approve it, so a slow check can't cost a
- * link its place.
+ * When a sign-up paid, for counting: when its slip was uploaded (the slip's
+ * file name starts with the upload time in ms), or else when it signed up.
+ * Never when staff happened to approve it, so a slow check can't move a
+ * payment past close.
  */
 export function paidAt(r: { slipPath: string | null; createdAt: string }): string {
   const ms = Number(r.slipPath?.match(/\/(\d{12,14})-/)?.[1]);
   return Number.isFinite(ms) && ms > 0 ? new Date(ms).toISOString() : r.createdAt;
 }
 
-const byTime = <T extends { at: string }>(rows: readonly T[]) => [...rows].sort((a, b) => a.at.localeCompare(b.at));
-
-/**
- * Devices with each network adding at most `cap` (the same total as
- * countDevices in link-views.ts), and when the total first reached `goal`.
- */
-export function deviceCount(views: readonly ViewEvent[], goal: number, cap = PER_NETWORK_CAP): { devices: number; reachedAt: string | null } {
-  const perNetwork = new Map<string, number>();
-  let devices = 0;
-  let reachedAt: string | null = null;
-  for (const v of byTime(views)) {
-    const n = (perNetwork.get(v.ipHash) ?? 0) + 1;
-    perNetwork.set(v.ipHash, n);
-    if (n > cap) continue;
-    devices += 1;
-    if (devices === goal) reachedAt = v.at;
-  }
-  return { devices, reachedAt };
-}
-
-/** Paid seats, and when they first added up to `goal`. */
-export function paidCount(paid: readonly PaidEvent[], goal: number): { paid: number; reachedAt: string | null } {
-  let total = 0;
-  let reachedAt: string | null = null;
-  for (const p of byTime(paid)) {
-    const before = total;
-    total += Math.max(0, p.seats);
-    if (before < goal && total >= goal) reachedAt = p.at;
-  }
-  return { paid: total, reachedAt };
-}
-
-/** A link's numbers (devices capped per network, paid seats), and when each seat was earned. */
-export function linkProgress(views: readonly ViewEvent[], paid: readonly PaidEvent[], rule: SeatRule = SEAT_RULE): Progress & { earnedAt: string[] } {
-  const total = { devices: deviceCount(views, Number.MAX_SAFE_INTEGER).devices, paid: paidCount(paid, Number.MAX_SAFE_INTEGER).paid };
-  const earnedAt: string[] = [];
-  for (let i = 1; i <= seatsEarned(total, rule); i++) {
-    const goal = seatGoal(i, rule);
-    const d = deviceCount(views, goal.devices).reachedAt;
-    const p = paidCount(paid, goal.paid).reachedAt;
-    if (d && p) earnedAt.push(d > p ? d : p);
-  }
-  return { ...total, earnedAt };
-}
-
-/** Registration statuses that count as "has paid": a slip waiting for a check counts (no free seat on top of a payment). */
-export const hasPaid = (status: string) => status === "paid" || status === "review";
-
-/**
- * A seat as stored (hackathon_share_seats):
- * - needs_recipient: earned, nobody named yet;
- * - qualified: earned and someone to give it to; waiting for staff;
- * - confirmed: staff gave it (that sign-up is free);
- * - rejected: staff turned it down. It still uses up its place.
- */
-export type SeatSlotStatus = "qualified" | "needs_recipient" | "confirmed" | "rejected";
-export type SeatRow = {
-  id: string;
-  index: number;
-  status: SeatSlotStatus;
-  recipientRegistrationId: string | null;
-  /** The recipient's sign-up status now, when known (a named friend may have paid anyway). */
-  recipientStatus?: string | null;
-};
-
-/**
- * Who an earned seat goes to before anyone is named: an unpaid student's
- * first seat is their own sign-up, unless a friend's link already gave them
- * one (one free seat per sign-up); any other seat waits for a name.
- */
-export function defaultRecipient(input: {
-  kind: ShareKind;
-  index: number;
-  ownRegistrationId: string | null;
-  ownStatus: string | null;
-  /** The owner is already the recipient of a live seat on another link. */
-  ownAlreadyRecipient?: boolean;
-}): string | null {
-  if (input.ownAlreadyRecipient) return null;
-  return input.kind === "student" && input.index === 1 && input.ownRegistrationId && input.ownStatus === "pending" ? input.ownRegistrationId : null;
-}
-
-/**
- * Whether an unpaid student's first seat, written waiting for a name because a
- * friend's link had named them, should go back to them: they're still unpaid
- * and no live seat elsewhere names them any more (the friend renamed, staff
- * rejected that seat, or shut that link). Otherwise they'd have no seat at all.
- */
-export function shouldReclaimOwnSeat(input: {
-  kind: ShareKind;
-  ownStatus: string | null;
-  ownGiftedElsewhere: boolean;
-  seat: Pick<SeatRow, "index" | "status" | "recipientRegistrationId"> | undefined;
-}): boolean {
-  return (
-    input.kind === "student" &&
-    input.ownStatus === "pending" &&
-    !input.ownGiftedElsewhere &&
-    !!input.seat &&
-    input.seat.index === 1 &&
-    input.seat.status === "needs_recipient" &&
-    !input.seat.recipientRegistrationId
-  );
-}
-
-/**
- * A free seat coming to a sign-up from any link (a friend's, a teacher's, or
- * their own first seat): "checking" while staff haven't confirmed it,
- * "given" once they have, null when none names them. The pay page uses it to
- * stop asking that student to pay.
- */
-export type IncomingSeat = "checking" | "given" | null;
-
-/** The incoming seat from the statuses of the seats that name a sign-up. */
-export function incomingSeatFrom(statuses: readonly string[]): IncomingSeat {
-  if (statuses.includes("confirmed")) return "given";
-  if (statuses.includes("qualified")) return "checking";
-  return null;
-}
-
-/** One seat as a share page shows it. A friend shows by code only. */
-export type SeatSlotView = {
-  index: number;
-  status: SeatSlotStatus;
-  /** The named recipient's code, when it isn't the viewer's own sign-up. */
-  recipientCode?: string;
-  /** The seat goes to the viewer's own sign-up. */
-  mine?: boolean;
-  /** The named friend has paid since (or has a slip waiting): this seat can't go to them; name someone else. */
-  recipientPaid?: boolean;
-};
-
-/** Everything a page needs to draw a link's seats: the view model the share UI is designed against. */
-export type SeatProgressView = {
-  rule: SeatRule;
-  phase: "open" | "after-close" | "off";
-  devices: number;
-  paid: number;
-  /** Earned seats, by index. */
-  seats: SeatSlotView[];
-  /** The next seat and what's missing for it (counting stops at close, so after close it stays where it stopped). Null when maxed. */
-  next: NextSeat | null;
-  maxed: boolean;
-  /** The owner already has a free seat from a friend's link, so their own first seat waits for another friend's name. */
-  giftedToYou: boolean;
-  /** No new seats are being written (switched off, or the event-wide cap is reached). Earned seats still work. */
-  seatsClosed: boolean;
-  seatsClosedReason: SeatsClosedReason | null;
-  /** Staff shut this link (fraud): it earns no more seats and its open seats were turned down. */
-  linkRejected: boolean;
-};
-
-/**
- * The seats as the link's owner sees them. A qualified seat for the owner's
- * own sign-up turns back into needs_recipient if they paid in the meantime
- * (no free seat on top of a payment): they name a friend instead.
- */
-export function seatProgressView(input: {
-  progress: Progress;
-  rows: readonly SeatRow[];
-  ownRegistrationId: string | null;
-  selfPaid: boolean;
-  phase: SeatProgressView["phase"];
-  rule?: SeatRule;
-  giftedToYou?: boolean;
-  seatsClosedReason?: SeatsClosedReason | null;
-  linkRejected?: boolean;
-}): SeatProgressView {
-  const rule = input.rule ?? SEAT_RULE;
-  const seats = [...input.rows]
-    .sort((a, b) => a.index - b.index)
-    .map((r): SeatSlotView => {
-      const mine = !!r.recipientRegistrationId && r.recipientRegistrationId === input.ownRegistrationId;
-      const status = r.status === "qualified" && mine && input.selfPaid ? "needs_recipient" : r.status;
-      const slot: SeatSlotView = { index: r.index, status };
-      if (status === "needs_recipient") return slot;
-      if (mine) slot.mine = true;
-      else if (r.recipientRegistrationId) {
-        slot.recipientCode = shareCode(r.recipientRegistrationId);
-        if (status === "qualified" && r.recipientStatus && r.recipientStatus !== "pending") slot.recipientPaid = true;
-      }
-      return slot;
-    });
-  return {
-    rule,
-    phase: input.phase,
-    devices: input.progress.devices,
-    paid: input.progress.paid,
-    seats,
-    next: nextSeat(input.progress, seats.length, rule),
-    maxed: seats.length >= rule.maxSeatsPerLink,
-    giftedToYou: input.giftedToYou ?? false,
-    seatsClosed: Boolean(input.seatsClosedReason),
-    seatsClosedReason: input.seatsClosedReason ?? null,
-    linkRejected: input.linkRejected ?? false,
-  };
-}
-
-/** Whether the owner may type a code for this seat: it waits for a name, or a friend was named and staff haven't confirmed yet. */
-export function canNameSeat(seat: SeatSlotView, phase: SeatProgressView["phase"]): boolean {
-  if (phase === "off") return false;
-  return seat.status === "needs_recipient" || (seat.status === "qualified" && !seat.mine);
-}
-
-export type RecipientProblem = "not_found" | "self" | "paid" | "cancelled" | "ambiguous";
-
-/** Why a typed code can't get the seat, or null if it can. Only an unpaid sign-up of this event, not your own. */
-export function recipientProblem(
-  matches: readonly { id: string; status: string }[],
-  ownRegistrationId: string | null,
-): RecipientProblem | null {
-  if (matches.length === 0) return "not_found";
-  if (matches.length > 1) return "ambiguous";
-  const [m] = matches;
-  if (m.id === ownRegistrationId) return "self";
-  if (m.status === "cancelled") return "cancelled";
-  if (m.status !== "pending") return "paid";
-  return null;
-}
-
-/** A code as people type it: "1a2b 3c4d", "No. 1A2B3C4D", "1a2b-3c4d" all read as 1a2b3c4d. */
-export function parseShareCode(raw: string): string | null {
-  const code = raw
-    .trim()
-    .replace(/^no\.?\s*/i, "")
-    .replace(/[\s-]/g, "")
-    .toLowerCase();
-  return SHARE_CODE_RE.test(code) ? code : null;
-}
-
 /**
  * A student's code is the first 8 hex digits of their sign-up's id, which is
  * the whole first group of the uuid, so the ids that carry it are one range.
+ * A teacher's random code must not fall in any sign-up's range.
  */
 export function codeIdRange(code: string): { from: string; to: string } {
   return { from: `${code}-0000-0000-0000-000000000000`, to: `${code}-ffff-ffff-ffff-ffffffffffff` };
@@ -426,70 +54,46 @@ export function parseOptionalPhone(raw: string | undefined | null): { ok: true; 
   return /^\d{9,15}$/.test(digits) ? { ok: true, value } : { ok: false };
 }
 
-/** For the admin fraud check: how a link's devices came in. */
-export function trafficStats(views: readonly ViewEvent[], now: Date): { networks: number; last24h: number; peakHour: number } {
-  const since = now.getTime() - 24 * 3600_000;
-  const hours = new Map<string, number>();
-  let last24h = 0;
-  for (const v of views) {
-    if (new Date(v.at).getTime() >= since) last24h += 1;
-    const h = v.at.slice(0, 13);
-    hours.set(h, (hours.get(h) ?? 0) + 1);
-  }
-  return { networks: new Set(views.map((v) => v.ipHash)).size, last24h, peakHour: Math.max(0, ...hours.values()) };
-}
-
-const digits = (p: string | null | undefined) => (p ?? "").replace(/\D/g, "").replace(/^66/, "0").slice(-9);
-
-/** Whether any phone in one list is the same number as any in the other (ignores spaces, dashes and +66). */
-export function phonesMatch(a: readonly (string | null | undefined)[], b: readonly (string | null | undefined)[]): boolean {
-  const left = new Set(a.map(digits).filter((d) => d.length >= 8));
-  return b.map(digits).some((d) => d.length >= 8 && left.has(d));
-}
-
-function editDistance(a: string, b: string): number {
-  const x = [...a];
-  const y = [...b];
-  let prev = Array.from({ length: y.length + 1 }, (_, j) => j);
-  for (let i = 1; i <= x.length; i++) {
-    const cur = [i];
-    for (let j = 1; j <= y.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (x[i - 1] === y[j - 1] ? 0 : 1));
-    prev = cur;
-  }
-  return prev[y.length];
-}
-
-export type SchoolMatch = "match" | "similar" | "different";
-
 /**
- * For the admin check, two school names as staff should read them:
- * - "match": the same name once folded (no โรงเรียน/รร., spaces, Thai digits);
- * - "similar": one name inside the other, or a few letters apart. Sibling
- *   schools ("สตรีวิทยา" / "สตรีวิทยา 2") and abbreviations both land here,
- *   so a person looks;
- * - "different": anything else, or a name missing.
+ * What the share page and the teacher page show about one link, at load and
+ * from their polling GET routes. Nothing in it names a person.
  */
-export function schoolMatch(a: string | null | undefined, b: string | null | undefined): SchoolMatch {
-  const x = foldSchoolName(a ?? "");
-  const y = foldSchoolName(b ?? "");
-  if (!x || !y) return "different";
-  if (x === y) return "match";
-  if (x.includes(y) || y.includes(x)) return "similar";
-  return editDistance(x, y) <= Math.max(2, Math.floor(Math.min([...x].length, [...y].length) * 0.2)) ? "similar" : "different";
-}
-
-/** What a share page shows about one link. Nothing in it names a person. */
 export type ShareLinkView = {
   kind: ShareKind;
+  /** The poster code (8 hex): the link tags ?src=share-<code> (students) or ?src=t-<code> (teachers). */
   code: string;
   school: { name: string; province: string | null };
-  /** Students may change their school while sign-up is open. */
+  /** Students may change their school while sign-up is open. Teachers never. */
   canChangeSchool: boolean;
-  /** Students: whether their own sign-up has paid. */
-  selfPaid: boolean;
-  /** Teachers: staff checked with the school. */
-  verified: boolean;
-  /** Teachers: staff have sent the Demo Day invite. */
-  invited: boolean;
-  seats: SeatProgressView;
+  /** Real devices that opened the link, each network adding at most PER_NETWORK_CAP, up to sign-up close. */
+  devices: number;
+  /** Paid seats (member_count) of sign-ups that came through the link, slip in by close. */
+  paid: number;
+  /**
+   * "open": until sign-up closes, counting. "after-close": read-only until
+   * the end of Demo Day, numbers frozen at close. "off": switched off or over.
+   */
+  phase: SharePhase;
+  /** Students: their own Instagram Story proof. Teachers: always "none". */
+  storyProof: StoryProofStatus;
 };
+
+/** The view model from a link's stored fields, its counts and the phase. */
+export function shareLinkView(input: {
+  link: { kind: ShareKind; code: string; schoolName: string; province: string | null };
+  counts: { devices: number; paid: number };
+  phase: SharePhase;
+  storyProof?: StoryProofStatus;
+}): ShareLinkView {
+  const { link, counts, phase } = input;
+  return {
+    kind: link.kind,
+    code: link.code,
+    school: { name: link.schoolName, province: link.province },
+    canChangeSchool: link.kind === "student" && phase === "open",
+    devices: Math.max(0, counts.devices),
+    paid: Math.max(0, counts.paid),
+    phase,
+    storyProof: link.kind === "student" ? (input.storyProof ?? "none") : "none",
+  };
+}

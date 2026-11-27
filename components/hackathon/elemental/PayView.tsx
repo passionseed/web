@@ -31,6 +31,8 @@ type Props = {
   teamUpUrl?: string | null;
   /** How the last Discord sign-in from this page went (?discord=…). */
   discordOutcome?: ElementalDiscordOutcome | null;
+  /** The share page, set only on a paid page while sharing is open. */
+  shareHref?: string | null;
   demo?: boolean;
 };
 
@@ -168,6 +170,13 @@ function PaidSection(props: Props) {
       </div>
       <Team {...props} />
       <BuddySection reg={reg} />
+      {props.shareHref && (
+        <p className="text-sm" style={{ color: EL.inkSoft }}>
+          <Link href={props.shareHref} className="underline underline-offset-4">
+            แชร์โปสเตอร์ · custom ชื่อทีม →
+          </Link>
+        </p>
+      )}
       <p className="text-sm" style={{ color: EL.inkSoft }}>
         มีคำถามทักไลน์ {SHIFT_PAYMENT.lineId} ·{" "}
         <Link href="/hackathon/elemental" className="underline underline-offset-4">

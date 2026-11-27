@@ -65,7 +65,6 @@ type RegDbRow = {
   source: string | null;
   created_at: string;
   slip_path: string | null;
-  free_seat?: boolean | null;
   board_name?: string | null;
   name_style?: unknown;
   leaderboard_hidden?: boolean | null;
@@ -94,7 +93,7 @@ async function loadRegistrations(eventSlug: string, endsAt: string): Promise<Boa
     allRows<RegDbRow>((from, to) =>
       db
         .from("hackathon_event_registrations")
-        .select(full ? `${base}, free_seat, board_name, name_style, leaderboard_hidden` : base)
+        .select(full ? `${base}, board_name, name_style, leaderboard_hidden` : base)
         .eq("event_slug", eventSlug)
         .neq("status", "cancelled")
         .lte("created_at", endsAt)
@@ -109,7 +108,6 @@ async function loadRegistrations(eventSlug: string, endsAt: string): Promise<Boa
     status: r.status,
     memberCount: r.member_count ?? 1,
     source: r.source,
-    freeSeat: Boolean(r.free_seat),
     createdAt: r.created_at,
     slipPath: r.slip_path ?? null,
     style: r.name_style ?? null,

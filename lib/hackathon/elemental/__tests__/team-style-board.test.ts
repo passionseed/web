@@ -31,7 +31,6 @@ function reg(n: number, over: Partial<BoardRegistrationRow> = {}): BoardRegistra
     status: "pending",
     memberCount: 1,
     source: null,
-    freeSeat: false,
     createdAt: BEFORE,
     slipPath: null,
     style: null,
@@ -72,8 +71,7 @@ describe("building the team board", () => {
     reg(12, { status: "pending", source: src(1) }),
     reg(13, { status: "paid", source: src(4) }),
     reg(14, { status: "paid", source: src(5) }),
-    // A free seat staff gave, and a sign-up after close: neither counts as paid.
-    reg(15, { status: "paid", source: src(1), freeSeat: true }),
+    // A sign-up after close: doesn't count as paid.
     reg(16, { status: "paid", source: src(1), createdAt: AFTER }),
     // Signed up before close but sent the slip after it: not paid by close.
     reg(17, { status: "paid", source: src(1), slipPath: slip(AFTER) }),
@@ -96,17 +94,17 @@ describe("building the team board", () => {
     expect(t1.name).toBe("ไฟป่า");
   });
 
-  it("counts only real paid seats whose slip came in by close", () => {
-    // reg 10 (1) + reg 11 (2) + reg 18 (1). Not the free seat (15), the late sign-up (16),
+  it("counts only paid seats whose slip came in by close", () => {
+    // reg 10 (1) + reg 11 (2) + reg 18 (1). Not the late sign-up (16),
     // the late slip (17) or the pending one (12).
     expect(t1.paid).toBe(4);
-    expect(countsAsPaid({ status: "paid", freeSeat: true, createdAt: BEFORE, slipPath: null }, END)).toBe(false);
-    expect(countsAsPaid({ status: "paid", freeSeat: false, createdAt: AFTER, slipPath: null }, END)).toBe(false);
-    expect(countsAsPaid({ status: "paid", freeSeat: false, createdAt: BEFORE, slipPath: null }, END)).toBe(true);
+    expect(countsAsPaid({ status: "paid", createdAt: AFTER, slipPath: null }, END)).toBe(false);
+    expect(countsAsPaid({ status: "paid", createdAt: BEFORE, slipPath: null }, END)).toBe(true);
+    expect(countsAsPaid({ status: "review", createdAt: BEFORE, slipPath: null }, END)).toBe(false);
   });
 
   it("keeps the final board final: a slip sent after close never adds a seat", () => {
-    const late = { status: "paid", freeSeat: false, createdAt: BEFORE, slipPath: slip(AFTER) };
+    const late = { status: "paid", createdAt: BEFORE, slipPath: slip(AFTER) };
     expect(countsAsPaid(late, END)).toBe(false);
     expect(countsAsPaid({ ...late, slipPath: slip("2026-12-04T23:59:00+07:00") }, END)).toBe(true);
     const before = buildBoard({ teams: [], registrations: [reg(30, { boardName: "x" })], views: views(src(30), 2), endsAt: END });
