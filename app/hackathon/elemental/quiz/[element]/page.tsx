@@ -95,7 +95,33 @@ export default async function QuizResultPage({ params, searchParams }: { params:
         <p className="mt-4 text-pretty text-2xl" style={{ fontFamily: EL_FONT.display }}>
           “{r.roastTh}”
         </p>
-        <p className="mt-4 text-pretty text-lg" style={{ color: p.soft }}>
+
+        {/* The next step sits right under the result, on the first screen of a phone: share it if it's yours, take the quiz if it's a friend's. */}
+        <div className="mt-6">
+          {me ? (
+            <QuizShare element={element} shareText={shareText} needLabel={need.th} cardAlt={`การ์ดผลแบบทดสอบ: ฉันคือ${r.th}`} />
+          ) : (
+            <>
+              <Link
+                href="/hackathon/elemental/quiz"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full px-7 py-4 text-lg font-semibold"
+                style={{ backgroundColor: EL.flame, color: EL.char }}
+              >
+                ทำควิซ 8 ข้อ <ArrowRight className="h-5 w-5" />
+              </Link>
+              <p className="mt-2 text-center text-sm" style={{ color: p.soft }}>
+                เพื่อนคุณเป็น{elementLabel(r.th)} แล้วคุณคือธาตุไหน
+              </p>
+            </>
+          )}
+          {open && (
+            <Link href={quizJoinHref(element)} className="mt-4 inline-flex items-center gap-1 text-sm underline underline-offset-4" style={{ color: p.soft }}>
+              สมัคร Elemental Hackathon <ArrowRight className="h-4 w-4" />
+            </Link>
+          )}
+        </div>
+
+        <p className="mt-8 text-pretty text-lg" style={{ color: p.soft }}>
           <strong style={{ color: p.ink }}>{r.roleTh}</strong> {r.strengthTh}
         </p>
 
@@ -114,49 +140,6 @@ export default async function QuizResultPage({ params, searchParams }: { params:
             {r.needsWhyTh}
           </p>
         </div>
-
-        <div className="mt-8">
-          {me ? (
-            <div className="grid gap-5 sm:grid-cols-[200px_1fr] sm:items-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`/hackathon/elemental/quiz/${element}/story`}
-                alt={`การ์ดผลแบบทดสอบ: ฉันคือ${r.th}`}
-                width={1080}
-                height={1920}
-                className="mx-auto w-48 rounded-xl border sm:w-full"
-                style={{ borderColor: line }}
-              />
-              <QuizShare element={element} shareText={shareText} />
-            </div>
-          ) : (
-            <Link
-              href="/hackathon/elemental/quiz"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-full px-7 py-4 text-lg font-semibold"
-              style={{ backgroundColor: EL.flame, color: EL.char }}
-            >
-              คุณคือธาตุอะไร ลองทำดู <ArrowRight className="h-5 w-5" />
-            </Link>
-          )}
-        </div>
-
-        <section className="mt-12 border-t pt-8" style={{ borderColor: line }}>
-          <div className="flex items-center gap-3">
-            <ElementIcon element={element} size={27} id="brief" />
-            <p className={tag} style={{ fontFamily: EL_FONT.mono, color: p.soft }}>
-              [โจทย์ของ{elementLabel(r.th)}]
-            </p>
-          </div>
-          <h2 className="mt-3 text-pretty text-2xl" style={{ fontFamily: EL_FONT.display, lineHeight: 1.4 }}>
-            {brief.howMightWeTh}
-          </h2>
-          <p className="mt-4 text-pretty" style={{ color: p.soft }}>
-            <strong style={{ color: p.ink }}>เริ่มจากตรงนี้ได้เลย:</strong> {brief.starterTh}
-          </p>
-          <p className="mt-3 text-sm" style={{ color: p.soft }}>
-            ธาตุของคุณไม่ได้บังคับโจทย์ {ANY_PROBLEM_NOTE}
-          </p>
-        </section>
 
         {open && (
           <section className="mt-10 rounded-2xl p-6" style={{ backgroundColor: EL.cream, color: EL.ink }}>
@@ -179,13 +162,32 @@ export default async function QuizResultPage({ params, searchParams }: { params:
               className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full px-7 py-4 text-lg font-semibold"
               style={{ backgroundColor: EL.ink, color: EL.cream }}
             >
-              สมัครพร้อมเพื่อน <ArrowRight className="h-5 w-5" />
+              สมัคร Hackathon <ArrowRight className="h-5 w-5" />
             </Link>
             <p className="mt-3 text-center text-sm" style={{ color: EL.inkSoft }}>
               ปิดรับสมัคร {formatThaiDate(ELEMENTAL.registrationClosesOn, false)} · <DaysLeft closesOn={ELEMENTAL.registrationClosesOn} />
             </p>
           </section>
         )}
+
+        <section className="mt-12 border-t pt-8" style={{ borderColor: line }}>
+          <div className="flex items-center gap-3">
+            <ElementIcon element={element} size={27} id="brief" />
+            <p className={tag} style={{ fontFamily: EL_FONT.mono, color: p.soft }}>
+              [โจทย์ของ{elementLabel(r.th)}]
+            </p>
+          </div>
+          <h2 className="mt-3 text-pretty text-2xl" style={{ fontFamily: EL_FONT.display, lineHeight: 1.4 }}>
+            {brief.howMightWeTh}
+          </h2>
+          <p className="mt-4 text-pretty" style={{ color: p.soft }}>
+            <strong style={{ color: p.ink }}>เริ่มจากตรงนี้ได้เลย:</strong> {brief.starterTh}
+          </p>
+          <p className="mt-3 text-sm" style={{ color: p.soft }}>
+            ธาตุของคุณไม่ได้บังคับโจทย์ {ANY_PROBLEM_NOTE}
+          </p>
+        </section>
+
 
         <section className="mt-12">
           <p className={tag} style={{ fontFamily: EL_FONT.mono, color: p.soft }}>
@@ -197,6 +199,7 @@ export default async function QuizResultPage({ params, searchParams }: { params:
                 key={el}
                 href={`/hackathon/elemental/quiz/${el}`}
                 aria-current={el === element ? "page" : undefined}
+                aria-label={el === "aether" ? QUIZ_RESULTS[el].th : undefined}
                 className="flex flex-col items-center gap-2 rounded-xl border px-1 py-3 text-center text-xs"
                 style={{ borderColor: el === element ? QUIZ_PALETTE[el].accent : line }}
               >

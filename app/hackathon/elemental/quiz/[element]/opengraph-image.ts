@@ -12,6 +12,6 @@ export function generateStaticParams() {
 
 export default async function Image({ params }: { params: Promise<{ element: string }> }) {
   const { element } = await params;
-  const png = renderQuizOg(isQuizElement(element) ? element : "fire");
-  return new Response(new Uint8Array(png), { headers: { "Content-Type": "image/png" } });
+  if (!isQuizElement(element)) return new Response("Not found", { status: 404 });
+  return new Response(new Uint8Array(renderQuizOg(element)), { headers: { "Content-Type": "image/png" } });
 }

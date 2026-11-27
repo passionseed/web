@@ -87,6 +87,23 @@ function pixelBox(ctx: Ctx, x: number, y: number, w: number, h: number, step: nu
   ctx.fillRect(x + w - step, y + step, step, h - step * 2);
 }
 
+/** A dashed pixel outline: the empty slot where a Story sticker goes. */
+function dashedBox(ctx: Ctx, x: number, y: number, w: number, h: number, step: number, color: string) {
+  const dash = step * 4;
+  const gap = step * 3;
+  ctx.fillStyle = color;
+  for (let i = x + step; i < x + w - step; i += dash + gap) {
+    const len = Math.min(dash, x + w - step - i);
+    ctx.fillRect(i, y, len, step);
+    ctx.fillRect(i, y + h - step, len, step);
+  }
+  for (let j = y + step; j < y + h - step; j += dash + gap) {
+    const len = Math.min(dash, y + h - step - j);
+    ctx.fillRect(x, j, step, len);
+    ctx.fillRect(x + w - step, j, step, len);
+  }
+}
+
 /** Draws text lines with the first baseline at `y`; returns the last baseline. */
 function lines(ctx: Ctx, text: string, font: string, color: string, x: number, y: number, maxWidth: number, lineHeight: number, maxLines = 3): number {
   ctx.font = font;
@@ -129,8 +146,8 @@ export function renderQuizStory(key: ElementKey): Buffer {
   ctx.fillStyle = p.bg;
   ctx.fillRect(0, 0, W, H);
 
-  // IG covers about the top 250 px and the bottom 340 px with its own buttons:
-  // the crest can sit under them, the words can't.
+  // IG covers about the top 250 px and the bottom 380 px with its own buttons:
+  // the crest can sit under them; everything to read or tap sits between y=270 and y=1540.
   drawCrest(ctx, key, W, 36);
   const x = 80;
   const right = W - x;
@@ -162,26 +179,30 @@ export function renderQuizStory(key: ElementKey): Buffer {
   y += 74;
   y = lines(ctx, r.roleTh, `40px "${REGULAR}"`, p.soft, x, y, maxW, 58, 2);
 
-  // The tag box: room to drop an IG mention sticker for the friend this element needs. It sits
-  // at the same height on all five cards, so a row of them in a feed reads as one set.
-  const boxTop = Math.max(y + 80, 1230);
-  const boxH = 300;
-  pixelBox(ctx, x, boxTop, maxW, boxH, 6, p.accent);
-  ctx.font = `56px "${REGULAR}"`;
-  ctx.fillStyle = p.ink;
-  ctx.fillText(`${r.th}ต้องการ${need.th}`, x + 48, boxTop + 100);
-  ctx.font = `40px "${REGULAR}"`;
-  ctx.fillStyle = p.soft;
-  ctx.fillText(`แท็ก${need.th}ของคุณตรงนี้`, x + 48, boxTop + 172);
-  drawIcon(ctx, r.needs, right - 48 - ICON_SIZE * 12, boxTop + 48, 12, false);
-
-  const footY = boxTop + boxH + 76;
+  // Two slots for the two stickers a Story needs, both above IG's bottom buttons (y=1540) and at
+  // the same height on all five cards. The link slot: a Story can't carry a link by itself, so it
+  // marks where the link sticker goes, and prints the quiz and its address underneath as the
+  // fallback. Above it, the tag box: the friend this element needs, with room for their mention.
+  const linkTop = 1428;
+  const linkH = 112;
+  dashedBox(ctx, x, linkTop, maxW, linkH, 4, p.soft);
   ctx.font = `34px "${REGULAR}"`;
   ctx.fillStyle = p.ink;
-  ctx.fillText("คุณคือธาตุอะไร?", x, footY);
-  ctx.font = `28px "${MONO}"`;
+  ctx.fillText("คุณคือธาตุอะไร? ทำควิซ 8 ข้อ", x + 40, linkTop + 50);
+  ctx.font = `26px "${MONO}"`;
   ctx.fillStyle = p.soft;
-  ctx.fillText(QUIZ_SHORT_URL, x, footY + 48);
+  ctx.fillText(QUIZ_SHORT_URL, x + 40, linkTop + 88);
+
+  const boxBottom = linkTop - 24;
+  const boxTop = Math.max(y + 50, boxBottom - 260);
+  pixelBox(ctx, x, boxTop, maxW, boxBottom - boxTop, 6, p.accent);
+  ctx.font = `52px "${REGULAR}"`;
+  ctx.fillStyle = p.ink;
+  ctx.fillText(`${r.th}ต้องการ${need.th}`, x + 44, boxTop + 78);
+  ctx.font = `34px "${REGULAR}"`;
+  ctx.fillStyle = p.soft;
+  ctx.fillText(`แท็ก${need.th}ของคุณตรงนี้`, x + 44, boxTop + 128);
+  drawIcon(ctx, r.needs, right - 44 - ICON_SIZE * 12, boxTop + 34, 12, false);
 
   return canvas.toBuffer("image/png");
 }
