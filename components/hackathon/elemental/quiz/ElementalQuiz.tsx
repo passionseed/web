@@ -174,7 +174,7 @@ function Intro({ onStart }: { onStart: () => void }) {
               </div>
             ))}
             <span className="text-xs" style={{ color: EL.creamSoft }}>
-              {el === "aether" ? "มองไม่เห็น" : QUIZ_RESULTS[el].th}
+              {el === "aether" ? "Aether" : QUIZ_RESULTS[el].th}
             </span>
           </div>
         ))}

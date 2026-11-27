@@ -198,7 +198,7 @@ export default async function QuizResultPage({ params, searchParams }: { params:
                 style={{ borderColor: el === element ? QUIZ_PALETTE[el].accent : line }}
               >
                 <ElementIcon element={el} size={36} id={`all-${el}`} />
-                {el === "aether" ? "มองไม่เห็น" : QUIZ_RESULTS[el].th}
+                {el === "aether" ? "Aether" : QUIZ_RESULTS[el].th}
               </Link>
             ))}
           </div>
