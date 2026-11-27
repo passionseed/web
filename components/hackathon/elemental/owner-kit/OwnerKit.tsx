@@ -23,7 +23,7 @@ import { PassionSeedWordmark } from "@/components/hackathon/PassionSeedWordmark"
 /** Owners send everything by Sunday 29 November (the problem-owner emails Big sent on 2026-11-25; company-brain private/hackathon-ops/voices-and-speakers.md). */
 const DUE = "2026-11-29";
 /** The interview workshop owners may join for 20 minutes. */
-const WORKSHOP = ELEMENTAL.schedule.find((s) => s.kind === "workshop" && s.time.startsWith("10:00"));
+const WORKSHOP = ELEMENTAL.schedule.find((s) => s.kind === "workshop" && s.time?.startsWith("10:00"));
 
 const PLATE = "/hackathon/poster/elemental/plate-key-blue.png";
 const RULE = "1px solid rgba(243,239,230,0.28)";

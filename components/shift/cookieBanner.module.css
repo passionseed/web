@@ -1,0 +1,219 @@
+/* The SHIFT cookie banner, in the /shift space look (components/shift/next/shiftNext.module.css):
+   a dark glass panel with a small planet and a satellite on its orbit.
+   Shown on every SHIFT page, including light ones, so the panel is near-opaque
+   and never depends on what is behind it.
+   PDPA: "ยอมรับ" and "ไม่ยอมรับ" have the same size, style and weight. Keep it that way. */
+
+.dock {
+  --void: #03040b;
+  --star: #f4f6ff;
+  --mist: rgba(226, 232, 255, 0.74);
+  --aurora: #7fe3ff;
+  --nebula: #9d8cff;
+  --sol: #ffd29a;
+  --tension: cubic-bezier(0.05, 0.7, 0.35, 0.99);
+
+  position: fixed;
+  inset-inline: 0.75rem;
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+  z-index: 50;
+  margin-inline: auto;
+  max-width: 28rem;
+  overflow: hidden;
+  border-radius: 24px;
+  padding: 1.1rem 1.1rem 1rem;
+  color: var(--star);
+  background:
+    radial-gradient(1px 1px at 22% 18%, rgba(255, 255, 255, 0.7), transparent 60%),
+    radial-gradient(1px 1px at 64% 12%, rgba(200, 220, 255, 0.55), transparent 60%),
+    radial-gradient(1px 1px at 88% 44%, rgba(255, 236, 210, 0.5), transparent 60%),
+    radial-gradient(1px 1px at 46% 86%, rgba(255, 255, 255, 0.4), transparent 60%),
+    radial-gradient(1.2px 1.2px at 8% 72%, rgba(190, 230, 255, 0.6), transparent 60%),
+    linear-gradient(180deg, rgba(14, 17, 40, 0.96) 0%, rgba(3, 4, 11, 0.97) 100%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 30px 70px -30px rgba(0, 0, 0, 0.85);
+  animation: dock-in 700ms var(--tension) both;
+}
+
+/* Wider screens: a small card in the bottom-right corner, out of the way of the page. */
+@media (min-width: 640px) {
+  .dock {
+    inset-inline: auto 1.25rem;
+    bottom: 1.25rem;
+    margin-inline: 0;
+    width: 24rem;
+  }
+}
+
+.dock[data-leaving] {
+  animation: dock-out 420ms cubic-bezier(0.5, 0, 0.75, 0) forwards;
+  pointer-events: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.copy {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--mist);
+}
+
+/* ---------- The little system: a planet, its orbit, a satellite ---------- */
+
+.system {
+  position: relative;
+  flex: none;
+  width: 56px;
+  height: 56px;
+}
+
+.planet {
+  position: absolute;
+  inset: 17px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(233, 238, 255, 0.5), transparent 46%),
+    radial-gradient(circle at 50% 50%, #1b2a6b 0%, #0b1340 60%, #050a24 100%);
+  box-shadow: inset -3px -3px 6px rgba(0, 0, 0, 0.55);
+}
+
+.orbit {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.orbit ellipse {
+  fill: none;
+  stroke: rgba(226, 232, 255, 0.28);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+
+/* Same ellipse as the SVG (cx 28, cy 28, rx 26, ry 10, tilted -18deg), so the
+   satellite rides the drawn line. The path starts at the ellipse's right end
+   after the tilt. The box sits at the container's origin with no margin, so
+   the path coordinates match the SVG's. */
+.satellite {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--sol);
+  box-shadow: 0 0 0 2px rgba(255, 210, 154, 0.18);
+  offset-path: path("M 52.73 19.97 A 26 10 -18 1 1 3.27 36.03 A 26 10 -18 1 1 52.73 19.97");
+  offset-anchor: center;
+  offset-rotate: 0deg;
+  animation: orbit 6s linear infinite;
+}
+
+/* On a choice the satellite leaves its orbit, the same way for either answer. */
+.dock[data-leaving] .satellite {
+  animation-play-state: paused;
+  translate: 40px -40px;
+  opacity: 0;
+  transition:
+    translate 380ms ease-in,
+    opacity 380ms ease-in;
+}
+
+/* ---------- Two equal choices ---------- */
+
+.choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
+.choice {
+  min-height: 3rem;
+  padding: 0 1rem;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--star);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  cursor: pointer;
+  transition:
+    background-color 160ms ease-out,
+    box-shadow 160ms ease-out,
+    translate 160ms ease-out;
+}
+
+@media (hover: hover) {
+  .choice:hover {
+    background: rgba(255, 255, 255, 0.11);
+    box-shadow: inset 0 0 0 1px rgba(127, 227, 255, 0.45);
+  }
+}
+
+.choice:active {
+  translate: 0 1px;
+}
+
+.choice:focus-visible {
+  outline: 2px solid var(--aurora);
+  outline-offset: 3px;
+}
+
+/* ---------- Motion ---------- */
+
+@keyframes dock-in {
+  from {
+    opacity: 0;
+    translate: 0 24px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes dock-out {
+  to {
+    opacity: 0;
+    translate: 0 16px;
+  }
+}
+
+@keyframes orbit {
+  from {
+    offset-distance: 0%;
+  }
+  to {
+    offset-distance: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dock,
+  .dock[data-leaving] {
+    animation: none;
+  }
+
+  .satellite {
+    animation: none;
+    offset-distance: 30%;
+  }
+
+  .dock[data-leaving] .satellite {
+    transition: none;
+  }
+}

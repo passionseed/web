@@ -1,3 +1,4 @@
+import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { formatThaiDate } from "@/lib/content/shift-cohort";
 
 /**
@@ -9,7 +10,10 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
  *   ending in a demo day (Big, 2026-11-19).
  * - Any student who has won a contest qualifies, not only Elemental's winners
  *   (Angpao, 2026-11-18 and 2026-11-19).
- * - Opens Friday 11 December 2026 (Angpao, 2026-11-19).
+ * - Starts after Elemental's Demo Day on Saturday 12 December 2026 (Big,
+ *   2026-11-26; company-brain decisions/log.md, PR #134). The exact date is
+ *   (fill in). It replaces Friday 11 December (Angpao, 2026-11-19), which
+ *   clashed with Elemental's final hand-in.
  * - Teams build on the PassionSeed whiteboard (Big, 2026-11-19) with weekly
  *   check-ins (CSII proposal).
  * - What we ask back: testimonials and help promoting PassionSeed
@@ -27,7 +31,8 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
 export const RFW = {
   name: "Request for Winners",
   weeks: 4,
-  opensOn: "2026-12-11",
+  /** First day to apply. (fill in): until then the page says "after Demo Day". */
+  opensOn: null as string | null,
   /** Last day to apply. (fill in) */
   closesOn: null as string | null,
   /** First day of the 4 weeks. (fill in) */
@@ -55,6 +60,15 @@ export const SOON_TH = "ประกาศเร็ว ๆ นี้";
 export function thaiDateWithYear(iso: string): string {
   const year = Number(iso.slice(0, 4)) + 543;
   return `${formatThaiDate(iso)} ${year}`;
+}
+
+/**
+ * When applications open: the date once it's set, until then "หลัง Demo Day
+ * ของ Elemental (เสาร์ 12 ธ.ค. 2569)". Never a guessed date.
+ */
+export function opensLine(): string {
+  if (RFW.opensOn) return thaiDateWithYear(RFW.opensOn);
+  return `หลัง Demo Day ของ ${ELEMENTAL.edition} (${thaiDateWithYear(ELEMENTAL.demoDay.date)})`;
 }
 
 /** A date line, or null when the date is still unknown. */

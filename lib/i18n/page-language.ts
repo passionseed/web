@@ -6,13 +6,13 @@
  * site on 2026-11-22 (0 to 2% Thai text). A page added in English should be
  * added here.
  */
-const ENGLISH_PAGES = new Set(["/about", "/contact", "/link", "/expert-interview", "/hackathon/gallery"]);
+const ENGLISH_PAGES = new Set(["/contact", "/link", "/expert-interview", "/hackathon/gallery"]);
 
 /**
  * Pages that follow the site's Thai/English switch (useLanguage). They
  * render English first, then the visitor's saved choice.
  */
-const SWITCH_PAGES = ["/about", "/expert-interview", "/settings", "/direction-finder", "/me", "/forgot-password", "/reset-password"];
+const SWITCH_PAGES = ["/expert-interview", "/settings", "/direction-finder", "/me", "/forgot-password", "/reset-password"];
 
 export type PageLanguage = { lang: "th" | "en"; followsSwitch: boolean };
 

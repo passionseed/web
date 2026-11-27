@@ -44,10 +44,9 @@ async function main() {
       console.log("No uploads yet.");
       return;
     }
-    const base = `https://${process.env.B2_BUCKET_NAME}.${process.env.B2_ENDPOINT || "s3.us-west-000.backblazeb2.com"}`;
     for (const o of objects) {
       const mb = (o.size / 1024 / 1024).toFixed(1).padStart(8);
-      console.log(`${o.lastModified?.toISOString() ?? ""}  ${mb} MB  ${base}/${o.key}`);
+      console.log(`${o.lastModified?.toISOString() ?? ""}  ${mb} MB  ${b2.publicUrl(o.key)}`);
     }
     return;
   }

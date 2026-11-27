@@ -1,6 +1,7 @@
 import { after, NextRequest, NextResponse } from "next/server";
 
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
+import { DEFAULT_BUDDY_OWE, isSameContact } from "@/lib/hackathon/elemental/buddy-pass";
 import {
   elementalPriceBaht,
   elementalRegistrationOpen,
@@ -13,7 +14,9 @@ import { safeServerError } from "@/lib/security/route-guards";
 import {
   createRegistration,
   createTeam,
+  getBuddyPass,
   getTeamByInviteCode,
+  isUniqueViolation,
 } from "@/lib/supabase/hackathon-event-registrations";
 
 /**
@@ -22,6 +25,9 @@ import {
  * - solo: alone, at the solo price
  * - create: start a team (group price) and get an invite link for friends
  * - join: join a team by its invite code (group price) while it has room
+ * - buddy: one friend on a paid solo sign-up's buddy pass (buddy price). The
+ *   price is set here, never taken from the client, and the database lets
+ *   only one sign-up that isn't cancelled hold a pass.
  */
 export async function POST(request: NextRequest) {
   if (!elementalRegistrationOpen()) {
@@ -40,6 +46,35 @@ export async function POST(request: NextRequest) {
   const input = { ...parsed.data, source: normalizeSource(parsed.data.source) };
 
   try {
+    if (input.teamMode === "buddy") {
+      const pass = await getBuddyPass(ELEMENTAL.slug, input.passCode!);
+      if (pass.state !== "available" || !pass.registrationId) {
+        return NextResponse.json({ error: `pass_${pass.state}` }, { status: 409 });
+      }
+      if (isSameContact(input, { contactEmail: pass.contactEmail ?? "", contactPhone: pass.contactPhone ?? "" })) {
+        return NextResponse.json({ error: "pass_self" }, { status: 409 });
+      }
+      const amount = ELEMENTAL.buddyPriceBaht;
+      const buddyInput = { ...input, source: input.source ?? "buddy" };
+      let payToken: string;
+      try {
+        ({ payToken } = await createRegistration(
+          ELEMENTAL.slug,
+          buddyInput,
+          amount,
+          null,
+          { fromRegistrationId: pass.registrationId, owe: input.buddyOwe ?? DEFAULT_BUDDY_OWE },
+        ));
+      } catch (error) {
+        // Another friend took the pass a moment ago.
+        if (isUniqueViolation(error)) return NextResponse.json({ error: "pass_used" }, { status: 409 });
+        throw error;
+      }
+      after(() => notifyElementalSignup(buddyInput, null, amount));
+      await sendRegistrationEmail({ to: input.contactEmail, payToken, amountBaht: amount, team: null });
+      return NextResponse.json({ payToken, amountBaht: amount });
+    }
+
     let team: { id: string; name: string; inviteCode: string } | null = null;
     if (input.teamMode === "join") {
       const found = await getTeamByInviteCode(ELEMENTAL.slug, input.inviteCode!, ELEMENTAL.maxGroupSize);

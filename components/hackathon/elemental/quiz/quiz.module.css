@@ -1,0 +1,332 @@
+/* The quiz's pixel motion. Everything moves in whole steps (steps(), never an
+   ease or a fade), and all of it goes away for people who ask for reduced
+   motion. Timings: docs/hackathon/elemental-quiz-pixel-art.md, "Motion". */
+
+/* An icon effect: eight frames, each shown for one eighth of the loop. Every
+   frame runs the same keyframes, offset by a negative delay, and stops on the
+   still after a few loops (PixelArt.tsx). */
+.fx,
+.fxKey {
+  animation-name: fxFrame;
+  animation-timing-function: steps(1, end);
+}
+
+.fx {
+  opacity: 0;
+}
+
+@keyframes fxFrame {
+  0% {
+    opacity: 1;
+  }
+  12.5%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* A question scene (QuestionScene.tsx). Its still shows only when motion is
+   off; otherwise its 8 frames (.fx) take turns. The far layer drifts slowly
+   left and right, a whole pixel at a time, behind the scene: the parallax. */
+.still {
+  display: none;
+}
+
+.drift {
+  animation: drift 9600ms steps(1, end) infinite;
+}
+
+@keyframes drift {
+  0%,
+  6.25% {
+    transform: none;
+  }
+  12.5%,
+  18.75% {
+    transform: translateX(-1px);
+  }
+  25%,
+  31.25% {
+    transform: translateX(-2px);
+  }
+  37.5%,
+  43.75% {
+    transform: translateX(-1px);
+  }
+  50%,
+  56.25% {
+    transform: none;
+  }
+  62.5%,
+  68.75% {
+    transform: translateX(1px);
+  }
+  75%,
+  81.25% {
+    transform: translateX(2px);
+  }
+  87.5%,
+  93.75% {
+    transform: translateX(1px);
+  }
+}
+
+.pixelIn {
+  animation: pixelIn 1ms steps(1, end) both;
+}
+
+@keyframes pixelIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.glowIn {
+  animation: glowIn 500ms ease-out both;
+}
+
+@keyframes glowIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* An icon you can tap (PlayableIcon.tsx). The hit area reaches 6 px past the
+   icon, so even the smallest (36 px) is a 48 px target. */
+.playable {
+  position: relative;
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.playable::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}
+
+.playable:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 8px;
+}
+
+/* Hits (hit.ts): how each element reacts when its moment lands. The sizes
+   (--hit-l, -m, -s) are 6, 4 and 2 px at the reveal. */
+.hitFire {
+  animation: hitFire 100ms steps(1, end);
+}
+
+@keyframes hitFire {
+  0% {
+    transform: translateX(var(--hit-l));
+  }
+  33% {
+    transform: translateX(calc(var(--hit-m) * -1));
+  }
+  66% {
+    transform: translateX(var(--hit-s));
+  }
+  100% {
+    transform: none;
+  }
+}
+
+.hitEarth {
+  animation: hitEarth 96ms steps(1, end);
+}
+
+@keyframes hitEarth {
+  0% {
+    transform: translateY(calc(var(--hit-l) * 2));
+  }
+  50% {
+    transform: translateY(calc(var(--hit-s) * -1));
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* Water dips on the frame its splash shows (210 ms), for one 50 ms step. */
+.hitWater {
+  animation: hitWater 260ms steps(1, end);
+}
+
+@keyframes hitWater {
+  0% {
+    transform: none;
+  }
+  80.77% {
+    transform: translateY(var(--hit-m));
+  }
+  100% {
+    transform: none;
+  }
+}
+
+.hitAir {
+  animation: hitAir 125ms steps(1, end);
+}
+
+@keyframes hitAir {
+  0% {
+    transform: translateX(var(--hit-m));
+  }
+  40% {
+    transform: translateX(var(--hit-s));
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* The reveal's flash: the icon all light for one 50 ms step as it lands. */
+.flash {
+  animation: flash 100ms steps(1, end) both;
+}
+
+@keyframes flash {
+  0% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Answers: the border lights in one step, never eased. */
+.answer {
+  border-color: rgba(243, 239, 230, 0.18);
+  background-color: rgba(243, 239, 230, 0.04);
+}
+
+@media (hover: hover) {
+  .answer:hover {
+    border-color: #ec6424;
+  }
+}
+
+/* The answer being picked lights in flame and sits 2 px down; the others step back. */
+.picked {
+  border-color: #ec6424;
+  background-color: rgba(236, 100, 36, 0.16);
+  transform: translateY(2px);
+}
+
+.dimmed {
+  opacity: 0.4;
+}
+
+/* The next question arrives in one step: 8 px off for 50 ms, then home. */
+.stepFromRight {
+  animation: stepFromRight 50ms steps(1, end) both;
+}
+
+@keyframes stepFromRight {
+  0% {
+    transform: translateX(8px);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+.stepFromLeft {
+  animation: stepFromLeft 50ms steps(1, end) both;
+}
+
+@keyframes stepFromLeft {
+  0% {
+    transform: translateX(-8px);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* A progress square as it lights: one frame half as big again, then itself. */
+.pixelPop {
+  animation: pixelPop 180ms steps(1, end);
+}
+
+@keyframes pixelPop {
+  0% {
+    transform: scale(1.5);
+  }
+  50%,
+  100% {
+    transform: none;
+  }
+}
+
+/* The square for the question you're on blinks like a cursor, four times, then holds. */
+.cursor {
+  animation: cursor 1060ms steps(1, end) 4;
+}
+
+@keyframes cursor {
+  0% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0.35;
+  }
+}
+
+/* The crest drips in from the top edge, one of its eight rows at a time. */
+.crestIn {
+  animation: crestIn 480ms steps(8, end) both;
+}
+
+@keyframes crestIn {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0);
+  }
+}
+
+/* No motion: every still holds, nothing moves or flashes. The picked answer still lights. */
+@media (prefers-reduced-motion: reduce) {
+  .fx,
+  .flash {
+    display: none;
+  }
+
+  .still {
+    display: inline;
+  }
+
+  .fxKey,
+  .drift,
+  .pixelIn,
+  .glowIn,
+  .hitFire,
+  .hitEarth,
+  .hitWater,
+  .hitAir,
+  .stepFromRight,
+  .stepFromLeft,
+  .pixelPop,
+  .cursor,
+  .crestIn {
+    animation: none;
+  }
+
+  .picked {
+    transform: none;
+  }
+}

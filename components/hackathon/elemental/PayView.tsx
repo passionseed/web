@@ -8,6 +8,7 @@ import type { ElementalDiscordOutcome } from "@/lib/hackathon/elemental/discordL
 import { teamLabel } from "@/lib/hackathon/elemental/team-name";
 import type { PublicRegistration } from "@/lib/supabase/hackathon-event-registrations";
 
+import { BuddyPass, IouSlip } from "./BuddyPass";
 import { ConnectDiscord } from "./ConnectDiscord";
 import { PayWithSlip } from "./PayWithSlip";
 import { placeFor, ticketNumber } from "./places";
@@ -22,9 +23,12 @@ import { TrackStep } from "./TrackStep";
 
 type Props = {
   token: string;
-  reg: Pick<PublicRegistration, "status" | "teamName" | "memberCount" | "amountBaht" | "memberNicknames" | "team" | "isTeamStarter" | "teamPosition" | "discordJoined">;
+  reg: Pick<PublicRegistration, "status" | "teamName" | "memberCount" | "amountBaht" | "memberNicknames" | "team" | "isTeamStarter" | "teamPosition" | "discordJoined"> &
+    Partial<Pick<PublicRegistration, "buddyPass" | "buddyOf">>;
   qrSrc: string | null;
   links: { line: string | null; discord: string | null };
+  /** The find-a-team OpenChat, set only on an unpaid page that still needs teammates. */
+  teamUpUrl?: string | null;
   /** How the last Discord sign-in from this page went (?discord=…). */
   discordOutcome?: ElementalDiscordOutcome | null;
   demo?: boolean;
@@ -53,13 +57,44 @@ function LineButton({ label, style }: { label: string; style: typeof filled | ty
 function whoAndPeople(reg: Props["reg"]): { who: string; people: string } {
   const who = reg.team ? reg.memberNicknames.join(", ") : (reg.teamName ?? reg.memberNicknames.join(", "));
   if (reg.team) return { who, people: teamLabel(reg.team.name) };
+  if (reg.buddyOf) return { who, people: `บัตรเพื่อนจาก ${reg.buddyOf.name}` };
   return { who, people: reg.memberCount > 1 ? `${reg.memberCount} คน` : "มาคนเดียว" };
+}
+
+/** The buddy pass (for a ฿199 solo payer) or joke receipt (for a friend on a pass). */
+function BuddySection({ reg }: { reg: Props["reg"] }) {
+  return (
+    <>
+      {reg.buddyPass && <BuddyPass pass={reg.buddyPass} />}
+      {reg.buddyOf && <IouSlip debt={`คุณติด ${reg.buddyOf.name}`} owe={reg.buddyOf.owe} />}
+    </>
+  );
 }
 
 /** The team card; the person who started the team can rename it from here. */
 function Team({ token, reg, demo }: Props) {
   if (!reg.team) return null;
   return <TeamInvite team={reg.team} renameToken={reg.isTeamStarter ? token : undefined} demo={demo} />;
+}
+
+/**
+ * The find-a-team LINE OpenChat, for someone who signed up without enough
+ * teammates (Big, 2026-11-26). It sits under the payment, so paying stays the
+ * main step.
+ */
+function TeamUp({ url }: { url: string }) {
+  return (
+    <section className="space-y-3 rounded-2xl border p-5 sm:p-6" style={{ borderColor: "rgba(29,33,31,0.18)" }}>
+      <p className="text-lg">หาเพื่อนร่วมทีม</p>
+      <p className="text-sm" style={{ color: EL.inkSoft }}>
+        เข้าโอเพนแชท {ELEMENTAL.edition} Hackathon หาเพื่อนร่วมทีม จากโรงเรียนเดียวกันหรือต่างโรงเรียนก็ได้ ทีมละ{" "}
+        {ELEMENTAL.teamMin}–{ELEMENTAL.maxGroupSize} คน
+      </p>
+      <a href={url} target="_blank" rel="noopener noreferrer" className={`${primary} w-full`} style={outline}>
+        เข้าโอเพนแชทหาทีม
+      </a>
+    </section>
+  );
 }
 
 const DISCORD_FAILED = "เชื่อม Discord ไม่สำเร็จ ลองอีกครั้ง หรือทักไลน์ทีมงาน";
@@ -132,6 +167,7 @@ function PaidSection(props: Props) {
         )}
       </div>
       <Team {...props} />
+      <BuddySection reg={reg} />
       <p className="text-sm" style={{ color: EL.inkSoft }}>
         มีคำถามทักไลน์ {SHIFT_PAYMENT.lineId} ·{" "}
         <Link href="/hackathon/elemental" className="underline underline-offset-4">
@@ -152,6 +188,7 @@ function ReviewSection(props: Props) {
       <p style={{ color: EL.inkSoft }}>ลิงก์กลุ่ม LINE และ Discord ของงานขึ้นที่หน้านี้เมื่อสลิปผ่าน</p>
       <LineButton label={`มีคำถาม ทักไลน์ ${SHIFT_PAYMENT.lineId}`} style={outline} />
       <Team {...props} />
+      <BuddySection reg={props.reg} />
     </section>
   );
 }
@@ -167,7 +204,7 @@ function CancelledSection() {
 }
 
 function PendingSection(props: Props) {
-  const { token, reg, qrSrc, demo } = props;
+  const { token, reg, qrSrc, demo, teamUpUrl } = props;
   return (
     <section className="mt-6">
       {!demo && <TrackStep step="pay" />}
@@ -175,12 +212,27 @@ function PendingSection(props: Props) {
       <p className="mt-3 text-pretty text-lg" style={{ color: EL.inkSoft }}>
         โอนแล้วส่งสลิป ที่นั่งยืนยันทันทีที่สลิปผ่าน
       </p>
+      {reg.buddyOf && (
+        <div className="mt-8">
+          <IouSlip debt={`คุณติด ${reg.buddyOf.name}`} owe={reg.buddyOf.owe} />
+        </div>
+      )}
       <div className="mt-8">
         <PayWithSlip token={token} amountBaht={reg.amountBaht} qrSrc={qrSrc} demo={demo} />
       </div>
+      {reg.buddyPass && (
+        <div className="mt-10">
+          <BuddyPass pass={reg.buddyPass} />
+        </div>
+      )}
       {reg.team && (
         <div className="mt-10">
           <Team {...props} />
+        </div>
+      )}
+      {teamUpUrl && (
+        <div className={reg.team ? "mt-4" : "mt-10"}>
+          <TeamUp url={teamUpUrl} />
         </div>
       )}
     </section>
@@ -205,7 +257,7 @@ export function PayView(props: Props) {
     <main className="min-h-[100dvh] px-5 py-10 sm:px-8 sm:py-16" style={{ backgroundColor: EL.cream, color: EL.ink }}>
       <div className="mx-auto max-w-xl">
         <p className="text-sm" style={{ color: EL.inkSoft }}>
-          {ELEMENTAL.edition} Hackathon · {thaiDateLine()}
+          {ELEMENTAL.edition} Hackathon · {thaiDateLine()} · {ELEMENTAL.venueTh}
         </p>
         <StatusSection {...props} />
       </div>

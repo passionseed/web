@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 
 import { ElementalLanding } from "@/components/hackathon/elemental/ElementalLanding";
 import { TrackStep } from "@/components/hackathon/elemental/TrackStep";
-import { ELEMENTAL, prizeTotal, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
+import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { elementalRegistrationOpen, normalizeSource } from "@/lib/hackathon/elemental/registration";
+import { elementalShareDescription } from "@/lib/hackathon/elemental/share";
 import { CANONICAL_ORIGIN } from "@/lib/seo/canonical-origin";
 
 const TITLE = `${ELEMENTAL.edition} Hackathon | ${ELEMENTAL.series}`;
-const DESCRIPTION = `${ELEMENTAL.edition} Hackathon: ดิน น้ำ ลม ไฟ ${thaiDateLine()} สำหรับนักเรียน ${ELEMENTAL.gradesTh} รางวัลรวม ${prizeTotal()} บาท สมัครคนเดียว ฿${ELEMENTAL.priceBaht} มากับเพื่อน ฿${ELEMENTAL.groupPriceBaht} ต่อคน`;
+const DESCRIPTION = elementalShareDescription();
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -20,8 +21,10 @@ export const metadata: Metadata = {
 };
 
 /**
- * Event data for Google (schema.org Event), all from facts.ts. The Discord
- * link isn't public, so the online location is this page.
+ * Event data for Google (schema.org Event), all from facts.ts. Mixed: online
+ * on Discord until Demo Day, which is onsite. The Discord link isn't public,
+ * so the online location is this page. No street address is on record for
+ * the Demo Day venue, so it gives only the city.
  */
 function eventSchema(open: boolean) {
   const page = `${CANONICAL_ORIGIN}/hackathon/elemental`;
@@ -42,9 +45,17 @@ function eventSchema(open: boolean) {
     startDate: ELEMENTAL.startDate,
     endDate: ELEMENTAL.endDate,
     eventStatus: "https://schema.org/EventScheduled",
-    eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
-    location: { "@type": "VirtualLocation", url: page },
-    image: [`${CANONICAL_ORIGIN}/hackathon/elemental/media/key-visual.webp`],
+    eventAttendanceMode: "https://schema.org/MixedEventAttendanceMode",
+    location: [
+      { "@type": "VirtualLocation", url: page },
+      {
+        "@type": "Place",
+        name: ELEMENTAL.demoDay.venueEn,
+        address: { "@type": "PostalAddress", addressLocality: ELEMENTAL.demoDay.city, addressCountry: ELEMENTAL.demoDay.country },
+      },
+    ],
+    // The link preview (./opengraph-image.ts): the key-visual.webp poster still prints the old dates.
+    image: [`${CANONICAL_ORIGIN}/hackathon/elemental/opengraph-image`],
     url: page,
     inLanguage: "th",
     organizer: { "@type": "Organization", "@id": `${CANONICAL_ORIGIN}/#organization`, name: "PassionSeed", url: CANONICAL_ORIGIN },

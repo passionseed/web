@@ -1,0 +1,13 @@
+import { ELEMENTAL_OG_SIZE, elementalOgAlt, elementalOgResponse } from "@/lib/og/elemental-hackathon";
+
+// Team invite links (/hackathon/join?team=...) are shared in LINE. The page
+// sets its own openGraph, which drops the image from app/hackathon, so the
+// preview needs its own handler here.
+export const alt = elementalOgAlt();
+export const size = ELEMENTAL_OG_SIZE;
+export const contentType = "image/jpeg";
+export const runtime = "nodejs";
+
+export default function Image() {
+  return elementalOgResponse();
+}

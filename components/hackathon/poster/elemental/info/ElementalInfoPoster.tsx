@@ -6,7 +6,7 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
 import { EL, EL_FONT } from "../brand";
 import { AetherPixels, ELEMENT_ICON_ROWS, Pixels, type ElementIconKey } from "../element-icons";
 import { Chula, RegisterQr } from "../ElementalKeyPoster";
-import { ELEMENTAL, prizeTotal, thaiDayRange } from "../facts";
+import { ELEMENTAL, prizeTotal, thaiDayRange, type ElementalSlotKind } from "../facts";
 import { PassionSeedWordmark } from "@/components/hackathon/PassionSeedWordmark";
 
 /**
@@ -50,7 +50,7 @@ const TROPHY = ["###########", "#.#h#####.#", "#.#h#####.#", ".#.h####.#.", "...
 const HIGHLIGHT = "#ffd067";
 const baht = (n: number) => `฿${n.toLocaleString("en-US")}`;
 
-const SLOT_COLOR = { open: EL.ash, workshop: EL.toxicCyan, due: EL.flame } as const;
+const SLOT_COLOR: Record<ElementalSlotKind, string> = { open: EL.ash, workshop: EL.toxicCyan, build: EL.creamSoft, due: EL.flame, judge: EL.ash, demo: HIGHLIGHT };
 
 function Trophy({ cell }: { cell: number }) {
   return (
@@ -97,7 +97,17 @@ function Fact({ tag, big, below, size = 40 }: { tag: string; big: ReactNode; bel
 
 export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) {
   const el = (k: string) => ELEMENTAL.elements.find((e) => e.key === k);
-  const days = Array.from(new Set(ELEMENTAL.schedule.map((s) => s.date)));
+  // The Demo Day has its own lit box at the end, and sign-up closing is in
+  // block 04, so neither gets a line in the day columns.
+  const slots = ELEMENTAL.schedule.filter((s) => s.kind !== "demo" && !(s.kind === "due" && s.date === ELEMENTAL.registrationClosesOn));
+  const days = Array.from(new Set(slots.map((s) => s.date)));
+  /** "จ. 7 ธ.ค.", or "7–9 ธ.ค." for a day whose slot runs over several days. */
+  const dayLabel = (d: string) => {
+    const until = slots.find((s) => s.date === d && "until" in s && s.until)?.until;
+    return until ? `${Number(d.slice(8))}–${formatThaiDate(until, false)}` : formatThaiDate(d);
+  };
+  /** The slot's words without the "เวิร์กช็อป:" prefix (the cyan bar says it), the bracket or the end day. */
+  const slotWords = (th: string) => th.replace(/^เวิร์กช็อป: /, "").replace(/ \(.*\)$/, "").replace(/ ถึง .*$/, "");
   return (
     <div
       id={id}
@@ -143,7 +153,7 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
         {/* What it is: when, where, who. The biggest type after the title. */}
         <div style={{ marginTop: 22, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", columnGap: 36, borderTop: RULE, borderBottom: RULE, padding: "14px 0 16px" }}>
           <Fact size={50} tag="วันแข่ง" big={thaiDayRange()} below={`${YEAR_TH} · ${ELEMENTAL.longWeekend ? "หยุดยาว " : ""}${ELEMENTAL.days} วัน`} />
-          <Fact size={50} tag="ที่ไหน" big="ออนไลน์" below={`${ELEMENTAL.venueTh.replace("ออนไลน์", "").trim()} อยู่ที่ไหนก็ร่วมได้`} />
+          <Fact size={50} tag="ที่ไหน" big="ออนไลน์" below="ทาง Discord อยู่ที่ไหนก็ร่วมได้" />
           <Fact size={50} tag="ใครสมัครได้" big={ELEMENTAL.gradesTh} below="นักเรียนจากทั่วประเทศ" />
         </div>
 
@@ -213,16 +223,16 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
           >
             กำหนดการ
           </Head>
-          <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1.2fr 1fr 1fr 1.5fr", columnGap: 14 }}>
+          <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: `${days.map((d) => (d === "2026-12-05" ? "1.25fr" : "1fr")).join(" ")} 1.4fr`, columnGap: 10 }}>
             {days.map((d) => (
               <div key={d} style={{ borderTop: `2px solid ${EL.cream}`, paddingTop: 8 }}>
-                <p style={{ margin: 0, fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 24, lineHeight: "32px" }}>{formatThaiDate(d)}</p>
-                {ELEMENTAL.schedule
+                <p style={{ margin: 0, fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 21, lineHeight: "30px", whiteSpace: "nowrap" }}>{dayLabel(d)}</p>
+                {slots
                   .filter((s) => s.date === d)
                   .map((s) => (
                     <div key={s.time + s.th} style={{ marginTop: 6, paddingLeft: 10, borderLeft: `4px solid ${SLOT_COLOR[s.kind]}` }}>
                       <p style={{ margin: 0, fontFamily: EL_FONT.mono, fontSize: 17, color: SLOT_COLOR[s.kind] }}>{s.time}</p>
-                      <p style={{ margin: "1px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 20, lineHeight: "26px" }}>{s.th.replace(/^เวิร์กช็อป: /, "")}</p>
+                      <p style={{ margin: "1px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 20, lineHeight: "26px" }}>{slotWords(s.th)}</p>
                     </div>
                   ))}
               </div>
@@ -236,6 +246,9 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
               </p>
               <p style={{ margin: "4px 0 0", fontFamily: EL_FONT.mono, fontSize: 17, color: HIGHLIGHT }}>CSII · {ELEMENTAL.demoDay.time}</p>
               <p style={{ margin: "2px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 20, lineHeight: "26px" }}>ผู้สนับสนุนและผู้เชี่ยวชาญแต่ละด้านมาชมผลงาน</p>
+              <p style={{ margin: "4px 0 0", fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 18, lineHeight: "24px", color: HIGHLIGHT }}>
+                {ELEMENTAL.demoDay.whoTh}{ELEMENTAL.demoDay.optional ? " (Optional)" : ""}
+              </p>
             </div>
           </div>
         </div>

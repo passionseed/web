@@ -8,6 +8,7 @@ import {
   stepForServerPath,
   stepsFor,
   suggestTeamName,
+  teamNameFor,
   validateStep,
   type Draft,
 } from "../join/draft";
@@ -29,14 +30,8 @@ const filled = (patch: Partial<Draft> = {}): Draft => ({
 });
 
 describe("stepsFor", () => {
-  it("asks for the person's own name before the team name", () => {
-    expect(stepsFor(filled({ mode: "create", age: "22" }))).toEqual(["mode", "name", "team", "school", "contact", "heard", "review"]);
-  });
-
-
-  it("asks for a team name only when starting a team", () => {
-    expect(stepsFor(filled({ mode: "create" }))).toContain("team");
-    expect(stepsFor(filled({ mode: "solo" }))).not.toContain("team");
+  it("has no team-name screen, even when starting a team", () => {
+    expect(stepsFor(filled({ mode: "create", age: "22" }))).toEqual(["mode", "name", "school", "contact", "heard", "review"]);
   });
 
   it("skips the parent step for adults", () => {
@@ -102,6 +97,17 @@ describe("registrationBody", () => {
     expect(body.members[0].parentName).toBeUndefined();
     expect(registrationSchema.safeParse(body).success).toBe(true);
   });
+
+  it("sends passCode and buddyOwe in buddy mode", () => {
+    const body = registrationBody(filled({ mode: "buddy" }), undefined, undefined, undefined, {
+      code: "0123456789ab",
+      senderName: "บิ๊ก",
+      owe: "mookata",
+    });
+    expect(body.passCode).toBe("0123456789ab");
+    expect(body.buddyOwe).toBe("mookata");
+    expect(registrationSchema.safeParse(body).success).toBe(true);
+  });
 });
 
 describe("suggestTeamName", () => {
@@ -114,8 +120,24 @@ describe("suggestTeamName", () => {
   it("is empty when there's no name yet", () => {
     expect(suggestTeamName({ nickname: "", fullName: "  " })).toBe("");
   });
-  it("passes the team-name check", () => {
-    const d = filled({ mode: "create", teamName: suggestTeamName(filled()) });
-    expect(validateStep("team", d)).toEqual({});
+});
+
+describe("teamNameFor", () => {
+  it("names a new team after the nickname when no name was typed", () => {
+    expect(teamNameFor(filled({ mode: "create", teamName: "" }))).toBe("ทีมชาย");
+    expect(registrationBody(filled({ mode: "create", teamName: "" }), undefined).teamName).toBe("ทีมชาย");
+  });
+  it("keeps a name typed before the team-name screen was removed", () => {
+    expect(teamNameFor(filled({ teamName: " ทีมไฟ " }))).toBe("ทีมไฟ");
+  });
+  it("sends no team name for solo sign-ups", () => {
+    expect(registrationBody(filled({ mode: "solo" }), undefined).teamName).toBeUndefined();
+  });
+  it("blocks a rude nickname on the name step when it would name the team", () => {
+    expect(validateStep("name", filled({ mode: "create", nickname: "ควย" })).nickname).toBeDefined();
+    expect(validateStep("name", filled({ mode: "solo", nickname: "ควย" }))).toEqual({});
+  });
+  it("sends a rejected team name back to the name step", () => {
+    expect(stepForServerPath(["teamName"])).toBe("name");
   });
 });

@@ -1,14 +1,20 @@
 import {
   RFW,
   maybeThaiDate,
+  opensLine,
   priceLine,
   thaiDateWithYear,
   weekLines,
 } from "../facts";
 
 describe("Request for Winners facts", () => {
-  it("prints the opening date with weekday and Buddhist-era year", () => {
-    expect(thaiDateWithYear(RFW.opensOn)).toMatch(/11 .+ 2569$/);
+  it("prints a date with weekday and Buddhist-era year", () => {
+    expect(thaiDateWithYear("2026-12-12")).toMatch(/12 .+ 2569$/);
+  });
+
+  it("opens after Elemental's Demo Day, with no guessed date", () => {
+    expect(RFW.opensOn).toBeNull();
+    expect(opensLine()).toMatch(/^หลัง Demo Day ของ Elemental \(.*12 .+ 2569\)$/);
   });
 
   it("leaves unknown dates and prices empty instead of guessing", () => {
