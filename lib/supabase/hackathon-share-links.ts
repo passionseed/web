@@ -11,6 +11,7 @@ import {
   countsForLink,
   defaultRecipient,
   hasPaid,
+  incomingSeatFrom,
   linkProgress,
   paidAt,
   parseShareCode,
@@ -21,7 +22,9 @@ import {
   seatsEarned,
   seatsSwitchOpen,
   SEAT_RULE,
+  shouldReclaimOwnSeat,
   trafficStats,
+  type IncomingSeat,
   type PaidEvent,
   type Progress,
   type RecipientProblem,
@@ -491,6 +494,30 @@ async function recordEarnedSeats(eventSlug: string, link: ShareLink, p: LinkProg
   return added.length === writable.length ? [...existing, ...added] : seatsOf([link.id]);
 }
 
+/**
+ * Give an unpaid student back their own first seat once no other link names
+ * them (see shouldReclaimOwnSeat). If someone names them again in the same
+ * moment, the one-seat-per-sign-up index refuses it and the seat stays as is.
+ */
+async function reclaimOwnSeat(link: ShareLink, seats: ShareSeat[], ctx: SeatContext): Promise<ShareSeat[]> {
+  const seat = seats.find((x) => x.index === 1);
+  if (!shouldReclaimOwnSeat({ kind: link.kind, ownStatus: link.registrationStatus, ownGiftedElsewhere: ctx.ownGiftedElsewhere, seat }) || !seat) return seats;
+  const now = new Date().toISOString();
+  const { data, error } = await createAdminClient()
+    .from("hackathon_share_seats")
+    .update({ status: "qualified", recipient_registration_id: link.registrationId, updated_at: now })
+    .eq("id", seat.id)
+    .eq("status", "needs_recipient")
+    .is("recipient_registration_id", null)
+    .select(SEAT_COLUMNS);
+  if (error) {
+    if (isUniqueViolation(error)) return seats;
+    throw error;
+  }
+  const updated = data?.[0] ? toSeat(data[0] as SeatDbRow) : null;
+  return updated ? seats.map((x) => (x.id === updated.id ? updated : x)) : seats;
+}
+
 type LinkState = {
   progress: LinkProgress;
   seats: ShareSeat[];
@@ -510,7 +537,7 @@ async function recipientStatuses(ids: string[]): Promise<Map<string, string>> {
 async function syncLink(eventSlug: string, link: ShareLink): Promise<LinkState> {
   const [activity, existing, ctx] = await Promise.all([loadActivity(eventSlug, [linkSource(link.kind, link.code)]), seatsOf([link.id]), seatContext(eventSlug, link)]);
   const progress = progressOf(link, activity);
-  const seats = await recordEarnedSeats(eventSlug, link, progress, existing, ctx);
+  const seats = await reclaimOwnSeat(link, await recordEarnedSeats(eventSlug, link, progress, existing, ctx), ctx);
   const named = [...new Set(seats.map((x) => x.recipientRegistrationId).filter((id): id is string => !!id && id !== link.registrationId))];
   return { progress, seats, ctx, recipientStatus: await recipientStatuses(named) };
 }
@@ -522,7 +549,7 @@ function toView(link: ShareLink, state: LinkState, self: { id: string; status: s
     kind: link.kind,
     code: link.code,
     school: { name: link.schoolName, province: link.province },
-    canChangeSchool: link.kind === "student" && phase === "open",
+    canChangeSchool: link.kind === "student" && phase === "open" && !link.rejectedAt,
     selfPaid,
     verified: Boolean(link.verifiedAt),
     invited: Boolean(link.invitedAt),
@@ -542,6 +569,26 @@ function toView(link: ShareLink, state: LinkState, self: { id: string; status: s
 /** What the share page shows for one link, fresh: its numbers and its seats. */
 export async function linkView(eventSlug: string, link: ShareLink, self: { id: string; status: string } | null): Promise<ShareLinkView> {
   return toView(link, await syncLink(eventSlug, link), self);
+}
+
+/**
+ * Whether a free seat is on its way to this sign-up, from any link: "checking"
+ * while a qualified seat names it, "given" once confirmed, else null. Never
+ * throws: on any error (tables missing before the migration) it's null.
+ */
+export async function incomingSeatFor(registrationId: string): Promise<IncomingSeat> {
+  try {
+    const { data, error } = await createAdminClient()
+      .from("hackathon_share_seats")
+      .select("status")
+      .eq("recipient_registration_id", registrationId)
+      .in("status", ["qualified", "confirmed"]);
+    if (error) throw error;
+    return incomingSeatFrom((data ?? []).map((r) => r.status as string));
+  } catch (error) {
+    console.error("[elemental share] no incoming seat", error);
+    return null;
+  }
 }
 
 export type NameResult = { ok: true; view: ShareLinkView } | { ok: false; reason: RecipientProblem | "invalid" | "not_allowed" | "taken" };
@@ -650,10 +697,12 @@ export async function listShareLinksForAdmin(eventSlug: string): Promise<AdminSh
     let linkSeats = own;
     let syncError: string | null = null;
     try {
-      linkSeats = await recordEarnedSeats(eventSlug, l, progress, own, { closedReason, liveSeatsTotal: live, ownGiftedElsewhere: l.kind === "student" && elsewhere });
-      for (const x of linkSeats) if (!own.some((o) => o.id === x.id)) {
-        noteRecipient(x);
-        if (x.status !== "rejected") live += 1;
+      const ctx = { closedReason, liveSeatsTotal: live, ownGiftedElsewhere: l.kind === "student" && elsewhere };
+      linkSeats = await reclaimOwnSeat(l, await recordEarnedSeats(eventSlug, l, progress, own, ctx), ctx);
+      for (const x of linkSeats) {
+        const before = own.find((o) => o.id === x.id);
+        if (!before || before.recipientRegistrationId !== x.recipientRegistrationId) noteRecipient(x);
+        if (!before && x.status !== "rejected") live += 1;
       }
     } catch (error) {
       console.error("[admin share] could not write a link's seats", l.id, error);

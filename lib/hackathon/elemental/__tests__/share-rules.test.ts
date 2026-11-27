@@ -9,6 +9,7 @@ import {
   defaultRecipient,
   deviceCount,
   hasPaid,
+  incomingSeatFrom,
   linkProgress,
   nextSeat,
   paidAt,
@@ -28,6 +29,7 @@ import {
   seatsClosedReason,
   seatsEarned,
   seatsSwitchOpen,
+  shouldReclaimOwnSeat,
   TEACHER_TOKEN_RE,
   trafficStats,
   type SeatRow,
@@ -434,5 +436,33 @@ describe("a named friend who paid anyway", () => {
       phase: "open",
     });
     expect(unpaid.seats[0].recipientPaid).toBeUndefined();
+  });
+});
+
+describe("a student who lost the seat a friend gave them gets their own back", () => {
+  const seat1 = { index: 1, status: "needs_recipient" as const, recipientRegistrationId: null };
+
+  it("when they're unpaid and no live seat elsewhere names them any more", () => {
+    expect(shouldReclaimOwnSeat({ kind: "student", ownStatus: "pending", ownGiftedElsewhere: false, seat: seat1 })).toBe(true);
+  });
+
+  it("not while a friend's seat still names them, once they've paid, for a teacher, or once they named someone", () => {
+    expect(shouldReclaimOwnSeat({ kind: "student", ownStatus: "pending", ownGiftedElsewhere: true, seat: seat1 })).toBe(false);
+    expect(shouldReclaimOwnSeat({ kind: "student", ownStatus: "paid", ownGiftedElsewhere: false, seat: seat1 })).toBe(false);
+    expect(shouldReclaimOwnSeat({ kind: "teacher", ownStatus: null, ownGiftedElsewhere: false, seat: seat1 })).toBe(false);
+    expect(
+      shouldReclaimOwnSeat({ kind: "student", ownStatus: "pending", ownGiftedElsewhere: false, seat: { index: 1, status: "qualified", recipientRegistrationId: "5e6f7a8b-0000-4000-8000-000000000002" } }),
+    ).toBe(false);
+    expect(shouldReclaimOwnSeat({ kind: "student", ownStatus: "pending", ownGiftedElsewhere: false, seat: { ...seat1, index: 2 } })).toBe(false);
+    expect(shouldReclaimOwnSeat({ kind: "student", ownStatus: "pending", ownGiftedElsewhere: false, seat: undefined })).toBe(false);
+  });
+});
+
+describe("incomingSeatFrom: a free seat on its way to a sign-up", () => {
+  it("is checking while staff look, given once confirmed, else nothing", () => {
+    expect(incomingSeatFrom([])).toBeNull();
+    expect(incomingSeatFrom(["qualified"])).toBe("checking");
+    expect(incomingSeatFrom(["qualified", "confirmed"])).toBe("given");
+    expect(incomingSeatFrom(["rejected", "needs_recipient"])).toBeNull();
   });
 });

@@ -12,7 +12,7 @@ import { shareCode, sharePhase } from "@/lib/hackathon/elemental/share";
 import { hasPaid } from "@/lib/hackathon/elemental/share-rules";
 import { getRegistrationByToken } from "@/lib/supabase/hackathon-event-registrations";
 import { loadTeamStyleCard } from "@/lib/supabase/hackathon-team-style";
-import { getStudentLink, linkView } from "@/lib/supabase/hackathon-share-links";
+import { getStudentLink, incomingSeatFor, linkView } from "@/lib/supabase/hackathon-share-links";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +43,8 @@ export default async function ElementalPayPage({
   // Paid or not, anyone signed up can share for a school's free seat; read-only from close to Demo Day.
   const phase = sharePhase();
   const share = reg.status !== "cancelled" && phase !== "off" ? await shareCard(token, reg, phase) : null;
+  // A free seat on its way from any link (friend's, teacher's, or their own first seat): "checking" | "given" | null.
+  const withSeat = { ...reg, incomingSeat: reg.status !== "cancelled" && phase !== "off" ? await incomingSeatFor(reg.id) : null };
   // The team's board name, style and rank, once the board has launched (live, or final after close).
   // Null on any error, so this page never breaks because of it.
   const teamStyle =
@@ -50,7 +52,7 @@ export default async function ElementalPayPage({
 
   return (
     <div className={`${trirong.variable} ${teamStyleFonts}`}>
-      <PayView token={token} reg={reg} qrSrc={qrSrc} links={links} discordOutcome={discordOutcome} share={share} teamStyle={teamStyle} />
+      <PayView token={token} reg={withSeat} qrSrc={qrSrc} links={links} discordOutcome={discordOutcome} share={share} teamStyle={teamStyle} />
     </div>
   );
 }

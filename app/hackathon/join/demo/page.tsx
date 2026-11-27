@@ -11,6 +11,7 @@ import { elementalPayQr } from "@/lib/hackathon/elemental/pay-qr";
 import { elementalPriceBaht } from "@/lib/hackathon/elemental/registration";
 import { demoPagesOn, SHARE_DEMO_CODE } from "@/lib/hackathon/elemental/share";
 import { studentDemo } from "@/lib/hackathon/elemental/share-demo";
+import type { IncomingSeat } from "@/lib/hackathon/elemental/share-rules";
 import type { RegistrationStatus } from "@/lib/supabase/hackathon-event-registrations";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +31,7 @@ const STATES: RegistrationStatus[] = ["pending", "review", "paid", "cancelled"];
  * &share=1|<state> shows the share card (1: no school yet; a state from lib/hackathon/elemental/share-demo.ts:
  *   start, early, close, devices-done, seat1-ready, seat1-given, seat2-progress, maxed, paid-naming-friend, after-close)
  *   on the pending, review or paid page; &phase=after-close shows it read-only.
+ * &incoming=checking|given sets reg.incomingSeat: a free seat on its way from a friend's or teacher's link.
  * &style=unnamed|locked|colors|fonts|all|final gives the share card the team's board row at that level
  * (unnamed: no board name yet; final: after sign-up close). Editing is its own page: /hackathon/join/demo/team?style=…
  */
@@ -56,13 +58,27 @@ export default async function PayDemoPage({ searchParams }: { searchParams: Sear
     : null;
 
   const styleLevel = DEMO_STYLE_LEVELS.find((l) => l === first(params.style));
+  // &incoming=checking|given: a free seat on its way from a friend's or teacher's link.
+  const incoming = first(params.incoming);
+  const demoReg = {
+    status: state,
+    teamName: team?.name ?? null,
+    memberCount: 1,
+    amountBaht,
+    memberNicknames: ["มิว"],
+    team,
+    isTeamStarter: mode === "create",
+    teamPosition,
+    discordJoined: first(params.discord) === "joined",
+    incomingSeat: incoming === "checking" || incoming === "given" ? (incoming as IncomingSeat) : null,
+  };
 
   return (
     <div className={`${trirong.variable} ${teamStyleFonts}`}>
       <PayView
         token="demo"
         demo
-        reg={{ status: state, teamName: team?.name ?? null, memberCount: 1, amountBaht, memberNicknames: ["มิว"], team, isTeamStarter: mode === "create", teamPosition, discordJoined: first(params.discord) === "joined" }}
+        reg={demoReg}
         qrSrc={state === "pending" ? await elementalPayQr(amountBaht) : null}
         links={{ line: "https://line.me/ti/g/demo", discord: "https://discord.gg/demo" }}
         discordOutcome={parseElementalDiscordOutcome(first(params.discord))}

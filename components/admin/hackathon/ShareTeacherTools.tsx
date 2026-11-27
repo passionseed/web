@@ -111,7 +111,7 @@ export function ShareLinkReject({ id, rejected }: { id: string; rejected: boolea
   return (
     <Button size="sm" variant={rejected ? "outline" : "destructive"} disabled={busy} onClick={toggle}>
       {busy && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
-      {rejected ? "Open the link again" : "Reject link (fraud)"}
+      {rejected ? "Open the link again · rejected seats don't come back" : "Reject link (fraud)"}
     </Button>
   );
 }

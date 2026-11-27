@@ -69,7 +69,11 @@ export function seatsClosedReason(input: { switchOpen: boolean; liveSeatsTotal: 
   return null;
 }
 
-/** How many of the missing seats may be written now, given the event-wide cap. */
+/**
+ * How many of the missing seats may be written now, given the event-wide cap.
+ * The cap is soft: two pages writing at the same moment can each see room and
+ * go over it by a seat or two. Staff confirm every seat anyway.
+ */
 export function seatsAllowedNow(missing: number, liveSeatsTotal: number, rule: SeatRule = SEAT_RULE): number {
   if (rule.maxSeatsTotal === null) return missing;
   return Math.max(0, Math.min(missing, rule.maxSeatsTotal - liveSeatsTotal));
@@ -241,6 +245,44 @@ export function defaultRecipient(input: {
 }): string | null {
   if (input.ownAlreadyRecipient) return null;
   return input.kind === "student" && input.index === 1 && input.ownRegistrationId && input.ownStatus === "pending" ? input.ownRegistrationId : null;
+}
+
+/**
+ * Whether an unpaid student's first seat, written waiting for a name because a
+ * friend's link had named them, should go back to them: they're still unpaid
+ * and no live seat elsewhere names them any more (the friend renamed, staff
+ * rejected that seat, or shut that link). Otherwise they'd have no seat at all.
+ */
+export function shouldReclaimOwnSeat(input: {
+  kind: ShareKind;
+  ownStatus: string | null;
+  ownGiftedElsewhere: boolean;
+  seat: Pick<SeatRow, "index" | "status" | "recipientRegistrationId"> | undefined;
+}): boolean {
+  return (
+    input.kind === "student" &&
+    input.ownStatus === "pending" &&
+    !input.ownGiftedElsewhere &&
+    !!input.seat &&
+    input.seat.index === 1 &&
+    input.seat.status === "needs_recipient" &&
+    !input.seat.recipientRegistrationId
+  );
+}
+
+/**
+ * A free seat coming to a sign-up from any link (a friend's, a teacher's, or
+ * their own first seat): "checking" while staff haven't confirmed it,
+ * "given" once they have, null when none names them. The pay page uses it to
+ * stop asking that student to pay.
+ */
+export type IncomingSeat = "checking" | "given" | null;
+
+/** The incoming seat from the statuses of the seats that name a sign-up. */
+export function incomingSeatFrom(statuses: readonly string[]): IncomingSeat {
+  if (statuses.includes("confirmed")) return "given";
+  if (statuses.includes("qualified")) return "checking";
+  return null;
 }
 
 /** One seat as a share page shows it. A friend shows by code only. */
