@@ -5,7 +5,6 @@ import { Check, Copy, Share2 } from "lucide-react";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
-import { PixelEdge } from "@/components/hackathon/poster/elemental/pixel-art";
 import {
   BUDDY_OWE,
   BUDDY_OWE_KEYS,
@@ -28,8 +27,18 @@ import type { PublicBuddyPass } from "@/lib/supabase/hackathon-event-registratio
 
 const SAVED = ELEMENTAL.groupPriceBaht - ELEMENTAL.buddyPriceBaht;
 
-/** The row of pixels "corrupting" the card's edge now lives with the other pixel art (the dark slabs use it too). */
-export { PixelEdge };
+/** A short row of pixels "corrupting" the card's edge, in the fire palette. */
+const PIXELS = [EL.ember, EL.flame, null, EL.flameLight, EL.flame, null, null, EL.flameCore, EL.ember, null, EL.aetherViolet, null];
+
+export function PixelEdge() {
+  return (
+    <div aria-hidden className="flex h-2" style={{ backgroundColor: "transparent" }}>
+      {Array.from({ length: 36 }, (_, i) => PIXELS[(i * 7) % PIXELS.length]).map((c, i) => (
+        <span key={i} className="h-2 flex-1" style={{ backgroundColor: c ?? "transparent", opacity: c ? 0.9 - (i % 3) * 0.2 : 0 }} />
+      ))}
+    </div>
+  );
+}
 
 const tag = { fontFamily: EL_FONT.mono, color: EL.inkSoft } as const;
 const display = { fontFamily: EL_FONT.display, fontWeight: 300 } as const;

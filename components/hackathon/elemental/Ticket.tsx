@@ -1,12 +1,11 @@
 import Image from "next/image";
-import type { CSSProperties } from "react";
+import { CheckCircle2 } from "lucide-react";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL, thaiDateShort } from "@/components/hackathon/poster/elemental/facts";
 
 import styles from "./join/join.module.css";
 import type { RecoveredPlace } from "./places";
-import { Fine, PixelIcon, surfaceVars } from "./share/ui";
 
 type Props = {
   who: string;
@@ -29,7 +28,7 @@ function Notch({ side }: { side: "left" | "right" }) {
 function Stub({ label, children, mono }: { label: string; children: React.ReactNode; mono?: boolean }) {
   return (
     <div className="min-w-0">
-      <Fine>{label}</Fine>
+      <p className="text-[11px]" style={{ color: EL.creamSoft }}>{label}</p>
       <p className="mt-1 text-sm" style={mono ? { fontFamily: EL_FONT.mono, letterSpacing: "0.08em" } : undefined}>
         {children}
       </p>
@@ -46,8 +45,7 @@ export function Ticket({ who, people, place, number }: Props) {
   return (
     <article
       className={`${styles.ticketIn} relative max-w-md overflow-hidden rounded-[28px]`}
-      // A dark object on the cream page: its small text takes the ground's colours (Fine reads --el-fine).
-      style={{ ...surfaceVars("ground"), backgroundColor: EL.char, color: EL.cream, boxShadow: "0 30px 60px -30px rgba(29,33,31,0.55)" }}
+      style={{ backgroundColor: EL.char, color: EL.cream, boxShadow: "0 30px 60px -30px rgba(29,33,31,0.55)" }}
     >
       <div className="relative aspect-[4/5] overflow-hidden">
         <Image
@@ -66,9 +64,9 @@ export function Ticket({ who, people, place, number }: Props) {
             background: `linear-gradient(to top, ${EL.char} 2%, rgba(29,33,31,0.55) 30%, rgba(29,33,31,0) 58%), linear-gradient(to bottom, rgba(29,33,31,0.6) 0%, rgba(29,33,31,0) 22%)`,
           }}
         />
-        <span className="absolute left-5 top-5 sm:left-6" style={{ "--el-fine": EL.cream, textShadow: "0 1px 6px rgba(0,0,0,0.6)" } as CSSProperties}>
-          <Fine as="span">{place.nameTh}</Fine>
-        </span>
+        <p className="absolute left-5 top-5 text-xs sm:left-6" style={{ textShadow: "0 1px 6px rgba(0,0,0,0.6)" }}>
+          {place.nameTh}
+        </p>
         <div className={`${styles.titleIn} absolute inset-x-5 bottom-5 sm:inset-x-6`}>
           <p className="text-5xl sm:text-6xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300, fontStyle: "italic", lineHeight: 1 }}>
             {ELEMENTAL.edition}
@@ -98,10 +96,16 @@ export function Ticket({ who, people, place, number }: Props) {
         </Stub>
         {/* No price: this is the part people screenshot and share. */}
         <span className="col-span-3 inline-flex items-center gap-2 text-sm">
-          <PixelIcon name="check" color={EL.toxicGreen} /> ชำระแล้ว
+          <CheckCircle2 className="h-5 w-5" style={{ color: EL.toxicGreen }} aria-hidden="true" /> ชำระแล้ว
         </span>
-        <a href={place.creditUrl} target="_blank" rel="noopener noreferrer" className="col-span-3 -mt-2">
-          <Fine as="span">{place.credit}</Fine>
+        <a
+          href={place.creditUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="col-span-3 -mt-2 text-[10px]"
+          style={{ color: EL.creamSoft }}
+        >
+          {place.credit}
         </a>
       </div>
     </article>

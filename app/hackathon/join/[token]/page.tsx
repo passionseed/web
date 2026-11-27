@@ -2,17 +2,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { trirong } from "@/components/hackathon/elemental/fonts";
-import { PayView, type ShareCardData } from "@/components/hackathon/elemental/PayView";
-import { teamStyleFonts } from "@/components/hackathon/elemental/team-style/fonts";
+import { PayView } from "@/components/hackathon/elemental/PayView";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
-import { elementalCommunityLinks } from "@/lib/hackathon/elemental/community-links";
+import { elementalCommunityLinks, elementalTeamUpUrl, needsTeammates } from "@/lib/hackathon/elemental/community-links";
 import { parseElementalDiscordOutcome } from "@/lib/hackathon/elemental/discordLink";
 import { elementalPayQr } from "@/lib/hackathon/elemental/pay-qr";
-import { shareCode, sharePhase } from "@/lib/hackathon/elemental/share";
-import { hasPaid } from "@/lib/hackathon/elemental/share-rules";
 import { getRegistrationByToken } from "@/lib/supabase/hackathon-event-registrations";
-import { loadTeamStyleCard } from "@/lib/supabase/hackathon-team-style";
-import { getStudentLink, incomingSeatFor, linkView } from "@/lib/supabase/hackathon-share-links";
 
 export const dynamic = "force-dynamic";
 
@@ -40,37 +35,12 @@ export default async function ElementalPayPage({
   const qrSrc = pending ? await elementalPayQr(reg.amountBaht) : null;
   // Only a paid page renders these.
   const links = reg.status === "paid" ? elementalCommunityLinks() : { line: null, discord: null };
-  // Paid or not, anyone signed up can share for a school's free seat; read-only from close to Demo Day.
-  const phase = sharePhase();
-  const share = reg.status !== "cancelled" && phase !== "off" ? await shareCard(token, reg, phase) : null;
-  // A free seat on its way from any link (friend's, teacher's, or their own first seat): "checking" | "given" | null.
-  const withSeat = { ...reg, incomingSeat: reg.status !== "cancelled" && phase !== "off" ? await incomingSeatFor(reg.id) : null };
-  // The team's board name, style and rank, once the board has launched (live, or final after close).
-  // Null on any error, so this page never breaks because of it.
-  const teamStyle =
-    reg.status !== "cancelled" ? await loadTeamStyleCard(ELEMENTAL.slug, reg, `/hackathon/join/${token}/share`) : null;
+  // Before paying, someone who still needs teammates gets the find-a-team OpenChat.
+  const teamUpUrl = pending && needsTeammates(reg, ELEMENTAL.teamMin) ? elementalTeamUpUrl() : null;
 
   return (
-    <div className={`${trirong.variable} ${teamStyleFonts}`}>
-      <PayView token={token} reg={withSeat} qrSrc={qrSrc} links={links} discordOutcome={discordOutcome} share={share} teamStyle={teamStyle} />
+    <div className={trirong.variable}>
+      <PayView token={token} reg={reg} qrSrc={qrSrc} links={links} teamUpUrl={teamUpUrl} discordOutcome={discordOutcome} />
     </div>
   );
-}
-
-/** The share card's state. Never breaks the pay page: on any error there is no card. */
-async function shareCard(token: string, reg: { id: string; status: string }, phase: "open" | "after-close"): Promise<ShareCardData | null> {
-  try {
-    const own = await getStudentLink(reg.id);
-    return {
-      href: `/hackathon/join/${token}/share`,
-      pollUrl: `/api/hackathon/elemental/${token}/share`,
-      code: shareCode(reg.id),
-      selfPaid: hasPaid(reg.status),
-      link: own ? await linkView(ELEMENTAL.slug, own, reg) : null,
-      phase,
-    };
-  } catch (error) {
-    console.error("[elemental share] no share card", error);
-    return null;
-  }
 }

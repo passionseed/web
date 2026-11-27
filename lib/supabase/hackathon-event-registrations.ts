@@ -8,6 +8,7 @@ import {
   type BuddyOwe,
   type BuddyPassState,
 } from "@/lib/hackathon/elemental/buddy-pass";
+import type { AudienceRow } from "@/lib/hackathon/elemental/audience";
 import type { RegistrationTotalsRow } from "@/lib/hackathon/elemental/seats";
 
 /**
@@ -607,4 +608,26 @@ export async function getRegistrationForNotice(id: string): Promise<{
     amountBaht: data.amount_baht,
     teamName: data.team_name,
   };
+}
+
+/** Every sign-up with its members' ages, for the admin audience charts. Pages past Supabase's 1000-row cap. */
+export async function listAudienceRows(eventSlug: string): Promise<AudienceRow[]> {
+  const db = createAdminClient();
+  const PAGE = 1000;
+  const out: AudienceRow[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await db
+      .from("hackathon_event_registrations")
+      .select("id, status, source, heard_from, hackathon_event_registration_members(age)")
+      .eq("event_slug", eventSlug)
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, from + PAGE - 1);
+    if (error) throw error;
+    for (const r of data ?? []) {
+      const members = (r.hackathon_event_registration_members ?? []) as { age: number }[];
+      out.push({ status: r.status, source: r.source, heardFrom: r.heard_from, ages: members.map((m) => m.age) });
+    }
+    if (!data || data.length < PAGE) return out;
+  }
 }

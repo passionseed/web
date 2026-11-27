@@ -4,10 +4,10 @@ import Image from "next/image";
 import { ArrowUpRight, ChevronDown } from "lucide-react";
 
 import { EL_FONT } from "@/components/hackathon/poster/elemental/brand";
-import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 
 import { ANY_PROBLEM_NOTE, type CaseImage, type ElementCase, type ElementDetail } from "./challenges";
+import { buildDayCount } from "./journey-steps";
 import { buildLearnPrompt, ELEMENT_KEYWORDS } from "./learn";
 import { LearnDeeper } from "./LearnDeeper";
 import { elementLabel, type ElementChapter } from "./media";
@@ -274,7 +274,7 @@ export function ElementDetailSheet({
               <ChallengeStep
                 color={chapter.color}
                 title="เริ่มง่าย"
-                note={`จบได้ใน ${ELEMENTAL.days} วัน`}
+                note={`จบได้ใน ${buildDayCount()} วัน`}
                 text={detail.starterTh}
                 first
               />
@@ -294,7 +294,7 @@ export function ElementDetailSheet({
               className="flex w-full items-center justify-center gap-2 rounded-full px-5 py-3.5 text-base text-[#0c0d0c] transition-opacity hover:opacity-90"
               style={{ fontFamily: BODY_FONT, backgroundColor: chapter.color }}
             >
-              สมัครทีม แก้โจทย์นี้
+              สมัครเข้าร่วม
               <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
             </a>
           </div>

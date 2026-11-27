@@ -208,7 +208,7 @@ const STRIP = [EL.toxicCyan, EL.toxicGreen, EL.flame, EL.toxicYellow];
  * Program: the facts' schedule (Big, 2026-11-26), one column a day, plus the
  * day sponsor logos are locked. Workshop times are (fill in) since the
  * extension, so they aren't listed. The program grid below has one column
- * per day (repeat(7, 1fr)): change it if the number of days changes.
+ * per day (repeat(6, 1fr)): change it if the number of days changes.
  */
 const PROGRAM: ElementalSlot[] = [
   ...ELEMENTAL.schedule,
@@ -545,7 +545,7 @@ export function SponsorDeck() {
       <Section id="program">
         <Tag n="04 PROGRAM" />
         <H2>กำหนดการโครงการ</H2>
-        <div className="mt-8 grid grid-cols-1 gap-3 md:grid-cols-4 lg:grid-cols-[150px_repeat(7,1fr)_170px]" style={{ fontFamily: EL_FONT.display }}>
+        <div className="mt-8 grid grid-cols-1 gap-3 md:grid-cols-4 lg:grid-cols-[150px_repeat(6,1fr)_170px]" style={{ fontFamily: EL_FONT.display }}>
           <div className="border-l-2 py-1 pl-3 md:col-span-4 lg:col-span-1" style={{ borderColor: LINE_DARK }}>
             <p className="m-0 text-[15px]" style={{ color: EL.creamSoft }}>
               ตั้งแต่ 23 พ.ย.
@@ -612,7 +612,7 @@ export function SponsorDeck() {
         <Tag n="05 JUDGING" light />
         <H2>เกณฑ์การตัดสิน</H2>
         <p className="m-0 mt-3 max-w-[900px] text-[16px] leading-[1.65]" style={{ fontFamily: EL_FONT.display, fontWeight: 300, color: EL.inkSoft }}>
-          ทุกทีมส่งผลงานรอบสุดท้ายภายในศุกร์ 11 ธ.ค. 23:59 น. แต่ละเกณฑ์ตรงกับสิ่งที่สอนในเวิร์กช็อป มือใหม่จึงรู้ว่าต้องทำอะไรเพื่อให้ได้คะแนน
+          ทุกทีมส่งผลงานรอบสุดท้ายภายในพฤหัสบดี 10 ธ.ค. 23:00 น. แต่ละเกณฑ์ตรงกับสิ่งที่สอนในเวิร์กช็อป มือใหม่จึงรู้ว่าต้องทำอะไรเพื่อให้ได้คะแนน
           <Draft>เกณฑ์: Claude ร่าง</Draft>
         </p>
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-stretch" style={{ fontFamily: EL_FONT.display }}>

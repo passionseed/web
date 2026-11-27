@@ -13,6 +13,7 @@ import { ElementalHero } from "./ElementalHero";
 import { EditorialLink } from "./share/ui";
 import { ElementalTopBar } from "./ElementalTopBar";
 import { ElementalPlacesShowcase } from "./ElementalPlacesShowcase";
+import { JourneySteps } from "./JourneySteps";
 import { ELEMENT_CHAPTERS, KEY_VISUAL_MEDIA } from "./media";
 import { ScrollHookStatement } from "./ScrollHookStatement";
 import { SponsorSection } from "./SponsorSection";
@@ -201,6 +202,9 @@ function ElementalExperienceInner({
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // The board keeps the tracked link (?src=ig) the same way the sign-up does.
+  const boardHref = `/hackathon/elemental/problems${joinHref.includes("?") ? joinHref.slice(joinHref.indexOf("?")) : ""}`;
+
   const credits = Array.from(
     new Set([`Key visual: ${BACKGROUND.credit}`, ...ELEMENT_CHAPTERS.map((c) => c.credit)])
   );
@@ -218,22 +222,31 @@ function ElementalExperienceInner({
         homeHref="#top"
         homeLabel={`${ELEMENTAL.series}: กลับขึ้นด้านบน`}
         right={
-          open ? (
+          <div className="flex items-center gap-6">
             <Link
-              href={joinHref}
-              className={`${styles.textLink} text-[15px] italic`}
+              href={boardHref}
+              className={`${styles.textLink} hidden text-[15px] sm:inline-block`}
               style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}
             >
-              สมัคร →
+              บอร์ดโจทย์
             </Link>
-          ) : (
-            <span
-              className="text-[14px] opacity-50"
-              style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}
-            >
-              ปิดรับสมัครแล้ว
-            </span>
-          )
+            {open ? (
+              <Link
+                href={joinHref}
+                className={`${styles.textLink} text-[15px] italic`}
+                style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}
+              >
+                สมัคร →
+              </Link>
+            ) : (
+              <span
+                className="text-[14px] opacity-50"
+                style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}
+              >
+                ปิดรับสมัครแล้ว
+              </span>
+            )}
+          </div>
         }
       />
 
@@ -243,6 +256,9 @@ function ElementalExperienceInner({
       {/* ACT 1: THE VALLEY (STICKY PARALLAX HERO) */}
       <ElementalHero joinHref={joinHref} open={open} />
 
+      {/* What a student does, in six steps, with the help for each (Big, 2026-11-26: students didn't know what to do). */}
+      <JourneySteps boardHref={boardHref} joinHref={open ? joinHref : undefined} />
+
       {/* ACT 2: SCROLL-DRIVEN HOOK ("ธรรมชาติไม่ได้พังเอง ... ตรงที่ไม่มีใครมอง") */}
       <ScrollHookStatement />
 
@@ -251,6 +267,17 @@ function ElementalExperienceInner({
 
       {/* ACT 4: FIVE PLACES (APPLE-STYLE SCROLL-SCRUBBED 60FPS CANVAS CHAPTERS) */}
       <ElementalPlacesShowcase joinHref={joinHref} open={open} />
+
+      {/* After the five places: every problem, and each problem owner's, on one board. */}
+      <section className="flex justify-center bg-[#0c0d0c] px-5 py-16 sm:py-20">
+        <Link
+          href={boardHref}
+          className={`${styles.textLink} text-[1.6rem] italic text-[#faf8f4] sm:text-[2rem]`}
+          style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}
+        >
+          ดูบอร์ดโจทย์ →
+        </Link>
+      </section>
 
       {/* ACT 5: BEGINNER PITCH, WORKSHOPS, MENTOR SUPPORT & 3-DAY SCHEDULE */}
       <BeginnerJourneySection />
