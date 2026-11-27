@@ -85,3 +85,33 @@ export function ShareCopyTeacherLink({ token }: { token: string }) {
     </Button>
   );
 }
+
+/** Shut a link (fraud): no more seats, and its open seats are turned down. Or open it again. */
+export function ShareLinkReject({ id, rejected }: { id: string; rejected: boolean }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const toggle = async () => {
+    if (!rejected && !window.confirm("Shut this link? It earns no more seats, and its seats waiting for a name or a check are turned down.")) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/admin/hackathon/share-links/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mark: "rejected", on: !rejected }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success(rejected ? "Link open again: it can earn new seats (turned-down seats stay turned down)." : "Link shut: no more seats.");
+      router.refresh();
+    } catch {
+      toast.error("Could not save. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Button size="sm" variant={rejected ? "outline" : "destructive"} disabled={busy} onClick={toggle}>
+      {busy && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+      {rejected ? "Open the link again" : "Reject link (fraud)"}
+    </Button>
+  );
+}

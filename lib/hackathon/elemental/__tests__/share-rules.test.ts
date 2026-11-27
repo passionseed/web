@@ -4,6 +4,8 @@ import { newTeacherCode, newTeacherToken } from "../share-codes";
 import {
   canNameSeat,
   codeIdRange,
+  confirmBlock,
+  countsForLink,
   defaultRecipient,
   deviceCount,
   hasPaid,
@@ -22,7 +24,10 @@ import {
   SEAT_RULE,
   seatGoal,
   seatProgressView,
+  seatsAllowedNow,
+  seatsClosedReason,
   seatsEarned,
+  seatsSwitchOpen,
   TEACHER_TOKEN_RE,
   trafficStats,
   type SeatRow,
@@ -37,7 +42,15 @@ const devices = (n: number, start = 0, net = "n"): ViewEvent[] =>
 
 describe("SEAT_RULE: 50 devices + 1 paid per seat, up to 2 per link", () => {
   it("is the one setting everything reads", () => {
-    expect(SEAT_RULE).toEqual({ devicesPerSeat: 50, paidPerSeat: 1, maxSeatsPerLink: 2, onePerSchool: false });
+    expect(SEAT_RULE).toEqual({
+      devicesPerSeat: 50,
+      paidPerSeat: 1,
+      maxSeatsPerLink: 2,
+      onePerSchool: false,
+      maxSeatsTotal: null,
+      countTeammates: false,
+      teacherSeatsNeedVerified: true,
+    });
   });
 
   it("earns 0, 1 or 2 seats", () => {
@@ -54,7 +67,7 @@ describe("SEAT_RULE: 50 devices + 1 paid per seat, up to 2 per link", () => {
   });
 
   it("never gives more seats than the paid sign-ups brought, whatever the rule says", () => {
-    const loose = { devicesPerSeat: 10, paidPerSeat: 0.5, maxSeatsPerLink: 5, onePerSchool: false };
+    const loose = { ...SEAT_RULE, devicesPerSeat: 10, paidPerSeat: 0.5, maxSeatsPerLink: 5 };
     expect(seatsEarned({ devices: 100, paid: 2 }, loose)).toBe(2);
     expect(seatsEarned({ devices: 100, paid: 0 }, loose)).toBe(0);
   });
@@ -140,7 +153,19 @@ describe("seatProgressView: the view model the share pages draw", () => {
     seatProgressView({ progress: { devices: devicesN, paid: paidN }, rows, ownRegistrationId: me, selfPaid, phase });
 
   it("before any seat: what's left for seat 1", () => {
-    expect(view(12, 0, [])).toEqual({ rule: SEAT_RULE, phase: "open", devices: 12, paid: 0, seats: [], next: { index: 1, devicesLeft: 38, paidLeft: 1 }, maxed: false });
+    expect(view(12, 0, [])).toEqual({
+      rule: SEAT_RULE,
+      phase: "open",
+      devices: 12,
+      paid: 0,
+      seats: [],
+      next: { index: 1, devicesLeft: 38, paidLeft: 1 },
+      maxed: false,
+      giftedToYou: false,
+      seatsClosed: false,
+      seatsClosedReason: null,
+      linkRejected: false,
+    });
   });
 
   it("seat 1 for an unpaid student is theirs; staff are checking", () => {
@@ -300,5 +325,114 @@ describe("fraud check helpers", () => {
     expect(schoolMatch("บดินทรเดชา", "บดินทร์เดชา")).toBe("similar");
     expect(schoolMatch("สตรีวิทยา", "บดินทรเดชา")).toBe("different");
     expect(schoolMatch("สตรีวิทยา", "")).toBe("different");
+  });
+});
+
+describe("a seat collision: the owner already has a free seat from a friend", () => {
+  const me = "aaaaaaaa-0000-4000-8000-000000000001";
+
+  it("writes their own first seat waiting for another friend's name, not to themselves", () => {
+    expect(defaultRecipient({ kind: "student", index: 1, ownRegistrationId: me, ownStatus: "pending", ownAlreadyRecipient: true })).toBeNull();
+    expect(defaultRecipient({ kind: "student", index: 1, ownRegistrationId: me, ownStatus: "pending", ownAlreadyRecipient: false })).toBe(me);
+  });
+
+  it("tells the page, so it can say: you already have a seat from a friend, give this one to someone else", () => {
+    const v = seatProgressView({
+      progress: { devices: 52, paid: 1 },
+      rows: [{ id: "s1", index: 1, status: "needs_recipient", recipientRegistrationId: null }],
+      ownRegistrationId: me,
+      selfPaid: false,
+      phase: "open",
+      giftedToYou: true,
+    });
+    expect(v.giftedToYou).toBe(true);
+    expect(v.seats).toEqual([{ index: 1, status: "needs_recipient" }]);
+    expect(canNameSeat(v.seats[0], v.phase)).toBe(true);
+  });
+});
+
+describe("stopping new seats without taking pages down", () => {
+  it("ELEMENTAL_SEATS_OPEN=0 switches new seats off; unset or anything else leaves them on", () => {
+    expect(seatsSwitchOpen({} as unknown as NodeJS.ProcessEnv)).toBe(true);
+    expect(seatsSwitchOpen({ ELEMENTAL_SEATS_OPEN: "1" } as unknown as NodeJS.ProcessEnv)).toBe(true);
+    expect(seatsSwitchOpen({ ELEMENTAL_SEATS_OPEN: "0" } as unknown as NodeJS.ProcessEnv)).toBe(false);
+  });
+
+  it("says why seats are closed: switched off, or the cap", () => {
+    expect(seatsClosedReason({ switchOpen: true, liveSeatsTotal: 999 })).toBeNull();
+    expect(seatsClosedReason({ switchOpen: false, liveSeatsTotal: 0 })).toBe("off");
+    const capped = { ...SEAT_RULE, maxSeatsTotal: 30 };
+    expect(seatsClosedReason({ switchOpen: true, liveSeatsTotal: 29, rule: capped })).toBeNull();
+    expect(seatsClosedReason({ switchOpen: true, liveSeatsTotal: 30, rule: capped })).toBe("cap");
+  });
+
+  it("writes only what fits under the cap", () => {
+    expect(seatsAllowedNow(2, 1000)).toBe(2);
+    expect(seatsAllowedNow(2, 29, { ...SEAT_RULE, maxSeatsTotal: 30 })).toBe(1);
+    expect(seatsAllowedNow(2, 31, { ...SEAT_RULE, maxSeatsTotal: 30 })).toBe(0);
+  });
+
+  it("keeps earned seats nameable while closed, and tells the page", () => {
+    const v = seatProgressView({
+      progress: { devices: 60, paid: 1 },
+      rows: [{ id: "s1", index: 1, status: "needs_recipient", recipientRegistrationId: null }],
+      ownRegistrationId: null,
+      selfPaid: true,
+      phase: "open",
+      seatsClosedReason: "cap",
+    });
+    expect(v.seatsClosed).toBe(true);
+    expect(v.seatsClosedReason).toBe("cap");
+    expect(canNameSeat(v.seats[0], v.phase)).toBe(true);
+  });
+});
+
+describe("countTeammates: does a payment from your own team count for your link?", () => {
+  it("doesn't, by default (the friend would join your team and pay anyway)", () => {
+    expect(countsForLink({ kind: "student", sharerTeamId: "t1", payerTeamId: "t1" })).toBe(false);
+    expect(countsForLink({ kind: "student", sharerTeamId: "t1", payerTeamId: "t2" })).toBe(true);
+    expect(countsForLink({ kind: "student", sharerTeamId: "t1", payerTeamId: null })).toBe(true);
+    expect(countsForLink({ kind: "student", sharerTeamId: null, payerTeamId: "t1" })).toBe(true);
+  });
+
+  it("does when the setting is flipped, and always does for a teacher's link", () => {
+    expect(countsForLink({ kind: "student", sharerTeamId: "t1", payerTeamId: "t1", rule: { ...SEAT_RULE, countTeammates: true } })).toBe(true);
+    expect(countsForLink({ kind: "teacher", sharerTeamId: "t1", payerTeamId: "t1" })).toBe(true);
+  });
+});
+
+describe("teacherSeatsNeedVerified, and shut links", () => {
+  it("refuses Confirm on a teacher's seat until staff verify the teacher", () => {
+    expect(confirmBlock({ kind: "teacher", teacherVerified: false, linkRejected: false })).toBe("teacher_not_verified");
+    expect(confirmBlock({ kind: "teacher", teacherVerified: true, linkRejected: false })).toBeNull();
+    expect(confirmBlock({ kind: "student", teacherVerified: false, linkRejected: false })).toBeNull();
+    expect(confirmBlock({ kind: "teacher", teacherVerified: false, linkRejected: false, rule: { ...SEAT_RULE, teacherSeatsNeedVerified: false } })).toBeNull();
+  });
+
+  it("refuses Confirm on any seat of a link staff shut", () => {
+    expect(confirmBlock({ kind: "student", teacherVerified: false, linkRejected: true })).toBe("link_rejected");
+  });
+});
+
+describe("a named friend who paid anyway", () => {
+  it("is flagged so the owner can name someone else", () => {
+    const friend = "5e6f7a8b-0000-4000-8000-000000000002";
+    const v = seatProgressView({
+      progress: { devices: 55, paid: 1 },
+      rows: [{ id: "s1", index: 1, status: "qualified", recipientRegistrationId: friend, recipientStatus: "paid" }],
+      ownRegistrationId: "aaaaaaaa-0000-4000-8000-000000000001",
+      selfPaid: true,
+      phase: "open",
+    });
+    expect(v.seats).toEqual([{ index: 1, status: "qualified", recipientCode: "5e6f7a8b", recipientPaid: true }]);
+    expect(canNameSeat(v.seats[0], v.phase)).toBe(true);
+    const unpaid = seatProgressView({
+      progress: { devices: 55, paid: 1 },
+      rows: [{ id: "s1", index: 1, status: "qualified", recipientRegistrationId: friend, recipientStatus: "pending" }],
+      ownRegistrationId: null,
+      selfPaid: true,
+      phase: "open",
+    });
+    expect(unpaid.seats[0].recipientPaid).toBeUndefined();
   });
 });

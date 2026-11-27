@@ -3,13 +3,15 @@ import { z } from "zod";
 
 import { requireAdmin, safeServerError } from "@/lib/security/route-guards";
 import { isTrustedAdminRequest } from "@/lib/security/request-origin";
-import { setTeacherMark } from "@/lib/supabase/hackathon-share-links";
+import { setLinkRejected, setTeacherMark } from "@/lib/supabase/hackathon-share-links";
 
-const bodySchema = z.object({ mark: z.enum(["verified", "invited"]), on: z.boolean() });
+const bodySchema = z.object({ mark: z.enum(["verified", "invited", "rejected"]), on: z.boolean() });
 
 /**
- * Staff marks on a teacher link: "verified" (checked with the school), then
- * "invited" (Demo Day invite sent), which needs "verified" first.
+ * Staff marks on a share link:
+ * - teachers: "verified" (checked with the school), then "invited" (Demo Day
+ *   invite sent), which needs "verified" first;
+ * - any link: "rejected" shuts it (fraud): no more seats, open seats turned down.
  */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!isTrustedAdminRequest(request)) return NextResponse.json({ error: "forbidden" }, { status: 403 });
@@ -22,7 +24,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!parsed.success) return NextResponse.json({ error: "invalid" }, { status: 400 });
 
   try {
-    const result = await setTeacherMark(id, parsed.data.mark, parsed.data.on, admin.value.userId);
+    const { mark, on } = parsed.data;
+    const result = mark === "rejected" ? await setLinkRejected(id, on, admin.value.userId) : await setTeacherMark(id, mark, on, admin.value.userId);
     if (result === "not_found") return NextResponse.json({ error: "not_found" }, { status: 404 });
     if (result === "not_verified") return NextResponse.json({ error: "not_verified" }, { status: 409 });
     return NextResponse.json({ ok: true });

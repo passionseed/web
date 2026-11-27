@@ -21,9 +21,80 @@ import { foldSchoolName, SHARE_CODE_RE, shareCode, type ShareKind } from "./shar
  * free seats never count as paid.
  */
 
-/** The one place the seat rule lives. Copy, demos and the engine all read it. */
-export const SEAT_RULE = { devicesPerSeat: 50, paidPerSeat: 1, maxSeatsPerLink: 2, onePerSchool: false } as const;
-export type SeatRule = { devicesPerSeat: number; paidPerSeat: number; maxSeatsPerLink: number; onePerSchool: boolean };
+export type SeatRule = {
+  devicesPerSeat: number;
+  paidPerSeat: number;
+  maxSeatsPerLink: number;
+  /** Kept for the record: one seat per school was dropped on 2026-11-27, and its code with it. */
+  onePerSchool: boolean;
+  /** Free seats across the whole event, every link together; null = no cap. When reached, no new seats are written. */
+  maxSeatsTotal: number | null;
+  /** Whether a sign-up on the sharer's own team counts as paid for their link. Teacher links don't have a team. */
+  countTeammates: boolean;
+  /** Staff must verify a teacher with the school before confirming any seat from the teacher's link. */
+  teacherSeatsNeedVerified: boolean;
+};
+
+/**
+ * The one place the seat rule lives. Copy, demos and the engine all read it.
+ * maxSeatsTotal, countTeammates and teacherSeatsNeedVerified are defaults
+ * waiting for Big's answer (2026-11-27): each is a one-line flip.
+ */
+export const SEAT_RULE = {
+  devicesPerSeat: 50,
+  paidPerSeat: 1,
+  maxSeatsPerLink: 2,
+  onePerSchool: false,
+  maxSeatsTotal: null,
+  countTeammates: false,
+  teacherSeatsNeedVerified: true,
+} as const satisfies SeatRule;
+
+/**
+ * New seats can be switched off without taking any page down:
+ * ELEMENTAL_SEATS_OPEN=0 stops new seats (unset or anything else: open).
+ * Seats already earned can still be named and confirmed.
+ */
+export function seatsSwitchOpen(env: NodeJS.ProcessEnv = process.env): boolean {
+  return env.ELEMENTAL_SEATS_OPEN !== "0";
+}
+
+export type SeatsClosedReason = "off" | "cap";
+
+/** Why no new seats are being written: switched off, or the event-wide cap is reached. Null while seats are open. */
+export function seatsClosedReason(input: { switchOpen: boolean; liveSeatsTotal: number; rule?: SeatRule }): SeatsClosedReason | null {
+  const rule = input.rule ?? SEAT_RULE;
+  if (!input.switchOpen) return "off";
+  if (rule.maxSeatsTotal !== null && input.liveSeatsTotal >= rule.maxSeatsTotal) return "cap";
+  return null;
+}
+
+/** How many of the missing seats may be written now, given the event-wide cap. */
+export function seatsAllowedNow(missing: number, liveSeatsTotal: number, rule: SeatRule = SEAT_RULE): number {
+  if (rule.maxSeatsTotal === null) return missing;
+  return Math.max(0, Math.min(missing, rule.maxSeatsTotal - liveSeatsTotal));
+}
+
+/**
+ * Whether a paid sign-up counts toward a link. With countTeammates off, a
+ * sign-up on the sharer's own team doesn't count (friends who join your team
+ * would pay anyway). Teacher links have no team, so everything counts.
+ */
+export function countsForLink(input: { kind: ShareKind; sharerTeamId: string | null; payerTeamId: string | null; rule?: SeatRule }): boolean {
+  const rule = input.rule ?? SEAT_RULE;
+  if (input.kind === "teacher" || rule.countTeammates) return true;
+  return !input.sharerTeamId || !input.payerTeamId || input.sharerTeamId !== input.payerTeamId;
+}
+
+export type ConfirmBlock = "teacher_not_verified" | "link_rejected";
+
+/** Why staff can't confirm a seat yet, beyond its recipient: the teacher isn't verified, or the link was shut. */
+export function confirmBlock(input: { kind: ShareKind; teacherVerified: boolean; linkRejected: boolean; rule?: SeatRule }): ConfirmBlock | null {
+  const rule = input.rule ?? SEAT_RULE;
+  if (input.linkRejected) return "link_rejected";
+  if (input.kind === "teacher" && rule.teacherSeatsNeedVerified && !input.teacherVerified) return "teacher_not_verified";
+  return null;
+}
 
 /** A teacher's Demo Day invite: this many devices (staff verify the teacher first). */
 export const TEACHER_INVITE_DEVICES = 50;
@@ -146,10 +217,29 @@ export const hasPaid = (status: string) => status === "paid" || status === "revi
  * - rejected: staff turned it down. It still uses up its place.
  */
 export type SeatSlotStatus = "qualified" | "needs_recipient" | "confirmed" | "rejected";
-export type SeatRow = { id: string; index: number; status: SeatSlotStatus; recipientRegistrationId: string | null };
+export type SeatRow = {
+  id: string;
+  index: number;
+  status: SeatSlotStatus;
+  recipientRegistrationId: string | null;
+  /** The recipient's sign-up status now, when known (a named friend may have paid anyway). */
+  recipientStatus?: string | null;
+};
 
-/** Who an earned seat goes to before anyone is named: an unpaid student's first seat is their own sign-up; any other seat waits for a name. */
-export function defaultRecipient(input: { kind: ShareKind; index: number; ownRegistrationId: string | null; ownStatus: string | null }): string | null {
+/**
+ * Who an earned seat goes to before anyone is named: an unpaid student's
+ * first seat is their own sign-up, unless a friend's link already gave them
+ * one (one free seat per sign-up); any other seat waits for a name.
+ */
+export function defaultRecipient(input: {
+  kind: ShareKind;
+  index: number;
+  ownRegistrationId: string | null;
+  ownStatus: string | null;
+  /** The owner is already the recipient of a live seat on another link. */
+  ownAlreadyRecipient?: boolean;
+}): string | null {
+  if (input.ownAlreadyRecipient) return null;
   return input.kind === "student" && input.index === 1 && input.ownRegistrationId && input.ownStatus === "pending" ? input.ownRegistrationId : null;
 }
 
@@ -161,6 +251,8 @@ export type SeatSlotView = {
   recipientCode?: string;
   /** The seat goes to the viewer's own sign-up. */
   mine?: boolean;
+  /** The named friend has paid since (or has a slip waiting): this seat can't go to them; name someone else. */
+  recipientPaid?: boolean;
 };
 
 /** Everything a page needs to draw a link's seats: the view model the share UI is designed against. */
@@ -174,6 +266,13 @@ export type SeatProgressView = {
   /** The next seat and what's missing for it (counting stops at close, so after close it stays where it stopped). Null when maxed. */
   next: NextSeat | null;
   maxed: boolean;
+  /** The owner already has a free seat from a friend's link, so their own first seat waits for another friend's name. */
+  giftedToYou: boolean;
+  /** No new seats are being written (switched off, or the event-wide cap is reached). Earned seats still work. */
+  seatsClosed: boolean;
+  seatsClosedReason: SeatsClosedReason | null;
+  /** Staff shut this link (fraud): it earns no more seats and its open seats were turned down. */
+  linkRejected: boolean;
 };
 
 /**
@@ -188,6 +287,9 @@ export function seatProgressView(input: {
   selfPaid: boolean;
   phase: SeatProgressView["phase"];
   rule?: SeatRule;
+  giftedToYou?: boolean;
+  seatsClosedReason?: SeatsClosedReason | null;
+  linkRejected?: boolean;
 }): SeatProgressView {
   const rule = input.rule ?? SEAT_RULE;
   const seats = [...input.rows]
@@ -198,7 +300,10 @@ export function seatProgressView(input: {
       const slot: SeatSlotView = { index: r.index, status };
       if (status === "needs_recipient") return slot;
       if (mine) slot.mine = true;
-      else if (r.recipientRegistrationId) slot.recipientCode = shareCode(r.recipientRegistrationId);
+      else if (r.recipientRegistrationId) {
+        slot.recipientCode = shareCode(r.recipientRegistrationId);
+        if (status === "qualified" && r.recipientStatus && r.recipientStatus !== "pending") slot.recipientPaid = true;
+      }
       return slot;
     });
   return {
@@ -209,6 +314,10 @@ export function seatProgressView(input: {
     seats,
     next: nextSeat(input.progress, seats.length, rule),
     maxed: seats.length >= rule.maxSeatsPerLink,
+    giftedToYou: input.giftedToYou ?? false,
+    seatsClosed: Boolean(input.seatsClosedReason),
+    seatsClosedReason: input.seatsClosedReason ?? null,
+    linkRejected: input.linkRejected ?? false,
   };
 }
 

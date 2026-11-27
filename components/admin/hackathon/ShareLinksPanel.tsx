@@ -2,6 +2,8 @@ import { Badge } from "@/components/ui/badge";
 import { formatBangkokDateTime } from "@/lib/admin/queue-tools/format";
 import { linkSource, shareCode } from "@/lib/hackathon/elemental/share";
 import {
+  confirmBlock,
+  countsForLink,
   nextSeat,
   phonesMatch,
   reachedInvite,
@@ -15,7 +17,7 @@ import type { AdminShareLink, SharePerson, ShareSeat } from "@/lib/supabase/hack
 import { cn } from "@/lib/utils";
 
 import { ShareSeatActions } from "./ShareSeatActions";
-import { ShareCopyTeacherLink, ShareTeacherMarks } from "./ShareTeacherTools";
+import { ShareCopyTeacherLink, ShareLinkReject, ShareTeacherMarks } from "./ShareTeacherTools";
 
 /**
  * Every Elemental share link, students and teachers, and the free seats each
@@ -107,7 +109,7 @@ function FraudCheck({ l, seat, regs }: { l: AdminShareLink; seat: ShareSeat; reg
   const own = l.registrationId ? regs.get(l.registrationId) : undefined;
   const sharerPhones = l.kind === "teacher" ? [l.teacherPhone] : (own?.phones ?? []);
   const all = [...regs.entries()].filter(([, r]) => r.source === src && r.status === "paid");
-  const counted = all.filter(([, r]) => !r.freeSeat && !r.paidAfterClose);
+  const counted = all.filter(([, r]) => !r.freeSeat && !r.paidAfterClose && countsForLink({ kind: l.kind, sharerTeamId: l.teamId, payerTeamId: r.teamId }));
   const recipientId = seat.recipientRegistrationId;
   const t = l.traffic;
   return (
@@ -123,11 +125,21 @@ function FraudCheck({ l, seat, regs }: { l: AdminShareLink; seat: ShareSeat; reg
         Seat {seat.index} needs {seat.index * SEAT_RULE.devicesPerSeat} devices + {seat.index * SEAT_RULE.paidPerSeat} paid; earned{" "}
         {formatBangkokDateTime(seat.earnedAt, { year: false })} at {seat.devices} devices, {seat.paid} paid.
       </p>
+      {l.kind === "teacher" && SEAT_RULE.teacherSeatsNeedVerified && !l.verifiedAt && (
+        <p className="text-destructive">Teacher not verified with the school: Confirm stays off until the verified mark is on.</p>
+      )}
       <p>Paid through this link ({counted.reduce((n, [, r]) => n + r.seats, 0)} seats that count):</p>
       <ul className="list-disc space-y-0.5 pl-5">
         {all.map(([id, r]) => {
           const shared = phonesMatch(sharerPhones, r.phones);
-          const note = r.freeSeat ? "free seat, doesn't count" : r.paidAfterClose ? "paid after close, doesn't count" : null;
+          const teammate = !countsForLink({ kind: l.kind, sharerTeamId: l.teamId, payerTeamId: r.teamId });
+          const note = r.freeSeat
+            ? "free seat, doesn't count"
+            : r.paidAfterClose
+              ? "paid after close, doesn't count"
+              : teammate
+                ? "on the sharer's own team, doesn't count"
+                : null;
           return (
             <li key={id} className={cn(note && "text-muted-foreground", !note && shared && "text-destructive")}>
               {r.name} · {r.school} · {r.seats} {r.seats === 1 ? "seat" : "seats"}
@@ -142,9 +154,15 @@ function FraudCheck({ l, seat, regs }: { l: AdminShareLink; seat: ShareSeat; reg
   );
 }
 
+const BLOCK_LABEL = {
+  teacher_not_verified: "Confirm is off: verify the teacher with the school first.",
+  link_rejected: "This link was shut: its seats can't be given.",
+} as const;
+
 function SeatRowView({ l, seat, regs }: { l: AdminShareLink; seat: ShareSeat; regs: Map<string, ShareRegInfo> }) {
   const recipient = recipientLine(l, seat, regs);
   const open = seat.status === "qualified" || seat.status === "needs_recipient";
+  const block = confirmBlock({ kind: l.kind, teacherVerified: Boolean(l.verifiedAt), linkRejected: Boolean(l.rejectedAt) });
   return (
     <div className={cn("space-y-2 rounded-md border p-3", seat.status === "qualified" && "border-primary/50 bg-primary/10")}>
       <p>
@@ -153,7 +171,8 @@ function SeatRowView({ l, seat, regs }: { l: AdminShareLink; seat: ShareSeat; re
       </p>
       <p>{recipient.text}</p>
       {seat.status === "qualified" && <FraudCheck l={l} seat={seat} regs={regs} />}
-      {open && <ShareSeatActions id={seat.id} canConfirm={seat.status === "qualified" && recipient.ok} />}
+      {open && block && seat.status === "qualified" && <p className="text-destructive">{BLOCK_LABEL[block]}</p>}
+      {open && <ShareSeatActions id={seat.id} canConfirm={seat.status === "qualified" && recipient.ok && !block} />}
     </div>
   );
 }
@@ -174,7 +193,12 @@ function LinkRow({ l, regs }: { l: AdminShareLink; regs: Map<string, ShareRegInf
         {custom && <span className="text-muted-foreground">(typed, not on the list: check the name)</span>}
         <span className="text-muted-foreground">src: {linkSource(l.kind, l.code)}</span>
         {l.registrationStatus === "cancelled" && <Badge variant="outline">sign-up cancelled: earns no seats</Badge>}
+        {l.rejectedAt && <Badge variant="destructive">link shut {formatBangkokDateTime(l.rejectedAt, { year: false })}: earns no seats</Badge>}
+        <span className="ml-auto">
+          <ShareLinkReject id={l.id} rejected={Boolean(l.rejectedAt)} />
+        </span>
       </div>
+      {l.syncError && <p className="text-destructive">Could not write this link&apos;s new seats: {l.syncError}</p>}
       <p>
         <span className="tabular-nums">
           {l.progress.devices} devices · {l.progress.paid} paid
@@ -218,9 +242,19 @@ export function ShareLinksPanel({ links, regs }: { links: AdminShareLink[]; regs
     const [gb, tb, db] = rank(b);
     return ga - gb || ta.localeCompare(tb) || da - db;
   });
+  const closed = links[0]?.seatsClosedReason ?? null;
   return (
     <section className="space-y-2">
       <h2 className="text-base font-semibold">Share links</h2>
+      {closed && (
+        <p className="rounded-md border border-destructive/50 p-3 text-sm text-destructive">
+          New seats are closed ({closed === "off" ? "ELEMENTAL_SEATS_OPEN=0" : `the cap of ${SEAT_RULE.maxSeatsTotal} seats is reached`}). Seats already earned can
+          still be named, confirmed or rejected.
+        </p>
+      )}
+      {!SEAT_RULE.countTeammates && (
+        <p className="text-xs text-muted-foreground">Payments from the sharer&apos;s own team don&apos;t count toward their link (SEAT_RULE.countTeammates is off).</p>
+      )}
       <ul className="space-y-2">
         {sorted.map((l) => (
           <LinkRow key={l.id} l={l} regs={regs} />

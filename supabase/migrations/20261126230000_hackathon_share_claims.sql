@@ -24,6 +24,9 @@
 --                                   = true on hackathon_event_registrations,
 --                                   see 20261127100000)
 --   any open seat -> rejected       (staff: fraud; the seat stays used up)
+--   A link can be shut (rejected_at): no more seats, open ones rejected.
+--   ELEMENTAL_SEATS_OPEN=0 or a cap on seats (SEAT_RULE.maxSeatsTotal, in
+--   code) stops new seats; earned ones can still be named and confirmed.
 --
 -- Nobody reads these from the browser: service-role API routes only, keyed by
 -- a pay token or a teacher token, and the admin page after requireAdmin().
@@ -55,6 +58,10 @@ create table if not exists public.hackathon_share_links (
   verified_by text,
   invited_at timestamptz,
   invited_by text,
+  -- Staff shut the link (fraud): it earns no more seats, and its open seats
+  -- were turned down.
+  rejected_at timestamptz,
+  rejected_by text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint hackathon_share_links_kind_fields check (

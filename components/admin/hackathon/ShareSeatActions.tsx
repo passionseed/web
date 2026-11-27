@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 
 const REASON: Record<string, string> = {
   needs_recipient: "Nobody to give it to yet: the student or teacher must type a code on their page first.",
+  teacher_not_verified: "Verify the teacher with the school first (the mark on the teacher's link).",
+  link_rejected: "This link was shut by staff: its seats can't be given.",
   recipient_paid: "That sign-up isn't unpaid any more (paid, slip waiting, or cancelled). No free seat on top; ask for another code.",
   recipient_taken: "That sign-up already has a free seat from another school.",
   closed: "This seat was already decided.",
