@@ -19,8 +19,13 @@ import { ALL_ELEMENTS, ELEMENT_MARKS, type SceneName } from "./scenes";
  * Trirong, Space Mono [tags].
  */
 
-/** Owners send everything by Sunday 29 November (the problem-owner emails Big sent on 2026-11-25; company-brain private/hackathon-ops/voices-and-speakers.md). */
-const DUE = "2026-11-29";
+/**
+ * Owners send everything by Monday 30 November: the deadline for all five
+ * element videos (company-brain private/hackathon-ops/voices-and-speakers.md)
+ * and the date in the follow-up emails of 2026-11-27. The first emails, on
+ * 2026-11-25, asked for Sun 29 Nov. formatThaiDate works out the weekday.
+ */
+const DUE = "2026-11-30";
 /** The interview workshop owners may join for 20 minutes. */
 const WORKSHOP = ELEMENTAL.schedule.find((s) => s.kind === "workshop" && s.time?.startsWith("10:00"));
 
