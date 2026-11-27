@@ -5,13 +5,15 @@ import { randomBytes } from "crypto";
 import { shareCode } from "@/lib/hackathon/elemental/share";
 import {
   anyLiveProof,
+  proofHasImage,
   replacedProofPath,
-  revokeOutcome,
+  revokePlan,
   STORY_PROOF_BUCKET,
   storyProofPath,
   storyProofStatusOf,
   storyProofUpsert,
   type RevokeOutcome,
+  type StoryProofImageType,
   type StoryProofStatus,
 } from "@/lib/hackathon/elemental/story-proof";
 import { createAdminClient } from "@/utils/supabase/admin";
@@ -20,9 +22,9 @@ import { createAdminClient } from "@/utils/supabase/admin";
  * Instagram Story proofs (hackathon_story_proofs, the private
  * hackathon-story-proofs bucket; rules in lib/hackathon/elemental/story-proof.ts).
  * Service role only: the share page holds a pay token, the admin page calls
- * requireAdmin() first. One row per sign-up; a new upload replaces the file.
- * The image is never returned on a public route: staff see it through a
- * short-lived signed URL.
+ * requireAdmin() first. One row per sign-up; a new upload replaces the file,
+ * and a staff revoke deletes it. The image is never returned on a public
+ * route: staff see it through a short-lived signed URL.
  *
  * Before the 20261127120000 migration is applied the table and bucket don't
  * exist: the readers never throw (none / false), and an upload fails with a
@@ -92,17 +94,23 @@ export async function teamHasStoryProof(eventSlug: string, registrationIds: stri
 }
 
 /**
- * Store a new proof for a sign-up: upload the file, point the sign-up's one
- * row at it (live again if it was revoked), then delete the file it
- * replaced. Two uploads at once both land; the last row wins and the other
- * file is left for the cleanup script, which empties the event's folder.
+ * Store a new proof for a sign-up: upload the file (as the type its first
+ * bytes say, checkStoryProofBytes), point the sign-up's one row at it (live
+ * again if it was revoked), then delete the file it replaced. Two uploads at
+ * once both land; the last row wins and the other file is left for the
+ * cleanup script, which empties the event's folder.
  */
-export async function saveStoryProof(eventSlug: string, registrationId: string, file: File, ext: string): Promise<void> {
+export async function saveStoryProof(
+  eventSlug: string,
+  registrationId: string,
+  file: Blob,
+  type: { ext: string; contentType: StoryProofImageType },
+): Promise<void> {
   const db = createAdminClient();
   const current = await proofRow(registrationId);
-  const path = storyProofPath(eventSlug, registrationId, ext, Date.now(), randomBytes(6).toString("hex"));
+  const path = storyProofPath(eventSlug, registrationId, type.ext, Date.now(), randomBytes(6).toString("hex"));
 
-  const { error: uploadError } = await db.storage.from(STORY_PROOF_BUCKET).upload(path, file, { contentType: file.type, upsert: false });
+  const { error: uploadError } = await db.storage.from(STORY_PROOF_BUCKET).upload(path, file, { contentType: type.contentType, upsert: false });
   if (uploadError) throw uploadError;
 
   const { error } = await db
@@ -122,23 +130,40 @@ export async function saveStoryProof(eventSlug: string, registrationId: string, 
   }
 }
 
-/** Staff take a proof back: the team's styles go back to what its devices unlock. The file stays until the cleanup after Demo Day. */
+/**
+ * Staff take a proof back (revokePlan): its file is deleted from the bucket
+ * straight away, then the row is marked revoked, so the team's styles go back
+ * to what its devices unlock. If the delete fails this throws and the proof
+ * stays live, so pressing Revoke again is always safe.
+ */
 export async function revokeStoryProof(id: string, adminUserId: string): Promise<RevokeOutcome> {
   const db = createAdminClient();
-  const { data, error } = await db.from("hackathon_story_proofs").select("id, revoked_at").eq("id", id).maybeSingle();
+  const { data, error } = await db.from("hackathon_story_proofs").select("id, storage_path, revoked_at").eq("id", id).maybeSingle();
   if (error) throw error;
-  const outcome = revokeOutcome(data ? { revokedAt: (data.revoked_at as string | null) ?? null } : null);
-  if (outcome !== "revoked") return outcome;
-  const now = new Date().toISOString();
+  const plan = revokePlan(data ? { storagePath: data.storage_path as string, revokedAt: (data.revoked_at as string | null) ?? null } : null);
+  if (plan.outcome === "not_found") return "not_found";
+
+  // Removing a file that is already gone is not an error, so this is safe to repeat.
+  const { error: removeError } = await db.storage.from(STORY_PROOF_BUCKET).remove([plan.deletePath]);
+  if (removeError) throw removeError;
+  if (plan.outcome === "already_revoked") return "already_revoked";
+
   const { data: done, error: updateError } = await db
     .from("hackathon_story_proofs")
-    .update({ revoked_at: now, revoked_by: `admin:${adminUserId}` })
+    .update({ revoked_at: new Date().toISOString(), revoked_by: `admin:${adminUserId}` })
     .eq("id", id)
     .is("revoked_at", null)
+    // Only the screenshot staff were looking at: a new upload in the same moment has another path.
+    .eq("storage_path", plan.deletePath)
     .select("id");
   if (updateError) throw updateError;
-  // Another staff member revoked it a moment ago.
-  return done && done.length > 0 ? "revoked" : "already_revoked";
+  if (done && done.length > 0) return "revoked";
+
+  // Another staff member revoked it, or the student uploaded a new screenshot, a moment ago.
+  const { data: now, error: againError } = await db.from("hackathon_story_proofs").select("revoked_at").eq("id", id).maybeSingle();
+  if (againError) throw againError;
+  if (!now) return "not_found";
+  return now.revoked_at ? "already_revoked" : "changed";
 }
 
 /** A proof as the admin page shows it (staff only). */
@@ -150,11 +175,11 @@ export type AdminStoryProof = {
   uploadedAt: string;
   revokedAt: string | null;
   revokedBy: string | null;
-  /** Works for SIGNED_URL_SECONDS; null if signing failed or the file is gone. */
+  /** Works for SIGNED_URL_SECONDS; null once revoked (the file is deleted) or if signing failed. */
   imageUrl: string | null;
 };
 
-/** Every proof of the event, newest first, each with a short-lived signed thumbnail URL. */
+/** Every proof of the event, newest first, each live one with a short-lived signed thumbnail URL (a revoked one's file is deleted). */
 export async function listStoryProofsForAdmin(eventSlug: string): Promise<AdminStoryProof[]> {
   const db = createAdminClient();
   const { data, error } = await db
@@ -166,9 +191,10 @@ export async function listStoryProofsForAdmin(eventSlug: string): Promise<AdminS
   if (error) throw error;
   const rows = (data ?? []) as ProofDbRow[];
   const signed = new Map<string, string>();
-  if (rows.length > 0) {
+  const withImage = rows.filter((r) => proofHasImage({ revokedAt: r.revoked_at }));
+  if (withImage.length > 0) {
     const { data: urls, error: signError } = await db.storage.from(STORY_PROOF_BUCKET).createSignedUrls(
-      rows.map((r) => r.storage_path),
+      withImage.map((r) => r.storage_path),
       SIGNED_URL_SECONDS,
     );
     if (signError) console.error("[admin story proofs] could not sign thumbnails", signError);
@@ -181,6 +207,6 @@ export async function listStoryProofsForAdmin(eventSlug: string): Promise<AdminS
     uploadedAt: r.uploaded_at,
     revokedAt: r.revoked_at,
     revokedBy: r.revoked_by,
-    imageUrl: signed.get(r.storage_path) ?? null,
+    imageUrl: proofHasImage({ revokedAt: r.revoked_at }) ? (signed.get(r.storage_path) ?? null) : null,
   }));
 }

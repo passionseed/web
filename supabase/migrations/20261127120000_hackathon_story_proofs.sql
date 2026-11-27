@@ -2,7 +2,8 @@
 -- A student posts their share poster as an Instagram Story and uploads a
 -- screenshot showing 200+ views. That unlocks every team-name style for their
 -- team at once, with no staff check (it's only cosmetic). Staff can
--- spot-check and revoke from the admin page.
+-- spot-check and revoke from the admin page; revoking deletes the file
+-- straight away and keeps the row as revoked.
 --
 -- hackathon_story_proofs: one row per sign-up. A new upload points the row at
 -- the new file (and clears revoked_at); the old file is deleted.
@@ -10,7 +11,7 @@
 -- <event_slug>/<registration_id>/<upload ms>-<random>.<ext>. Staff see it
 -- through short-lived signed URLs only; no public route returns it.
 -- After Demo Day, staff run scripts/delete-story-proofs.mjs, which deletes
--- every file and row for the event.
+-- every remaining file and row for the event.
 --
 -- Nobody reads this from the browser: service-role API routes only, keyed by
 -- a pay token, and the admin page after requireAdmin(). RLS is on with an

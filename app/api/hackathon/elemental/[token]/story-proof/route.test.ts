@@ -27,7 +27,10 @@ function upload(file: File | null, { origin = "http://localhost" }: { origin?: s
   return POST(req, { params: Promise.resolve({ token: TOKEN }) });
 }
 
-const png = (size = 3) => new File([new Uint8Array(size)], "story.png", { type: "image/png" });
+const PNG_HEAD = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0x0d];
+const JPEG_HEAD = [0xff, 0xd8, 0xff, 0xe0, 0, 0x10, 0x4a, 0x46, 0x49, 0x46, 0, 1];
+const file = (head: number[], type: string, name = "story") => new File([new Uint8Array([...head, 1, 2, 3])], name, { type });
+const png = () => file(PNG_HEAD, "image/png", "story.png");
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -41,7 +44,7 @@ it("stores the proof and says the team's styles are unlocked, without the image 
   const res = await upload(png());
   expect(res.status).toBe(200);
   expect(await res.json()).toEqual({ storyProof: "unlocked" });
-  expect(saveStoryProof).toHaveBeenCalledWith("elemental-2026", "reg-1", expect.any(File), "png");
+  expect(saveStoryProof).toHaveBeenCalledWith("elemental-2026", "reg-1", expect.any(File), { ext: "png", contentType: "image/png" });
 });
 
 it("refuses another site", async () => {
@@ -76,6 +79,24 @@ it("refuses a missing file and a wrong type", async () => {
   res = await upload(new File([new Uint8Array(3)], "x.gif", { type: "image/gif" }));
   expect(await res.json()).toEqual({ error: "file_type" });
   expect(saveStoryProof).not.toHaveBeenCalled();
+});
+
+it("checks the first bytes, not only the reported type", async () => {
+  // Text, or an HTML page, labelled as a PNG.
+  for (const head of [[...Buffer.from("hello world!")], [...Buffer.from("<html><body>")]]) {
+    const res = await upload(file(head, "image/png", "story.png"));
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: "file_type" });
+  }
+  expect(saveStoryProof).not.toHaveBeenCalled();
+});
+
+it("stores a real image as the type its bytes say, whatever the label", async () => {
+  const res = await upload(file(PNG_HEAD, "image/jpeg", "story.jpg"));
+  expect(res.status).toBe(200);
+  expect(saveStoryProof).toHaveBeenCalledWith("elemental-2026", "reg-1", expect.any(File), { ext: "png", contentType: "image/png" });
+  await upload(file(JPEG_HEAD, "image/jpeg", "story.jpg"));
+  expect(saveStoryProof).toHaveBeenLastCalledWith("elemental-2026", "reg-1", expect.any(File), { ext: "jpg", contentType: "image/jpeg" });
 });
 
 it("rate-limits per sign-up and per network", async () => {

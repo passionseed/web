@@ -1,10 +1,14 @@
 import { MAX_SLIP_BYTES } from "../slip-image";
 import {
   anyLiveProof,
+  checkStoryProofBytes,
   checkStoryProofFile,
   MAX_STORY_PROOF_BYTES,
+  proofHasImage,
   replacedProofPath,
-  revokeOutcome,
+  revokePlan,
+  sniffStoryProofType,
+  STORY_PROOF_SNIFF_BYTES,
   storyProofPath,
   storyProofStatusOf,
   storyProofUploadBlock,
@@ -104,10 +108,53 @@ describe("anyLiveProof: one live proof from any member unlocks the team", () => 
   });
 });
 
-describe("revokeOutcome: staff taking a proof back", () => {
-  it("revokes a live proof, leaves a revoked one alone, and says when there's none", () => {
-    expect(revokeOutcome({ revokedAt: null })).toBe("revoked");
-    expect(revokeOutcome({ revokedAt: "2026-12-02T03:00:00Z" })).toBe("already_revoked");
-    expect(revokeOutcome(null)).toBe("not_found");
+describe("revokePlan: staff taking a proof back deletes its screenshot", () => {
+  const path = `elemental-2026/${REG}/1-aaaaaaaaaaaa.jpg`;
+  it("revokes a live proof and deletes its file", () => {
+    expect(revokePlan({ storagePath: path, revokedAt: null })).toEqual({ outcome: "revoke", deletePath: path });
+  });
+
+  it("deletes a revoked proof's file again (harmless if gone), and leaves the row as it is", () => {
+    expect(revokePlan({ storagePath: path, revokedAt: "2026-12-02T03:00:00Z" })).toEqual({ outcome: "already_revoked", deletePath: path });
+  });
+
+  it("does nothing without a row", () => {
+    expect(revokePlan(null)).toEqual({ outcome: "not_found", deletePath: null });
+  });
+
+  it("shows staff no image for a revoked proof, since its file is deleted", () => {
+    expect(proofHasImage({ revokedAt: null })).toBe(true);
+    expect(proofHasImage({ revokedAt: "2026-12-02T03:00:00Z" })).toBe(false);
+  });
+});
+
+describe("sniffStoryProofType: the first bytes, not the label", () => {
+  const bytes = (...b: number[]) => new Uint8Array([...b, ...new Array(Math.max(0, STORY_PROOF_SNIFF_BYTES - b.length)).fill(0)]);
+  const ascii = (t: string) => [...t].map((c) => c.charCodeAt(0));
+  const JPEG = bytes(0xff, 0xd8, 0xff, 0xe0);
+  const PNG = bytes(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a);
+  const WEBP = bytes(...ascii("RIFF"), 0x24, 0x00, 0x00, 0x00, ...ascii("WEBP"));
+
+  it("knows JPEG, PNG and WEBP", () => {
+    expect(sniffStoryProofType(JPEG)).toBe("image/jpeg");
+    expect(sniffStoryProofType(PNG)).toBe("image/png");
+    expect(sniffStoryProofType(WEBP)).toBe("image/webp");
+  });
+
+  it("refuses anything else: text, HTML or SVG renamed .png, a GIF, a RIFF that isn't WEBP, too few bytes", () => {
+    expect(sniffStoryProofType(bytes(...ascii("hello world!")))).toBeNull();
+    expect(sniffStoryProofType(bytes(...ascii("<svg xmlns=")))).toBeNull();
+    expect(sniffStoryProofType(bytes(...ascii("<html><body")))).toBeNull();
+    expect(sniffStoryProofType(bytes(...ascii("GIF89a")))).toBeNull();
+    expect(sniffStoryProofType(bytes(...ascii("RIFF"), 0, 0, 0, 0, ...ascii("WAVE")))).toBeNull();
+    expect(sniffStoryProofType(new Uint8Array([0xff, 0xd8]))).toBeNull();
+    expect(sniffStoryProofType(new Uint8Array([]))).toBeNull();
+  });
+
+  it("stores the type the bytes say, refusing the rest as file_type", () => {
+    expect(checkStoryProofBytes(PNG)).toEqual({ ok: true, ext: "png", contentType: "image/png" });
+    expect(checkStoryProofBytes(JPEG)).toEqual({ ok: true, ext: "jpg", contentType: "image/jpeg" });
+    expect(checkStoryProofBytes(WEBP)).toEqual({ ok: true, ext: "webp", contentType: "image/webp" });
+    expect(checkStoryProofBytes(bytes(...ascii("not an image")))).toEqual({ ok: false, error: "file_type" });
   });
 });

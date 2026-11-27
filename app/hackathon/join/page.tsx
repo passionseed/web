@@ -64,7 +64,7 @@ export default async function ElementalJoinPage({ searchParams }: { searchParams
 
   return (
     <main className={`${trirong.variable} min-h-[100dvh]`} style={{ backgroundColor: EL.cream, color: EL.ink }}>
-      {/* A team invite carries the inviter's share link, so its opens count too. */}
+      {/* A share link (?src=share-<code> or t-<code>) kept from the landing, or opened here directly, counts this device once for that link. */}
       <TrackLinkView source={source} />
       {open ? (
         <JoinFlow

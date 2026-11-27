@@ -9,9 +9,10 @@ import { StoryProofRevoke } from "./StoryProofRevoke";
  * Instagram Story proofs: each live one already unlocked every team-name
  * style for its team, with no check first (it's only cosmetic). Staff
  * spot-check that the screenshot is the poster with STORY_PROOF_MIN_VIEWS+
- * views and revoke the ones that aren't. Thumbnails are signed URLs that
- * stop working after a few minutes: refresh to see them again. Every proof
- * is deleted after Demo Day (scripts/delete-story-proofs.mjs).
+ * views and revoke the ones that aren't; revoking deletes the screenshot
+ * straight away. Thumbnails are signed URLs that stop working after a few
+ * minutes: refresh to see them again. Every remaining proof is deleted after
+ * Demo Day (scripts/delete-story-proofs.mjs).
  */
 export function StoryProofsPanel({ proofs, names }: { proofs: AdminStoryProof[]; names: Map<string, string> }) {
   if (proofs.length === 0) return null;
@@ -21,7 +22,7 @@ export function StoryProofsPanel({ proofs, names }: { proofs: AdminStoryProof[];
       <h2 className="text-base font-semibold">Story proofs</h2>
       <p className="text-xs text-muted-foreground">
         {live} live, {proofs.length - live} revoked. A live proof unlocks every style for the team right away: check it shows the poster with{" "}
-        {STORY_PROOF_MIN_VIEWS}+ views, and revoke it if not.
+        {STORY_PROOF_MIN_VIEWS}+ views, and revoke it if not (or if it shows other students&apos; names). Revoking deletes the screenshot.
       </p>
       <ul className="space-y-2">
         {proofs.map((p) => (
@@ -32,7 +33,9 @@ export function StoryProofsPanel({ proofs, names }: { proofs: AdminStoryProof[];
                 <img src={p.imageUrl} alt="Instagram Story screenshot" className="h-32 w-20 rounded-md border object-cover" />
               </a>
             ) : (
-              <span className="flex h-32 w-20 items-center justify-center rounded-md border text-xs text-muted-foreground">no image</span>
+              <span className="flex h-32 w-20 items-center justify-center rounded-md border text-center text-xs text-muted-foreground">
+                {p.revokedAt ? "deleted" : "no image"}
+              </span>
             )}
             <div className="min-w-0 flex-1 space-y-1">
               <p>
