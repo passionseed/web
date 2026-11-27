@@ -180,7 +180,13 @@ export function LeaderboardView({
     ) : null;
 
   return (
-    <Page surface="ground" sky={<SkyBand title={<H1 board>{COPY.title}</H1>} lead={COPY.lead} />} bar={bar}>
+    <Page
+      surface="ground"
+      // Opened from a pay page in this tab: "← หน้าของฉัน" goes back to it (its own URL, from sessionStorage, never this page's).
+      back={you?.payHref ? { href: you.payHref } : undefined}
+      sky={<SkyBand title={<H1 board>{COPY.title}</H1>} lead={COPY.lead} />}
+      bar={bar}
+    >
       <p className="sr-only" aria-live="polite">
         {announce}
       </p>
@@ -200,9 +206,6 @@ export function LeaderboardView({
               </Tag>
             ) : null}
           </div>
-          <Body secondary className="mt-2 max-w-xl">
-            {COPY.explain}
-          </Body>
 
           {you && !youEntry && data.state !== "unavailable" && <YouOffBoard you={you} final={final} />}
 
@@ -228,7 +231,10 @@ export function LeaderboardView({
           )}
 
           {final ? (
-            <Fine className="mt-10">{COPY.finalNote}</Fine>
+            <div className="mt-10 border-t pt-6" style={{ borderColor: "var(--el-rule)" }}>
+              <Body secondary>{COPY.explain}</Body>
+              <Fine className="mt-2">{COPY.finalNote}</Fine>
+            </div>
           ) : (
             data.state === "live" && <HowToJoin you={you} />
           )}
@@ -263,14 +269,17 @@ function YouOffBoard({ you, final }: { you: BoardYou; final: boolean }) {
   );
 }
 
-/** Live, at the bottom: how a team gets on, and what its devices unlock (the same tiers as the editor). */
+/** Live, at the bottom: how a team gets on, what its devices unlock (the same tiers as the editor) and how the board is ordered. */
 function HowToJoin({ you }: { you: BoardYou | null }) {
   return (
     <section className="mt-14 border-t pt-8" style={{ borderColor: "var(--el-rule)" }}>
       <H2>{COPY.joinTitle}</H2>
       <Body className="mt-3">{you?.shareHref ? COPY.joinYou : COPY.join}</Body>
       <FactStrip className="mt-6" facts={STYLE_PARTS.map((part) => ({ tag: COPY.unlockTag(TEAM_STYLE_TIERS[part]), value: STYLE_PART_TH[part] }))} />
-      <Fine className="mt-4">{COPY.joinNote}</Fine>
+      <Body secondary className="mt-4">
+        {COPY.explain}
+      </Body>
+      <Fine className="mt-2">{COPY.joinNote}</Fine>
     </section>
   );
 }

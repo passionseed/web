@@ -5,6 +5,7 @@ import { useState, type ReactNode } from "react";
 import { isRudeTeamName } from "@/lib/hackathon/elemental/team-name";
 import {
   BOARD_NAME_MAX,
+  colorLabel,
   colorOf,
   DEFAULT_STYLE,
   lockedChoices,
@@ -68,7 +69,7 @@ const COPY = {
   save: "บันทึก",
   saving: "กำลังบันทึก…",
   saved: "บันทึกแล้ว",
-  seeBoard: "ดูบนกระดาน",
+  seeBoard: "ดูบนกระดาน →",
   failed: "บันทึกไม่สำเร็จ ลองอีกครั้ง",
   closed: "ตอนนี้แก้ไม่ได้แล้ว",
   closedBack: "กลับหน้าของฉัน",
@@ -168,17 +169,7 @@ export function TeamEditor({
     : error
       ? { text: error, tone: "error", alert: true }
       : justSaved
-        ? {
-            text: (
-              <span className="inline-flex flex-wrap items-baseline gap-x-4">
-                <span>{COPY.saved}</span>
-                <EditorialLink href={boardHref} size="sm" tone="action">
-                  {COPY.seeBoard}
-                </EditorialLink>
-              </span>
-            ),
-            tone: "action",
-          }
+        ? { text: COPY.saved, tone: "action" }
         : locked.length > 0
           ? { text: COPY.tryOnly(lockAt, lockAt - devices), tone: "secondary" }
           : !trimmed
@@ -197,7 +188,12 @@ export function TeamEditor({
             {status.text}
           </p>
         )}
-        {editable ? (
+        {editable && justSaved && !nameChanged && !styleChanged ? (
+          // Saved and untouched since: the next step is to see it on the board. The next edit brings "บันทึก" back.
+          <PrimaryButton href={boardHref} full>
+            {COPY.seeBoard}
+          </PrimaryButton>
+        ) : editable ? (
           <PrimaryButton onClick={save} disabled={!canSave} full>
             {saving ? COPY.saving : COPY.save}
           </PrimaryButton>
@@ -353,14 +349,14 @@ function Swatches({ value, onPick, label }: { value: ColorId; onPick: (id: Color
             type="button"
             role="radio"
             aria-checked={on}
-            aria-label={c.th}
+            aria-label={colorLabel(c.id)}
             onClick={() => onPick(c.id)}
             className={`${css.swatch} flex min-h-11 flex-col items-center gap-1.5`}
           >
             <span className="block h-11 w-11 rounded-[2px]" style={{ backgroundColor: nameColor(c.id) }} />
             <span className={css.swatchRule} aria-hidden="true" />
             <Fine as="span">
-              <span style={{ color: on ? v.text : undefined }}>{c.th}</span>
+              <span style={{ color: on ? v.text : undefined }}>{colorLabel(c.id)}</span>
             </Fine>
           </button>
         );

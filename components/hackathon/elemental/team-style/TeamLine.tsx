@@ -133,11 +133,11 @@ export function TeamLine({
       </Body>
       <div className="mt-3 flex flex-wrap items-center gap-x-6">
         {data.editable && (
-          <EditorialLink href={editHref} size="md" tone="action">
+          <EditorialLink href={editHref} size="sm" tone="action">
             {named ? COPY.edit : COPY.setName}
           </EditorialLink>
         )}
-        <EditorialLink href={boardHref} size="md">
+        <EditorialLink href={boardHref} size="sm">
           {COPY.board}
         </EditorialLink>
       </div>

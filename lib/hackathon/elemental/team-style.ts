@@ -71,6 +71,10 @@ export const NAME_COLORS = [
 
 export type ColorId = (typeof NAME_COLORS)[number]["id"];
 
+// copy: placeholder — Angpao rewrites
+/** Names that change with the surface: ink is drawn cream on the dark ground, so it's called cream there. */
+const DARK_LABELS: Partial<Record<ColorId, string>> = { ink: "ครีม" };
+
 /** Where a name is drawn: the dark ground (board, editor, share slab) or the cream paper. */
 export type NameSurface = "ground" | "paper";
 
@@ -223,6 +227,11 @@ export function checkBoardName(raw: unknown): { ok: true; name: string } | { ok:
 function rgba(hex: string, alpha: number): string {
   const n = parseInt(hex.slice(1), 16);
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
+}
+
+/** A colour's Thai name as it looks on a surface ("ครีม" for ink on the dark ground). */
+export function colorLabel(id: ColorId, surface: NameSurface = "ground"): string {
+  return (surface === "ground" ? DARK_LABELS[id] : undefined) ?? colorOf(id).th;
 }
 
 /** A colour as it is drawn on a surface. */

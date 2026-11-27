@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import type { CSSProperties } from "react";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import type { TeamNameStyle } from "@/lib/hackathon/elemental/team-style";
 
-import { Fine, Tag } from "../share/ui";
+import { Fine, RollingNumber, Tag } from "../share/ui";
 import { StyledTeamName } from "../team-style/StyledTeamName";
 import styles from "./board.module.css";
 
@@ -45,39 +45,6 @@ export type BoardRowEntry = {
 const fine: CSSProperties = { fontFamily: EL_FONT.body, fontSize: 13, lineHeight: "20px", color: "var(--el-fine)" };
 
 const trirong = (weight: 200 | 300 | 400, size: number): CSSProperties => ({ fontFamily: EL_FONT.display, fontWeight: weight, fontSize: size, lineHeight: 1 });
-
-/**
- * A number that changed on a poll: the old one slides up 6px and fades
- * (120ms snap), the new one comes in (240ms tension), and "+2" shows under it
- * in flameCore for 2.4s. Nothing moves under prefers-reduced-motion. The first
- * render never animates.
- */
-export function RollingNumber({ value, style, align = "end", className }: { value: number; style?: CSSProperties; align?: "start" | "end"; className?: string }) {
-  const [prev, setPrev] = useState(value);
-  const [change, setChange] = useState<{ from: number; delta: number; n: number } | null>(null);
-  // The "previous value" pattern: set during render, so the change paints in the same frame.
-  if (value !== prev) {
-    setChange({ from: prev, delta: value - prev, n: (change?.n ?? 0) + 1 });
-    setPrev(value);
-  }
-  return (
-    <span className={`${styles.roll} tabular-nums ${className ?? ""}`} style={style}>
-      {change && (
-        <span key={`out-${change.n}`} aria-hidden="true" className={styles.rollOut}>
-          {change.from}
-        </span>
-      )}
-      <span key={`in-${change?.n ?? 0}`} className={change ? styles.rollIn : undefined}>
-        {value}
-      </span>
-      {change && change.delta > 0 && (
-        <span key={`delta-${change.n}`} aria-hidden="true" className={`${styles.delta} ${align === "end" ? styles.deltaEnd : styles.deltaStart}`}>
-          +{change.delta}
-        </span>
-      )}
-    </span>
-  );
-}
 
 function Schools({ entry, you }: { entry: BoardRowEntry; you: boolean }) {
   const shown = entry.schools.slice(0, 2);

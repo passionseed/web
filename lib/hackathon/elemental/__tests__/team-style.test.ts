@@ -3,6 +3,7 @@ import {
   checkBoardName,
   checkStyleSave,
   clampStyle,
+  colorLabel,
   contrastRatio,
   DEFAULT_STYLE,
   lockedChoices,
@@ -156,6 +157,12 @@ describe("team name style CSS", () => {
       for (const end of pairColors(p.id, "ground")) expect(contrastRatio(end, "#0c0d0c")).toBeGreaterThanOrEqual(4.5);
       for (const end of pairColors(p.id, "paper")) expect(contrastRatio(end, "#f3efe6")).toBeGreaterThanOrEqual(3.5);
     }
+  });
+
+  it("calls ink cream where it is drawn cream (the dark ground), and ink on paper", () => {
+    expect(colorLabel("ink")).toBe("ครีม");
+    expect(colorLabel("ink", "paper")).toBe("หมึก");
+    expect(colorLabel("water")).toBe("น้ำ");
   });
 
   it("keeps six distinct voices and four effects, and never loads a banned font", () => {
