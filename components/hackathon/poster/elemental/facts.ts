@@ -25,7 +25,7 @@ const SCHEDULE: readonly ElementalSlot[] = [
   { date: "2026-12-07", time: null, th: "จบช่วงสร้างผลงาน ประกาศทีมที่เข้ารอบ", en: "Sprint ends. Finalists announced", kind: "build" },
   { date: "2026-12-08", time: null, th: "สัปดาห์ทดสอบ: หาผู้ใช้จริง เก็บหลักฐาน", en: "Test week: get real users, log evidence", kind: "build" },
   { date: "2026-12-10", time: null, th: "วันรัฐธรรมนูญ (วันหยุด): ได้วันสร้างงานเพิ่มอีกวัน", en: "Constitution Day (holiday): extra build day", kind: "build" },
-  { date: "2026-12-11", time: "23:59", th: "ส่งผลงานรอบสุดท้าย", en: "Final hand-in", kind: "due" },
+  { date: "2026-12-10", time: "23:00", th: "ส่งผลงานรอบสุดท้าย", en: "Final hand-in", kind: "due" },
   { date: "2026-12-12", time: null, th: "Demo Day และมอบรางวัล ที่ BAScii จุฬาฯ", en: "Demo Day and awards, onsite at BAScii, Chula", kind: "demo" },
 ];
 
@@ -37,6 +37,8 @@ const SCHEDULE: readonly ElementalSlot[] = [
  *   This replaces 5 to 7 December, 3 days over the long weekend (Angpao,
  *   2026-11-19), and the video hand-in on Mon 7 Dec at 23:00. CSII said OK to
  *   BAScii for 12 Dec (told by Big, 2026-11-26; Linear HAC-74). Hours: (fill in).
+ * - The final hand-in is Thu 10 Dec at 23:00 (Big, 2026-11-27). It replaces
+ *   Fri 11 Dec at 23:59, so Constitution Day is the last build day.
  * - Sponsor logos are locked on Mon 7 Dec (Big, 2026-11-26).
  * - Prices: ฿199 alone (told by Angpao, 2026-11-20; it replaces ฿190) and
  *   ฿149 a person with others (company-brain numbers.md).
