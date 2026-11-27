@@ -18,7 +18,6 @@ import {
   registrationBody,
   stepForServerPath,
   stepsFor,
-  suggestTeamName,
   validateStep,
   type BuddyPassOffer,
   type Draft,
@@ -104,11 +103,18 @@ export function JoinFlow({ source, utm, team, buddyPass, notice, backHref, demo 
   // Restore this tab's answers once, after hydration.
   useEffect(() => {
     const saved = load(team, buddyPass);
-    if (saved) {
-      setDraft({ ...emptyDraft(initialMode), ...saved.draft });
-      setStep(saved.step);
+    // A step saved before it was removed from the flow (e.g. "team") restarts at the first gap.
+    const restoredDraft = saved ? { ...emptyDraft(initialMode), ...saved.draft } : null;
+    const restoredStep = saved && restoredDraft && stepsFor(restoredDraft).includes(saved.step)
+      ? saved.step
+      : restoredDraft
+        ? (firstInvalidStep(restoredDraft) ?? "review")
+        : "mode";
+    if (restoredDraft) {
+      setDraft(restoredDraft);
+      setStep(restoredStep);
     }
-    window.history.replaceState({ ...window.history.state, elStep: saved?.step ?? "mode" }, "");
+    window.history.replaceState({ ...window.history.state, elStep: restoredStep }, "");
     setRestored(true);
     trackElemental({ step: "join", source, mode: initialMode ?? undefined });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -126,8 +132,6 @@ export function JoinFlow({ source, utm, team, buddyPass, notice, backHref, demo 
   // Count each step once, and put the cursor in its first box.
   useEffect(() => {
     if (!restored) return;
-    // The team name starts as "ทีม<nickname>", so starting a team is one tap; they can type over it.
-    if (step === "team") setDraft((d) => (d.teamName.trim() ? d : { ...d, teamName: suggestTeamName(d) }));
     trackElemental({ step: `step:${step}`, mode: draft.mode ?? undefined, source });
     if (step === "review") setEditing(false);
     const el = body.current?.querySelector<HTMLElement>("[data-autofocus]");
