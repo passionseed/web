@@ -6,7 +6,7 @@ import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { elementalRegistrationOpen, normalizeSource } from "@/lib/hackathon/elemental/registration";
 
 const TITLE = `บอร์ดโจทย์ | ${ELEMENTAL.edition} Hackathon`;
-const DESCRIPTION = `โจทย์ทั้ง 5 ธาตุของ ${ELEMENTAL.edition} Hackathon ดิน น้ำ ลม ไฟ อีเธอร์ โจทย์ตั้งต้น และโจทย์จากเจ้าของโจทย์ สำหรับนักเรียน ${ELEMENTAL.gradesTh}`;
+const DESCRIPTION = `โจทย์ทั้ง 5 ธาตุของ ${ELEMENTAL.edition} Hackathon ดิน น้ำ ลม ไฟ อีเธอร์ มีโจทย์ตั้งต้นและโจทย์จากเจ้าของโจทย์ สำหรับนักเรียน ${ELEMENTAL.gradesTh}`;
 
 export const metadata: Metadata = {
   title: TITLE,

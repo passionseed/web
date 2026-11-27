@@ -1,12 +1,19 @@
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 
-import { journeySteps, thaiDayDate } from "../journey-steps";
+import { buildDayCount, journeySteps, thaiDayDate } from "../journey-steps";
 
 describe("thaiDayDate", () => {
   it("puts the Thai weekday before the date", () => {
     expect(thaiDayDate("2026-12-04")).toBe("ศ. 4 ธ.ค.");
     expect(thaiDayDate("2026-12-05")).toBe("ส. 5 ธ.ค.");
     expect(thaiDayDate("2026-12-07")).toBe("จ. 7 ธ.ค.");
+  });
+});
+
+describe("buildDayCount", () => {
+  it("counts the build days up to the hand-in, not the Demo Day", () => {
+    expect(buildDayCount()).toBe(6);
+    expect(buildDayCount()).toBeLessThan(ELEMENTAL.days);
   });
 });
 
@@ -32,7 +39,7 @@ describe("journeySteps", () => {
     expect(byIcon.discord.whenTh).toBe("ศ. 4 ธ.ค. 19:00");
     expect(byIcon.talk.whenTh).toBe("ส. 5 ธ.ค.");
     expect(byIcon.build.whenTh).toBe("ส. 5 ธ.ค. ถึง พฤ. 10 ธ.ค.");
-    expect(byIcon.submit.whenTh).toBe("พฤ. 10 ธ.ค. ก่อน 23:00");
+    expect(byIcon.submit.whenTh).toBe("พฤ. 10 ธ.ค. ภายใน 23:00");
   });
 
   it("names each workshop, with its time only once facts.ts has one", () => {
@@ -42,7 +49,7 @@ describe("journeySteps", () => {
       expect(byIcon.talk.helpTh).toMatch(/^เวิร์กช็อปสอนสัมภาษณ์ \d/);
     } else {
       expect(byIcon.talk.helpTh).toBe("มีเวิร์กช็อปสอนสัมภาษณ์");
-      expect(byIcon.build.helpTh).toBe("มีเวิร์กช็อปพาสร้าง");
+      expect(byIcon.build.helpTh).toBe("มีเวิร์กช็อปพาทำ");
       expect(byIcon.submit.helpTh).toBe("มีเวิร์กช็อปการนำเสนอ");
     }
   });

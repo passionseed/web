@@ -19,7 +19,7 @@ const ICONS: Record<StepIcon, LucideIcon> = {
 };
 
 /** The promise over all six steps: beginners can do this, and every step has help. */
-export const BEGINNER_LINE_TH = "มือใหม่ก็ทำได้ ทุกขั้นมีคนช่วย";
+export const BEGINNER_LINE_TH = "มือใหม่ก็ทำได้ มีตัวช่วยทุกขั้นตอน";
 
 type Links = { boardHref?: string; joinHref?: string };
 
@@ -132,7 +132,7 @@ export function JourneyStepsCompact({ joinHref, stepsHref }: { joinHref?: string
               </span>
               {here ? (
                 <span className="mt-2 inline-block bg-[#ffd57a] px-1.5 text-[10px] text-[#0c0d0c]" style={{ fontFamily: EL_FONT.mono }}>
-                  อยู่ตรงนี้
+                  คุณอยู่ตรงนี้
                 </span>
               ) : null}
             </>

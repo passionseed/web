@@ -302,7 +302,7 @@ function ElementalExperienceInner({
           className={`${styles.textLink} text-[1.6rem] italic text-[#faf8f4] sm:text-[2rem]`}
           style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}
         >
-          ดูทุกโจทย์บนบอร์ดโจทย์ →
+          ดูบอร์ดโจทย์ →
         </Link>
       </section>
 

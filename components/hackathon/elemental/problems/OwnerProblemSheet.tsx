@@ -134,7 +134,7 @@ export function OwnerProblemSheet({
                   style={{ fontFamily: BODY_FONT }}
                 >
                   <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
-                  ดูเพจ
+                  ดูเว็บไซต์
                 </a>
               ) : null}
             </div>
@@ -158,7 +158,7 @@ export function OwnerProblemSheet({
                   className="h-3.5 w-3.5"
                   strokeWidth={2.25}
                 />
-                อยากให้ทีมคิด
+                สิ่งที่อยากให้ทีมคิด
               </p>
               <p
                 className="mt-1 text-xl text-[#faf8f4] sm:text-[1.5rem]"
@@ -180,7 +180,7 @@ export function OwnerProblemSheet({
             style={{ fontFamily: BODY_FONT }}
           >
             <Flag aria-hidden="true" className="h-3.5 w-3.5" />
-            ดูโจทย์ตั้งต้น{elementLabel(chapter.th)}
+            ดูโจทย์ตั้งต้นของ{elementLabel(chapter.th)}
           </button>
         </div>
 
@@ -191,7 +191,7 @@ export function OwnerProblemSheet({
               className="flex w-full items-center justify-center gap-2 rounded-full px-5 py-3.5 text-base text-[#0c0d0c] transition-opacity hover:opacity-90"
               style={{ fontFamily: BODY_FONT, backgroundColor: chapter.color }}
             >
-              สมัครทีม แก้โจทย์นี้
+              สมัครเข้าร่วม
               <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
             </a>
           </div>

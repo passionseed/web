@@ -68,11 +68,23 @@ function slots() {
   };
 }
 
-/** "เวิร์กช็อปพาสร้าง ส. 19:00", or "มีเวิร์กช็อปพาสร้าง" while its time isn't set. */
+/** "เวิร์กช็อปพาทำ ส. 19:00", or "มีเวิร์กช็อปพาทำ" while its time isn't set. */
 function workshopHelp(nameTh: string, slot: Slot | undefined, withWeekday: boolean): string {
   if (!slot?.time) return `มี${nameTh}`;
   const day = withWeekday ? `${thaiDayDate(slot.date).split(" ")[0]} ` : "";
   return `${nameTh} ${day}${startTime(slot.time)}`;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * How many days teams build: the first build day to the final hand-in,
+ * counting both (Sat 5 to Thu 10 Dec is 6). Not ELEMENTAL.days, which runs
+ * to the Demo Day, after the hand-in.
+ */
+export function buildDayCount(): number {
+  const { buildFrom, buildTo } = slots();
+  return Math.round((Date.parse(buildTo) - Date.parse(buildFrom)) / DAY_MS) + 1;
 }
 
 export function journeySteps(): JourneyStep[] {
@@ -82,19 +94,19 @@ export function journeySteps(): JourneyStep[] {
       icon: "pick",
       doTh: "เลือกโจทย์",
       whenTh: "ตอนนี้",
-      helpTh: `ทุกธาตุมีโจทย์เริ่มง่าย ทำจบได้ใน ${ELEMENTAL.days} วัน`,
+      helpTh: `ทุกธาตุมีโจทย์ตั้งต้น ทำจบได้ใน ${buildDayCount()} วัน`,
       link: "board",
     },
     {
       icon: "signup",
-      doTh: `สมัคร ชวนเพื่อน ${ELEMENTAL.teamMin}–${ELEMENTAL.teamMax} คน`,
+      doTh: `สมัคร ทีมละ ${ELEMENTAL.teamMin}–${ELEMENTAL.teamMax} คน`,
       whenTh: `ภายใน ${thaiDayDate(ELEMENTAL.registrationClosesOn)}`,
-      helpTh: "มาคนเดียวได้ เราจับคู่ทีมให้",
+      helpTh: "มาคนเดียวได้ เราหาทีมให้",
       link: "join",
     },
     {
       icon: "discord",
-      doTh: "เข้า Discord มาเปิดงาน",
+      doTh: "เข้า Discord ร่วมเปิดงาน",
       whenTh: `${thaiDayDate(opening.date)} ${opening.time}`,
       helpTh: "มีพี่เลี้ยงช่วยตลอดงาน",
     },
@@ -106,14 +118,14 @@ export function journeySteps(): JourneyStep[] {
     },
     {
       icon: "build",
-      doTh: "สร้าง แล้วให้เขาลองใช้",
+      doTh: "สร้าง แล้วให้คนที่เจอปัญหาลองใช้",
       whenTh: `${thaiDayDate(buildFrom)} ถึง ${thaiDayDate(buildTo)}`,
-      helpTh: workshopHelp("เวิร์กช็อปพาสร้าง", build, true),
+      helpTh: workshopHelp("เวิร์กช็อปพาทำ", build, true),
     },
     {
       icon: "submit",
       doTh: "อัดคลิป ส่งผลงาน",
-      whenTh: `${thaiDayDate(handIn.date)} ก่อน ${handIn.time}`,
+      whenTh: `${thaiDayDate(handIn.date)} ภายใน ${handIn.time}`,
       helpTh: workshopHelp("เวิร์กช็อปการนำเสนอ", pitch, true),
     },
   ];

@@ -143,7 +143,7 @@ function Tile({ column, tile, index, seed, onOpen }: { column: BoardColumn; tile
 function Legend({ counts }: { counts: ReturnType<typeof boardCounts> }) {
   const items: { icon: LucideIcon; label: string; n: number }[] = [
     { icon: Flag, label: "โจทย์ตั้งต้น", n: counts.starter },
-    { icon: Megaphone, label: "เจ้าของโจทย์", n: counts.owner },
+    { icon: Megaphone, label: "จากเจ้าของโจทย์", n: counts.owner },
     { icon: Lock, label: "รอเปิด", n: counts.locked },
   ];
   return (
