@@ -42,8 +42,10 @@ export type BoardYou = {
   key: string;
   /** Their share page, for "share my link". */
   shareHref: string | null;
-  /** Their pay page, where the board name is set. */
+  /** Their pay page. */
   payHref: string | null;
+  /** Their team editor (/hackathon/join/<token>/team), where the board name and style are set. */
+  editHref?: string | null;
   devices: number;
   named: boolean;
 };

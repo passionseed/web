@@ -1,0 +1,146 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+
+import {
+  nextUnlock,
+  STYLE_PART_TH,
+  STYLE_PARTS,
+  TEAM_STYLE_TIERS,
+  type NameSurface,
+  type TeamStyleCardData,
+} from "@/lib/hackathon/elemental/team-style";
+import { BOARD_YOU_KEY, type BoardYou } from "@/lib/hackathon/elemental/team-style-phase";
+
+import { Body, EditorialLink } from "../share/ui";
+import { StyledTeamName } from "./StyledTeamName";
+
+/**
+ * The team's line, on the pay page's team card (inside its dark slab) and on
+ * the share page: the board name as the board draws it, then one text line
+ * (rank · what's unlocked · what unlocks next), then "แต่งชื่อ →" to the team
+ * editor (/hackathon/join/<token>/team) and "กระดาน →". No meter: the team's
+ * progress is the text line. Colours come from the surface's CSS variables;
+ * the name's colour variant follows the surface around it (the dark ground
+ * unless the background is light), or pass surface.
+ * Usage: <TeamLine token={token} data={teamStyle} demo={demo} />
+ */
+
+// copy: placeholder — Angpao rewrites
+const COPY = {
+  label: "ทีมบนกระดาน",
+  labelSolo: "ชื่อของฉันบนกระดาน",
+  noName: "ยังไม่มีชื่อบนกระดาน",
+  rank: (rank: number, of: number) => `อันดับ ${rank} จาก ${of}`,
+  finalRank: (rank: number, of: number) => `ผลสุดท้าย อันดับ ${rank} จาก ${of}`,
+  offBoard: "ยังไม่ขึ้นกระดาน",
+  setToJoin: "ตั้งชื่อเพื่อขึ้นกระดาน",
+  toBoard: (n: number) => `อีก ${n} เครื่องขึ้นกระดาน`,
+  unlocked: (part: string) => `ปลดล็อก${part}แล้ว`,
+  next: (left: number, part: string) => `อีก ${left} เครื่อง ปลดล็อก${part}`,
+  allOpen: "ปลดล็อกครบแล้ว",
+  frozen: "ปิดนับแล้ว แต่งชื่อได้ถึงวัน Demo Day",
+  closed: "ปิดแก้ไขแล้ว",
+  edit: "แต่งชื่อ",
+  setName: "ตั้งชื่อ",
+  board: "กระดาน",
+};
+
+/** The status line's parts, in order. Exported for tests and the editor. */
+export function teamLineParts(data: Pick<TeamStyleCardData, "boardName" | "devices" | "rank" | "teamsOnBoard" | "final" | "editable">): string[] {
+  const named = Boolean(data.boardName);
+  const rank = data.rank ? (data.final ? COPY.finalRank : COPY.rank)(data.rank, data.teamsOnBoard) : named ? COPY.offBoard : null;
+  let progress: string[];
+  if (data.final) progress = [data.editable ? COPY.frozen : COPY.closed];
+  else if (!named) progress = [COPY.setToJoin];
+  else if (data.devices < 1) progress = [COPY.toBoard(1)];
+  else {
+    const next = nextUnlock(data.devices);
+    const last = [...STYLE_PARTS].reverse().find((p) => data.devices >= TEAM_STYLE_TIERS[p]);
+    progress = next
+      ? [...(last ? [COPY.unlocked(STYLE_PART_TH[last])] : []), COPY.next(next.left, STYLE_PART_TH[next.part])]
+      : [COPY.allOpen];
+  }
+  return [...(rank ? [rank] : []), ...progress];
+}
+
+/** Light or dark, from the --el-bg the surface set (ui.tsx surfaceVars). */
+function surfaceFrom(el: HTMLElement | null): NameSurface | null {
+  if (!el) return null;
+  const bg = getComputedStyle(el).getPropertyValue("--el-bg").trim();
+  const m = /^#([0-9a-f]{6})$/i.exec(bg);
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  const lum = (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
+  return lum > 0.5 ? "paper" : "ground";
+}
+
+export function TeamLine({
+  token,
+  data,
+  demo,
+  surface,
+}: {
+  token: string;
+  data: TeamStyleCardData;
+  demo?: boolean;
+  /** Kept for PayView: TeamLine never draws a meter, so it changes nothing. */
+  hideMeter?: boolean;
+  /** The name's colour variant. Without it, read from the surface around it. */
+  surface?: NameSurface;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [detected, setDetected] = useState<NameSurface>("ground");
+  useEffect(() => {
+    if (surface) return;
+    const found = surfaceFrom(ref.current);
+    if (found) setDetected(found);
+  }, [surface]);
+
+  const named = Boolean(data.boardName);
+  const payHref = demo ? "/hackathon/join/demo" : `/hackathon/join/${token}`;
+  const editHref = data.editHref ?? `/hackathon/join/${token}/team`;
+  const boardHref = `/hackathon/elemental/leaderboard${demo ? "/demo" : ""}#${data.key}`;
+
+  // Lets the board (same tab) mark "your team" and link back, without the pay token ever going in a URL.
+  useEffect(() => {
+    const you: BoardYou = { key: data.key, shareHref: data.shareHref, payHref, editHref, devices: data.devices, named };
+    try {
+      sessionStorage.setItem(BOARD_YOU_KEY, JSON.stringify(you));
+    } catch {
+      // Private mode or storage off: the board just won't mark the row.
+    }
+  }, [data.key, data.shareHref, data.devices, payHref, editHref, named]);
+
+  return (
+    <div ref={ref} data-team-line="" role="group" aria-label={data.solo ? COPY.labelSolo : COPY.label}>
+      <StyledTeamName
+        name={data.boardName}
+        style={data.style}
+        surface={surface ?? detected}
+        placeholder={COPY.noName}
+        className="block"
+        sizeStyle={named ? { fontSize: 28, lineHeight: 1.3 } : { fontSize: 22, lineHeight: 1.4 }}
+      />
+      {/* Each part moves to the next line whole, so Thai never breaks inside "ปลดล็อก…". */}
+      <Body secondary className="mt-1">
+        {teamLineParts(data).map((part, i) => (
+          <span key={i}>
+            {i > 0 && " · "}
+            <span className="inline-block">{part}</span>
+          </span>
+        ))}
+      </Body>
+      <div className="mt-3 flex flex-wrap items-center gap-x-6">
+        {data.editable && (
+          <EditorialLink href={editHref} size="md" tone="action">
+            {named ? COPY.edit : COPY.setName}
+          </EditorialLink>
+        )}
+        <EditorialLink href={boardHref} size="md">
+          {COPY.board}
+        </EditorialLink>
+      </div>
+    </div>
+  );
+}

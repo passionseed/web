@@ -21,64 +21,85 @@ export const TEAM_STYLE_TIERS = { color: 10, font: 25, effect: 50 } as const;
 export type StylePart = keyof typeof TEAM_STYLE_TIERS;
 export const STYLE_PARTS: readonly StylePart[] = ["color", "font", "effect"];
 
+// copy: placeholder — Angpao rewrites
+/** What each unlock opens, in Thai (the team line, the editor and the board). */
+export const STYLE_PART_TH: Record<StylePart, string> = { color: "สี", font: "ฟอนต์", effect: "เอฟเฟกต์" };
+
 /** The team meter's length: the last unlock. */
 export const TEAM_METER_GOAL = TEAM_STYLE_TIERS.effect;
 
 /**
  * Fonts that carry Thai and Latin (next/font/google, see
  * components/hackathon/elemental/team-style/fonts.ts). Trirong, the Elemental
- * type, is the free default. Mitr and bold Kanit are banned.
+ * type, is the free default; its Light Italic is the "Elemental" wordmark's
+ * voice. Each other font is one distinct voice: pixel (Chakra Petch), poster
+ * (Chonburi), handwriting (Sriracha), sign painter (Pattaya). Type review,
+ * 2026-11-27: Charm, Kodchasan and Itim were dropped (Charm's tone marks hit
+ * the line above and it can't be read small; the other two repeated a voice).
+ * Mitr and bold Kanit are banned.
  */
 export const NAME_FONTS = [
-  { id: "trirong", label: "Trirong", family: "var(--font-trirong), 'Noto Serif Thai', serif", weight: 400 },
-  { id: "chakra", label: "Chakra Petch", family: "var(--font-ts-chakra), 'Noto Sans Thai', sans-serif", weight: 600 },
-  { id: "kodchasan", label: "Kodchasan", family: "var(--font-ts-kodchasan), 'Noto Sans Thai', sans-serif", weight: 600 },
-  { id: "itim", label: "Itim", family: "var(--font-ts-itim), 'Noto Sans Thai', sans-serif", weight: 400 },
-  { id: "sriracha", label: "Sriracha", family: "var(--font-ts-sriracha), 'Noto Sans Thai', cursive", weight: 400 },
-  { id: "pattaya", label: "Pattaya", family: "var(--font-ts-pattaya), 'Noto Sans Thai', sans-serif", weight: 400 },
-  { id: "chonburi", label: "Chonburi", family: "var(--font-ts-chonburi), 'Noto Serif Thai', serif", weight: 400 },
-  { id: "charm", label: "Charm", family: "var(--font-ts-charm), 'Noto Serif Thai', cursive", weight: 700 },
+  { id: "trirong", label: "Trirong", family: "var(--font-trirong), 'Noto Serif Thai', serif", weight: 400, style: "normal" },
+  { id: "trirong-italic", label: "Trirong Italic", family: "var(--font-trirong), 'Noto Serif Thai', serif", weight: 300, style: "italic" },
+  { id: "chakra", label: "Chakra Petch", family: "var(--font-ts-chakra), 'Noto Sans Thai', sans-serif", weight: 600, style: "normal" },
+  { id: "chonburi", label: "Chonburi", family: "var(--font-ts-chonburi), 'Noto Serif Thai', serif", weight: 400, style: "normal" },
+  { id: "sriracha", label: "Sriracha", family: "var(--font-ts-sriracha), 'Noto Sans Thai', cursive", weight: 400, style: "normal" },
+  { id: "pattaya", label: "Pattaya", family: "var(--font-ts-pattaya), 'Noto Sans Thai', sans-serif", weight: 400, style: "normal" },
 ] as const;
 
+/** Fonts that were on the list once: a saved choice moves to its nearest voice, never back to the default. */
+const FONT_ALIASES: Record<string, (typeof NAME_FONTS)[number]["id"]> = { charm: "trirong-italic", kodchasan: "chakra", itim: "sriracha" };
+
 /**
- * Colours from the Elemental palette (components/hackathon/poster/elemental/brand.ts),
- * darkened where needed so each reads at 3.5:1 or better on the cream page.
- * Ink is the free default.
+ * Colours from the Elemental palette (components/hackathon/poster/elemental/brand.ts).
+ * hex is for the cream paper (3.5:1 or better on #f3efe6); dark is the same
+ * colour for the dark ground (4.5:1 or better on #0c0d0c), where the board,
+ * the editor and the share slab live. Ink (cream on the ground) is the free default.
  */
 export const NAME_COLORS = [
-  { id: "ink", th: "หมึก", hex: "#1d211f" },
-  { id: "ember", th: "ถ่านแดง", hex: "#b8301a" },
-  { id: "flame", th: "ไฟ", hex: "#c94f17" },
-  { id: "amber", th: "อำพัน", hex: "#946208" },
-  { id: "earth", th: "ดิน", hex: "#6b4423" },
-  { id: "leaf", th: "ใบไม้", hex: "#4f6f16" },
-  { id: "water", th: "น้ำ", hex: "#0e7470" },
-  { id: "air", th: "ลม", hex: "#56616b" },
-  { id: "aether", th: "อีเธอร์", hex: "#5b3fc4" },
-  { id: "rose", th: "กุหลาบ", hex: "#b02a5b" },
+  { id: "ink", th: "หมึก", hex: "#1d211f", dark: "#f3efe6" },
+  { id: "ember", th: "ถ่านแดง", hex: "#b8301a", dark: "#f2674a" },
+  { id: "flame", th: "ไฟ", hex: "#c94f17", dark: "#f99a3a" },
+  { id: "amber", th: "อำพัน", hex: "#946208", dark: "#dcae4e" },
+  { id: "earth", th: "ดิน", hex: "#6b4423", dark: "#c79a6b" },
+  { id: "leaf", th: "ใบไม้", hex: "#4f6f16", dark: "#9cc23a" },
+  { id: "water", th: "น้ำ", hex: "#0e7470", dark: "#38c9c2" },
+  { id: "air", th: "ลม", hex: "#56616b", dark: "#aab4bd" },
+  { id: "aether", th: "อีเธอร์", hex: "#5b3fc4", dark: "#9d7bff" },
+  { id: "rose", th: "กุหลาบ", hex: "#b02a5b", dark: "#f2789f" },
 ] as const;
 
 export type ColorId = (typeof NAME_COLORS)[number]["id"];
 
-/**
- * The only gradients: neighbouring colours from the palette, so a name reads
- * as fire, river or soil, never as a rainbow. Claude's pick of pairs.
- */
-export const NAME_PAIRS = [
-  { id: "fire", from: "ember", to: "flame" },
-  { id: "dusk", from: "flame", to: "amber" },
-  { id: "river", from: "water", to: "leaf" },
-  { id: "soil", from: "earth", to: "amber" },
-] as const satisfies readonly { id: string; from: ColorId; to: ColorId }[];
+/** Where a name is drawn: the dark ground (board, editor, share slab) or the cream paper. */
+export type NameSurface = "ground" | "paper";
 
-/** Effects. Gradient uses a set pair (NAME_PAIRS); the others use the colour. Solid is the free default. */
+/**
+ * The only gradients, from the type review (2026-11-27): each pair's two ends
+ * differ enough to read as a gradient on a short Thai name, never a rainbow.
+ */
+// copy: placeholder — Angpao rewrites (th)
+export const NAME_PAIRS = [
+  { id: "fire", th: "ไฟป่า", from: "ember", to: "amber" },
+  { id: "river", th: "สายน้ำ", from: "water", to: "leaf" },
+  { id: "dusk", th: "ฟ้าค่ำ", from: "aether", to: "rose" },
+  { id: "soil", th: "ผืนดิน", from: "earth", to: "flame" },
+] as const satisfies readonly { id: string; th: string; from: ColorId; to: ColorId }[];
+
+/**
+ * Effects. Gradient uses a set pair (NAME_PAIRS); the others use the colour.
+ * Solid is the free default. Offset is a hard shadow with no blur, like a
+ * misregistered print (it replaced the soft "pop"); outline was dropped
+ * because Thai letters overlap inside and the seams show.
+ */
 export const NAME_EFFECTS = [
   { id: "solid", th: "สีเดียว" },
-  { id: "gradient", th: "ไล่สี" },
-  { id: "pop", th: "เงาเด้ง" },
-  { id: "outline", th: "ตัวกลวง" },
   { id: "marker", th: "ปากกาเน้น" },
+  { id: "offset", th: "เงาเหลื่อม" },
+  { id: "gradient", th: "ไล่สี" },
 ] as const;
+
+const EFFECT_ALIASES: Record<string, (typeof NAME_EFFECTS)[number]["id"]> = { pop: "offset", outline: "solid" };
 
 export type FontId = (typeof NAME_FONTS)[number]["id"];
 export type PairId = (typeof NAME_PAIRS)[number]["id"];
@@ -103,21 +124,25 @@ export const colorOf = (id: ColorId) => NAME_COLORS.find((c) => c.id === id) ?? 
 export const pairOf = (id: PairId) => NAME_PAIRS.find((p) => p.id === id) ?? NAME_PAIRS[0];
 
 /**
- * A style read back from the database: anything unknown falls back to the
- * default, so an old or hand-edited row can never break a page.
+ * A style read back from the database: a font or effect that has left the
+ * lists moves to its nearest replacement (FONT_ALIASES, EFFECT_ALIASES), and
+ * anything else unknown falls back to the default, so an old or hand-edited
+ * row can never break a page.
  */
 export function readStyle(raw: unknown): TeamNameStyle {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { ...DEFAULT_STYLE };
   const r = raw as Record<string, unknown>;
+  const font = typeof r.font === "string" ? (FONT_ALIASES[r.font] ?? r.font) : r.font;
+  const effect = typeof r.effect === "string" ? (EFFECT_ALIASES[r.effect] ?? r.effect) : r.effect;
   return {
-    font: isFont(r.font) ? r.font : DEFAULT_STYLE.font,
+    font: isFont(font) ? font : DEFAULT_STYLE.font,
     color: isColor(r.color) ? r.color : DEFAULT_STYLE.color,
-    effect: isEffect(r.effect) ? r.effect : DEFAULT_STYLE.effect,
+    effect: isEffect(effect) ? effect : DEFAULT_STYLE.effect,
     pair: isPair(r.pair) ? r.pair : DEFAULT_STYLE.pair,
   };
 }
 
-/** A style sent by a browser: every field must be on the lists, nothing else allowed. Null when it isn't. */
+/** A style sent by a browser: every field must be on the current lists (no old ids), nothing else allowed. Null when it isn't. */
 export function parseStyle(raw: unknown): TeamNameStyle | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
   const r = raw as Record<string, unknown>;
@@ -200,23 +225,42 @@ function rgba(hex: string, alpha: number): string {
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
 }
 
-/** The two colours of a set gradient pair. */
-export function pairColors(id: PairId): [string, string] {
+/** A colour as it is drawn on a surface. */
+export function nameColor(id: ColorId, surface: NameSurface = "ground"): string {
+  const c = colorOf(id);
+  return surface === "ground" ? c.dark : c.hex;
+}
+
+/** The two colours of a set gradient pair, on a surface. */
+export function pairColors(id: PairId, surface: NameSurface = "ground"): [string, string] {
   const p = pairOf(id);
-  return [colorOf(p.from).hex, colorOf(p.to).hex];
+  return [nameColor(p.from, surface), nameColor(p.to, surface)];
+}
+
+const COOL = new Set<ColorId>(["leaf", "water", "air", "aether"]);
+
+/**
+ * The offset effect's shadow: water under warm colours, ember under cool
+ * ones. On the dark ground they are the paper colours, so the shadow sits
+ * back instead of glowing.
+ */
+export function offsetShadowColor(id: ColorId, surface: NameSurface = "ground"): string {
+  if (surface === "ground") return COOL.has(id) ? colorOf("ember").hex : colorOf("water").hex;
+  return COOL.has(id) ? colorOf("ember").hex : "#38c9c2";
 }
 
 /**
- * The inline style for a name. Room is padded above and below for Thai tone
- * marks, so a gradient clipped to the text never cuts them off.
+ * The inline style for a name on a surface (default: the dark ground). Room
+ * is padded above and below for Thai tone marks, so a gradient clipped to the
+ * text never cuts them off.
  */
-export function nameStyleCss(style: TeamNameStyle): CSSProperties {
+export function nameStyleCss(style: TeamNameStyle, surface: NameSurface = "ground"): CSSProperties {
   const font = fontOf(style.font);
-  const c1 = colorOf(style.color).hex;
-  const base: CSSProperties = { fontFamily: font.family, fontWeight: font.weight, color: c1 };
+  const c1 = nameColor(style.color, surface);
+  const base: CSSProperties = { fontFamily: font.family, fontWeight: font.weight, fontStyle: font.style, color: c1 };
   switch (style.effect) {
     case "gradient": {
-      const [from, to] = pairColors(style.pair);
+      const [from, to] = pairColors(style.pair, surface);
       return {
         ...base,
         color: from,
@@ -230,26 +274,36 @@ export function nameStyleCss(style: TeamNameStyle): CSSProperties {
         boxDecorationBreak: "clone",
       };
     }
-    case "pop":
-      return { ...base, textShadow: `0.06em 0.06em 0 ${rgba(c1, 0.28)}` };
-    case "outline":
+    case "offset":
+      return { ...base, textShadow: `0.05em 0.05em 0 ${offsetShadowColor(style.color, surface)}` };
+    case "marker": {
+      const band = rgba(c1, surface === "ground" ? 0.26 : 0.22);
       return {
         ...base,
-        WebkitTextFillColor: "transparent",
-        WebkitTextStroke: `max(1px, 0.035em) ${c1}`,
-      };
-    case "marker":
-      return {
-        ...base,
-        backgroundImage: `linear-gradient(transparent 55%, ${rgba(c1, 0.22)} 55%, ${rgba(c1, 0.22)} 92%, transparent 92%)`,
+        backgroundImage: `linear-gradient(transparent 55%, ${band} 55%, ${band} 92%, transparent 92%)`,
         padding: "0 0.12em",
         margin: "0 -0.12em",
         WebkitBoxDecorationBreak: "clone",
         boxDecorationBreak: "clone",
       };
+    }
     default:
       return base;
   }
+}
+
+/** WCAG contrast ratio of two #rrggbb colours (tests and the dark-variant check). */
+export function contrastRatio(a: string, b: string): number {
+  const lum = (hex: string) => {
+    const n = parseInt(hex.slice(1), 16);
+    const [r, g, bl] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => {
+      const s = c / 255;
+      return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * bl;
+  };
+  const [x, y] = [lum(a), lum(b)];
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
 }
 
 /** What the pay page's team row needs (components/hackathon/elemental/team-style/TeamStyleRow.tsx). */
@@ -273,4 +327,6 @@ export type TeamStyleCardData = {
   final: boolean;
   /** This person's share page, for the board's "share my link" button. */
   shareHref: string | null;
+  /** The team editor; without it /hackathon/join/<token>/team. The demo pages set their own. */
+  editHref?: string;
 };

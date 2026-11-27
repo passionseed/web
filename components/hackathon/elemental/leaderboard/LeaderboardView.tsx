@@ -1,43 +1,40 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
-import { ELEMENTAL, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
-import type { LeaderboardPayload, PublicBoardEntry } from "@/lib/hackathon/elemental/team-style-board";
+import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
+import { STYLE_PARTS, STYLE_PART_TH, TEAM_STYLE_TIERS } from "@/lib/hackathon/elemental/team-style";
+import { rankBoard, type LeaderboardPayload, type PublicBoardEntry } from "@/lib/hackathon/elemental/team-style-board";
 import { BOARD_POLL_MS, BOARD_YOU_KEY, type BoardYou } from "@/lib/hackathon/elemental/team-style-phase";
 
-import { StyledTeamName } from "../team-style/StyledTeamName";
-import { TeamMeterStrip } from "../team-style/TeamMeter";
+import { Body, EditorialLink, FactStrip, Fine, H1, H2, Page, PrimaryButton, SkyBand, StickyBar, Tag } from "../share/ui";
+import { BoardRow, RestHeader } from "./BoardRow";
 
 /**
- * The public team board. Board names and school names and two numbers only:
- * never a person's name. While live and visible it asks for new numbers every
- * BOARD_POLL_MS; after sign-up close it shows the frozen final standings.
- * Opened from a pay page in the same tab, it marks that team "ทีมคุณ".
+ * The public team board, on the landing's dark ground: the sky band and its
+ * title, a Space Mono update stamp, then one row per team with 1px rules and
+ * Trirong numbers (the first three larger, #1 in flameCore). Board names and
+ * school names and two numbers only: never a person's name. Opened from a pay
+ * page in the same tab, it marks that team's row (a 2px flameCore rule and
+ * [ทีมคุณ]) and pins it above the sticky bar while it's further down. While
+ * live and visible it asks for new numbers every BOARD_POLL_MS; changed
+ * numbers roll in. After sign-up close it shows the frozen final standings.
  * Needs trirong and teamStyleFonts on a wrapper.
  */
 
 // copy: placeholder — Angpao rewrites
 const COPY = {
   title: "กระดานทีม",
-  lead: "ทีมที่ชวนเพื่อนมาสมัครได้มากที่สุด นับจากลิงก์แชร์ของทุกคนในทีม",
-  order: "เรียงตามที่นั่งที่จ่ายแล้ว ถ้าเท่ากันดูจำนวนเครื่องที่เปิดลิงก์",
-  updated: "อัปเดตล่าสุด",
-  final: "ผลสุดท้าย",
-  countedUntil: (when: string) => `นับถึงปิดรับสมัคร ${when}`,
-  paid: "จ่ายแล้ว",
-  paidLong: "ที่นั่งจ่ายแล้ว",
-  devices: "เครื่อง",
-  devicesLong: "เครื่องเปิดลิงก์",
-  rankTeam: "อันดับ · ทีม",
-  solo: "มาคนเดียว",
-  you: "ทีมคุณ",
+  lead: "ทีมที่ชวนเพื่อนมาสมัครได้มากที่สุด",
+  explain: "นับจากลิงก์แชร์ของทุกคนในทีม เรียงตามที่นั่งที่จ่ายแล้ว ถ้าเท่ากันดูจำนวนเครื่องที่เปิดลิงก์",
+  updated: (time: string) => `อัปเดต ${time}`,
+  final: (when: string) => `ผลสุดท้าย · นับถึง ${when}`,
   youOff: "ทีมคุณยังไม่ขึ้นกระดาน",
-  youNeedName: "ตั้งชื่อเพื่อขึ้นกระดาน",
-  youNeedDevices: (n: number) => `อีก ${n} เครื่องขึ้นกระดาน`,
+  youNeedName: "ตั้งชื่อบนกระดานก่อน แล้วทีมจะขึ้นเมื่อมีคนเปิดลิงก์แชร์เครื่องแรก",
+  youNeedDevices: (n: number) => `อีก ${n} เครื่องที่เปิดลิงก์แชร์ ทีมคุณก็ขึ้นกระดาน`,
   youSetName: "ตั้งชื่อทีม",
+  shareMine: "ส่งลิงก์ของฉัน →",
+  signUp: "สมัคร →",
   emptyTitle: "ยังไม่มีทีมบนกระดาน",
   empty: "ทีมแรกที่ตั้งชื่อและมีคนเปิดลิงก์แชร์ ขึ้นกระดานทันที",
   emptyFinal: "ไม่มีทีมบนกระดาน",
@@ -45,18 +42,16 @@ const COPY = {
   soon: "กระดานนี้จะโชว์ทีมที่ชวนเพื่อนมาสมัครได้มากที่สุด นับจากลิงก์แชร์ของทุกคนในทีม",
   unavailable: "โหลดกระดานไม่ได้ตอนนี้ หน้านี้จะลองใหม่เอง",
   joinTitle: "อยากให้ทีมขึ้นกระดาน",
-  join: "ตั้งชื่อทีมบนกระดานที่หน้าที่นั่ง แล้วแชร์ลิงก์ของตัวเอง ทุกเครื่องที่เปิดลิงก์นับให้ทีม ยิ่งมากยิ่งแต่งชื่อทีมได้มาก",
+  join: "ตั้งชื่อทีมบนกระดานที่หน้าของฉัน แล้วแชร์ลิงก์ของตัวเอง ทุกเครื่องที่เปิดลิงก์นับให้ทีม ยิ่งมากยิ่งแต่งชื่อทีมได้มาก",
   joinYou: "แชร์ลิงก์ของตัวเองต่อ ทุกเครื่องที่เปิดลิงก์นับให้ทีม ยิ่งมากยิ่งแต่งชื่อทีมได้มาก",
-  unlocks: "ครบเท่านี้ ปลดล็อกการแต่งชื่อทีม",
+  unlockTag: (n: number) => `${n} เครื่อง`,
   joinNote: "เปิดซ้ำจากเครื่องเดิมนับครั้งเดียว ทีมงานซ่อนชื่อที่ไม่เหมาะสมได้",
   finalNote: "ปิดรับสมัครแล้ว ตัวเลขหยุดนับ ทีมงานซ่อนชื่อที่ไม่เหมาะสมได้",
-  signUp: `สมัคร ${ELEMENTAL.edition}`,
-  shareMine: "แชร์ลิงก์ของฉัน",
-  back: `กลับหน้า ${ELEMENTAL.edition} Hackathon`,
+  back: `หน้า ${ELEMENTAL.edition} Hackathon`,
+  live: (change: string) => `ทีมคุณ ${change}`,
+  liveDevices: (d: number, total: number) => `เพิ่ม ${d} เครื่อง รวม ${total}`,
+  livePaid: (d: number, total: number) => `จ่ายเพิ่ม ${d} ที่ รวม ${total}`,
 };
-
-const line = "rgba(29,33,31,0.14)";
-const youTint = "rgba(236,100,36,0.08)";
 
 const bangkok = (iso: string, opts: Intl.DateTimeFormatOptions) =>
   new Intl.DateTimeFormat("th-TH", { timeZone: "Asia/Bangkok", ...opts }).format(new Date(iso));
@@ -68,16 +63,45 @@ function readYou(): BoardYou | null {
     if (!raw) return null;
     const v = JSON.parse(raw) as Partial<BoardYou>;
     return typeof v.key === "string"
-      ? { key: v.key, shareHref: v.shareHref ?? null, payHref: v.payHref ?? null, devices: Number(v.devices) || 0, named: Boolean(v.named) }
+      ? {
+          key: v.key,
+          shareHref: v.shareHref ?? null,
+          payHref: v.payHref ?? null,
+          editHref: v.editHref ?? null,
+          devices: Number(v.devices) || 0,
+          named: Boolean(v.named),
+        }
       : null;
   } catch {
     return null;
   }
 }
 
-export function LeaderboardView({ initial, poll, you: youProp }: { initial: LeaderboardPayload; poll: boolean; you?: BoardYou | null }) {
+/** Demo only: a few devices (and now and then a paid seat) arrive, re-ranked like the server would. */
+function simulateTick(teams: PublicBoardEntry[], n: number): PublicBoardEntry[] {
+  const bumped = teams.map((t, i) => {
+    if ((i * 7 + n * 3) % 5 !== 0) return t;
+    const paid = (i + n) % 7 === 0 ? t.paid + 1 : t.paid;
+    return { ...t, devices: t.devices + 1 + ((i + n) % 3), paid };
+  });
+  return rankBoard(bumped.map((t) => ({ ...t, id: t.key, hidden: false })));
+}
+
+export function LeaderboardView({
+  initial,
+  poll,
+  you: youProp,
+  simulate = false,
+}: {
+  initial: LeaderboardPayload;
+  poll: boolean;
+  you?: BoardYou | null;
+  /** Demo only: numbers change every few seconds, to see the motion. */
+  simulate?: boolean;
+}) {
   const [data, setData] = useState(initial);
   const [you, setYou] = useState<BoardYou | null>(youProp ?? null);
+  const [announce, setAnnounce] = useState("");
 
   useEffect(() => {
     if (youProp === undefined) setYou(readYou());
@@ -109,92 +133,108 @@ export function LeaderboardView({ initial, poll, you: youProp }: { initial: Lead
     };
   }, [poll]);
 
+  useEffect(() => {
+    if (!simulate) return;
+    let n = 0;
+    const timer = setInterval(() => {
+      n += 1;
+      setData((d) => ({ ...d, teams: simulateTick(d.teams, n), updatedAt: new Date().toISOString() }));
+    }, 3500);
+    return () => clearInterval(timer);
+  }, [simulate]);
+
+  const youKey = you?.key ?? null;
+  const youEntry = youKey ? (data.teams.find((t) => t.key === youKey) ?? null) : null;
+
+  // Screen readers hear only your team's change, in one line (not the whole board on every poll).
+  const [lastYou, setLastYou] = useState<PublicBoardEntry | null>(youEntry);
+  if (youEntry !== lastYou && (youEntry?.devices !== lastYou?.devices || youEntry?.paid !== lastYou?.paid)) {
+    if (youEntry && lastYou) {
+      const parts = [
+        youEntry.paid > lastYou.paid ? COPY.livePaid(youEntry.paid - lastYou.paid, youEntry.paid) : null,
+        youEntry.devices > lastYou.devices ? COPY.liveDevices(youEntry.devices - lastYou.devices, youEntry.devices) : null,
+      ].filter(Boolean);
+      if (parts.length) setAnnounce(COPY.live(parts.join(" ")));
+    }
+    setLastYou(youEntry);
+  }
+
   const final = data.state === "final";
+  const listed = data.state === "live" || data.state === "final";
   const top = data.teams.filter((t) => t.rank <= 3);
   const rest = data.teams.filter((t) => t.rank > 3);
-  const youKey = you?.key ?? null;
-  const youOnBoard = Boolean(youKey && data.teams.some((t) => t.key === youKey));
+
+  const bar =
+    final || data.state === "unavailable" ? null : you?.shareHref && data.state === "live" ? (
+      <StickyBar>
+        <PrimaryButton href={you.shareHref} icon="share" full>
+          {COPY.shareMine}
+        </PrimaryButton>
+      </StickyBar>
+    ) : !you ? (
+      <StickyBar>
+        <PrimaryButton href="/hackathon/join" full>
+          {COPY.signUp}
+        </PrimaryButton>
+      </StickyBar>
+    ) : null;
 
   return (
-    <main className="min-h-[100dvh] overflow-x-hidden px-5 py-10 sm:px-8 sm:py-16" style={{ backgroundColor: EL.cream, color: EL.ink }}>
-      <div className="mx-auto max-w-xl sm:max-w-2xl">
-        <p className="text-sm" style={{ color: EL.inkSoft }}>
-          {ELEMENTAL.edition} Hackathon · {thaiDateLine()}
-        </p>
-        <h1 className="mt-6 text-5xl sm:text-6xl" style={{ fontFamily: EL_FONT.display, fontWeight: 200, lineHeight: 1.05 }}>
-          {COPY.title}
-        </h1>
+    <Page surface="ground" sky={<SkyBand title={<H1 board>{COPY.title}</H1>} lead={COPY.lead} />} bar={bar}>
+      <p className="sr-only" aria-live="polite">
+        {announce}
+      </p>
 
-        {data.state === "soon" ? (
-          <Soon />
-        ) : (
-          <>
-            {final && (
-              <p className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <span className="rounded-full px-3 py-1 text-sm font-semibold" style={{ boxShadow: `inset 0 0 0 1.5px ${EL.ink}` }}>
-                  {COPY.final}
-                </span>
-                <span className="text-sm" style={{ color: EL.inkSoft }} suppressHydrationWarning>
-                  {COPY.countedUntil(bangkok(data.countedUntil, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }))}
-                </span>
-              </p>
-            )}
-            <p className="mt-4 text-pretty text-lg">{COPY.lead}</p>
-            <p className="mt-2 text-sm" style={{ color: EL.inkSoft }}>
-              {COPY.order}
-              {data.state === "live" && (
-                <>
-                  {" · "}
-                  {COPY.updated} <span suppressHydrationWarning>{bangkok(data.updatedAt, { hour: "2-digit", minute: "2-digit" })}</span>
-                </>
-              )}
-            </p>
-
-            {you && !youOnBoard && data.state !== "unavailable" && <YouOffBoard you={you} final={final} />}
-
-            {data.state === "unavailable" ? (
-              <p className="mt-10 rounded-2xl border p-5" style={{ borderColor: line }} role="status">
-                {COPY.unavailable}
-              </p>
-            ) : data.teams.length === 0 ? (
-              <div className="mt-10 rounded-2xl border p-6" style={{ borderColor: line }}>
-                <p className="text-xl font-semibold">{final ? COPY.emptyFinal : COPY.emptyTitle}</p>
-                {!final && (
-                  <p className="mt-1" style={{ color: EL.inkSoft }}>
-                    {COPY.empty}
-                  </p>
-                )}
-              </div>
-            ) : (
-              <>
-                <ol className="mt-10 space-y-3" aria-label={COPY.title}>
-                  {top.map((t) => (
-                    <TopRow key={t.key} team={t} you={t.key === youKey} />
-                  ))}
-                </ol>
-                {rest.length > 0 && <RestList teams={rest} youKey={youKey} />}
-              </>
-            )}
-
+      {data.state === "soon" ? (
+        <Soon />
+      ) : (
+        <>
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             {final ? (
-              <p className="mt-12 text-sm" style={{ color: EL.inkSoft }}>
-                {COPY.finalNote}
-              </p>
-            ) : (
-              <HowToJoin you={you} />
-            )}
-          </>
-        )}
-      </div>
-    </main>
-  );
-}
+              <Tag tone="action">
+                <span suppressHydrationWarning>{COPY.final(bangkok(data.countedUntil, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }))}</span>
+              </Tag>
+            ) : data.state === "live" ? (
+              <Tag>
+                <span suppressHydrationWarning>{COPY.updated(bangkok(data.updatedAt, { hour: "2-digit", minute: "2-digit" }))}</span>
+              </Tag>
+            ) : null}
+          </div>
+          <Body secondary className="mt-2 max-w-xl">
+            {COPY.explain}
+          </Body>
 
-function YouChip() {
-  return (
-    <span className="shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold" style={{ backgroundColor: EL.ink, color: EL.cream }}>
-      {COPY.you}
-    </span>
+          {you && !youEntry && data.state !== "unavailable" && <YouOffBoard you={you} final={final} />}
+
+          {data.state === "unavailable" ? (
+            <div className="mt-8 border-y py-5" style={{ borderColor: "var(--el-rule)" }} role="status">
+              <Body>{COPY.unavailable}</Body>
+            </div>
+          ) : listed && data.teams.length === 0 ? (
+            <div className="mt-8 border-t pt-6" style={{ borderColor: "var(--el-rule)" }}>
+              <H2>{final ? COPY.emptyFinal : COPY.emptyTitle}</H2>
+              {!final && <Body secondary className="mt-2">{COPY.empty}</Body>}
+            </div>
+          ) : (
+            <ol className="-mx-3 mt-8 border-t sm:-mx-4" style={{ borderColor: "var(--el-rule)" }} aria-label={COPY.title}>
+              {top.map((t) => (
+                <BoardRow key={t.key} entry={t} you={t.key === youKey} pinned />
+              ))}
+              {rest.length > 0 && <RestHeader />}
+              {rest.map((t) => (
+                <BoardRow key={t.key} entry={t} you={t.key === youKey} pinned />
+              ))}
+            </ol>
+          )}
+
+          {final ? (
+            <Fine className="mt-10">{COPY.finalNote}</Fine>
+          ) : (
+            data.state === "live" && <HowToJoin you={you} />
+          )}
+        </>
+      )}
+    </Page>
   );
 }
 
@@ -202,153 +242,49 @@ function YouChip() {
 function YouOffBoard({ you, final }: { you: BoardYou; final: boolean }) {
   const needName = !you.named;
   const needDevices = !needName && you.devices < 1;
-  const href = needName ? you.payHref : needDevices && !final ? you.shareHref : null;
+  const editHref = you.editHref ?? you.payHref;
   return (
-    <div className="mt-8 rounded-2xl border p-5" style={{ borderColor: EL.ink, backgroundColor: youTint }}>
-      <p className="flex items-center gap-2 text-base font-semibold">
-        <YouChip /> {COPY.youOff}
-      </p>
-      {(needName || needDevices) && <p className="mt-1">{needName ? COPY.youNeedName : COPY.youNeedDevices(1 - you.devices)}</p>}
-      {href && (
-        <Link href={href} className="-my-3 inline-flex min-h-11 items-center py-3 text-sm font-semibold underline underline-offset-4">
-          {needName ? COPY.youSetName : COPY.shareMine}
-        </Link>
+    <div className="mt-8 py-4 pl-4 pr-3" style={{ boxShadow: "inset 2px 0 0 var(--el-action)", backgroundColor: "#121311" }}>
+      <div className="flex items-baseline gap-2">
+        <Tag tone="action">ทีมคุณ</Tag>
+        <Body as="span">{COPY.youOff}</Body>
+      </div>
+      {(needName || needDevices) && (
+        <Body secondary className="mt-1">
+          {needName ? COPY.youNeedName : COPY.youNeedDevices(1 - you.devices)}
+        </Body>
+      )}
+      {needName && editHref && !final && (
+        <EditorialLink href={editHref} size="md" tone="action" className="mt-3">
+          {COPY.youSetName}
+        </EditorialLink>
       )}
     </div>
   );
 }
 
-/** Up to two schools; the count of the rest stays visible when the names are cut short. */
-function Schools({ team, className, you }: { team: PublicBoardEntry; className?: string; you?: boolean }) {
-  const shown = team.schools.slice(0, 2);
-  const more = team.schools.length - shown.length;
-  const text = shown.length ? shown.join(" · ") : team.solo ? COPY.solo : "";
-  if (!text && !you) return null;
-  return (
-    <p className={`flex min-w-0 items-center gap-1.5 ${className ?? ""}`} style={{ color: EL.inkSoft }}>
-      {you && <YouChip />}
-      <span className="truncate">{text}</span>
-      {more > 0 && <span className="shrink-0">+{more}</span>}
-    </p>
-  );
-}
-
-/** First, second and third: a card each, with the rank and the numbers large. */
-function TopRow({ team, you }: { team: PublicBoardEntry; you: boolean }) {
-  const first = team.rank === 1;
-  return (
-    <li
-      id={team.key}
-      className="scroll-mt-6 rounded-2xl border p-5 sm:p-6"
-      style={{ borderColor: you ? EL.ink : first ? "rgba(29,33,31,0.45)" : line, backgroundColor: you ? youTint : "rgba(255,255,255,0.45)" }}
-    >
-      <div className="flex gap-4">
-        <span className="w-8 shrink-0 text-5xl tabular-nums" style={{ fontFamily: EL_FONT.display, fontWeight: 200, lineHeight: 1 }} aria-label={`อันดับ ${team.rank}`}>
-          {team.rank}
-        </span>
-        <div className="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between sm:gap-6">
-          <div className="min-w-0">
-            <StyledTeamName name={team.name} style={team.style} className={`block leading-[1.3] ${first ? "text-[2.25rem]" : "text-[1.875rem]"}`} />
-            <Schools team={team} you={you} className="mt-1 text-sm" />
-          </div>
-          <div className="mt-4 flex items-baseline gap-6 sm:mt-0 sm:shrink-0 sm:flex-col sm:items-end sm:gap-2">
-            <Stat value={team.paid} label={COPY.paidLong} strong />
-            <Stat value={team.devices} label={COPY.devicesLong} />
-          </div>
-        </div>
-      </div>
-    </li>
-  );
-}
-
-function Stat({ value, label, strong }: { value: number; label: string; strong?: boolean }) {
-  return (
-    <span className="flex items-baseline gap-1.5">
-      <span className="text-[1.75rem] leading-none tabular-nums" style={{ fontFamily: EL_FONT.display, fontWeight: strong ? 400 : 300 }}>
-        {value}
-      </span>
-      <span className="text-sm" style={{ color: EL.inkSoft }}>
-        {label}
-      </span>
-    </span>
-  );
-}
-
-/** Fourth place down: one compact row each. */
-function RestList({ teams, youKey }: { teams: PublicBoardEntry[]; youKey: string | null }) {
-  const cols = "grid grid-cols-[1.75rem_minmax(0,1fr)_3.25rem_3.25rem] items-baseline gap-x-3";
-  return (
-    <div className="mt-8">
-      <div className={`${cols} border-b pb-2 text-xs`} style={{ borderColor: line, color: EL.inkSoft }}>
-        <span className="col-span-2">{COPY.rankTeam}</span>
-        <span className="text-right">{COPY.paid}</span>
-        <span className="text-right">{COPY.devices}</span>
-      </div>
-      <ol start={4}>
-        {teams.map((t) => {
-          const you = t.key === youKey;
-          return (
-            <li
-              key={t.key}
-              id={t.key}
-              className={`${cols} scroll-mt-6 border-b py-3.5 ${you ? "-mx-3 rounded-lg px-3" : ""}`}
-              style={{ borderColor: line, backgroundColor: you ? youTint : undefined }}
-            >
-              <span className="tabular-nums" style={{ color: EL.inkSoft }}>
-                {t.rank}
-              </span>
-              <span className="min-w-0">
-                <StyledTeamName name={t.name} style={t.style} className="block text-[1.375rem] leading-[1.35]" />
-                <Schools team={t} you={you} className="mt-0.5 text-xs" />
-              </span>
-              <span className="text-right text-lg font-semibold tabular-nums">{t.paid}</span>
-              <span className="text-right tabular-nums" style={{ color: EL.inkSoft }}>
-                {t.devices}
-              </span>
-            </li>
-          );
-        })}
-      </ol>
-    </div>
-  );
-}
-
+/** Live, at the bottom: how a team gets on, and what its devices unlock (the same tiers as the editor). */
 function HowToJoin({ you }: { you: BoardYou | null }) {
-  const share = you?.shareHref ?? null;
   return (
-    <section className="mt-14 space-y-4 rounded-2xl border p-5 sm:p-6" style={{ borderColor: line }}>
-      <h2 className="text-xl font-semibold">{COPY.joinTitle}</h2>
-      <p>{share ? COPY.joinYou : COPY.join}</p>
-      <div className="space-y-3 pt-2">
-        <p className="text-sm font-semibold">{COPY.unlocks}</p>
-        <TeamMeterStrip devices={null} />
-      </div>
-      <p className="text-sm" style={{ color: EL.inkSoft }}>
-        {COPY.joinNote}
-      </p>
-      <Link
-        href={share ?? "/hackathon/elemental"}
-        className="inline-flex min-h-12 w-full items-center justify-center rounded-full px-6 py-3.5 text-base font-semibold sm:w-auto sm:px-10"
-        style={{ backgroundColor: EL.flame, color: EL.flameWhite }}
-      >
-        {share ? COPY.shareMine : COPY.signUp}
-      </Link>
+    <section className="mt-14 border-t pt-8" style={{ borderColor: "var(--el-rule)" }}>
+      <H2>{COPY.joinTitle}</H2>
+      <Body className="mt-3">{you?.shareHref ? COPY.joinYou : COPY.join}</Body>
+      <FactStrip className="mt-6" facts={STYLE_PARTS.map((part) => ({ tag: COPY.unlockTag(TEAM_STYLE_TIERS[part]), value: STYLE_PART_TH[part] }))} />
+      <Fine className="mt-4">{COPY.joinNote}</Fine>
     </section>
   );
 }
 
 function Soon() {
   return (
-    <div className="mt-6 space-y-4">
-      <div className="rounded-2xl border p-5 sm:p-6" style={{ borderColor: line }}>
-        <p className="text-xl font-semibold">{COPY.soonTitle}</p>
-        <p className="mt-1" style={{ color: EL.inkSoft }}>
-          {COPY.soon}
-        </p>
-      </div>
-      <Link href="/hackathon/elemental" className="-my-3 inline-flex min-h-11 items-center py-3 text-sm underline underline-offset-4" style={{ color: EL.inkSoft }}>
+    <div className="border-y py-6" style={{ borderColor: "var(--el-rule)" }}>
+      <H2>{COPY.soonTitle}</H2>
+      <Body secondary className="mt-2">
+        {COPY.soon}
+      </Body>
+      <EditorialLink href="/hackathon/elemental" size="md" className="mt-4">
         {COPY.back}
-      </Link>
+      </EditorialLink>
     </div>
   );
 }
