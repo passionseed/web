@@ -1,24 +1,36 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { Check } from "lucide-react";
+import { Armchair, Check, Ticket } from "lucide-react";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { PER_NETWORK_CAP } from "@/lib/hackathon/elemental/link-views-shared";
 import { SHARE } from "@/lib/hackathon/elemental/share";
-import { GOALS, qualifies, reachedDevicesGoal, remaining, type Goals, type Progress, type Race } from "@/lib/hackathon/elemental/share-rules";
+import {
+  GOALS,
+  qualifies,
+  reachedDevicesGoal,
+  remaining,
+  type Goals,
+  type Progress,
+  type Race,
+  type ShareLinkView,
+} from "@/lib/hackathon/elemental/share-rules";
 
 import { hairline } from "./ui";
 
 /**
  * The house meter for share links, on the share pages and the pay-page card:
- * devices as a strip of 50 pixels (one per device), "และ", the 3 paid seats
- * as blocks, then the reward row that stays outlined until both are full.
- * A 15-year-old should get it in three seconds: the title says what's left.
+ * devices as a strip of 50 pixels (one per device, filled column by column),
+ * "และ", the 3 paid seats as blocks, then a status line for the reward that
+ * turns peach once it's earned. A 15-year-old should get it in three
+ * seconds: the title says what's left.
  *
  * mode "gone": the school's seat went to another link. The seat meters turn
  * grey and say so (a teacher's devices still count for Demo Day).
  * mode "rejected": staff turned the link down; everything is neutral grey.
+ * mode "closed": sign-up closed before this link reached the goal. Grey, like
+ * "gone"; a teacher's Demo Day invite still shows if it was earned.
  */
 
 // copy: placeholder — Angpao rewrites
@@ -29,9 +41,9 @@ const COPY = {
   paidUnit: "คน",
   and: "และ",
   wifi: `wifi เดียวกันนับได้ไม่เกิน ${PER_NETWORK_CAP} เครื่อง`,
-  seat: "ที่นั่งฟรี 1 ที่",
-  seatTeacher: "ที่นั่งฟรีของโรงเรียน",
-  demoDay: "เชิญคุณครูมา Demo Day",
+  seat: "= ที่นั่งฟรี 1 ที่",
+  seatTeacher: "= ที่นั่งฟรีของโรงเรียน",
+  demoDay: "= เชิญคุณครูมา Demo Day",
   gone: "ที่นั่งโรงเรียนนี้มีคนได้แล้ว",
   titleLeft: (r: Progress) =>
     `ที่นั่งฟรี: ${[r.devices > 0 && `อีก ${r.devices} เครื่อง`, r.paid > 0 && `${r.devices > 0 ? "+" : "อีก"} ${r.paid} คนจ่าย`].filter(Boolean).join(" ")}`,
@@ -39,7 +51,7 @@ const COPY = {
   titleTeacherDevices: (n: number) => `Demo Day: อีก ${n} เครื่อง`,
   titleTeacherPaid: (n: number) => `ที่นั่งฟรี: อีก ${n} คนจ่าย`,
   titleRejected: "ลิงก์นี้ไม่ได้ที่นั่งฟรี",
-  titleStopped: "ปิดนับแล้ว ยังไม่ครบ",
+  titleClosed: "ปิดนับแล้ว",
   race: (r: Race) =>
     r.links <= 1
       ? "ตอนนี้มีลิงก์เดียวในโรงเรียนนี้"
@@ -48,7 +60,28 @@ const COPY = {
   frozen: "ตัวเลขนับถึงวันปิดรับสมัคร",
 };
 
-export type MeterMode = "open" | "gone" | "rejected";
+export type MeterMode = "open" | "gone" | "rejected" | "closed";
+
+/**
+ * Which way to draw a link's meter: turned down, seat taken by another link,
+ * or (after close, with no seat for this link) stopped short.
+ */
+export function meterModeFor(link: Pick<ShareLinkView, "seat">, open: boolean): MeterMode {
+  if (link.seat.state === "rejected") return "rejected";
+  if (link.seat.state === "taken") return "gone";
+  if (!open && link.seat.state === "open") return "closed";
+  return "open";
+}
+
+/**
+ * Where device n sits along the strip, as a CSS left: the strip fills column
+ * by column (device n is in column ceil(n/2) of 25), so ticks for 10, 25 and
+ * 50 devices land at 20%, 52% and 100%. For labels under the strip.
+ */
+export function deviceTickLeft(n: number, goal: number = GOALS.devices): string {
+  const columns = Math.ceil(goal / 2);
+  return `${(Math.min(columns, Math.ceil(n / 2)) / columns) * 100}%`;
+}
 
 const EMPTY = "rgba(29,33,31,0.09)";
 const GREY = "rgba(29,33,31,0.32)";
@@ -58,17 +91,10 @@ const GREY = "rgba(29,33,31,0.32)";
  * when there's nothing left to aim for that the page doesn't already say
  * (a teacher who is invited and whose school's seat is gone).
  */
-export function meterTitle(
-  progress: Progress,
-  kind: "student" | "teacher",
-  mode: MeterMode = "open",
-  frozen = false,
-  goals: Goals = GOALS,
-): string | null {
+export function meterTitle(progress: Progress, kind: "student" | "teacher", mode: MeterMode = "open", goals: Goals = GOALS): string | null {
   const left = remaining(progress, goals);
   if (mode === "rejected") return COPY.titleRejected;
-  // After close nothing more counts: say it stopped short instead of "what's left".
-  if (frozen && mode === "open" && !qualifies(progress, goals) && (kind === "student" || left.devices > 0)) return COPY.titleStopped;
+  if (mode === "closed") return COPY.titleClosed;
   if (kind === "teacher") {
     if (left.devices > 0) return COPY.titleTeacherDevices(left.devices);
     if (mode === "gone") return null;
@@ -111,12 +137,20 @@ function Count({ value, goal, unit, grey, plain }: { value: number; goal: number
   );
 }
 
-/** 50 devices as 25 x 2 pixels. Past the goal the strip stays full. */
+/**
+ * 50 devices as 25 x 2 pixels, filled column by column (top, then bottom, then
+ * the next column), so the strip reads left to right like a bar. Past the goal
+ * the strip stays full.
+ */
 export function DeviceStrip({ value, goal = GOALS.devices, grey }: { value: number; goal?: number; grey?: boolean }) {
   const prev = usePrevious(value);
   const filled = Math.min(value, goal);
   return (
-    <div className="grid gap-[3px]" style={{ gridTemplateColumns: `repeat(${Math.ceil(goal / 2)}, minmax(0, 1fr))` }} aria-hidden="true">
+    <div
+      className="grid gap-[3px]"
+      style={{ gridTemplateRows: "repeat(2, auto)", gridAutoFlow: "column", gridAutoColumns: "minmax(0, 1fr)" }}
+      aria-hidden="true"
+    >
       {Array.from({ length: goal }, (_, i) => {
         const on = i < filled;
         const fresh = on && i >= prev;
@@ -163,14 +197,19 @@ function And() {
   );
 }
 
-/** The reward: outlined until it's earned, then filled with a check. */
-function Reward({ done, children }: { done: boolean; children: ReactNode }) {
+/**
+ * What the meters add up to, as a status line (never a button): a dashed
+ * hairline until it's earned, then a pale peach fill with orange text and a check.
+ */
+function Reward({ done, icon, children }: { done: boolean; icon: ReactNode; children: ReactNode }) {
   return (
     <div
-      className="flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 text-base font-semibold"
-      style={done ? { backgroundColor: EL.flame, color: EL.flameWhite } : { boxShadow: `inset 0 0 0 1.5px ${EL.ink}`, color: EL.ink }}
+      className="flex items-center gap-2 rounded-lg px-3 py-2 text-base"
+      style={done ? { backgroundColor: "rgba(236,100,36,0.10)", color: EL.ember } : { border: "1px dashed rgba(29,33,31,0.28)", color: EL.inkSoft }}
     >
-      {done && <Check className="h-5 w-5" strokeWidth={2.5} />}
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center" aria-hidden="true">
+        {done ? <Check className="h-4 w-4" strokeWidth={2.5} /> : icon}
+      </span>
       {children}
     </div>
   );
@@ -203,16 +242,14 @@ export function SeatMeter({
 }) {
   const rejected = mode === "rejected";
   const seatGone = mode !== "open";
-  // A teacher's devices still earn the Demo Day invite when the school's seat is gone.
-  const devicesGrey = rejected || (seatGone && kind === "student");
+  // A teacher's devices still earn the Demo Day invite when the school's seat is gone (until close).
+  const devicesGrey = rejected || mode === "closed" || (seatGone && kind === "student");
   const done = qualifies(progress, goals);
   const invited = reachedDevicesGoal(progress, goals);
 
   const body = (
     <>
-      {showTitle && meterTitle(progress, kind, mode, frozen, goals) && (
-        <p className="mb-5 text-xl font-semibold">{meterTitle(progress, kind, mode, frozen, goals)}</p>
-      )}
+      {showTitle && meterTitle(progress, kind, mode, goals) && <p className="mb-5 text-xl font-semibold">{meterTitle(progress, kind, mode, goals)}</p>}
 
       <div className="flex items-end justify-between gap-3">
         <span className="pb-1.5 text-base">{COPY.devices}</span>
@@ -230,9 +267,11 @@ export function SeatMeter({
       <p className="mt-1.5 text-xs" style={{ color: EL.inkSoft }}>
         {COPY.wifi}
       </p>
-      {kind === "teacher" && !rejected && (
+      {kind === "teacher" && !rejected && (mode !== "closed" || invited) && (
         <div className="mt-3">
-          <Reward done={invited}>{COPY.demoDay}</Reward>
+          <Reward done={invited} icon={<Ticket className="h-4 w-4" />}>
+            {COPY.demoDay}
+          </Reward>
         </div>
       )}
 
@@ -247,7 +286,9 @@ export function SeatMeter({
       </div>
       {!seatGone && (
         <div className="mt-4">
-          <Reward done={done}>{kind === "teacher" ? COPY.seatTeacher : COPY.seat}</Reward>
+          <Reward done={done} icon={<Armchair className="h-4 w-4" />}>
+            {kind === "teacher" ? COPY.seatTeacher : COPY.seat}
+          </Reward>
         </div>
       )}
       {kind === "teacher" && mode === "gone" && (

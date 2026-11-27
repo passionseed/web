@@ -40,6 +40,8 @@ const COPY = {
   toBoard: (n: number) => `อีก ${n} เครื่องขึ้นกระดาน`,
   next: (left: number, part: keyof typeof PART_TH) =>
     `อีก ${left} เครื่อง ปลดล็อก${PART_TH[part]}`,
+  nextShort: (left: number, part: keyof typeof PART_TH) =>
+    `ปลดล็อกต่อไป: ${PART_TH[part]} อีก ${left} เครื่อง`,
   allOpen: "ปลดล็อกครบแล้ว แต่งได้ทุกแบบ",
   frozen: "ปิดนับแล้ว แต่งชื่อได้ถึงวัน Demo Day",
   edit: "แต่งชื่อ",
@@ -52,10 +54,17 @@ export function TeamStyleRow({
   token,
   data,
   demo,
+  hideMeter,
 }: {
   token: string;
   data: TeamStyleCardData;
   demo?: boolean;
+  /**
+   * The share card already shows these devices (a solo sign-up, whose team
+   * total is its own link, while the seat is open): no second meter, just the
+   * next unlock in one line.
+   */
+  hideMeter?: boolean;
 }) {
   const [saved, setSaved] = useState<{
     style: TeamNameStyle;
@@ -101,7 +110,7 @@ export function TeamStyleRow({
     : named && data.devices < 1
       ? COPY.toBoard(1)
       : next
-        ? COPY.next(next.left, next.part)
+        ? (hideMeter ? COPY.nextShort : COPY.next)(next.left, next.part)
         : COPY.allOpen;
   const rankText = data.rank
     ? COPY.rank(data.rank, data.teamsOnBoard)
@@ -142,11 +151,15 @@ export function TeamStyleRow({
         />
       )}
 
-      <TeamMeter
-        devices={data.devices}
-        label={data.solo ? COPY.meterSolo : COPY.meter}
-      />
-      <p className="text-base font-semibold">{status}</p>
+      {!hideMeter && (
+        <TeamMeter
+          devices={data.devices}
+          label={data.solo ? COPY.meterSolo : COPY.meter}
+        />
+      )}
+      <p className={hideMeter ? "text-base" : "text-base font-semibold"}>
+        {status}
+      </p>
 
       {!open && (
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2">

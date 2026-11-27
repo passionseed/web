@@ -69,6 +69,8 @@ export function TeamInvite({
         <p className="text-sm" style={{ color: EL.inkSoft }}>ทีมครบแล้ว</p>
       ) : (
         <div className="space-y-3 border-t pt-4" style={{ borderColor: "rgba(29,33,31,0.12)" }}>
+          {/* Labelled by purpose: the share card's link is "ชวนคนอื่นสมัคร". copy: placeholder — Angpao rewrites */}
+          <p className="text-base font-semibold">ชวนเข้าทีม</p>
           <p className="text-sm">
             ส่งลิงก์ให้เพื่อนอีก {team.spotsLeft} คน แต่ละคนสมัครและจ่ายเอง คนละ ฿{ELEMENTAL.groupPriceBaht}
           </p>

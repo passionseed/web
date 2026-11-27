@@ -302,11 +302,35 @@ export function phonesMatch(a: readonly (string | null | undefined)[], b: readon
   return b.map(digits).some((d) => d.length >= 8 && left.has(d));
 }
 
-/** Whether two school names are the same school, loosely (one folded name inside the other). */
-export function sameSchool(a: string | null | undefined, b: string | null | undefined): boolean {
+function editDistance(a: string, b: string): number {
+  const x = [...a];
+  const y = [...b];
+  let prev = Array.from({ length: y.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= x.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= y.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (x[i - 1] === y[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[y.length];
+}
+
+export type SchoolMatch = "match" | "similar" | "different";
+
+/**
+ * For the admin check, two school names as staff should read them:
+ * - "match": the same name once folded (no โรงเรียน/รร., spaces, Thai digits);
+ * - "similar": one name inside the other, or a few letters apart. Sibling
+ *   schools ("สตรีวิทยา" / "สตรีวิทยา 2") and abbreviations both land here,
+ *   so a person looks;
+ * - "different": anything else, or a name missing.
+ */
+export function schoolMatch(a: string | null | undefined, b: string | null | undefined): SchoolMatch {
   const x = foldSchoolName(a ?? "");
   const y = foldSchoolName(b ?? "");
-  return !!x && !!y && (x.includes(y) || y.includes(x));
+  if (!x || !y) return "different";
+  if (x === y) return "match";
+  if (x.includes(y) || y.includes(x)) return "similar";
+  return editDistance(x, y) <= Math.max(2, Math.floor(Math.min([...x].length, [...y].length) * 0.2)) ? "similar" : "different";
 }
 
 /** What a share page shows about one link. Nothing in it names a person. */

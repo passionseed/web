@@ -286,8 +286,9 @@ type Activity = Map<string, { views: ViewEvent[]; paid: PaidEvent[] }>;
 
 /**
  * Device views and paid sign-ups per tracked source, counted only up to
- * sign-up close: views before it, and paid sign-ups created before it that
- * paid real money (not free seats). `sources` null: every link of the event.
+ * sign-up close: views before it, and paid sign-ups whose slip came in by
+ * then (paidAt) and that paid real money (not free seats). `sources` null:
+ * every link of the event.
  */
 async function loadActivity(eventSlug: string, sources: string[] | null): Promise<Activity> {
   const out: Activity = new Map();
@@ -318,7 +319,13 @@ async function loadActivity(eventSlug: string, sources: string[] | null): Promis
     return a;
   };
   for (const v of views) slot(v.source).views.push({ ipHash: v.ip_hash, at: v.created_at });
-  for (const r of regs) slot(r.source).paid.push({ seats: r.member_count ?? 1, at: paidAt({ slipPath: r.slip_path, createdAt: r.created_at }) });
+  const endsMs = Date.parse(endsAt);
+  for (const r of regs) {
+    const at = paidAt({ slipPath: r.slip_path, createdAt: r.created_at });
+    // Paid means the slip came in by close, not just a sign-up made by then.
+    if (Date.parse(at) > endsMs) continue;
+    slot(r.source).paid.push({ seats: r.member_count ?? 1, at });
+  }
   return out;
 }
 
@@ -718,4 +725,87 @@ export async function setTeacherMark(
     if (exists) return "not_verified";
   }
   return "not_found";
+}
+
+/** A sign-up as the admin fraud check sees it (staff only: names and phones). */
+export type SharePerson = {
+  name: string;
+  status: string;
+  /** The first member's school, as typed at sign-up. */
+  school: string;
+  /** The contact phone and every parent phone on the sign-up. */
+  phones: string[];
+  source: string | null;
+  seats: number;
+  /** Got a free seat: never counts as paid for a link. */
+  freeSeat: boolean;
+  /** Paid, but the slip came in after sign-up closed: doesn't count either. */
+  paidAfterClose: boolean;
+};
+
+type PersonRow = {
+  id: string;
+  status: string;
+  source: string | null;
+  member_count: number | null;
+  contact_phone: string | null;
+  free_seat: boolean | null;
+  slip_path: string | null;
+  created_at: string;
+  team_name: string | null;
+  hackathon_event_registration_members: { position: number; full_name: string; nickname: string | null; school: string; parent_phone: string | null }[] | null;
+};
+
+const PERSON_COLUMNS =
+  "id, status, source, member_count, contact_phone, free_seat, slip_path, created_at, team_name, hackathon_event_registration_members(position, full_name, nickname, school, parent_phone)";
+
+function toPerson(r: PersonRow, endsMs: number): SharePerson {
+  const members = [...(r.hackathon_event_registration_members ?? [])].sort((a, b) => a.position - b.position);
+  return {
+    name: members[0]?.full_name || members[0]?.nickname || r.team_name || "?",
+    status: r.status,
+    school: members[0]?.school ?? "",
+    phones: [r.contact_phone, ...members.map((m) => m.parent_phone)].filter((p): p is string => Boolean(p)),
+    source: r.source,
+    seats: r.member_count ?? 1,
+    freeSeat: Boolean(r.free_seat),
+    paidAfterClose: r.status === "paid" && Date.parse(paidAt({ slipPath: r.slip_path, createdAt: r.created_at })) > endsMs,
+  };
+}
+
+/**
+ * Everyone the admin share panel needs, read directly rather than from the
+ * newest-500 sign-up list: each link's own sign-up, each seat's recipient,
+ * and every paid sign-up that came through a link holding a seat.
+ */
+export async function loadSharePeople(eventSlug: string, links: AdminShareLink[]): Promise<Map<string, SharePerson>> {
+  const db = createAdminClient();
+  const endsMs = elementalCountingEndsAt().getTime();
+  const out = new Map<string, SharePerson>();
+  const ids = [
+    ...new Set(
+      links.flatMap((l) => [l.registrationId, l.seat?.recipientRegistrationId].filter((id): id is string => Boolean(id))),
+    ),
+  ];
+  const sources = links.filter((l) => l.seat).map((l) => linkSource(l.kind, l.code));
+  const chunks = <T,>(list: T[], n: number) => Array.from({ length: Math.ceil(list.length / n) }, (_, i) => list.slice(i * n, i * n + n));
+  const batches: Promise<PersonRow[]>[] = [
+    ...chunks(ids, 100).map((part) =>
+      allRows<PersonRow>((from, to) => db.from("hackathon_event_registrations").select(PERSON_COLUMNS).in("id", part).order("id").range(from, to)),
+    ),
+    ...chunks(sources, 50).map((part) =>
+      allRows<PersonRow>((from, to) =>
+        db
+          .from("hackathon_event_registrations")
+          .select(PERSON_COLUMNS)
+          .eq("event_slug", eventSlug)
+          .eq("status", "paid")
+          .in("source", part)
+          .order("id")
+          .range(from, to),
+      ),
+    ),
+  ];
+  for (const rows of await Promise.all(batches)) for (const r of rows) out.set(r.id, toPerson(r, endsMs));
+  return out;
 }

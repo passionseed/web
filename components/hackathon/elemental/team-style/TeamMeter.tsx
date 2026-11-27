@@ -3,13 +3,13 @@ import { Check } from "lucide-react";
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { STYLE_PARTS, TEAM_METER_GOAL, TEAM_STYLE_TIERS, type StylePart } from "@/lib/hackathon/elemental/team-style";
 
-import { DeviceStrip } from "../share/Progress";
+import { DeviceStrip, deviceTickLeft } from "../share/Progress";
 
 /**
  * The team's devices on the way to each unlock: the share link's own meter
- * (DeviceStrip, ../share/Progress.tsx: one cell per device, 25 to a row, the
- * count in Trirong), with the cell of each unlock (TEAM_STYLE_TIERS) ringed
- * and a legend of what each one opens.
+ * (DeviceStrip, ../share/Progress.tsx: one cell per device, filling two rows
+ * column by column, the count in Trirong), with the cell of each unlock
+ * (TEAM_STYLE_TIERS) ringed and, under its tick (deviceTickLeft), what it opens.
  */
 
 // copy: placeholder — Angpao rewrites
@@ -44,7 +44,7 @@ function MeterCount({ value }: { value: number }) {
   );
 }
 
-/** The cells, with a ring on each unlock's cell, and the legend. Without devices it is the map of unlocks. */
+/** The cells, with a ring on each unlock's cell and its label under it. Without devices it is the map of unlocks. */
 export function TeamMeterStrip({ devices }: { devices: number | null }) {
   const filled = Math.min(devices ?? 0, TEAM_METER_GOAL);
   const tierCells = new Set(TIERS.map((t) => t.at - 1));
@@ -52,8 +52,12 @@ export function TeamMeterStrip({ devices }: { devices: number | null }) {
     <div>
       <div className="relative">
         <DeviceStrip value={filled} goal={TEAM_METER_GOAL} />
-        {/* The same grid on top, transparent but for the rings, so the ticks sit exactly on their cells. */}
-        <div className="pointer-events-none absolute inset-0 grid gap-[3px]" style={{ gridTemplateColumns: `repeat(${TEAM_METER_GOAL / 2}, minmax(0, 1fr))` }} aria-hidden="true">
+        {/* DeviceStrip's grid again on top, transparent but for the rings, so they sit exactly on their cells. */}
+        <div
+          className="pointer-events-none absolute inset-0 grid gap-[3px]"
+          style={{ gridTemplateRows: "repeat(2, auto)", gridAutoFlow: "column", gridAutoColumns: "minmax(0, 1fr)" }}
+          aria-hidden="true"
+        >
           {Array.from({ length: TEAM_METER_GOAL }, (_, i) => (
             <span
               key={i}
@@ -63,21 +67,23 @@ export function TeamMeterStrip({ devices }: { devices: number | null }) {
           ))}
         </div>
       </div>
-      <ul className="mt-4 grid grid-cols-3 gap-2 text-sm">
+      {/* Each unlock under its tick: centred, the last one held to the right edge. */}
+      <ul className="relative mt-2 h-11 text-sm">
         {TIERS.map(({ part, at }) => {
           const reached = devices !== null && devices >= at;
+          const last = at >= TEAM_METER_GOAL;
           return (
-            <li key={part} className="flex items-start gap-1.5">
-              {reached ? (
-                <Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: EL.flame }} strokeWidth={2.5} aria-label="ปลดล็อกแล้ว" />
-              ) : (
-                <span className="mt-1 h-3 w-3 shrink-0 rounded-[2px]" style={{ boxShadow: `0 0 0 1.5px ${EL.ink}` }} aria-hidden="true" />
-              )}
-              <span className="leading-tight">
-                <span className="block font-semibold tabular-nums">
-                  {at} {UNIT}
-                </span>
-                <span style={{ color: EL.inkSoft }}>{PART_TH[part]}</span>
+            <li
+              key={part}
+              className={`absolute top-0 whitespace-nowrap leading-tight ${last ? "right-0 text-right" : "-translate-x-1/2 text-center"}`}
+              style={last ? undefined : { left: deviceTickLeft(at, TEAM_METER_GOAL) }}
+            >
+              <span className="flex items-center gap-1 font-semibold tabular-nums" style={{ justifyContent: last ? "flex-end" : "center" }}>
+                {reached && <Check className="h-3.5 w-3.5 shrink-0" style={{ color: EL.flame }} strokeWidth={2.5} aria-label="ปลดล็อกแล้ว" />}
+                {at} {UNIT}
+              </span>
+              <span className="block" style={{ color: EL.inkSoft }}>
+                {PART_TH[part]}
               </span>
             </li>
           );

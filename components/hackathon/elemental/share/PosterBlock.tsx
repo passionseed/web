@@ -142,18 +142,19 @@ export function PosterBlock({ poster, actions = true }: { poster: PosterShare; a
 }
 
 /** The main actions, pinned to the bottom of the screen (above the iPhone home bar). */
-export function ShareBar({ poster }: { poster: PosterShare }) {
-  const bar = "inline-flex h-[52px] items-center justify-center gap-2 rounded-full px-4 text-base font-semibold";
+export function ShareBar({ poster, lineLabel = COPY.line }: { poster: PosterShare; lineLabel?: string }) {
+  const bar = "inline-flex h-[52px] items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 text-base font-semibold";
   return (
     <div
       data-share-bar=""
       className="fixed inset-x-0 bottom-0 z-40 border-t px-5 pt-2"
       style={{ backgroundColor: EL.cream, borderColor: hairline, paddingBottom: "max(env(safe-area-inset-bottom), 0.5rem)" }}
     >
-      <div className="mx-auto grid max-w-xl grid-cols-2 gap-2">
+      {/* A longer LINE label (the teacher's "ส่งให้นักเรียนใน LINE") gets the wider half, so it stays on one line. */}
+      <div className={`mx-auto grid max-w-xl gap-2 ${lineLabel === COPY.line ? "grid-cols-2" : "grid-cols-[minmax(0,2fr)_minmax(0,3fr)]"}`}>
         <ImageAction poster={poster} className={bar} />
         <a href={poster.lineHref} target="_blank" rel="noopener noreferrer" className={bar} style={outline}>
-          <Share2 className="h-4 w-4" /> {COPY.line}
+          <Share2 className="h-4 w-4" /> {lineLabel}
         </a>
       </div>
     </div>

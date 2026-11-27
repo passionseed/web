@@ -64,6 +64,7 @@ type RegDbRow = {
   member_count: number | null;
   source: string | null;
   created_at: string;
+  slip_path: string | null;
   free_seat?: boolean | null;
   board_name?: string | null;
   name_style?: unknown;
@@ -88,7 +89,7 @@ async function loadTeams(eventSlug: string): Promise<BoardTeamRow[]> {
 
 async function loadRegistrations(eventSlug: string, endsAt: string): Promise<BoardRegistrationRow[]> {
   const db = createAdminClient();
-  const base = "id, team_id, status, member_count, source, created_at, hackathon_event_registration_members(school)";
+  const base = "id, team_id, status, member_count, source, created_at, slip_path, hackathon_event_registration_members(school)";
   const rows = await withColumnFallback((full) =>
     allRows<RegDbRow>((from, to) =>
       db
@@ -110,6 +111,7 @@ async function loadRegistrations(eventSlug: string, endsAt: string): Promise<Boa
     source: r.source,
     freeSeat: Boolean(r.free_seat),
     createdAt: r.created_at,
+    slipPath: r.slip_path ?? null,
     style: r.name_style ?? null,
     hidden: Boolean(r.leaderboard_hidden),
     schools: (r.hackathon_event_registration_members ?? []).map((m) => m.school ?? "").filter(Boolean),

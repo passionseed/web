@@ -11,7 +11,7 @@ import {
   listRegistrations,
   type AdminRegistration,
 } from "@/lib/supabase/hackathon-event-registrations";
-import { listShareLinksForAdmin, type AdminShareLink } from "@/lib/supabase/hackathon-share-links";
+import { listShareLinksForAdmin, loadSharePeople, type AdminShareLink, type SharePerson } from "@/lib/supabase/hackathon-share-links";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -146,8 +146,11 @@ export default async function AdminHackathonRegistrationsPage() {
 
   // The share links load on their own, so a missing table (migration not applied) can't break this page.
   let links: AdminShareLink[] = [];
+  // Read directly, not from the newest-500 list above, so older payers and recipients still show.
+  let people = new Map<string, SharePerson>();
   try {
     links = await listShareLinksForAdmin(ELEMENTAL.slug);
+    people = await loadSharePeople(ELEMENTAL.slug, links);
   } catch (error) {
     console.error("[admin/hackathon/registrations] share links did not load", error);
   }
@@ -167,19 +170,7 @@ export default async function AdminHackathonRegistrationsPage() {
   const order = { review: 0, pending: 1, paid: 2, cancelled: 3 } as const;
   const sorted = [...rows].sort((a, b) => order[a.status] - order[b.status]);
   const share = shareSummary(links);
-  const regInfo = new Map<string, ShareRegInfo>(
-    rows.map((r) => [
-      r.id,
-      {
-        name: r.members[0]?.fullName || r.members[0]?.nickname || r.teamName || "?",
-        status: r.status,
-        school: r.members[0]?.school ?? "",
-        phones: [r.contactPhone, ...r.members.map((m) => m.parentPhone)].filter((p): p is string => Boolean(p)),
-        source: r.source,
-        seats: r.memberCount,
-      },
-    ]),
-  );
+  const regInfo = new Map<string, ShareRegInfo>(people);
   const paid = rows.filter((r) => r.status === "paid");
   const seats = paid.reduce((n, r) => n + r.memberCount, 0);
   const baht = paid.reduce((n, r) => n + r.amountBaht, 0);

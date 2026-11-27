@@ -9,7 +9,7 @@ import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { linkUrl, SHARE } from "@/lib/hackathon/elemental/share";
 import type { ShareLinkView } from "@/lib/hackathon/elemental/share-rules";
 
-import { meterTitle, SeatMeter, type MeterMode } from "./Progress";
+import { meterModeFor, meterTitle, SeatMeter } from "./Progress";
 import { btn, btnSmall, CodeText, filled, hairline, outline, schoolLabel } from "./ui";
 import { usePollLink } from "./usePoll";
 
@@ -39,11 +39,12 @@ const COPY = {
   title: "ลิงก์ของฉัน",
   lead: `เลือกโรงเรียน รับลิงก์และโปสเตอร์ของคุณ ครบ ${SHARE.devicesGoal} เครื่อง + ${SHARE.paidGoal} คนจ่าย ได้ที่นั่งฟรี โรงเรียนละ 1 ที่ ใครครบก่อนได้ก่อน`,
   leadClosed: "ปิดรับสมัครแล้ว ลิงก์แชร์ปิดตามไปด้วย",
-  start: "เลือกโรงเรียน รับลิงก์",
+  start: "เลือกโรงเรียน ลุ้นที่นั่งฟรี",
   open: "ดูโปสเตอร์และลิงก์ของฉัน",
   openClosed: "ดูหน้าลิงก์ของฉัน",
   nameFriend: "ใส่รหัสเพื่อน",
   pendingLine: "จ่ายแล้วก็แชร์ต่อได้ ถ้าครบ ที่นั่งฟรียกให้เพื่อน",
+  linkLabel: "ชวนคนอื่นสมัคร",
   copy: "คัดลอกลิงก์",
   copied: "คัดลอกแล้ว",
   line: "ส่งใน LINE",
@@ -61,10 +62,6 @@ const COPY = {
   myCodeHint: "เพื่อนหรือครูที่ได้ที่นั่งฟรี ยกให้คุณได้ด้วยรหัสนี้",
   copyCode: "คัดลอก",
 };
-
-function meterMode(link: ShareLinkView): MeterMode {
-  return link.seat.state === "rejected" ? "rejected" : link.seat.state === "taken" ? "gone" : "open";
-}
 
 function news(link: ShareLinkView): string | null {
   const s = link.seat;
@@ -110,13 +107,16 @@ export function ShareCard({ share, teamRow }: { share: ShareCardData; teamRow?: 
   // On an unpaid page, paying stays the main action: the share button is an outline.
   const ctaStyle = needsFriend || (share.selfPaid && !link) ? filled : outline;
   const url = link ? linkUrl(link.kind, link.code) : null;
+  const mode = link ? meterModeFor(link, open) : "open";
+  // Taken, turned down, or closed short: no seat left to promise.
+  const seatGone = mode !== "open";
 
   return (
     <section className="space-y-4 rounded-2xl border p-5 sm:p-6" style={{ borderColor: "rgba(29,33,31,0.2)" }}>
       {link ? (
         <>
           <div>
-            <h2 className="text-xl font-semibold">{meterTitle(link.progress, "student", meterMode(link), !open) ?? COPY.title}</h2>
+            <h2 className="text-xl font-semibold">{meterTitle(link.progress, "student", mode) ?? COPY.title}</h2>
             <p className="mt-1 text-base" style={{ color: EL.inkSoft }}>
               {COPY.title} · {schoolLabel(link.school.name)}
             </p>
@@ -126,7 +126,7 @@ export function ShareCard({ share, teamRow }: { share: ShareCardData; teamRow?: 
               {news(link)}
             </p>
           )}
-          <SeatMeter progress={link.progress} kind="student" mode={meterMode(link)} race={link.race} framed={false} showTitle={false} frozen={!open} />
+          <SeatMeter progress={link.progress} kind="student" mode={mode} race={link.race} framed={false} showTitle={false} frozen={!open} />
         </>
       ) : (
         <div>
@@ -147,6 +147,7 @@ export function ShareCard({ share, teamRow }: { share: ShareCardData; teamRow?: 
         <div className="space-y-3 border-t pt-4" style={{ borderColor: hairline }}>
           {link && url && open && (
             <>
+              <p className="text-base font-semibold">{COPY.linkLabel}</p>
               <p className="break-words text-sm" style={{ color: EL.inkSoft }}>
                 {url.replace(/^https:\/\/www\./, "").split("?")[0]}
                 <wbr />?{url.split("?")[1]}
@@ -162,7 +163,7 @@ export function ShareCard({ share, teamRow }: { share: ShareCardData; teamRow?: 
           <Link href={share.href} className={`${btn} w-full`} style={ctaStyle}>
             {!link ? COPY.start : needsFriend ? COPY.nameFriend : open ? COPY.open : COPY.openClosed}
           </Link>
-          {!share.selfPaid && open && (
+          {!share.selfPaid && open && !seatGone && (
             <p className="text-sm" style={{ color: EL.inkSoft }}>
               {COPY.pendingLine}
             </p>

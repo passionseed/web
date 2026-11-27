@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, Copy, Share2 } from "lucide-react";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
@@ -12,7 +12,7 @@ import { progressPhase, reachedDevicesGoal, type ShareLinkView } from "@/lib/hac
 import { CodeEntry } from "./CodeEntry";
 import { recipientError } from "./copy-shared";
 import { PosterBlock, ShareBar, usePosterShare } from "./PosterBlock";
-import { SeatMeter, type MeterMode } from "./Progress";
+import { meterModeFor, SeatMeter } from "./Progress";
 import { SeatMessage, SeatNote } from "./SeatNote";
 import { btn, CodeText, filled, Lead, outline, Page, schoolLabel, TextButton, TextLink, Title } from "./ui";
 import { usePollLink } from "./usePoll";
@@ -46,7 +46,9 @@ const COPY = {
     given: "ให้ที่นั่งฟรีแล้ว",
     taken: "ที่นั่งฟรีของโรงเรียนนี้มีคนได้แล้ว",
     rejected: "ลิงก์นี้ไม่ได้ที่นั่งฟรี",
+    closed: "ปิดนับแล้ว",
   },
+  barLine: "ส่งให้นักเรียนใน LINE",
   inviteTitle: "ได้รับเชิญมา Demo Day",
   inviteWhen: `${formatThaiDate(ELEMENTAL.demoDay.date)} ที่ ${ELEMENTAL.demoDay.venueTh}`,
   invitePending: "ทีมงานจะยืนยันกับโรงเรียนก่อน แล้วส่งคำเชิญทางอีเมลหรือ LINE ที่ให้ไว้",
@@ -74,13 +76,11 @@ const COPY = {
   more: `ดูหน้า ${ELEMENTAL.edition} Hackathon`,
 };
 
-const meterMode = (link: ShareLinkView): MeterMode =>
-  link.seat.state === "rejected" ? "rejected" : link.seat.state === "taken" ? "gone" : "open";
-
-function titleFor(link: ShareLinkView): string {
+function titleFor(link: ShareLinkView, open: boolean): string {
   const t = COPY.titles;
   const s = link.seat;
   const invited = reachedDevicesGoal(link.progress);
+  if (!open && s.state === "open") return invited ? t.invited : t.closed;
   if (s.state === "checking") return s.recipient.who === "other" ? t.named : t.seat;
   if (s.state === "given") return t.given;
   if (s.state === "rejected") return t.rejected;
@@ -216,9 +216,19 @@ function TeacherLink({
 }) {
   const open = phase === "open";
   const poster = usePosterShare(link.code, "teacher", posterVersion);
-  const mode = meterMode(link);
+  const mode = meterModeFor(link, open);
   const invited = reachedDevicesGoal(link.progress) && link.seat.state !== "rejected";
-  const title = titleFor(link);
+  const title = titleFor(link, open);
+  // Right after the link is made, the keep-this-page block has its own LINE button: no second one pinned below it.
+  const keepRef = useRef<HTMLDivElement>(null);
+  const [keepVisible, setKeepVisible] = useState(fresh);
+  useEffect(() => {
+    const el = keepRef.current;
+    if (!fresh || !el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([entry]) => setKeepVisible(entry.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
+  }, [fresh]);
   const start = open && link.seat.state === "open" && progressPhase(link.progress) === "start";
 
   const posterSection = open && (
@@ -243,10 +253,10 @@ function TeacherLink({
           <TextLink href="/hackathon/elemental">{COPY.more}</TextLink>
         </div>
       }
-      bar={open && link.seat.state === "open" ? <ShareBar poster={poster} /> : undefined}
+      bar={open && link.seat.state === "open" && !keepVisible ? <ShareBar poster={poster} lineLabel={COPY.barLine} /> : undefined}
     >
       {fresh && (
-        <div className="mb-8">
+        <div className="mb-8" ref={keepRef}>
           <KeepPage fresh />
         </div>
       )}

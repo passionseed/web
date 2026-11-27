@@ -18,6 +18,8 @@ const END = new Date("2026-12-04T23:59:59+07:00");
 const BEFORE = "2026-11-30T10:00:00+07:00";
 const AFTER = "2026-12-05T09:00:00+07:00";
 
+/** A slip's storage path as the upload route names it: <registration>/<upload time in ms>-<random>.jpg. */
+const slip = (iso: string) => `reg/${new Date(iso).getTime()}-ab12.jpg`;
 const id = (n: number) => `${String(n).padStart(8, "0")}-0000-4000-8000-000000000000`;
 const src = (n: number) => shareSource(shareCode(id(n)));
 
@@ -31,6 +33,7 @@ function reg(n: number, over: Partial<BoardRegistrationRow> = {}): BoardRegistra
     source: null,
     freeSeat: false,
     createdAt: BEFORE,
+    slipPath: null,
     style: null,
     hidden: false,
     schools: [],
@@ -72,6 +75,10 @@ describe("building the team board", () => {
     // A free seat staff gave, and a sign-up after close: neither counts as paid.
     reg(15, { status: "paid", source: src(1), freeSeat: true }),
     reg(16, { status: "paid", source: src(1), createdAt: AFTER }),
+    // Signed up before close but sent the slip after it: not paid by close.
+    reg(17, { status: "paid", source: src(1), slipPath: slip(AFTER) }),
+    // Slip in before close, approved by staff later: counts.
+    reg(18, { status: "paid", source: src(2), slipPath: slip("2026-12-04T22:00:00+07:00") }),
   ];
   const board = buildBoard({
     teams,
@@ -89,12 +96,27 @@ describe("building the team board", () => {
     expect(t1.name).toBe("ไฟป่า");
   });
 
-  it("counts only real paid seats signed up by close", () => {
-    // reg 10 (1) + reg 11 (2). Not the free seat (15), not the late one (16), not the pending one (12).
-    expect(t1.paid).toBe(3);
-    expect(countsAsPaid({ status: "paid", freeSeat: true, createdAt: BEFORE }, END)).toBe(false);
-    expect(countsAsPaid({ status: "paid", freeSeat: false, createdAt: AFTER }, END)).toBe(false);
-    expect(countsAsPaid({ status: "paid", freeSeat: false, createdAt: BEFORE }, END)).toBe(true);
+  it("counts only real paid seats whose slip came in by close", () => {
+    // reg 10 (1) + reg 11 (2) + reg 18 (1). Not the free seat (15), the late sign-up (16),
+    // the late slip (17) or the pending one (12).
+    expect(t1.paid).toBe(4);
+    expect(countsAsPaid({ status: "paid", freeSeat: true, createdAt: BEFORE, slipPath: null }, END)).toBe(false);
+    expect(countsAsPaid({ status: "paid", freeSeat: false, createdAt: AFTER, slipPath: null }, END)).toBe(false);
+    expect(countsAsPaid({ status: "paid", freeSeat: false, createdAt: BEFORE, slipPath: null }, END)).toBe(true);
+  });
+
+  it("keeps the final board final: a slip sent after close never adds a seat", () => {
+    const late = { status: "paid", freeSeat: false, createdAt: BEFORE, slipPath: slip(AFTER) };
+    expect(countsAsPaid(late, END)).toBe(false);
+    expect(countsAsPaid({ ...late, slipPath: slip("2026-12-04T23:59:00+07:00") }, END)).toBe(true);
+    const before = buildBoard({ teams: [], registrations: [reg(30, { boardName: "x" })], views: views(src(30), 2), endsAt: END });
+    const after = buildBoard({
+      teams: [],
+      registrations: [reg(30, { boardName: "x" }), reg(31, { status: "paid", source: src(30), slipPath: slip(AFTER) })],
+      views: [...views(src(30), 2), ...views(src(30), 9, AFTER)],
+      endsAt: END,
+    });
+    expect(after.find((e) => e.key === before[0].key)).toMatchObject({ devices: before[0].devices, paid: 0 });
   });
 
   it("stops counting devices at close", () => {

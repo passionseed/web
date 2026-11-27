@@ -20,7 +20,7 @@ import {
   reachedDevicesGoal,
   recipientProblem,
   remaining,
-  sameSchool,
+  schoolMatch,
   schoolRace,
   seatRecipientId,
   seatView,
@@ -339,10 +339,15 @@ describe("fraud check helpers", () => {
     expect(phonesMatch([""], [""])).toBe(false);
   });
 
-  it("sameSchool matches loosely and flags a different school", () => {
-    expect(sameSchool("เตรียมอุดมศึกษา", "โรงเรียนเตรียมอุดมศึกษา")).toBe(true);
-    expect(sameSchool("เตรียมอุดมศึกษา", "รร.เตรียมอุดม")).toBe(true);
-    expect(sameSchool("สตรีวิทยา", "บดินทรเดชา")).toBe(false);
-    expect(sameSchool("สตรีวิทยา", "")).toBe(false);
+  it("schoolMatch: the same school, a name to check, or a different school", () => {
+    expect(schoolMatch("เตรียมอุดมศึกษา", "โรงเรียนเตรียมอุดมศึกษา")).toBe("match");
+    expect(schoolMatch("สตรีวิทยา ๒", "สตรีวิทยา 2")).toBe("match");
+    // Sibling schools and abbreviations are never a silent match: a person checks.
+    expect(schoolMatch("สตรีวิทยา", "สตรีวิทยา 2")).toBe("similar");
+    expect(schoolMatch("เตรียมอุดมศึกษา", "เตรียมอุดมศึกษาพัฒนาการ")).toBe("similar");
+    expect(schoolMatch("เตรียมอุดมศึกษา", "รร.เตรียมอุดม")).toBe("similar");
+    expect(schoolMatch("บดินทรเดชา", "บดินทร์เดชา")).toBe("similar");
+    expect(schoolMatch("สตรีวิทยา", "บดินทรเดชา")).toBe("different");
+    expect(schoolMatch("สตรีวิทยา", "")).toBe("different");
   });
 });

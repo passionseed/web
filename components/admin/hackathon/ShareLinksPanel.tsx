@@ -1,8 +1,8 @@
 import { Badge } from "@/components/ui/badge";
 import { formatBangkokDateTime } from "@/lib/admin/queue-tools/format";
 import { linkSource, shareCode } from "@/lib/hackathon/elemental/share";
-import { GOALS, phonesMatch, reachedDevicesGoal, sameSchool, seatRecipientId } from "@/lib/hackathon/elemental/share-rules";
-import type { AdminShareLink } from "@/lib/supabase/hackathon-share-links";
+import { GOALS, phonesMatch, reachedDevicesGoal, schoolMatch, seatRecipientId, type SchoolMatch } from "@/lib/hackathon/elemental/share-rules";
+import type { AdminShareLink, SharePerson } from "@/lib/supabase/hackathon-share-links";
 import { cn } from "@/lib/utils";
 
 import { ShareSeatActions } from "./ShareSeatActions";
@@ -15,16 +15,20 @@ import { ShareCopyTeacherLink, ShareTeacherMarks } from "./ShareTeacherTools";
  * Staff only: names and contacts show here and nowhere public.
  */
 
-export type ShareRegInfo = {
-  name: string;
-  status: string;
-  /** The first member's school, as typed at sign-up. */
-  school: string;
-  /** The contact phone and every parent phone on the sign-up. */
-  phones: string[];
-  source: string | null;
-  seats: number;
-};
+/** A sign-up as the panel sees it (lib/supabase/hackathon-share-links.ts, loadSharePeople). */
+export type ShareRegInfo = SharePerson;
+
+const MATCH_LABEL: Record<SchoolMatch, string> = { match: "match", similar: "similar names: check", different: "different" };
+
+/** Two schools side by side, and whether they're the same: match, similar (look), or different. */
+function SchoolPair({ label, linkSchool, other }: { label: string; linkSchool: string; other: string | undefined }) {
+  const m = schoolMatch(linkSchool, other);
+  return (
+    <p className={cn(m === "different" && "text-destructive", m === "similar" && "text-amber-700 dark:text-amber-400")}>
+      {label}: link {linkSchool} · sign-up {other || "?"} · <span className="font-medium">{MATCH_LABEL[m]}</span>
+    </p>
+  );
+}
 
 export type ShareSummary = {
   links: number;
@@ -98,34 +102,34 @@ function FraudCheck({ l, regs }: { l: AdminShareLink; regs: Map<string, ShareReg
   const src = linkSource(l.kind, l.code);
   const own = l.registrationId ? regs.get(l.registrationId) : undefined;
   const sharerPhones = l.kind === "teacher" ? [l.teacherPhone] : (own?.phones ?? []);
-  const payers = [...regs.entries()].filter(([, r]) => r.source === src && r.status === "paid");
-  const schoolMismatch = l.kind === "student" && own && !sameSchool(l.schoolName, own.school);
+  const all = [...regs.entries()].filter(([, r]) => r.source === src && r.status === "paid");
+  const counted = all.filter(([, r]) => !r.freeSeat && !r.paidAfterClose);
+  const recipientId = l.seat?.recipientRegistrationId ?? null;
   const t = l.traffic;
   return (
     <div className="space-y-1.5 rounded-md border bg-background p-3">
       <p className="font-medium">Fraud check</p>
-      {schoolMismatch && (
-        <p className="text-destructive">
-          School doesn&apos;t match: the link says {l.schoolName}, the sign-up says {own.school}.
-        </p>
-      )}
+      {l.kind === "student" && <SchoolPair label="Sharer" linkSchool={l.schoolName} other={own?.school} />}
+      {recipientId && recipientId !== l.registrationId && <SchoolPair label="Recipient" linkSchool={l.schoolName} other={regs.get(recipientId)?.school} />}
       <p>
         Devices: {l.progress.devices} from {t.networks} network{t.networks === 1 ? "" : "s"} · {t.last24h} in the last 24 hours · busiest hour{" "}
         {t.peakHour}
         {t.networks > 0 && l.progress.devices / t.networks >= 4 && " · many devices per network: look closer"}
       </p>
-      <p>Paid through this link ({payers.reduce((n, [, r]) => n + r.seats, 0)} seats):</p>
+      <p>Paid through this link ({counted.reduce((n, [, r]) => n + r.seats, 0)} seats that count):</p>
       <ul className="list-disc space-y-0.5 pl-5">
-        {payers.map(([id, r]) => {
+        {all.map(([id, r]) => {
           const shared = phonesMatch(sharerPhones, r.phones);
+          const note = r.freeSeat ? "free seat, doesn't count" : r.paidAfterClose ? "paid after close, doesn't count" : null;
           return (
-            <li key={id} className={cn(shared && "text-destructive")}>
+            <li key={id} className={cn(note && "text-muted-foreground", !note && shared && "text-destructive")}>
               {r.name} · {r.school} · {r.seats} {r.seats === 1 ? "seat" : "seats"}
               {shared && " · same phone as the sharer"}
+              {note && ` · ${note}`}
             </li>
           );
         })}
-        {payers.length === 0 && <li className="text-muted-foreground">none</li>}
+        {all.length === 0 && <li className="text-muted-foreground">none</li>}
       </ul>
     </div>
   );

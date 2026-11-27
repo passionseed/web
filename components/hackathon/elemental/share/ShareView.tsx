@@ -13,7 +13,7 @@ import { progressPhase, type ShareLinkView } from "@/lib/hackathon/elemental/sha
 import { CodeEntry } from "./CodeEntry";
 import { lineHelp, recipientError } from "./copy-shared";
 import { PosterBlock, ShareBar, usePosterShare } from "./PosterBlock";
-import { SeatMeter, type MeterMode } from "./Progress";
+import { meterModeFor, SeatMeter } from "./Progress";
 import { SchoolPicker, type SchoolChoice } from "./SchoolPicker";
 import { SeatMessage, SeatNote } from "./SeatNote";
 import { btn, CodeText, ErrorLine, filled, hairline, Lead, outline, Page, schoolLabel, TextButton, TextLink, Title } from "./ui";
@@ -56,6 +56,7 @@ const COPY = {
     givenOther: "ยกที่นั่งให้เพื่อนแล้ว",
     taken: "ที่นั่งฟรีของโรงเรียนนี้มีคนได้แล้ว",
     rejected: "ลิงก์นี้ไม่ได้ที่นั่งฟรี",
+    closed: "ปิดนับแล้ว",
   },
   friendLabel: "รหัสของเพื่อน",
   friendHint: "ขอรหัส 8 ตัวจากหน้าที่นั่งของเพื่อน ต้องเป็นคนที่สมัครแล้วแต่ยังไม่จ่าย",
@@ -107,12 +108,10 @@ type Props = {
   demo?: boolean;
 };
 
-const meterMode = (link: ShareLinkView): MeterMode =>
-  link.seat.state === "rejected" ? "rejected" : link.seat.state === "taken" ? "gone" : "open";
-
-function titleFor(link: ShareLinkView): string {
+function titleFor(link: ShareLinkView, open: boolean): string {
   const t = COPY.titles;
   const s = link.seat;
+  if (!open && s.state === "open") return t.closed;
   if (s.state === "taken") return t.taken;
   if (s.state === "rejected") return t.rejected;
   if (s.state === "checking") return s.recipient.who === "self" ? t.checkingSelf : s.recipient.who === "none" ? t.checkingNone : t.checkingOther;
@@ -301,7 +300,7 @@ function StudentLink(props: Props & { link: ShareLinkView; onLink: (l: ShareLink
   const { token, link, demo, onLink, state } = props;
   const open = state === "open";
   const poster = usePosterShare(link.code, "student", props.posterVersion);
-  const mode = meterMode(link);
+  const mode = meterModeFor(link, open);
   const start = open && link.seat.state === "open" && progressPhase(link.progress) === "start";
   const seatOpen = link.seat.state === "open";
 
@@ -331,7 +330,7 @@ function StudentLink(props: Props & { link: ShareLinkView; onLink: (l: ShareLink
       }
       bar={open && seatOpen ? <ShareBar poster={poster} /> : undefined}
     >
-      <Title>{titleFor(link)}</Title>
+      <Title>{titleFor(link, open)}</Title>
       <p className="mt-3 text-lg">
         {schoolLabel(link.school.name, link.school.province)}
         {open && link.canChangeSchool && (
@@ -347,9 +346,10 @@ function StudentLink(props: Props & { link: ShareLinkView; onLink: (l: ShareLink
 
       <div className="mt-6 space-y-6">
         <SeatBlock token={token} link={link} demo={demo} onLink={onLink} />
+        {/* Seat out of reach (taken, turned down, closed short): the team's board row is the next goal, above the grey meter. */}
+        {mode !== "open" && <TeamNext teamRow={props.teamRow} />}
         {/* Nothing shared yet: the poster is the one thing to do, so it comes first. */}
         {start ? posterSection : meter}
-        {(link.seat.state === "taken" || link.seat.state === "rejected") && <TeamNext teamRow={props.teamRow} />}
       </div>
 
       {open && <div className="mt-10">{start ? meter : posterSection}</div>}
