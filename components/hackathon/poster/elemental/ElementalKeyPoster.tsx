@@ -2,6 +2,7 @@ import { Trirong } from "next/font/google";
 import QRCode from "qrcode";
 import { EL, EL_FONT } from "./brand";
 import { ELEMENTAL, prizeTotal, thaiDayRange } from "./facts";
+import { posterLabel, posterSource } from "@/lib/hackathon/elemental/poster-numbers";
 
 /**
  * Elemental Hackathon key visual, 1080x1350.
@@ -22,6 +23,8 @@ const trirong = Trirong({
 
 export const W = 1080;
 export const H = 1350;
+/** A4 proportions at the same width (1:√2), for printing on A4 (Big, 2026-11-26: the print shop said 4:5 doesn't fill A4). */
+export const H_A4 = Math.round(W * Math.SQRT2);
 const PLATES = {
   grey: "/hackathon/poster/elemental/plate-key.png",
   blue: "/hackathon/poster/elemental/plate-key-blue.png",
@@ -313,13 +316,17 @@ function Fact({ icon, children, color = EL.cream }: { icon: keyof typeof ICON; c
  * Where the posters' QR code goes: the hackathon page first, not straight to
  * the sign-up form (Angpao, 2026-11-23). The page passes ?src= on to the
  * form, so sign-ups from the posters can still be counted (the tag is
- * Claude's choice, 2026-11-23).
+ * Claude's choice, 2026-11-23). A numbered printed copy tags its own number,
+ * ?src=poster-7, so each copy is counted on its own (Big, 2026-11-26).
  */
-export const REGISTER_URL = `https://www.${ELEMENTAL.url}?src=poster`;
+export function registerUrl(posterNo?: number): string {
+  return `https://www.${ELEMENTAL.url}?src=${posterSource(posterNo)}`;
+}
+export const REGISTER_URL = registerUrl();
 
 /** The sign-up QR code as ink pixels, drawn from the link above. */
-export function RegisterQr({ size, fill = EL.ink }: { size: number; fill?: string }) {
-  const { modules } = QRCode.create(REGISTER_URL, { errorCorrectionLevel: "M" });
+export function RegisterQr({ size, fill = EL.ink, posterNo }: { size: number; fill?: string; posterNo?: number }) {
+  const { modules } = QRCode.create(registerUrl(posterNo), { errorCorrectionLevel: "M" });
   const n = modules.size;
   let d = "";
   for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (modules.get(y, x)) d += `M${x} ${y}h1v1h-1z`;
@@ -354,8 +361,8 @@ const QR_SCATTER: [number, number, number, string][] = [
  * to scan: the data cells stay ink on cream, and the error correction level
  * (Q) covers the cells the flame hides.
  */
-function RegisterQrArt({ cell, fire = false, label = true }: { cell: number; fire?: boolean; label?: boolean }) {
-  const { modules } = QRCode.create(REGISTER_URL, { errorCorrectionLevel: "Q" });
+function RegisterQrArt({ cell, fire = false, label = true, posterNo }: { cell: number; fire?: boolean; label?: boolean; posterNo?: number }) {
+  const { modules } = QRCode.create(registerUrl(posterNo), { errorCorrectionLevel: "Q" });
   const n = modules.size;
   const quiet = 3;
   const eyes: [number, number][] = [[0, 0], [n - 7, 0], [0, n - 7]];
@@ -430,7 +437,7 @@ function Tag({ children }: { children: string }) {
 /** How the prize label is kept readable in the "number" design. */
 export type PrizeLabel = "tag" | "shadow" | "outline" | "beside";
 
-function BottomBlock({ design, label = "tag", rule = true, side = "facts", trophy = "line", prizeWeight = 200 }: { design: Exclude<BottomDesign, "stack">; label?: PrizeLabel; rule?: boolean; side?: "facts" | "qr"; trophy?: TrophyDesign; prizeWeight?: number }) {
+function BottomBlock({ design, label = "tag", rule = true, side = "facts", trophy = "line", prizeWeight = 200, posterNo }: { design: Exclude<BottomDesign, "stack">; label?: PrizeLabel; rule?: boolean; side?: "facts" | "qr"; trophy?: TrophyDesign; prizeWeight?: number; posterNo?: number }) {
   const date = thaiDayRange();
   const prize = prizeTotal();
   const friends = `฿${ELEMENTAL.groupPriceBaht}`;
@@ -503,8 +510,9 @@ function BottomBlock({ design, label = "tag", rule = true, side = "facts", troph
           </div>
           {side === "qr" ? (
             // The sign-up QR code takes the facts' place; the facts are a row under the title (review note, 2026-11-23).
-            <div style={{ background: EL.cream, padding: 9, flex: "none", marginBottom: 0 }}>
-              <RegisterQr size={150} />
+            <div className="relative" style={{ background: EL.cream, padding: 9, flex: "none", marginBottom: 0 }}>
+              <RegisterQr size={150} posterNo={posterNo} />
+              {posterNo ? <PosterNoTag posterNo={posterNo} /> : null}
             </div>
           ) : (
             <div className="flex flex-col gap-[10px] pb-[8px]" style={{ fontWeight: 400, fontSize: 23, lineHeight: "30px", flex: "none" }}>
@@ -592,18 +600,37 @@ function BottomBlock({ design, label = "tag", rule = true, side = "facts", troph
 }
 
 /**
+ * A printed copy's number, small under its QR code, so whoever puts the copy
+ * up can note where it went. It hangs below the cream block, so the layout
+ * doesn't move.
+ */
+function PosterNoTag({ posterNo }: { posterNo: number }) {
+  return (
+    <span className="absolute right-0 whitespace-nowrap" style={{ top: "100%", marginTop: 4, fontFamily: EL_FONT.mono, fontSize: 14, lineHeight: "18px", letterSpacing: "0.04em", color: EL.cream, opacity: 0.7 }}>
+      {posterLabel(posterNo)}
+    </span>
+  );
+}
+
+/**
  * With no options this is the poster Angpao chose on 2026-11-23: the facts in
  * a row under the title, the prize as one big light number with the solid
  * trophy, a plain sign-up QR code at the bottom right, and the line under
  * them. The other values are the layouts tried on the way there.
+ * `posterNo` makes a numbered printed copy: its QR code tags ?src=poster-<n>
+ * and its number is printed under the code (Big, 2026-11-26).
+ * `format="a4"` makes the canvas A4-shaped: the scene and title stay where
+ * they are, the dark foot runs on below the scene, and the bottom block (prize,
+ * QR, line) moves down with the bottom edge.
  */
-export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs = true, bottom = "number", label = "beside", rule = false, qr = "bottom", facts = "top", qrStyle = "art", trophy = "solid", prizeWeight = 200, who = WHO }: { id?: string; who?: string; sky?: keyof typeof PLATES; glyphs?: boolean; bottom?: BottomDesign; label?: PrizeLabel; rule?: boolean; qr?: false | "left" | "right" | "bottom"; facts?: "bottom" | "top"; trophy?: TrophyDesign; prizeWeight?: number; qrStyle?: "art" | "plain" | "glass" | "scan" | "fire" }) {
+export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs = true, bottom = "number", label = "beside", rule = false, qr = "bottom", facts = "top", qrStyle = "art", trophy = "solid", prizeWeight = 200, who = WHO, posterNo, format = "feed" }: { id?: string; who?: string; sky?: keyof typeof PLATES; glyphs?: boolean; bottom?: BottomDesign; label?: PrizeLabel; rule?: boolean; qr?: false | "left" | "right" | "bottom"; facts?: "bottom" | "top"; trophy?: TrophyDesign; prizeWeight?: number; qrStyle?: "art" | "plain" | "glass" | "scan" | "fire"; posterNo?: number; format?: "feed" | "a4" }) {
+  const height = format === "a4" ? H_A4 : H;
   return (
-    <div id={id} className={`${trirong.variable} relative overflow-hidden`} style={{ width: W, height: H, backgroundColor: "#2a2b26" }}>
+    <div id={id} className={`${trirong.variable} relative overflow-hidden`} style={{ width: W, height, backgroundColor: "#2a2b26" }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={PLATES[sky]} alt="" width={W} height={H} className="absolute inset-0 h-full w-full" />
+      <img src={PLATES[sky]} alt="" width={W} height={H} className="absolute left-0 top-0" style={{ width: W, height: H }} />
 
-      <svg className="absolute inset-0" width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
+      <svg className="absolute inset-0" width={W} height={height} viewBox={`0 0 ${W} ${height}`} aria-hidden="true">
         <defs>
           <linearGradient id="el-key-foot" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor="#0f0f0d" stopOpacity="0" />
@@ -633,6 +660,8 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
         ))}
         {/* The dark foot starts 150px lower than at first (Angpao, 2026-11-23: "move it a bit down", three times). */}
         <rect y={H - 300} width={W} height={300} fill="url(#el-key-foot)" />
+        {/* A4: below the scene, the foot carries on at its darkest, so there is no seam. */}
+        {height > H ? <rect y={H} width={W} height={height - H} fill="#0f0f0d" fillOpacity={0.92} /> : null}
       </svg>
 
       {/* The sign-up QR code in the top-right corner, over the top of the smoke (Angpao, 2026-11-23: "try top right instead"). */}
@@ -643,13 +672,13 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
             // It stands beside the title, as tall as "Elemental Hackathon", and
             // 32px higher than the title's top (Angpao, same day: "move up a bit").
             <div style={{ background: EL.cream, padding: 10 }}>
-              <RegisterQr size={194} />
+              <RegisterQr size={194} posterNo={posterNo} />
             </div>
           ) : qrStyle === "glass" ? (
             // Plain code on blurred glass, no text (Angpao, 2026-11-23). Only the
             // panel is see-through: the code's cells are solid black.
             <div style={{ padding: 14, background: "rgba(243,239,230,0.62)", backdropFilter: "blur(9px)", WebkitBackdropFilter: "blur(9px)", border: "1.5px solid rgba(243,239,230,0.75)" }}>
-              <RegisterQr size={165} fill="#000000" />
+              <RegisterQr size={165} fill="#000000" posterNo={posterNo} />
             </div>
           ) : qrStyle === "scan" ? (
             // A scan box that has locked on to the code, like the teaser video's boxes.
@@ -662,11 +691,11 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
                 สแกนเพื่อสมัคร
               </span>
               <div style={{ background: EL.cream, padding: 12 }}>
-                <RegisterQr size={165} />
+                <RegisterQr size={165} posterNo={posterNo} />
               </div>
             </div>
           ) : (
-            <RegisterQrArt cell={5} fire={qrStyle === "fire"} label={qrStyle !== "fire"} />
+            <RegisterQrArt cell={5} fire={qrStyle === "fire"} label={qrStyle !== "fire"} posterNo={posterNo} />
           )}
         </div>
       ) : null}
@@ -677,7 +706,7 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
         {qr === "left" ? (
           <div className="flex items-center gap-[22px]" style={{ marginLeft: 4 }}>
             <div style={{ background: EL.cream, padding: 8, flex: "none" }}>
-              <RegisterQr size={132} />
+              <RegisterQr size={132} posterNo={posterNo} />
             </div>
             <div>
               <div className="flex items-center gap-[18px]">
@@ -752,12 +781,12 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
           </div>
         </div>
       ) : (
-        <BottomBlock design={bottom} label={label} rule={rule} side={qr === "bottom" ? "qr" : "facts"} trophy={trophy} prizeWeight={prizeWeight} />
+        <BottomBlock design={bottom} label={label} rule={rule} side={qr === "bottom" ? "qr" : "facts"} trophy={trophy} prizeWeight={prizeWeight} posterNo={posterNo} />
       )}
 
       {/* Grain over the type too, so it sits in the same film */}
-      <svg className="pointer-events-none absolute inset-0" width={W} height={H} aria-hidden="true">
-        <rect width={W} height={H} filter="url(#el-key-grain)" opacity="0.1" style={{ mixBlendMode: "overlay" }} />
+      <svg className="pointer-events-none absolute inset-0" width={W} height={height} aria-hidden="true">
+        <rect width={W} height={height} filter="url(#el-key-grain)" opacity="0.1" style={{ mixBlendMode: "overlay" }} />
       </svg>
     </div>
   );
