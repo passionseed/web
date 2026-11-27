@@ -12,6 +12,9 @@ import { isRudeTeamName } from "./team-name";
  *
  * Sharing unlocks the lists, like a Nitro perk: the more real devices open the
  * share links of a team's members, the more of a style the team can change.
+ * A live Instagram Story proof from any member (lib/hackathon/elemental/story-proof.ts)
+ * unlocks every part at once (Big, 2026-11-27). Every unlock function takes it
+ * as storyProof. Sharing earns looks only, never a seat.
  * Safe to import in the browser.
  */
 
@@ -156,7 +159,9 @@ export function parseStyle(raw: unknown): TeamNameStyle | null {
   return { font: r.font, color: r.color, effect: r.effect, pair: isPair(r.pair) ? r.pair : DEFAULT_STYLE.pair };
 }
 
-export function unlockedParts(devices: number): Record<StylePart, boolean> {
+/** What a team can change: by its devices, or everything once a member has a live Story proof. */
+export function unlockedParts(devices: number, storyProof = false): Record<StylePart, boolean> {
+  if (storyProof) return { color: true, font: true, effect: true };
   return {
     color: devices >= TEAM_STYLE_TIERS.color,
     font: devices >= TEAM_STYLE_TIERS.font,
@@ -164,8 +169,9 @@ export function unlockedParts(devices: number): Record<StylePart, boolean> {
   };
 }
 
-/** The next part to unlock and how many more devices it needs, or null when everything is open. */
-export function nextUnlock(devices: number): { part: StylePart; at: number; left: number } | null {
+/** The next part to unlock and how many more devices it needs, or null when everything is open (a Story proof opens it all). */
+export function nextUnlock(devices: number, storyProof = false): { part: StylePart; at: number; left: number } | null {
+  if (storyProof) return null;
   for (const part of STYLE_PARTS) {
     const at = TEAM_STYLE_TIERS[part];
     if (devices < at) return { part, at, left: at - devices };
@@ -174,8 +180,8 @@ export function nextUnlock(devices: number): { part: StylePart; at: number; left
 }
 
 /** The parts of a style that differ from the default but aren't unlocked yet. */
-export function lockedChoices(style: TeamNameStyle, devices: number): StylePart[] {
-  const open = unlockedParts(devices);
+export function lockedChoices(style: TeamNameStyle, devices: number, storyProof = false): StylePart[] {
+  const open = unlockedParts(devices, storyProof);
   const out: StylePart[] = [];
   if (style.color !== DEFAULT_STYLE.color && !open.color) out.push("color");
   if (style.font !== DEFAULT_STYLE.font && !open.font) out.push("font");
@@ -184,8 +190,8 @@ export function lockedChoices(style: TeamNameStyle, devices: number): StylePart[
 }
 
 /** The style as it may show: any part the team hasn't unlocked goes back to the default. */
-export function clampStyle(style: TeamNameStyle, devices: number): TeamNameStyle {
-  const open = unlockedParts(devices);
+export function clampStyle(style: TeamNameStyle, devices: number, storyProof = false): TeamNameStyle {
+  const open = unlockedParts(devices, storyProof);
   return {
     font: open.font ? style.font : DEFAULT_STYLE.font,
     color: open.color ? style.color : DEFAULT_STYLE.color,
@@ -199,13 +205,13 @@ export type StyleSaveCheck =
   | { ok: false; error: "invalid" }
   | { ok: false; error: "locked"; parts: StylePart[] };
 
-/** The server's check on a save: on the lists, and nothing the team hasn't unlocked. */
-export function checkStyleSave(raw: unknown, devices: number): StyleSaveCheck {
+/** The server's check on a save: on the lists, and nothing the team hasn't unlocked (by devices or a live Story proof). */
+export function checkStyleSave(raw: unknown, devices: number, storyProof = false): StyleSaveCheck {
   const style = parseStyle(raw);
   if (!style) return { ok: false, error: "invalid" };
-  const parts = lockedChoices(style, devices);
+  const parts = lockedChoices(style, devices, storyProof);
   if (parts.length > 0) return { ok: false, error: "locked", parts };
-  return { ok: true, style: clampStyle(style, devices) };
+  return { ok: true, style: clampStyle(style, devices, storyProof) };
 }
 
 /** Longest board name. */
@@ -326,6 +332,8 @@ export type TeamStyleCardData = {
   style: TeamNameStyle;
   /** Devices over every member's share link, counted up to sign-up close. */
   devices: number;
+  /** A member has a live Instagram Story proof: every style is open, whatever the devices. */
+  storyUnlocked?: boolean;
   paid: number;
   /** Null when the team isn't on the board (no board name, no devices, or hidden). */
   rank: number | null;

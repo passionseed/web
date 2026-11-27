@@ -7,6 +7,7 @@ import { boardPhase, teamStyleEditable } from "@/lib/hackathon/elemental/team-st
 import { clampStyle, readStyle, type TeamNameStyle, type TeamStyleCardData } from "@/lib/hackathon/elemental/team-style";
 import { linkStats } from "@/lib/supabase/hackathon-link-views";
 import { forgetBoard, loadLeaderboard } from "@/lib/supabase/hackathon-leaderboard";
+import { teamHasStoryProof } from "@/lib/supabase/hackathon-story-proofs";
 
 /**
  * Team name styles and board names (service role). A team's live on
@@ -85,7 +86,9 @@ export async function setBoardHidden(eventSlug: string, owner: { kind: "team" | 
 }
 
 /**
- * The pay page's team row, once the board has launched. Null on any error
+ * The team's row for its TeamLine and the team editor, once the board has
+ * launched: its board name, style, devices, rank, and whether a member's
+ * live Instagram Story proof has unlocked every style. Null on any error
  * (for example before the migration is applied), so the pay page never
  * breaks because of it.
  */
@@ -99,15 +102,22 @@ export async function loadTeamStyleCard(
   try {
     const owner = { id: reg.id, teamId: reg.team?.id ?? null };
     const ids = owner.teamId ? await teamMemberIds(owner.teamId) : [reg.id];
-    const [own, numbers, board] = await Promise.all([readOwn(owner), teamLinkNumbers(eventSlug, ids), loadLeaderboard(eventSlug)]);
+    // teamHasStoryProof never throws (false without the table), so the row still loads.
+    const [own, numbers, board, storyUnlocked] = await Promise.all([
+      readOwn(owner),
+      teamLinkNumbers(eventSlug, ids),
+      loadLeaderboard(eventSlug),
+      teamHasStoryProof(eventSlug, ids),
+    ]);
     const key = boardKey({ teamId: owner.teamId, registrationId: reg.id });
     const row = board.find((e) => e.key === key);
     return {
       key,
       boardName: own.boardName,
       solo: !owner.teamId,
-      style: clampStyle(readStyle(own.style), numbers.devices),
+      style: clampStyle(readStyle(own.style), numbers.devices, storyUnlocked),
       devices: numbers.devices,
+      storyUnlocked,
       paid: numbers.paid,
       rank: row?.rank ?? null,
       teamsOnBoard: board.length,

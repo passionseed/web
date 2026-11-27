@@ -8,7 +8,8 @@ import { DEMO_TEAM_KEY } from "../team-style/demo";
  * previews only). Names, schools and numbers are invented; styles go through
  * the same clamp as real teams, so each one shows only what its devices unlock.
  */
-type Demo = [key: string, name: string, schools: string[], paid: number, devices: number, style: Partial<TeamNameStyle>, solo?: boolean];
+/** story: a member's live Instagram Story proof, which shows the whole style whatever the devices. */
+type Demo = [key: string, name: string, schools: string[], paid: number, devices: number, style: Partial<TeamNameStyle>, solo?: boolean, story?: boolean];
 
 const TEAMS: Demo[] = [
   [DEMO_TEAM_KEY, "ไฟป่า", ["สตรีวิทยา", "เตรียมอุดมศึกษา"], 9, 142, { font: "pattaya", effect: "gradient", pair: "fire" }],
@@ -22,16 +23,16 @@ const TEAMS: Demo[] = [
   ["tdemo0back", "เด็กหลังห้อง", ["อุดรพิทยานุกูล", "อุดรพิชัยรักษ์พิทยา", "สตรีราชินูทิศ"], 1, 25, { font: "sriracha", color: "ember" }],
   ["tdemo0404", "404 Not Found", ["สวนกุหลาบวิทยาลัย"], 1, 12, { color: "amber", font: "chakra" }],
   ["sdemo0wolf", "หมาป่าเดียวดาย", ["บดินทรเดชา (สิงห์ สิงหเสนี)"], 0, 9, {}, true],
-  ["tdemo0coral", "Coral Kids", ["ระยองวิทยาคม"], 0, 3, {}],
+  ["tdemo0coral", "Coral Kids", ["ระยองวิทยาคม"], 0, 3, { font: "chonburi", color: "water", effect: "offset" }, false, true],
 ];
 
 export function demoBoard(): PublicBoardEntry[] {
-  const entries: BoardEntry[] = TEAMS.map(([key, name, schools, paid, devices, style, solo]) => ({
+  const entries: BoardEntry[] = TEAMS.map(([key, name, schools, paid, devices, style, solo, story]) => ({
     key,
     id: key,
     solo: Boolean(solo),
     name,
-    style: clampStyle({ ...DEFAULT_STYLE, ...style }, devices),
+    style: clampStyle({ ...DEFAULT_STYLE, ...style }, devices, Boolean(story)),
     schools,
     devices,
     paid,

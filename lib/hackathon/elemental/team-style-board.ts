@@ -1,6 +1,7 @@
 import { countDevices } from "./link-views";
 import { shareCode, shareSource } from "./share";
 import { paidAt } from "./share-rules";
+import { anyLiveProof, type StoryProofRow } from "./story-proof";
 import { clampStyle, readStyle, type TeamNameStyle } from "./team-style";
 
 /**
@@ -106,7 +107,10 @@ export function buildBoard(input: {
   views: BoardView[];
   /** Counting stops here (elementalCountingEndsAt()). */
   endsAt: Date;
+  /** Instagram Story proofs: a live one from any member shows every part of the team's style. Ranking ignores them. */
+  storyProofs?: readonly Pick<StoryProofRow, "registrationId" | "revokedAt">[];
 }): BoardEntry[] {
+  const proofs = input.storyProofs ?? [];
   const viewsBySource = new Map<string, { ipHash: string }[]>();
   for (const v of input.views) {
     if (!before(v.createdAt, input.endsAt)) continue;
@@ -144,7 +148,7 @@ export function buildBoard(input: {
       id: r.id,
       solo: true,
       name: r.boardName?.trim() || null,
-      style: clampStyle(readStyle(r.style), devices),
+      style: clampStyle(readStyle(r.style), devices, anyLiveProof(proofs, [r.id])),
       schools: teamSchools(r.schools),
       devices,
       paid,
@@ -165,7 +169,7 @@ export function buildBoard(input: {
       id: team.id,
       solo: false,
       name: team.boardName?.trim() || null,
-      style: clampStyle(readStyle(team.style), devices),
+      style: clampStyle(readStyle(team.style), devices, anyLiveProof(proofs, regs.map((r) => r.id))),
       schools: teamSchools(regs.flatMap((r) => r.schools)),
       devices,
       paid,

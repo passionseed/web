@@ -44,13 +44,15 @@ import css from "./team-editor.module.css";
 
 // copy: placeholder — Angpao rewrites
 const COPY = {
-  title: "แต่งชื่อทีม",
-  titleSolo: "แต่งชื่อของฉัน",
+  title: "custom ชื่อทีม",
+  titleSolo: "custom ชื่อของฉัน",
   count: (n: number) => `ทั้งทีม ${n} เครื่องที่เปิดลิงก์`,
   countSolo: (n: number) => `${n} เครื่องที่เปิดลิงก์ของฉัน`,
   next: (left: number, part: string) => `อีก ${left} เครื่อง ปลดล็อก${part}`,
-  allOpen: "ปลดล็อกครบแล้ว แต่งได้ทุกแบบ",
-  frozen: "ปิดนับแล้ว ตัวเลขหยุดนับ แต่งชื่อได้ถึงวัน Demo Day",
+  allOpen: "ปลดล็อกครบแล้ว custom ได้ทุกแบบ",
+  story: "ปลดล็อกจากสตอรี่ IG",
+  storyHint: "หรือลงสตอรี่ IG ปลดล็อกทุกแบบทันที",
+  frozen: "ปิดนับแล้ว ตัวเลขหยุดนับ custom ชื่อได้ถึงวัน Demo Day",
   preview: "ตัวอย่างบนกระดาน",
   previewLocked: "ลองดู ยังบันทึกไม่ได้",
   name: "ชื่อทีมบนกระดาน",
@@ -76,7 +78,7 @@ const COPY = {
   locked: "ยังปลดล็อกไม่ถึง รีเฟรชหน้านี้แล้วลองใหม่",
   badName: `ชื่อยาวได้ไม่เกิน ${BOARD_NAME_MAX} ตัว`,
   unavailableTitle: "กระดานทีมยังไม่เปิด",
-  unavailable: "ตั้งชื่อและแต่งชื่อทีมได้เมื่อกระดานทีมเปิด",
+  unavailable: "ตั้งชื่อและ custom ชื่อทีมได้เมื่อกระดานทีมเปิด",
   sample: "กข Aa",
 };
 
@@ -117,14 +119,16 @@ export function TeamEditor({
   const [justSaved, setJustSaved] = useState(false);
 
   const { devices, solo, editable } = data;
-  const unlocked = unlockedParts(devices);
+  // A member's live Instagram Story proof opens every part at once.
+  const story = Boolean(data.storyUnlocked);
+  const unlocked = unlockedParts(devices, story);
   const trimmed = name.replace(/\s+/g, " ").trim();
-  const locked = lockedChoices(draft, devices);
+  const locked = lockedChoices(draft, devices, story);
   const lockAt = Math.max(0, ...locked.map((p) => TEAM_STYLE_TIERS[p]));
   const nameChanged = trimmed !== (saved.boardName ?? "");
   const styleChanged = JSON.stringify(draft) !== JSON.stringify(saved.style);
   const canSave = editable && Boolean(trimmed) && locked.length === 0 && (nameChanged || styleChanged) && !saving;
-  const next = nextUnlock(devices);
+  const next = nextUnlock(devices, story);
 
   const change = (fn: () => void) => {
     setError(null);
@@ -210,8 +214,28 @@ export function TeamEditor({
     <Page surface="ground" back={{ href: payHref }} bar={bar} wordmark={false}>
       <H1>{solo ? COPY.titleSolo : COPY.title}</H1>
       <Body secondary className="mt-2">
-        {[(solo ? COPY.countSolo : COPY.count)(devices), !editable ? COPY.closed : data.final ? COPY.frozen : next ? COPY.next(next.left, STYLE_PART_TH[next.part]) : COPY.allOpen].join(" · ")}
+        {(solo ? COPY.countSolo : COPY.count)(devices)}
+        {" · "}
+        {!editable ? (
+          COPY.closed
+        ) : data.final ? (
+          COPY.frozen
+        ) : story ? (
+          <span className="inline-block" style={{ color: v.action }}>
+            {COPY.story}
+          </span>
+        ) : next ? (
+          COPY.next(next.left, STYLE_PART_TH[next.part])
+        ) : (
+          COPY.allOpen
+        )}
       </Body>
+      {/* Still locked: the other way to open everything (the share page takes the Story screenshot). */}
+      {editable && !data.final && !story && next && data.shareHref && (
+        <EditorialLink href={data.shareHref} size="sm" tone="action" className="mt-2">
+          {COPY.storyHint}
+        </EditorialLink>
+      )}
 
       {/* The team's row as the board draws it, pinned while the options scroll. */}
       <div className={`${css.preview} -mx-5 mt-6 border-y sm:-mx-8`} style={{ borderColor: v.rule }} aria-live="polite">

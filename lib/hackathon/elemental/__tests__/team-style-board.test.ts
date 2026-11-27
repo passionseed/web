@@ -138,6 +138,31 @@ describe("building the team board", () => {
     expect(t1.style).toEqual({ ...DEFAULT_STYLE, color: "flame" });
   });
 
+  it("shows a team's whole style once any member has a live Story proof, and ranks it the same", () => {
+    const input = {
+      teams,
+      registrations,
+      views: [...views(src(1), 8), ...views(src(2), 6), ...views(src(4), 3)],
+      endsAt: END,
+    };
+    const plain = buildBoard(input);
+    const withProof = buildBoard({
+      ...input,
+      storyProofs: [
+        // Member 2 of T1: live. The solo sign-up 4: revoked, so it unlocks nothing.
+        { registrationId: id(2), revokedAt: null },
+        { registrationId: id(4), revokedAt: "2026-12-01T10:00:00+07:00" },
+      ],
+    });
+    const key = boardKey({ teamId: T1, registrationId: id(1) });
+    const soloKey = boardKey({ teamId: null, registrationId: id(4) });
+    expect(withProof.find((e) => e.key === key)!.style).toEqual({ font: "chakra", color: "flame", effect: "solid", pair: DEFAULT_STYLE.pair });
+    expect(plain.find((e) => e.key === key)!.style).toEqual({ ...DEFAULT_STYLE, color: "flame" });
+    expect(withProof.find((e) => e.key === soloKey)!.style).toEqual(plain.find((e) => e.key === soloKey)!.style);
+    // Looks only: the ranking ignores proofs.
+    expect(rankBoard(withProof).map((e) => [e.key, e.rank])).toEqual(rankBoard(plain).map((e) => [e.key, e.rank]));
+  });
+
   it("caps devices per network, the same way a single link is counted", () => {
     const capped = buildBoard({
       teams: [],

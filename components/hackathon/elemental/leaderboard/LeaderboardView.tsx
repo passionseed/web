@@ -42,8 +42,9 @@ const COPY = {
   soon: "กระดานนี้จะโชว์ทีมที่ชวนเพื่อนมาสมัครได้มากที่สุด นับจากลิงก์แชร์ของทุกคนในทีม",
   unavailable: "โหลดกระดานไม่ได้ตอนนี้ หน้านี้จะลองใหม่เอง",
   joinTitle: "อยากให้ทีมขึ้นกระดาน",
-  join: "ตั้งชื่อทีมบนกระดานที่หน้าของฉัน แล้วแชร์ลิงก์ของตัวเอง ทุกเครื่องที่เปิดลิงก์นับให้ทีม ยิ่งมากยิ่งแต่งชื่อทีมได้มาก",
-  joinYou: "แชร์ลิงก์ของตัวเองต่อ ทุกเครื่องที่เปิดลิงก์นับให้ทีม ยิ่งมากยิ่งแต่งชื่อทีมได้มาก",
+  join: "ตั้งชื่อทีมบนกระดานที่หน้าของฉัน แล้วแชร์ลิงก์ของตัวเอง ทุกเครื่องที่เปิดลิงก์นับให้ทีม ยิ่งมากยิ่ง custom ชื่อทีมได้มาก",
+  joinYou: "แชร์ลิงก์ของตัวเองต่อ ทุกเครื่องที่เปิดลิงก์นับให้ทีม ยิ่งมากยิ่ง custom ชื่อทีมได้มาก",
+  joinStory: "หรือใครในทีมลงสตอรี่ IG ปลดล็อกทุกแบบทันที",
   unlockTag: (n: number) => `${n} เครื่อง`,
   joinNote: "เปิดซ้ำจากเครื่องเดิมนับครั้งเดียว ทีมงานซ่อนชื่อที่ไม่เหมาะสมได้",
   finalNote: "ปิดรับสมัครแล้ว ตัวเลขหยุดนับ ทีมงานซ่อนชื่อที่ไม่เหมาะสมได้",
@@ -276,6 +277,7 @@ function HowToJoin({ you }: { you: BoardYou | null }) {
       <H2>{COPY.joinTitle}</H2>
       <Body className="mt-3">{you?.shareHref ? COPY.joinYou : COPY.join}</Body>
       <FactStrip className="mt-6" facts={STYLE_PARTS.map((part) => ({ tag: COPY.unlockTag(TEAM_STYLE_TIERS[part]), value: STYLE_PART_TH[part] }))} />
+      <Body className="mt-4">{COPY.joinStory}</Body>
       <Body secondary className="mt-4">
         {COPY.explain}
       </Body>

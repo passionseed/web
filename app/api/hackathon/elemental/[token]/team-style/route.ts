@@ -7,6 +7,7 @@ import { teamStyleEditable } from "@/lib/hackathon/elemental/team-style-phase";
 import { safeServerError } from "@/lib/security/route-guards";
 import { isTrustedAdminRequest } from "@/lib/security/request-origin";
 import { getRegistrationByToken } from "@/lib/supabase/hackathon-event-registrations";
+import { teamHasStoryProof } from "@/lib/supabase/hackathon-story-proofs";
 import { saveNameStyle, teamLinkNumbers, teamMemberIds } from "@/lib/supabase/hackathon-team-style";
 
 const body = z.object({
@@ -18,8 +19,9 @@ const body = z.object({
 /**
  * Save a team's board name and/or name style from the pay page. Any member of
  * the team can (last save wins). The name gets the rude-word check; the style
- * must come from the fixed lists and use only what the team's share links had
- * unlocked by sign-up close. Open until the end of Demo Day.
+ * must come from the fixed lists and use only what the team has unlocked: by
+ * its share links' devices up to sign-up close, or all at once by a member's
+ * live Instagram Story proof. Open until the end of Demo Day.
  */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   try {
@@ -47,8 +49,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     let devices: number | undefined;
     if (parsed.data.style !== undefined) {
       const ids = teamId ? await teamMemberIds(teamId) : [reg.id];
-      devices = (await teamLinkNumbers(ELEMENTAL.slug, ids)).devices;
-      const check = checkStyleSave(parsed.data.style, devices);
+      // Unlocked by the team's devices, or all at once by a member's live Instagram Story proof.
+      const [numbers, storyProof] = await Promise.all([teamLinkNumbers(ELEMENTAL.slug, ids), teamHasStoryProof(ELEMENTAL.slug, ids)]);
+      devices = numbers.devices;
+      const check = checkStyleSave(parsed.data.style, devices, storyProof);
       if (!check.ok) {
         return check.error === "locked"
           ? NextResponse.json({ error: "locked", parts: check.parts, devices }, { status: 403 })

@@ -54,6 +54,18 @@ describe("team name style tiers", () => {
     expect(lockedChoices(FULL, TEAM_STYLE_TIERS.effect)).toEqual([]);
   });
 
+  it("opens every part at once with a live Instagram Story proof, whatever the devices", () => {
+    expect(unlockedParts(0, true)).toEqual({ color: true, font: true, effect: true });
+    expect(nextUnlock(3, true)).toBeNull();
+    expect(lockedChoices(FULL, 0, true)).toEqual([]);
+    expect(clampStyle(FULL, 0, true)).toEqual(FULL);
+    expect(checkStyleSave(FULL, 0, true)).toEqual({ ok: true, style: FULL });
+    // Without one, the device tiers still decide.
+    expect(checkStyleSave(FULL, 0, false)).toEqual({ ok: false, error: "locked", parts: ["color", "font", "effect"] });
+    // A proof doesn't let anything off the lists through.
+    expect(checkStyleSave({ ...FULL, font: "charm" }, 0, true)).toEqual({ ok: false, error: "invalid" });
+  });
+
   it("shows a style only as far as the team has unlocked it", () => {
     expect(clampStyle(FULL, 0)).toEqual(DEFAULT_STYLE);
     expect(clampStyle(FULL, TEAM_STYLE_TIERS.color)).toEqual({ ...DEFAULT_STYLE, color: "water" });

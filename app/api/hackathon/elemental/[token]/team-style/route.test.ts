@@ -7,6 +7,7 @@ const getRegistrationByToken = jest.fn();
 const saveNameStyle = jest.fn();
 const teamLinkNumbers = jest.fn();
 const teamMemberIds = jest.fn();
+const teamHasStoryProof = jest.fn();
 let editable = true;
 
 jest.mock("@/lib/supabase/hackathon-event-registrations", () => ({
@@ -16,6 +17,9 @@ jest.mock("@/lib/supabase/hackathon-team-style", () => ({
   saveNameStyle: (...args: unknown[]) => saveNameStyle(...args),
   teamLinkNumbers: (...args: unknown[]) => teamLinkNumbers(...args),
   teamMemberIds: (...args: unknown[]) => teamMemberIds(...args),
+}));
+jest.mock("@/lib/supabase/hackathon-story-proofs", () => ({
+  teamHasStoryProof: (...args: unknown[]) => teamHasStoryProof(...args),
 }));
 jest.mock("@/lib/hackathon/elemental/team-style-phase", () => ({ teamStyleEditable: () => editable }));
 
@@ -43,6 +47,7 @@ beforeEach(() => {
   getRegistrationByToken.mockResolvedValue({ id: "reg-1", status: "pending", team: { id: "team-1", name: "ทีมมิว" } });
   teamMemberIds.mockResolvedValue(["reg-1", "reg-2"]);
   saveNameStyle.mockResolvedValue(undefined);
+  teamHasStoryProof.mockResolvedValue(false);
 });
 
 it("saves a board name and a style the team has unlocked, for the whole team", async () => {
@@ -67,6 +72,16 @@ it("refuses a part the team hadn't unlocked", async () => {
   expect(status).toBe(403);
   expect(json).toMatchObject({ error: "locked", parts: ["effect"] });
   expect(saveNameStyle).not.toHaveBeenCalled();
+});
+
+it("lets a team with a member's live Instagram Story proof save every part, checked on the server", async () => {
+  teamLinkNumbers.mockResolvedValue({ devices: 2, paid: 0 });
+  teamHasStoryProof.mockResolvedValue(true);
+  const { status, json } = await save({ style: FULL });
+  expect(status).toBe(200);
+  expect(json).toMatchObject({ style: FULL });
+  expect(teamHasStoryProof).toHaveBeenCalledWith("elemental-2026", ["reg-1", "reg-2"]);
+  expect(saveNameStyle).toHaveBeenCalledWith("elemental-2026", { id: "reg-1", teamId: "team-1" }, { style: FULL, boardName: undefined });
 });
 
 it("refuses anything that isn't on the lists, a free second colour included", async () => {

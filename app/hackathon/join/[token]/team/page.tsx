@@ -11,7 +11,7 @@ import { loadTeamStyleCard } from "@/lib/supabase/hackathon-team-style";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: `แต่งชื่อทีม ${ELEMENTAL.edition} Hackathon`,
+  title: `custom ชื่อทีม ${ELEMENTAL.edition} Hackathon`,
   robots: { index: false, follow: false },
   // The URL holds the pay token: don't leak it to other sites.
   referrer: "no-referrer",

@@ -38,8 +38,14 @@ describe("the team line's text", () => {
     expect(teamLineParts({ ...base, rank: 1, devices: 142 })).toEqual(["อันดับ 1 จาก 23", "ปลดล็อกครบแล้ว"]);
   });
 
+  it("says a member's Instagram Story unlocked everything, instead of the device tiers", () => {
+    expect(teamLineParts({ ...base, rank: 17, devices: 6, storyUnlocked: true })).toEqual(["อันดับ 17 จาก 23", "ปลดล็อกจากสตอรี่ IG"]);
+    expect(teamLineParts({ ...base, boardName: null, devices: 6, storyUnlocked: true })).toEqual(["ตั้งชื่อเพื่อขึ้นกระดาน", "ปลดล็อกจากสตอรี่ IG"]);
+    expect(teamLineParts({ ...base, devices: 0, storyUnlocked: true })).toEqual(["ยังไม่ขึ้นกระดาน", "อีก 1 เครื่องขึ้นกระดาน", "ปลดล็อกจากสตอรี่ IG"]);
+  });
+
   it("says final after close, and whether names can still change", () => {
-    expect(teamLineParts({ ...base, rank: 1, devices: 142, final: true })).toEqual(["ผลสุดท้าย อันดับ 1 จาก 23", "ปิดนับแล้ว แต่งชื่อได้ถึงวัน Demo Day"]);
+    expect(teamLineParts({ ...base, rank: 1, devices: 142, final: true })).toEqual(["ผลสุดท้าย อันดับ 1 จาก 23", "ปิดนับแล้ว custom ชื่อได้ถึงวัน Demo Day"]);
     expect(teamLineParts({ ...base, rank: 1, devices: 142, final: true, editable: false })).toEqual(["ผลสุดท้าย อันดับ 1 จาก 23", "ปิดแก้ไขแล้ว"]);
   });
 });
@@ -47,7 +53,7 @@ describe("the team line's text", () => {
 describe("TeamLine", () => {
   it("links to the team editor route and the board, and keeps the pay token out of the board link", () => {
     render(<TeamLine token={"a".repeat(32)} data={{ ...base, rank: 5, devices: 31 }} />);
-    expect(screen.getByRole("link", { name: /แต่งชื่อ/ }).getAttribute("href")).toBe(`/hackathon/join/${"a".repeat(32)}/team`);
+    expect(screen.getByRole("link", { name: /custom ชื่อทีม/ }).getAttribute("href")).toBe(`/hackathon/join/${"a".repeat(32)}/team`);
     const board = screen.getByRole("link", { name: /กระดาน/ }).getAttribute("href");
     expect(board).toBe("/hackathon/elemental/leaderboard#tabc");
     expect(screen.getByText("ไฟป่า")).toBeTruthy();
@@ -55,9 +61,9 @@ describe("TeamLine", () => {
 
   it("offers no edit link once names can't change, and uses the demo's own editor link", () => {
     const { unmount } = render(<TeamLine token="demo" demo data={demoStyleCard("closed", { solo: false })} />);
-    expect(screen.queryByRole("link", { name: /แต่งชื่อ/ })).toBeNull();
+    expect(screen.queryByRole("link", { name: /custom ชื่อ/ })).toBeNull();
     unmount();
     render(<TeamLine token="demo" demo data={demoStyleCard("fonts", { solo: true })} />);
-    expect(screen.getByRole("link", { name: /แต่งชื่อ/ }).getAttribute("href")).toBe("/hackathon/join/demo/team?style=fonts&mode=solo");
+    expect(screen.getByRole("link", { name: /custom ชื่อ/ }).getAttribute("href")).toBe("/hackathon/join/demo/team?style=fonts&mode=solo");
   });
 });

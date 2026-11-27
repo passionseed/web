@@ -18,7 +18,8 @@ import { StyledTeamName } from "./StyledTeamName";
 /**
  * The team's line, on the pay page's team card (inside its dark slab) and on
  * the share page: the board name as the board draws it, then one text line
- * (rank · what's unlocked · what unlocks next), then "แต่งชื่อ →" to the team
+ * (rank · what's unlocked · what unlocks next, or that a member's Instagram
+ * Story unlocked it all), then "custom ชื่อทีม →" to the team
  * editor (/hackathon/join/<token>/team) and "กระดาน →". No meter: the team's
  * progress is the text line. Colours come from the surface's CSS variables;
  * the name's colour variant follows the surface around it (the dark ground
@@ -39,21 +40,28 @@ const COPY = {
   unlocked: (part: string) => `ปลดล็อก${part}แล้ว`,
   next: (left: number, part: string) => `อีก ${left} เครื่อง ปลดล็อก${part}`,
   allOpen: "ปลดล็อกครบแล้ว",
-  frozen: "ปิดนับแล้ว แต่งชื่อได้ถึงวัน Demo Day",
+  story: "ปลดล็อกจากสตอรี่ IG",
+  frozen: "ปิดนับแล้ว custom ชื่อได้ถึงวัน Demo Day",
   closed: "ปิดแก้ไขแล้ว",
-  edit: "แต่งชื่อ",
+  edit: "custom ชื่อทีม",
+  editSolo: "custom ชื่อ",
   setName: "ตั้งชื่อ",
   board: "กระดาน",
 };
 
 /** The status line's parts, in order. Exported for tests and the editor. */
-export function teamLineParts(data: Pick<TeamStyleCardData, "boardName" | "devices" | "rank" | "teamsOnBoard" | "final" | "editable">): string[] {
+export function teamLineParts(
+  data: Pick<TeamStyleCardData, "boardName" | "devices" | "rank" | "teamsOnBoard" | "final" | "editable" | "storyUnlocked">,
+): string[] {
   const named = Boolean(data.boardName);
+  const story = Boolean(data.storyUnlocked);
   const rank = data.rank ? (data.final ? COPY.finalRank : COPY.rank)(data.rank, data.teamsOnBoard) : named ? COPY.offBoard : null;
   let progress: string[];
   if (data.final) progress = [data.editable ? COPY.frozen : COPY.closed];
-  else if (!named) progress = [COPY.setToJoin];
-  else if (data.devices < 1) progress = [COPY.toBoard(1)];
+  else if (!named) progress = [COPY.setToJoin, ...(story ? [COPY.story] : [])];
+  else if (data.devices < 1) progress = [COPY.toBoard(1), ...(story ? [COPY.story] : [])];
+  // Every style is open, and this is why (the device tiers no longer matter).
+  else if (story) progress = [COPY.story];
   else {
     const next = nextUnlock(data.devices);
     const last = [...STYLE_PARTS].reverse().find((p) => data.devices >= TEAM_STYLE_TIERS[p]);
@@ -134,7 +142,7 @@ export function TeamLine({
       <div className="mt-3 flex flex-wrap items-center gap-x-6">
         {data.editable && (
           <EditorialLink href={editHref} size="sm" tone="action">
-            {named ? COPY.edit : COPY.setName}
+            {named ? (data.solo ? COPY.editSolo : COPY.edit) : COPY.setName}
           </EditorialLink>
         )}
         <EditorialLink href={boardHref} size="sm">

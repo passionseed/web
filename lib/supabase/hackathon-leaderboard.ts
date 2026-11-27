@@ -131,6 +131,31 @@ async function loadViews(eventSlug: string, endsAt: string): Promise<BoardView[]
   return rows.map((v) => ({ source: v.source, ipHash: v.ip_hash }));
 }
 
+/**
+ * The live Instagram Story proofs (lib/hackathon/elemental/story-proof.ts): a
+ * team with one shows its whole style. Never throws: before the
+ * 20261127120000 migration (or on any error) there are none, so the board
+ * only shows what devices unlock.
+ */
+async function loadStoryProofs(eventSlug: string): Promise<{ registrationId: string; revokedAt: string | null }[]> {
+  try {
+    const db = createAdminClient();
+    const rows = await allRows<{ registration_id: string }>((from, to) =>
+      db
+        .from("hackathon_story_proofs")
+        .select("registration_id")
+        .eq("event_slug", eventSlug)
+        .is("revoked_at", null)
+        .order("registration_id")
+        .range(from, to) as unknown as Page<{ registration_id: string }>,
+    );
+    return rows.map((r) => ({ registrationId: r.registration_id, revokedAt: null }));
+  } catch (error) {
+    console.error("[elemental leaderboard] no story proofs", error);
+    return [];
+  }
+}
+
 const memo = new Map<string, { at: number; entries: Promise<BoardEntry[]> }>();
 
 /** Every team's numbers, hidden and unnamed ones included, counted up to sign-up close. Kept for MEMO_MS. */
@@ -139,8 +164,8 @@ export async function loadBoardEntries(eventSlug: string): Promise<BoardEntry[]>
   if (hit && Date.now() - hit.at < MEMO_MS) return hit.entries;
   const endsAt = elementalCountingEndsAt();
   const iso = endsAt.toISOString();
-  const entries = Promise.all([loadTeams(eventSlug), loadRegistrations(eventSlug, iso), loadViews(eventSlug, iso)]).then(
-    ([teams, registrations, views]) => buildBoard({ teams, registrations, views, endsAt }),
+  const entries = Promise.all([loadTeams(eventSlug), loadRegistrations(eventSlug, iso), loadViews(eventSlug, iso), loadStoryProofs(eventSlug)]).then(
+    ([teams, registrations, views, storyProofs]) => buildBoard({ teams, registrations, views, endsAt, storyProofs }),
   );
   memo.set(eventSlug, { at: Date.now(), entries });
   entries.catch(() => memo.delete(eventSlug));
