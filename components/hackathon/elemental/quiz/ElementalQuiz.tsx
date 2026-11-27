@@ -191,7 +191,7 @@ function Intro({ onStart }: { onStart: () => void }) {
               </div>
             ))}
             <span className="text-xs" style={{ color: EL.creamSoft }}>
-              {el === "aether" ? "Aether" : QUIZ_RESULTS[el].th}
+              {QUIZ_RESULTS[el].th}
             </span>
           </div>
         ))}
@@ -203,7 +203,7 @@ function Intro({ onStart }: { onStart: () => void }) {
         คุณคือธาตุอะไร
       </h1>
       <p className="mt-5 text-pretty text-lg" style={{ color: EL.creamSoft }}>
-        ดิน น้ำ ลม ไฟ หรือธาตุที่มองไม่เห็น 8 ข้อ 1 นาที แล้วดูว่าทีมของคุณยังขาดธาตุไหน
+        ดิน น้ำ ลม ไฟ หรืออีเธอร์ 8 ข้อ 1 นาที แล้วดูว่าทีมของคุณยังขาดธาตุไหน
       </p>
       <button
         type="button"

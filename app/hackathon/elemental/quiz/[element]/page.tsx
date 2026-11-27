@@ -199,12 +199,11 @@ export default async function QuizResultPage({ params, searchParams }: { params:
                 key={el}
                 href={`/hackathon/elemental/quiz/${el}`}
                 aria-current={el === element ? "page" : undefined}
-                aria-label={el === "aether" ? QUIZ_RESULTS[el].th : undefined}
                 className="flex flex-col items-center gap-2 rounded-xl border px-1 py-3 text-center text-xs"
                 style={{ borderColor: el === element ? QUIZ_PALETTE[el].accent : line }}
               >
                 <ElementIcon element={el} size={36} id={`all-${el}`} />
-                {el === "aether" ? "Aether" : QUIZ_RESULTS[el].th}
+                {QUIZ_RESULTS[el].th}
               </Link>
             ))}
           </div>

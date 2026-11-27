@@ -115,7 +115,7 @@ function lines(ctx: Ctx, text: string, font: string, color: string, x: number, y
   return y + (out.length - 1) * lineHeight;
 }
 
-/** The one-syllable names go huge; "ธาตุที่มองไม่เห็น" has to fit one line. */
+/** The short names go huge; a long one shrinks to fit one line. */
 function nameFont(ctx: Ctx, th: string, max: number, maxWidth: number): number {
   let size = max;
   ctx.font = `${size}px "${LIGHT}"`;
@@ -164,10 +164,13 @@ export function renderQuizStory(key: ElementKey): Buffer {
   ctx.fillStyle = p.ink;
   ctx.fillText("ฉันคือ", x, 520);
 
-  // The one-syllable names sit beside the icon; a name too wide for that
-  // ("ธาตุที่มองไม่เห็น") drops under the icon and its effect.
-  const size = nameFont(ctx, r.th, 340, maxW);
-  const top = ctx.measureText(r.th).width > icon.left - 48 - x ? Math.max(570, icon.bottom + 40) : 570;
+  // The name sits beside the icon, as big as fits there (340 px for the one-syllable names). Only
+  // a name that would have to shrink below 240 px to fit drops under the icon and its effect instead.
+  const beside = nameFont(ctx, r.th, 340, icon.left - 48 - x);
+  const fitsBeside = beside >= 240;
+  const size = fitsBeside ? beside : nameFont(ctx, r.th, 340, maxW);
+  ctx.font = `${size}px "${LIGHT}"`;
+  const top = fitsBeside ? 570 : Math.max(570, icon.bottom + 40);
   ctx.fillStyle = p.ink;
   let y = drawName(ctx, r.th, x, top, size);
   y = Math.max(y, icon.bottom);
@@ -194,7 +197,7 @@ export function renderQuizStory(key: ElementKey): Buffer {
   ctx.fillText(QUIZ_SHORT_URL, x + 40, linkTop + 88);
 
   const boxBottom = linkTop - 24;
-  const boxTop = Math.max(y + 50, boxBottom - 260);
+  const boxTop = Math.min(Math.max(y + 50, boxBottom - 260), boxBottom - 200);
   pixelBox(ctx, x, boxTop, maxW, boxBottom - boxTop, 6, p.accent);
   ctx.font = `52px "${REGULAR}"`;
   ctx.fillStyle = p.ink;
