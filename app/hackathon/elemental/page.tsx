@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { ElementalLanding } from "@/components/hackathon/elemental/ElementalLanding";
+import { TrackLinkView } from "@/components/hackathon/elemental/TrackLinkView";
 import { TrackStep } from "@/components/hackathon/elemental/TrackStep";
 import { ELEMENTAL, prizeTotal, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
 import { elementalRegistrationOpen, normalizeSource } from "@/lib/hackathon/elemental/registration";
@@ -76,6 +77,7 @@ export default async function ElementalPage({ searchParams }: { searchParams: Se
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(eventSchema(open)) }} />
       <TrackStep step="landing" source={src} />
+      <TrackLinkView source={src} />
       <ElementalLanding joinHref={joinHref} open={open} />
     </>
   );
