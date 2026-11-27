@@ -24,6 +24,10 @@ describe("link views", () => {
     expect(visitHashes("f".repeat(32), "1.2.3.4", "k").deviceHash).not.toEqual(a.deviceHash);
     expect(visitHashes(id, "1.2.3.4", "other-key").deviceHash).not.toEqual(a.deviceHash);
     expect(a.deviceHash).not.toContain("1.2.3.4");
+    // Private tab on the same phone: new cookie, same network + browser.
+    const ua = "Mozilla/5.0 (iPhone) Line/14.19.0 test browser";
+    expect(visitHashes("f".repeat(32), "1.2.3.4", "k", ua).netuaHash).toEqual(visitHashes(id, "1.2.3.4", "k", ua).netuaHash);
+    expect(visitHashes(id, "1.2.3.4", "k", ua).netuaHash).not.toEqual(visitHashes(id, "5.6.7.8", "k", ua).netuaHash);
     expect(DEVICE_ID_RE.test(id)).toBe(true);
     expect(DEVICE_ID_RE.test("not-an-id")).toBe(false);
   });

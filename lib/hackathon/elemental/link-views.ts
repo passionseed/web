@@ -6,9 +6,9 @@ import { createHmac } from "crypto";
  *
  * A device is the browser's first-party id cookie (DEVICE_COOKIE), hashed with
  * a server key, so a phone that changes network (airplane mode, wifi to mobile)
- * stays one device. Private tabs get a new cookie each time, so each network
- * address can add at most PER_NETWORK_CAP devices to a link: one person with
- * many tabs can't fill it. The raw address is never stored.
+ * stays one device. Private tabs get a new cookie each time, but the same
+ * network + browser string counts once, and each network address can add at
+ * most PER_NETWORK_CAP devices to a link. The raw address is never stored.
  */
 
 import { PER_NETWORK_CAP } from "./link-views-shared";
@@ -29,9 +29,19 @@ function hmac32(key: string, value: string): string {
   return createHmac("sha256", key).update(value).digest("hex").slice(0, 32);
 }
 
-/** Keyed hashes for one visit. The key must be a server secret, so the hashes can't be reversed by guessing addresses or ids. */
-export function visitHashes(deviceId: string, ip: string, key: string): { deviceHash: string; ipHash: string } {
-  return { deviceHash: hmac32(key, `device|${deviceId}`), ipHash: hmac32(key, `ip|${ip}`) };
+/**
+ * Keyed hashes for one visit: the browser cookie id (device), the network
+ * address (for the per-network cap) and network + browser string (so private
+ * tabs on one phone, each with a new cookie, still count once). The key must be
+ * a server secret, so the hashes can't be reversed by guessing addresses or ids.
+ */
+export function visitHashes(
+  deviceId: string,
+  ip: string,
+  key: string,
+  ua = "",
+): { deviceHash: string; ipHash: string; netuaHash: string } {
+  return { deviceHash: hmac32(key, `device|${deviceId}`), ipHash: hmac32(key, `ip|${ip}`), netuaHash: hmac32(key, `netua|${ip}|${ua}`) };
 }
 
 /** A browser id we set ourselves: 32 lowercase hex characters. */

@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     const code = src.replace(/^(share|t)-/, "");
     const kind = await findLinkKind(ELEMENTAL.slug, code);
     if (!kind || (kind === "teacher") !== src.startsWith("t-")) return res;
-    await recordLinkView(ELEMENTAL.slug, src, deviceId, ip);
+    await recordLinkView(ELEMENTAL.slug, src, deviceId, ip, ua);
   } catch (error) {
     console.error("Failed to record the link view", error);
   }

@@ -71,12 +71,12 @@ export function usePosterShare(code: string, kind: ShareKind, posterVersion: str
   };
 }
 
-/** Share the image if the phone can, else save it. */
+/** Share the image with the link as text (a QR in a chat can't be scanned by the phone showing it), else save it. */
 function ImageAction({ poster, className }: { poster: PosterShare; className: string }) {
   if (poster.canShareFile && poster.file) {
     const file = poster.file;
     return (
-      <button type="button" className={className} style={filled} onClick={() => navigator.share({ files: [file] }).catch(() => {})}>
+      <button type="button" className={className} style={filled} onClick={() => navigator.share({ files: [file], text: COPY.message(poster.url) }).catch(() => {})}>
         <Share2 className="h-4 w-4" /> {COPY.shareImage}
       </button>
     );

@@ -3,6 +3,7 @@ import "server-only";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { countDevices, PER_NETWORK_CAP, TRACKED_SOURCE_RE, visitHashes } from "@/lib/hackathon/elemental/link-views";
 import { elementalCountingEndsAt } from "@/lib/hackathon/elemental/link-views-shared";
+import { paidAt } from "@/lib/hackathon/elemental/share-rules";
 
 /** The secret that keys the device hashes. Set ELEMENTAL_VIEW_KEY in production; falls back to the service key. */
 function hashKey(): string {
@@ -12,29 +13,28 @@ function hashKey(): string {
 }
 
 /**
- * Record that one device opened a tracked link. Repeat visits from the same
- * device do nothing, and a network address that has already added
- * PER_NETWORK_CAP devices to this link adds no more rows (so a flood of
- * private tabs from one place can't grow the table or the count).
+ * Record that one device opened a tracked link. A device counts once: the same
+ * browser cookie never counts twice for a link (so changing network doesn't add
+ * devices), and the same network + browser never counts twice either (so fresh
+ * private tabs on one phone don't add devices). A network address that has
+ * already added PER_NETWORK_CAP devices to this link adds no more rows.
  * Nothing is recorded after sign-up closes. Returns whether a row was added.
  */
-export async function recordLinkView(eventSlug: string, source: string, deviceId: string, ip: string): Promise<boolean> {
+export async function recordLinkView(eventSlug: string, source: string, deviceId: string, ip: string, ua: string): Promise<boolean> {
   if (!TRACKED_SOURCE_RE.test(source)) return false;
   if (Date.now() > elementalCountingEndsAt().getTime()) return false;
-  const { deviceHash, ipHash } = visitHashes(deviceId, ip, hashKey());
+  const { deviceHash, ipHash, netuaHash } = visitHashes(deviceId, ip, hashKey(), ua);
   const supabase = createAdminClient();
-  const { count, error: countError } = await supabase
-    .from("hackathon_link_views")
-    .select("id", { count: "exact", head: true })
-    .eq("event_slug", eventSlug)
-    .eq("source", source)
-    .eq("ip_hash", ipHash);
-  if (countError) throw countError;
-  if ((count ?? 0) >= PER_NETWORK_CAP) return false;
+  const sameLink = () =>
+    supabase.from("hackathon_link_views").select("id", { count: "exact", head: true }).eq("event_slug", eventSlug).eq("source", source);
+  const [network, browser] = await Promise.all([sameLink().eq("ip_hash", ipHash), sameLink().eq("netua_hash", netuaHash)]);
+  if (network.error) throw network.error;
+  if (browser.error) throw browser.error;
+  if ((network.count ?? 0) >= PER_NETWORK_CAP || (browser.count ?? 0) > 0) return false;
   const { error } = await supabase
     .from("hackathon_link_views")
     .upsert(
-      { event_slug: eventSlug, source, device_hash: deviceHash, ip_hash: ipHash },
+      { event_slug: eventSlug, source, device_hash: deviceHash, ip_hash: ipHash, netua_hash: netuaHash },
       { onConflict: "event_slug,source,device_hash", ignoreDuplicates: true },
     );
   if (error) throw error;
@@ -45,7 +45,7 @@ export type LinkStats = { devices: number; paid: number };
 
 /**
  * Devices (capped per network) and paid seats for each tracked link, both
- * counted only up to sign-up close. Paid seats = member_count of paid sign-ups
+ * counted only up to sign-up close (paid = slip uploaded by close). Paid seats = member_count of paid sign-ups
  * whose source is that link, leaving out free seats (free_seat = true), so
  * only real money counts.
  */
@@ -54,7 +54,8 @@ export async function linkStats(eventSlug: string, sources: string[]): Promise<M
   const wanted = sources.filter((s) => TRACKED_SOURCE_RE.test(s));
   if (wanted.length === 0) return out;
   const supabase = createAdminClient();
-  const endsAt = elementalCountingEndsAt().toISOString();
+  const endsMs = elementalCountingEndsAt().getTime();
+  const endsAt = new Date(endsMs).toISOString();
   // PostgREST returns at most 1,000 rows per request: page through all of them.
   const all = async <T,>(page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>) => {
     const rows: T[] = [];
@@ -76,10 +77,10 @@ export async function linkStats(eventSlug: string, sources: string[]): Promise<M
         .order("id")
         .range(from, to),
     ),
-    all<{ source: string | null; member_count: number | null }>((from, to) =>
+    all<{ source: string | null; member_count: number | null; slip_path: string | null; created_at: string }>((from, to) =>
       supabase
         .from("hackathon_event_registrations")
-        .select("source, member_count")
+        .select("source, member_count, slip_path, created_at")
         .eq("event_slug", eventSlug)
         .eq("status", "paid")
         .eq("free_seat", false)
@@ -97,6 +98,8 @@ export async function linkStats(eventSlug: string, sources: string[]): Promise<M
   }
   for (const [s, rows] of bySource) out.get(s)!.devices = countDevices(rows);
   for (const r of regs) {
+    // Paid means the slip was uploaded by close (paidAt), not just signed up by then.
+    if (new Date(paidAt({ slipPath: r.slip_path, createdAt: r.created_at })).getTime() > endsMs) continue;
     const s = out.get(r.source as string);
     if (s) s.paid += r.member_count ?? 1;
   }

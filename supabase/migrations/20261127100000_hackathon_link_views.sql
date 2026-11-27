@@ -1,8 +1,9 @@
 -- Elemental share links (Dec 2026): count the real devices that open each
 -- student's or teacher's tracked link (?src=share-<code> or ?src=t-<code>).
--- One row per device per link. A "device" is a keyed hash of the network
--- address and the browser (never the raw address); ip_hash lets the count
--- cap how many devices one network can add, so one person can't fill a link.
+-- One row per device per link. A "device" is a keyed hash of a first-party
+-- browser cookie id; ip_hash caps how many devices one network can add and
+-- netua_hash (network + browser) stops private tabs counting again. Only keyed
+-- hashes are stored, never a raw address or id.
 -- Nobody reads this from the browser: service-role API routes only.
 -- Additive and idempotent: safe to apply straight to production.
 
@@ -12,6 +13,8 @@ create table if not exists public.hackathon_link_views (
   source text not null check (source ~ '^(share|t)-[a-z0-9_-]{1,40}$'),
   device_hash text not null check (device_hash ~ '^[0-9a-f]{32}$'),
   ip_hash text not null check (ip_hash ~ '^[0-9a-f]{32}$'),
+  -- network + browser string: private tabs on one phone (a new cookie each time) still count once
+  netua_hash text check (netua_hash ~ '^[0-9a-f]{32}$'),
   created_at timestamptz not null default now()
 );
 
@@ -20,6 +23,9 @@ create unique index if not exists hackathon_link_views_device_key
 
 create index if not exists hackathon_link_views_source_idx
   on public.hackathon_link_views (event_slug, source);
+
+create index if not exists hackathon_link_views_netua_idx
+  on public.hackathon_link_views (event_slug, source, netua_hash);
 
 alter table public.hackathon_link_views enable row level security;
 
