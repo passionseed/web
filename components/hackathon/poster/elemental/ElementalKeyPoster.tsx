@@ -463,7 +463,7 @@ function BottomBlock({ design, label = "tag", rule = true, side = "facts", troph
         </div>
         <div className="mt-[28px] flex items-center justify-between" style={{ fontWeight: 400, fontSize: 24 }}>
           <Tag>{date}</Tag>
-          <Tag>ออนไลน์</Tag>
+          <Tag>{ELEMENTAL.formatShortTh}</Tag>
           <Tag>{`${BEGINNER[0]} ${BEGINNER[1]}`}</Tag>
           <Tag>{`มากับเพื่อน ${friends}`}</Tag>
         </div>
@@ -517,7 +517,7 @@ function BottomBlock({ design, label = "tag", rule = true, side = "facts", troph
           ) : (
             <div className="flex flex-col gap-[10px] pb-[8px]" style={{ fontWeight: 400, fontSize: 23, lineHeight: "30px", flex: "none" }}>
               <Fact icon="date">{date}</Fact>
-              <Fact icon="online">ออนไลน์</Fact>
+              <Fact icon="online">{ELEMENTAL.formatShortTh}</Fact>
               <Fact icon="friends">{`มากับเพื่อน ${friends} ต่อคน`}</Fact>
               <span className="flex items-start gap-[9px]">
                 <span className="pt-[2px]">
@@ -563,7 +563,7 @@ function BottomBlock({ design, label = "tag", rule = true, side = "facts", troph
           </div>
         </div>
         <div className="mt-[22px] flex items-center justify-between" style={{ fontWeight: 500, fontSize: 22, lineHeight: "36px", color: EL.ink }}>
-          {[date, "ออนไลน์", `${BEGINNER[0]} ${BEGINNER[1]}`, `มากับเพื่อน ${friends}`].map((t) => (
+          {[date, ELEMENTAL.formatShortTh, `${BEGINNER[0]} ${BEGINNER[1]}`, `มากับเพื่อน ${friends}`].map((t) => (
             <span key={t} className="whitespace-nowrap" style={{ background: EL.cream, padding: "0 12px" }}>
               {t}
             </span>
@@ -575,7 +575,7 @@ function BottomBlock({ design, label = "tag", rule = true, side = "facts", troph
 
   // D. Editorial: the slogan in the title's italic, then a ruled table of labelled facts.
   const cols: [string, string, boolean][] = [
-    ["ออนไลน์", date, false],
+    [ELEMENTAL.formatShortTh, date, false],
     ["รางวัลรวมมูลค่า", `${prize} บาท`, true],
     [BEGINNER[0], BEGINNER[1], false],
     ["มากับเพื่อน", `${friends} / คน`, false],
@@ -748,14 +748,14 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
             Hackathon
           </span>
         </h1>
-        {/* The facts as a row under the title, in ink on the sky (review note, 2026-11-23: "move the info under here, as a row"). The longest one takes its own line. */}
+        {/* The facts as a row under the title, in ink on the sky (review note, 2026-11-23: "move the info under here, as a row"). Two lines: when, where and who, then price and workshops. Who moved up beside the dates when the format got longer (4–12 Dec), so the row still fits on two lines. */}
         {facts === "top" ? (
-          <div className="flex flex-wrap items-center gap-x-[24px] gap-y-[6px]" style={{ width: 660, marginLeft: 4, marginTop: 4, fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 23, lineHeight: "32px" }}>
+          <div className="flex flex-wrap items-center gap-x-[24px] gap-y-[6px]" style={{ width: 690, marginLeft: 4, marginTop: 4, fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 23, lineHeight: "32px" }}>
             <Fact icon="date" color={EL.ink}>{thaiDayRange()}</Fact>
-            <Fact icon="online" color={EL.ink}>ออนไลน์</Fact>
+            <Fact icon="online" color={EL.ink}>{ELEMENTAL.formatShortTh}</Fact>
+            <Fact icon="school" color={EL.ink}>{who}</Fact>
             <Fact icon="friends" color={EL.ink}>{`มากับเพื่อน ฿${ELEMENTAL.groupPriceBaht} ต่อคน`}</Fact>
             <Fact icon="workshop" color={EL.ink}>{`${BEGINNER[0]} ${BEGINNER[1]}`}</Fact>
-            <Fact icon="school" color={EL.ink}>{who}</Fact>
           </div>
         ) : null}
       </div>
@@ -775,7 +775,7 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
           <div style={{ fontWeight: 500, fontSize: 50, lineHeight: "64px", marginBottom: 28 }}>{LINE[0]} {LINE[1]}</div>
           <div className="flex items-center justify-between" style={{ fontWeight: 400, fontSize: 26 }}>
             <Fact icon="date">{thaiDayRange()}</Fact>
-            <Fact icon="online">ออนไลน์</Fact>
+            <Fact icon="online">{ELEMENTAL.formatShortTh}</Fact>
             <Fact icon="workshop">{`${BEGINNER[0]} ${BEGINNER[1]}`}</Fact>
             <Fact icon="friends">{`มากับเพื่อน ฿${ELEMENTAL.groupPriceBaht}`}</Fact>
           </div>
