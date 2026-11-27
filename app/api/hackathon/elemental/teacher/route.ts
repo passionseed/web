@@ -6,7 +6,7 @@ import { z } from "zod";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { checkRateLimit } from "@/lib/expert-interview/rate-limiter";
 import { clientIp } from "@/lib/hackathon/elemental/link-views";
-import { shareOpen } from "@/lib/hackathon/elemental/share";
+import { sharePhase } from "@/lib/hackathon/elemental/share";
 import { parseOptionalPhone, parseTeacherContact } from "@/lib/hackathon/elemental/share-rules";
 import { resolveSchool, schoolBody } from "@/lib/hackathon/elemental/share-school";
 import { isRudeTeamName } from "@/lib/hackathon/elemental/team-name";
@@ -35,7 +35,7 @@ const limitKey = (kind: string, value: string) => createHash("sha256").update(`e
 export async function POST(request: NextRequest) {
   try {
     if (!isTrustedAdminRequest(request)) return NextResponse.json({ error: "forbidden" }, { status: 403 });
-    if (!shareOpen()) return NextResponse.json({ error: "closed" }, { status: 409 });
+    if (sharePhase() !== "open") return NextResponse.json({ error: "closed" }, { status: 409 });
 
     const parsed = bodySchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) return NextResponse.json({ error: "invalid" }, { status: 400 });

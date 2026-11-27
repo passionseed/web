@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
-import { shareOpen } from "@/lib/hackathon/elemental/share";
+import { sharePhase } from "@/lib/hackathon/elemental/share";
 import { TEACHER_TOKEN_RE } from "@/lib/hackathon/elemental/share-rules";
 import { safeServerError } from "@/lib/security/route-guards";
 import { isTrustedAdminRequest } from "@/lib/security/request-origin";
@@ -16,7 +16,8 @@ type Guarded = { ok: true; link: ShareLink } | { ok: false; response: NextRespon
 async function guard(request: NextRequest, token: string): Promise<Guarded> {
   if (!isTrustedAdminRequest(request)) return { ok: false, response: NextResponse.json({ error: "forbidden" }, { status: 403 }) };
   if (!TEACHER_TOKEN_RE.test(token)) return { ok: false, response: NextResponse.json({ error: "not_found" }, { status: 404 }) };
-  if (!shareOpen()) return { ok: false, response: NextResponse.json({ error: "closed" }, { status: 409 }) };
+  // Readable, and a student can still be named, until the end of Demo Day.
+  if (sharePhase() === "off") return { ok: false, response: NextResponse.json({ error: "closed" }, { status: 409 }) };
   const link = await getTeacherLink(token);
   if (!link) return { ok: false, response: NextResponse.json({ error: "not_found" }, { status: 404 }) };
   return { ok: true, link };

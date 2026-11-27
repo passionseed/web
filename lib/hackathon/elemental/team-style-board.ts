@@ -8,29 +8,36 @@ import { clampStyle, readStyle, type TeamNameStyle } from "./team-style";
  * devices that opened those links. Pure; the database side is
  * lib/supabase/hackathon-leaderboard.ts.
  *
- * A team's numbers are the sums over every member's own link
- * (?src=share-<shareCode(registration id)>). A sign-up without a team is a
- * one-person team. Public rows carry team and school names only: never a
- * person's name, nickname or contact (students are mostly minors).
+ * - A team's numbers are the sums over every member's own link
+ *   (?src=share-<shareCode(registration id)>). A sign-up without a team is a
+ *   one-person team.
+ * - Only what happened up to sign-up close counts (views and paid sign-ups
+ *   created by then), and free seats never count as paid.
+ * - Students are mostly minors: a team is listed only under a board name a
+ *   member typed (never the sign-up's "ทีม<nickname>" default), with its
+ *   schools. Never a person's name, nickname or contact.
  */
 
-export type BoardTeamRow = { id: string; name: string; style: unknown; hidden: boolean };
+export type BoardTeamRow = { id: string; boardName: string | null; style: unknown; hidden: boolean };
 
 export type BoardRegistrationRow = {
   id: string;
   teamId: string | null;
-  /** Without a team: the name it picked for the board, else its own team_name. Null when it has neither. */
-  name: string | null;
+  /** Without a team: the board name it set. */
+  boardName: string | null;
   status: string;
   memberCount: number;
   /** The link this sign-up came through. */
   source: string | null;
+  /** A free seat (staff gave it): never counts as paid. */
+  freeSeat: boolean;
+  createdAt: string;
   style: unknown;
   hidden: boolean;
   schools: string[];
 };
 
-export type BoardView = { source: string; ipHash: string };
+export type BoardView = { source: string; ipHash: string; createdAt?: string };
 
 /** One team's numbers, before hiding and ranking. */
 export type BoardEntry = {
@@ -39,6 +46,7 @@ export type BoardEntry = {
   /** The team id, or the registration id of a sign-up without a team. Server only. */
   id: string;
   solo: boolean;
+  /** Null until a member sets one; such a team is never listed. */
   name: string | null;
   /** Clamped to what the team's devices unlock. */
   style: TeamNameStyle;
@@ -49,7 +57,8 @@ export type BoardEntry = {
 };
 
 /** A row as the public page and API show it. */
-export type PublicBoardEntry = Pick<BoardEntry, "key" | "solo" | "name" | "style" | "schools" | "devices" | "paid"> & {
+export type PublicBoardEntry = Pick<BoardEntry, "key" | "solo" | "style" | "schools" | "devices" | "paid"> & {
+  name: string;
   rank: number;
 };
 
@@ -81,21 +90,31 @@ export function teamSchools(raw: string[]): string[] {
   return [...counts.values()].sort((a, b) => b.n - a.n || a.first - b.first).map((c) => c.name);
 }
 
-/** Every team's numbers, hidden ones and ones without devices included (the pay page needs them too). */
+const before = (iso: string | undefined, endsAt: Date) => !iso || new Date(iso).getTime() <= endsAt.getTime();
+
+/** A paid seat that counts: paid, not a free seat, signed up by close. */
+export function countsAsPaid(r: Pick<BoardRegistrationRow, "status" | "freeSeat" | "createdAt">, endsAt: Date): boolean {
+  return r.status === "paid" && !r.freeSeat && before(r.createdAt, endsAt);
+}
+
+/** Every team's numbers, hidden and unnamed ones and ones without devices included (the pay page needs them too). */
 export function buildBoard(input: {
   teams: BoardTeamRow[];
   registrations: BoardRegistrationRow[];
   views: BoardView[];
+  /** Counting stops here (elementalCountingEndsAt()). */
+  endsAt: Date;
 }): BoardEntry[] {
   const viewsBySource = new Map<string, { ipHash: string }[]>();
   for (const v of input.views) {
+    if (!before(v.createdAt, input.endsAt)) continue;
     const list = viewsBySource.get(v.source) ?? [];
     list.push({ ipHash: v.ipHash });
     viewsBySource.set(v.source, list);
   }
   const paidBySource = new Map<string, number>();
   for (const r of input.registrations) {
-    if (r.status !== "paid" || !r.source) continue;
+    if (!r.source || !countsAsPaid(r, input.endsAt)) continue;
     paidBySource.set(r.source, (paidBySource.get(r.source) ?? 0) + Math.max(1, r.memberCount));
   }
   const linkNumbers = (registrationId: string) => {
@@ -122,7 +141,7 @@ export function buildBoard(input: {
       key: boardKey({ teamId: null, registrationId: r.id }),
       id: r.id,
       solo: true,
-      name: r.name?.trim() || null,
+      name: r.boardName?.trim() || null,
       style: clampStyle(readStyle(r.style), devices),
       schools: teamSchools(r.schools),
       devices,
@@ -143,7 +162,7 @@ export function buildBoard(input: {
       key: boardKey({ teamId: team.id, registrationId: regs[0].id }),
       id: team.id,
       solo: false,
-      name: team.name.trim() || null,
+      name: team.boardName?.trim() || null,
       style: clampStyle(readStyle(team.style), devices),
       schools: teamSchools(regs.flatMap((r) => r.schools)),
       devices,
@@ -154,21 +173,23 @@ export function buildBoard(input: {
   return out;
 }
 
+/** Why a team isn't on the public board, or null when it is. */
+export function offBoardReason(e: Pick<BoardEntry, "name" | "devices" | "hidden">): "name" | "devices" | "hidden" | null {
+  if (e.hidden) return "hidden";
+  if (!e.name) return "name";
+  if (e.devices < 1) return "devices";
+  return null;
+}
+
 /**
- * The public board: not hidden, at least one device, most paid seats first,
- * then most devices. Teams level on both share a rank (1, 2, 2, 4) and are
- * listed by name.
+ * The public board: named, not hidden, at least one device; most paid seats
+ * first, then most devices. Teams level on both share a rank (1, 2, 2, 4) and
+ * are listed by name.
  */
 export function rankBoard(entries: BoardEntry[]): PublicBoardEntry[] {
   const shown = entries
-    .filter((e) => !e.hidden && e.devices >= 1)
-    .sort(
-      (a, b) =>
-        b.paid - a.paid ||
-        b.devices - a.devices ||
-        (a.name ?? "￿").localeCompare(b.name ?? "￿", "th") ||
-        a.key.localeCompare(b.key),
-    );
+    .filter((e): e is BoardEntry & { name: string } => offBoardReason(e) === null)
+    .sort((a, b) => b.paid - a.paid || b.devices - a.devices || a.name.localeCompare(b.name, "th") || a.key.localeCompare(b.key));
   let rank = 0;
   return shown.map((e, i) => {
     const prev = shown[i - 1];
@@ -179,11 +200,15 @@ export function rankBoard(entries: BoardEntry[]): PublicBoardEntry[] {
 
 /** What the board page renders and GET /api/hackathon/elemental/leaderboard returns. */
 export type LeaderboardPayload = {
-  /** live: open and loaded. closed: sharing isn't open (shareOpen()). unavailable: the numbers failed to load. */
-  state: "live" | "closed" | "unavailable";
+  /**
+   * soon: sharing hasn't opened. live: open, numbers move. final: sign-up has
+   * closed and the standings are frozen. unavailable: the numbers failed to load.
+   */
+  state: "soon" | "live" | "final" | "unavailable";
   teams: PublicBoardEntry[];
   updatedAt: string;
+  /** When counting stops (sign-up close), for the final label. */
+  countedUntil: string;
 };
 
-/** How often an open board page asks for new numbers. */
-export const BOARD_POLL_MS = 20_000;
+export { BOARD_POLL_MS, BOARD_YOU_KEY, type BoardYou } from "./team-style-phase";

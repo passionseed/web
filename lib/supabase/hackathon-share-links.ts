@@ -1,18 +1,23 @@
 import "server-only";
 
 import { freeSeatOutcome, linkSource, shareCode, type ShareKind } from "@/lib/hackathon/elemental/share";
+import { elementalCountingEndsAt } from "@/lib/hackathon/elemental/link-views-shared";
 import { newTeacherCode, newTeacherToken } from "@/lib/hackathon/elemental/share-codes";
+import { notifyShareSeat } from "@/lib/hackathon/elemental/share-notify";
 import {
   canChangeSchool,
   canNameRecipient,
   codeIdRange,
   hasPaid,
   linkProgress,
+  paidAt,
   parseShareCode,
   pickSeatWinner,
   recipientProblem,
+  schoolRace,
   seatRecipientId,
   seatView,
+  trafficStats,
   type PaidEvent,
   type Progress,
   type RecipientProblem,
@@ -47,9 +52,12 @@ export type ShareLink = {
   teacherName: string | null;
   teacherContact: string | null;
   teacherPhone: string | null;
+  verifiedAt: string | null;
   invitedAt: string | null;
   status: "live" | "rejected";
   createdAt: string;
+  /** A student link's sign-up status (a cancelled sign-up's link can't win a seat). */
+  registrationStatus: string | null;
 };
 
 type LinkRow = {
@@ -64,13 +72,15 @@ type LinkRow = {
   teacher_name: string | null;
   teacher_contact: string | null;
   teacher_phone: string | null;
+  verified_at: string | null;
   invited_at: string | null;
   status: "live" | "rejected";
   created_at: string;
+  registration?: { status: string } | { status: string }[] | null;
 };
 
 const LINK_COLUMNS =
-  "id, kind, code, registration_id, school_key, school_name, province, token, teacher_name, teacher_contact, teacher_phone, invited_at, status, created_at";
+  "id, kind, code, registration_id, school_key, school_name, province, token, teacher_name, teacher_contact, teacher_phone, verified_at, invited_at, status, created_at, registration:hackathon_event_registrations!registration_id(status)";
 
 const toLink = (r: LinkRow): ShareLink => ({
   id: r.id,
@@ -84,9 +94,11 @@ const toLink = (r: LinkRow): ShareLink => ({
   teacherName: r.teacher_name,
   teacherContact: r.teacher_contact,
   teacherPhone: r.teacher_phone,
+  verifiedAt: r.verified_at,
   invitedAt: r.invited_at,
   status: r.status,
   createdAt: r.created_at,
+  registrationStatus: (Array.isArray(r.registration) ? r.registration[0]?.status : r.registration?.status) ?? null,
 });
 
 export type School = { key: string; name: string; province: string | null };
@@ -101,19 +113,20 @@ export type ShareContext = {
   status: RegistrationStatus;
   /** The school typed at sign-up, to start the search with. */
   school: string | null;
+  teamId: string | null;
 };
 
 export async function getShareContext(token: string): Promise<ShareContext | null> {
   if (!isPayToken(token)) return null;
   const { data, error } = await createAdminClient()
     .from("hackathon_event_registrations")
-    .select("id, status, hackathon_event_registration_members(position, school)")
+    .select("id, status, team_id, hackathon_event_registration_members(position, school)")
     .eq("pay_token", token)
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
   const first = [...(data.hackathon_event_registration_members ?? [])].sort((a, b) => a.position - b.position)[0];
-  return { id: data.id, status: data.status as RegistrationStatus, school: first?.school ?? null };
+  return { id: data.id, status: data.status as RegistrationStatus, school: first?.school ?? null, teamId: data.team_id ?? null };
 }
 
 /** Sign-ups of this event whose code (first 8 hex of the id) is `code`. */
@@ -271,23 +284,30 @@ async function allRows<T>(page: (from: number, to: number) => PromiseLike<{ data
 
 type Activity = Map<string, { views: ViewEvent[]; paid: PaidEvent[] }>;
 
-/** Device views and paid sign-ups per tracked source. `sources` null: every link of the event. */
+/**
+ * Device views and paid sign-ups per tracked source, counted only up to
+ * sign-up close: views before it, and paid sign-ups created before it that
+ * paid real money (not free seats). `sources` null: every link of the event.
+ */
 async function loadActivity(eventSlug: string, sources: string[] | null): Promise<Activity> {
   const out: Activity = new Map();
   if (sources && sources.length === 0) return out;
   const db = createAdminClient();
+  const endsAt = elementalCountingEndsAt().toISOString();
   const [views, regs] = await Promise.all([
     allRows<{ source: string; ip_hash: string; created_at: string }>((from, to) => {
-      let q = db.from("hackathon_link_views").select("source, ip_hash, created_at").eq("event_slug", eventSlug);
+      let q = db.from("hackathon_link_views").select("source, ip_hash, created_at").eq("event_slug", eventSlug).lte("created_at", endsAt);
       if (sources) q = q.in("source", sources);
       return q.order("id").range(from, to);
     }),
-    allRows<{ source: string; member_count: number | null; paid_at: string | null; updated_at: string }>((from, to) => {
+    allRows<{ source: string; member_count: number | null; slip_path: string | null; created_at: string }>((from, to) => {
       let q = db
         .from("hackathon_event_registrations")
-        .select("source, member_count, paid_at, updated_at")
+        .select("source, member_count, slip_path, created_at")
         .eq("event_slug", eventSlug)
-        .eq("status", "paid");
+        .eq("status", "paid")
+        .eq("free_seat", false)
+        .lte("created_at", endsAt);
       q = sources ? q.in("source", sources) : q.not("source", "is", null);
       return q.order("id").range(from, to);
     }),
@@ -298,7 +318,7 @@ async function loadActivity(eventSlug: string, sources: string[] | null): Promis
     return a;
   };
   for (const v of views) slot(v.source).views.push({ ipHash: v.ip_hash, at: v.created_at });
-  for (const r of regs) slot(r.source).paid.push({ seats: r.member_count ?? 1, at: r.paid_at ?? r.updated_at });
+  for (const r of regs) slot(r.source).paid.push({ seats: r.member_count ?? 1, at: paidAt({ slipPath: r.slip_path, createdAt: r.created_at }) });
   return out;
 }
 
@@ -362,10 +382,17 @@ async function liveSeat(eventSlug: string, schoolKey: string): Promise<SchoolSea
 /** Give a school's seat to the first link there that qualified, if nobody holds it yet. */
 async function awardSeat(eventSlug: string, schoolKey: string, links: ShareLink[], progress: Map<string, LinkProgress>): Promise<SchoolSeat | null> {
   const winner = pickSeatWinner(
-    links.map((l) => ({ linkId: l.id, qualifiedAt: progress.get(l.id)?.qualifiedAt ?? null, createdAt: l.createdAt, rejected: l.status === "rejected" })),
+    links.map((l) => ({
+      linkId: l.id,
+      qualifiedAt: progress.get(l.id)?.qualifiedAt ?? null,
+      createdAt: l.createdAt,
+      rejected: l.status === "rejected",
+      cancelled: l.registrationStatus === "cancelled",
+    })),
   );
   if (!winner) return null;
   const p = progress.get(winner.linkId)!;
+  const link = links.find((l) => l.id === winner.linkId)!;
   const { data, error } = await createAdminClient()
     .from("hackathon_school_seats")
     .insert({ event_slug: eventSlug, school_key: schoolKey, link_id: winner.linkId, qualified_at: winner.qualifiedAt, devices: p.devices, paid: p.paid })
@@ -376,11 +403,18 @@ async function awardSeat(eventSlug: string, schoolKey: string, links: ShareLink[
     if (isUniqueViolation(error)) return liveSeat(eventSlug, schoolKey);
     throw error;
   }
+  notifyShareSeat({ event: "qualified", kind: link.kind, code: link.code, school: link.schoolName, devices: p.devices, paid: p.paid });
   return toSeat(data as SeatDbRow);
 }
 
+/** A link is out of the race when staff turned it down or its sign-up was cancelled. */
+const outOfRace = (l: ShareLink) => l.status === "rejected" || l.registrationStatus === "cancelled";
+
 /** Every link at one school with its numbers, and the school's seat (awarding it if a link has just qualified). */
-async function syncSchool(eventSlug: string, schoolKey: string): Promise<{ seat: SchoolSeat | null; progress: Map<string, LinkProgress> }> {
+async function syncSchool(
+  eventSlug: string,
+  schoolKey: string,
+): Promise<{ seat: SchoolSeat | null; progress: Map<string, LinkProgress>; links: ShareLink[] }> {
   const { data, error } = await createAdminClient()
     .from("hackathon_share_links")
     .select(LINK_COLUMNS)
@@ -394,10 +428,14 @@ async function syncSchool(eventSlug: string, schoolKey: string): Promise<{ seat:
   ]);
   const progress = new Map(links.map((l) => [l.id, progressOf(l, activity)]));
   const seat = existing ?? (await awardSeat(eventSlug, schoolKey, links, progress));
-  return { seat, progress };
+  return { seat, progress, links };
 }
 
-function toView(link: ShareLink, p: Progress, seat: SeatRow | null, self: { id: string; status: string } | null): ShareLinkView {
+type SchoolState = { seat: SeatRow | null; progress: Map<string, LinkProgress>; links: ShareLink[] };
+
+function toView(link: ShareLink, school: SchoolState, self: { id: string; status: string } | null): ShareLinkView {
+  const p = school.progress.get(link.id) ?? { devices: 0, paid: 0 };
+  const seat = school.seat;
   const selfPaid = self ? hasPaid(self.status) : false;
   const view = seatView({
     linkId: link.id,
@@ -415,14 +453,18 @@ function toView(link: ShareLink, p: Progress, seat: SeatRow | null, self: { id: 
     seat: view,
     canChangeSchool: link.kind === "student" && canChangeSchool(p, view),
     selfPaid,
+    verified: Boolean(link.verifiedAt),
     invited: Boolean(link.invitedAt),
+    race: schoolRace(
+      school.links.map((l) => ({ id: l.id, progress: school.progress.get(l.id) ?? { devices: 0, paid: 0 }, out: outOfRace(l) })),
+      link.id,
+    ),
   };
 }
 
 /** What the share page shows for one link, fresh: its numbers and its school's seat. */
 export async function linkView(eventSlug: string, link: ShareLink, self: { id: string; status: string } | null): Promise<ShareLinkView> {
-  const { seat, progress } = await syncSchool(eventSlug, link.schoolKey);
-  return toView(link, progress.get(link.id) ?? { devices: 0, paid: 0 }, seat, self);
+  return toView(link, await syncSchool(eventSlug, link.schoolKey), self);
 }
 
 /** Which of these schools already have their seat taken (qualified or confirmed). */
@@ -452,8 +494,9 @@ export async function nameRecipient(
 ): Promise<NameResult> {
   const code = parseShareCode(rawCode);
   if (!code) return { ok: false, reason: "invalid" };
-  const { seat, progress } = await syncSchool(eventSlug, link.schoolKey);
-  const view = toView(link, progress.get(link.id) ?? { devices: 0, paid: 0 }, seat, self);
+  const school = await syncSchool(eventSlug, link.schoolKey);
+  const { seat } = school;
+  const view = toView(link, school, self);
   if (!seat || !canNameRecipient(link.kind, view.selfPaid, view.seat)) return { ok: false, reason: "not_allowed" };
 
   const matches = await registrationsByCode(eventSlug, code);
@@ -474,7 +517,11 @@ export async function nameRecipient(
     throw error;
   }
   if (!data || data.length === 0) return { ok: false, reason: "not_allowed" };
-  return { ok: true, view: toView(link, progress.get(link.id)!, toSeat(data[0] as SeatDbRow), self) };
+  const p = school.progress.get(link.id) ?? { devices: 0, paid: 0 };
+  if (seat.recipientRegistrationId !== matches[0].id) {
+    notifyShareSeat({ event: "named", kind: link.kind, code: link.code, school: link.schoolName, devices: p.devices, paid: p.paid, recipientCode: code });
+  }
+  return { ok: true, view: toView(link, { ...school, seat: toSeat(data[0] as SeatDbRow) }, self) };
 }
 
 /* ------------------------------------------------------------------ */
@@ -483,6 +530,8 @@ export async function nameRecipient(
 
 export type AdminShareLink = ShareLink & {
   progress: LinkProgress;
+  /** For the fraud check: distinct networks, devices in the last 24 hours (up to close), and the busiest hour. */
+  traffic: { networks: number; last24h: number; peakHour: number };
   /** The seat this link holds, if it qualified first at its school. */
   seat: SchoolSeat | null;
   /** Another link at the same school holds the seat. */
@@ -502,6 +551,8 @@ export async function listShareLinksForAdmin(eventSlug: string): Promise<AdminSh
   ]);
   const activity = await loadActivity(eventSlug, null);
   const progress = new Map(links.map((l) => [l.id, progressOf(l, activity)]));
+  const close = elementalCountingEndsAt();
+  const now = new Date(Math.min(Date.now(), close.getTime()));
   const seatBySchool = new Map(seats.map((s) => [s.schoolKey, s]));
 
   const bySchool = new Map<string, ShareLink[]>();
@@ -514,7 +565,13 @@ export async function listShareLinksForAdmin(eventSlug: string): Promise<AdminSh
 
   return links.map((l) => {
     const seat = seatBySchool.get(l.schoolKey) ?? null;
-    return { ...l, progress: progress.get(l.id)!, seat: seat?.linkId === l.id ? seat : null, schoolTaken: !!seat && seat.linkId !== l.id };
+    return {
+      ...l,
+      progress: progress.get(l.id)!,
+      traffic: trafficStats(activity.get(linkSource(l.kind, l.code))?.views ?? [], now),
+      seat: seat?.linkId === l.id ? seat : null,
+      schoolTaken: !!seat && seat.linkId !== l.id,
+    };
   });
 }
 
@@ -534,7 +591,7 @@ export async function decideSeat(seatId: string, action: "confirm" | "reject", a
   const db = createAdminClient();
   const { data: seatRow, error } = await db
     .from("hackathon_school_seats")
-    .select("id, link_id, status, recipient_registration_id, hackathon_share_links(kind, code, registration_id, school_name, province)")
+    .select("id, link_id, status, recipient_registration_id, hackathon_share_links!link_id(kind, code, registration_id, school_name, province)")
     .eq("id", seatId)
     .maybeSingle();
   if (error) throw error;
@@ -611,6 +668,8 @@ export async function decideSeat(seatId: string, action: "confirm" | "reject", a
     .update({
       amount_baht: outcome.amountBaht,
       admin_note: note,
+      // Free seats never count as paid for a link, a seat or the board.
+      free_seat: true,
       ...(outcome.paid ? { status: "paid", paid_at: now, paid_by: `admin:${adminUserId}` } : {}),
       updated_at: now,
     })
@@ -629,15 +688,34 @@ export async function decideSeat(seatId: string, action: "confirm" | "reject", a
   return { ok: true, becamePaid: outcome.paid, registrationId: recipientId };
 }
 
-/** Staff mark (or unmark) that a teacher's Demo Day invite was sent. */
-export async function setTeacherInvited(linkId: string, invited: boolean, adminUserId: string): Promise<boolean> {
+export type TeacherMark = "verified" | "invited";
+
+/**
+ * Staff mark (or unmark) a teacher: "verified" (checked with the school that
+ * they teach there), then "invited" (Demo Day invite sent), which needs
+ * "verified" first. Unverifying also clears the invite mark.
+ */
+export async function setTeacherMark(
+  linkId: string,
+  mark: TeacherMark,
+  on: boolean,
+  adminUserId: string,
+): Promise<"ok" | "not_found" | "not_verified"> {
   const now = new Date().toISOString();
-  const { data, error } = await createAdminClient()
-    .from("hackathon_share_links")
-    .update({ invited_at: invited ? now : null, invited_by: invited ? `admin:${adminUserId}` : null, updated_at: now })
-    .eq("id", linkId)
-    .eq("kind", "teacher")
-    .select("id");
+  const by = `admin:${adminUserId}`;
+  let q = createAdminClient().from("hackathon_share_links").update(
+    mark === "verified"
+      ? { verified_at: on ? now : null, verified_by: on ? by : null, ...(on ? {} : { invited_at: null, invited_by: null }), updated_at: now }
+      : { invited_at: on ? now : null, invited_by: on ? by : null, updated_at: now },
+  );
+  q = q.eq("id", linkId).eq("kind", "teacher");
+  if (mark === "invited" && on) q = q.not("verified_at", "is", null);
+  const { data, error } = await q.select("id");
   if (error) throw error;
-  return (data ?? []).length > 0;
+  if ((data ?? []).length > 0) return "ok";
+  if (mark === "invited" && on) {
+    const { data: exists } = await createAdminClient().from("hackathon_share_links").select("id").eq("id", linkId).eq("kind", "teacher").maybeSingle();
+    if (exists) return "not_verified";
+  }
+  return "not_found";
 }

@@ -9,7 +9,9 @@ import {
   GOALS,
   hasPaid,
   linkProgress,
+  paidAt,
   paidCount,
+  phonesMatch,
   parseOptionalPhone,
   parseShareCode,
   parseTeacherContact,
@@ -18,10 +20,13 @@ import {
   reachedDevicesGoal,
   recipientProblem,
   remaining,
+  sameSchool,
+  schoolRace,
   seatRecipientId,
   seatView,
-  sharePhase,
+  progressPhase,
   TEACHER_TOKEN_RE,
+  trafficStats,
   type SeatRow,
   type ViewEvent,
 } from "../share-rules";
@@ -55,11 +60,11 @@ describe("the goals", () => {
   });
 
   it("pick the words: start, early, close (70% of the way), done", () => {
-    expect(sharePhase({ devices: 0, paid: 0 })).toBe("start");
-    expect(sharePhase({ devices: 12, paid: 0 })).toBe("early");
-    expect(sharePhase({ devices: 44, paid: 2 })).toBe("close");
-    expect(sharePhase({ devices: 50, paid: 1 })).toBe("early");
-    expect(sharePhase({ devices: 50, paid: 3 })).toBe("done");
+    expect(progressPhase({ devices: 0, paid: 0 })).toBe("start");
+    expect(progressPhase({ devices: 12, paid: 0 })).toBe("early");
+    expect(progressPhase({ devices: 44, paid: 2 })).toBe("close");
+    expect(progressPhase({ devices: 50, paid: 1 })).toBe("early");
+    expect(progressPhase({ devices: 50, paid: 3 })).toBe("done");
   });
 });
 
@@ -120,6 +125,10 @@ describe("pickSeatWinner: one seat per school, first to qualify", () => {
 
   it("breaks a tie with the older link", () => {
     expect(pickSeatWinner([{ linkId: "b", qualifiedAt: at(9), createdAt: at(3) }, { linkId: "a", qualifiedAt: at(9), createdAt: at(1) }])?.linkId).toBe("a");
+  });
+
+  it("skips the link of a cancelled sign-up", () => {
+    expect(pickSeatWinner([{ linkId: "a", qualifiedAt: at(1), createdAt: at(0), cancelled: true }, { linkId: "b", qualifiedAt: at(2), createdAt: at(0) }])?.linkId).toBe("b");
   });
 
   it("skips links staff turned down, and gives nothing when nobody qualified", () => {
@@ -277,5 +286,63 @@ describe("teacher contact", () => {
     expect(parseOptionalPhone(undefined)).toEqual({ ok: true, value: null });
     expect(parseOptionalPhone("081-234-5678")).toEqual({ ok: true, value: "081-234-5678" });
     expect(parseOptionalPhone("12345")).toEqual({ ok: false });
+  });
+});
+
+describe("paidAt: when a payment counts for the race", () => {
+  it("is when the slip was uploaded, from the slip's file name, not when staff approved it", () => {
+    const ms = Date.UTC(2026, 11, 2, 5, 30);
+    expect(paidAt({ slipPath: `3f9a2c1d-0b1c-4d2e-8f90-123456789abc/${ms}-a1b2c3d4e5f6.jpg`, createdAt: at(0) })).toBe(new Date(ms).toISOString());
+  });
+
+  it("is the sign-up time when there's no slip (marked paid by hand)", () => {
+    expect(paidAt({ slipPath: null, createdAt: at(7) })).toBe(at(7));
+    expect(paidAt({ slipPath: "odd/name.jpg", createdAt: at(7) })).toBe(at(7));
+  });
+});
+
+describe("schoolRace: the anonymous race at a school", () => {
+  it("counts the links still in it and shows the leader's numbers", () => {
+    const r = schoolRace(
+      [
+        { id: "me", progress: { devices: 12, paid: 0 } },
+        { id: "b", progress: { devices: 31, paid: 1 } },
+        { id: "c", progress: { devices: 40, paid: 0 } },
+        { id: "gone", progress: { devices: 50, paid: 3 }, out: true },
+      ],
+      "me",
+    );
+    expect(r).toEqual({ links: 3, leader: { devices: 31, paid: 1 }, youLead: false });
+  });
+
+  it("says when you lead, and when you're alone", () => {
+    expect(schoolRace([{ id: "me", progress: { devices: 9, paid: 2 } }, { id: "b", progress: { devices: 30, paid: 0 } }], "me").youLead).toBe(true);
+    expect(schoolRace([{ id: "me", progress: { devices: 0, paid: 0 } }], "me")).toEqual({ links: 1, leader: { devices: 0, paid: 0 }, youLead: true });
+  });
+});
+
+describe("fraud check helpers", () => {
+  it("trafficStats: networks, the last 24 hours, the busiest hour", () => {
+    const now = new Date(at(0));
+    const views: ViewEvent[] = [
+      { ipHash: "a", at: new Date(now.getTime() - 2 * 3600_000).toISOString() },
+      { ipHash: "a", at: new Date(now.getTime() - 2 * 3600_000 + 60_000).toISOString() },
+      { ipHash: "b", at: new Date(now.getTime() - 30 * 3600_000).toISOString() },
+    ];
+    expect(trafficStats(views, now)).toEqual({ networks: 2, last24h: 2, peakHour: 2 });
+    expect(trafficStats([], now)).toEqual({ networks: 0, last24h: 0, peakHour: 0 });
+  });
+
+  it("phonesMatch ignores dashes, spaces and +66", () => {
+    expect(phonesMatch(["081-234-5678"], ["+66 81 234 5678"])).toBe(true);
+    expect(phonesMatch(["0812345678", null], ["0899999999", undefined])).toBe(false);
+    expect(phonesMatch([""], [""])).toBe(false);
+  });
+
+  it("sameSchool matches loosely and flags a different school", () => {
+    expect(sameSchool("เตรียมอุดมศึกษา", "โรงเรียนเตรียมอุดมศึกษา")).toBe(true);
+    expect(sameSchool("เตรียมอุดมศึกษา", "รร.เตรียมอุดม")).toBe(true);
+    expect(sameSchool("สตรีวิทยา", "บดินทรเดชา")).toBe(false);
+    expect(sameSchool("สตรีวิทยา", "")).toBe(false);
   });
 });

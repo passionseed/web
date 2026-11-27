@@ -168,7 +168,17 @@ export default async function AdminHackathonRegistrationsPage() {
   const sorted = [...rows].sort((a, b) => order[a.status] - order[b.status]);
   const share = shareSummary(links);
   const regInfo = new Map<string, ShareRegInfo>(
-    rows.map((r) => [r.id, { name: r.members[0]?.nickname || r.members[0]?.fullName || r.teamName || "?", status: r.status }]),
+    rows.map((r) => [
+      r.id,
+      {
+        name: r.members[0]?.fullName || r.members[0]?.nickname || r.teamName || "?",
+        status: r.status,
+        school: r.members[0]?.school ?? "",
+        phones: [r.contactPhone, ...r.members.map((m) => m.parentPhone)].filter((p): p is string => Boolean(p)),
+        source: r.source,
+        seats: r.memberCount,
+      },
+    ]),
   );
   const paid = rows.filter((r) => r.status === "paid");
   const seats = paid.reduce((n, r) => n + r.memberCount, 0);
@@ -195,8 +205,8 @@ export default async function AdminHackathonRegistrationsPage() {
         {links.length > 0 && (
           <p className="mt-1 text-muted-foreground">
             Share links: {share.links} ({share.students} students, {share.teachers} teachers) · {share.qualified} qualified,
-            waiting for a check · {share.confirmed} free seats confirmed · {share.invited} of {share.teachersAtGoal} teachers at{" "}
-            {GOALS.devices} devices invited to Demo Day.
+            waiting for a check · {share.confirmed} free seats confirmed · teachers at {GOALS.devices} devices: {share.teachersAtGoal},
+            verified {share.verified}, invited {share.invited}.
           </p>
         )}
         {sources.length > 0 && (

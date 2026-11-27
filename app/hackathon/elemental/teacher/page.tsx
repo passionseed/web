@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { trirong } from "@/components/hackathon/elemental/fonts";
 import { TeacherForm } from "@/components/hackathon/elemental/share/TeacherForm";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
-import { demoPagesOn, shareOpen } from "@/lib/hackathon/elemental/share";
+import { demoPagesOn, sharePhase } from "@/lib/hackathon/elemental/share";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +25,7 @@ export default async function TeacherPage({ searchParams }: { searchParams: Sear
   const demo = demoPagesOn() && (await searchParams).demo === "1";
   return (
     <div className={trirong.variable}>
-      <TeacherForm open={demo || shareOpen()} demo={demo} />
+      <TeacherForm open={demo || sharePhase() === "open"} demo={demo} />
     </div>
   );
 }

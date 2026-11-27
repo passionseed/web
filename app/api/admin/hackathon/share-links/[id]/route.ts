@@ -3,11 +3,14 @@ import { z } from "zod";
 
 import { requireAdmin, safeServerError } from "@/lib/security/route-guards";
 import { isTrustedAdminRequest } from "@/lib/security/request-origin";
-import { setTeacherInvited } from "@/lib/supabase/hackathon-share-links";
+import { setTeacherMark } from "@/lib/supabase/hackathon-share-links";
 
-const bodySchema = z.object({ invited: z.boolean() });
+const bodySchema = z.object({ mark: z.enum(["verified", "invited"]), on: z.boolean() });
 
-/** Staff mark that a teacher's Demo Day invite was sent (or undo the mark). */
+/**
+ * Staff marks on a teacher link: "verified" (checked with the school), then
+ * "invited" (Demo Day invite sent), which needs "verified" first.
+ */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!isTrustedAdminRequest(request)) return NextResponse.json({ error: "forbidden" }, { status: 403 });
   const admin = await requireAdmin();
@@ -19,11 +22,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!parsed.success) return NextResponse.json({ error: "invalid" }, { status: 400 });
 
   try {
-    if (!(await setTeacherInvited(id, parsed.data.invited, admin.value.userId))) {
-      return NextResponse.json({ error: "not_found" }, { status: 404 });
-    }
+    const result = await setTeacherMark(id, parsed.data.mark, parsed.data.on, admin.value.userId);
+    if (result === "not_found") return NextResponse.json({ error: "not_found" }, { status: 404 });
+    if (result === "not_verified") return NextResponse.json({ error: "not_verified" }, { status: 409 });
     return NextResponse.json({ ok: true });
   } catch (error) {
-    return safeServerError("Failed to save the Demo Day invite", error);
+    return safeServerError("Failed to save the teacher mark", error);
   }
 }

@@ -1,5 +1,5 @@
 import { SHARE_DEMO_CODE, TEACHER_DEMO_CODE } from "./share";
-import type { SeatView, ShareLinkView } from "./share-rules";
+import type { Race, SeatView, ShareLinkView } from "./share-rules";
 
 /**
  * Made-up states for the demo pages (development and PR previews only):
@@ -10,6 +10,12 @@ import type { SeatView, ShareLinkView } from "./share-rules";
 const FRIEND_CODE = "5e6f7a8b";
 const school = { name: "เตรียมอุดมศึกษา", province: "กรุงเทพมหานคร" };
 
+/** Made-up races: 4 links at the school, someone else ahead, unless you lead. */
+const race = (devices: number, paid: number, lead = { devices: 31, paid: 1 }): Race =>
+  devices + paid * 17 >= lead.devices + lead.paid * 17
+    ? { links: 4, leader: { devices, paid }, youLead: true }
+    : { links: 4, leader: lead, youLead: false };
+
 const student = (devices: number, paid: number, seat: SeatView, selfPaid = false): ShareLinkView => ({
   kind: "student",
   code: SHARE_DEMO_CODE,
@@ -18,7 +24,9 @@ const student = (devices: number, paid: number, seat: SeatView, selfPaid = false
   seat,
   canChangeSchool: devices < 5 && paid === 0 && (seat.state === "open" || seat.state === "taken"),
   selfPaid,
+  verified: false,
   invited: false,
+  race: race(devices, paid),
 });
 
 export const STUDENT_DEMO_STATES = {
@@ -35,7 +43,7 @@ export const STUDENT_DEMO_STATES = {
 } as const;
 export type StudentDemoState = keyof typeof STUDENT_DEMO_STATES;
 
-const teacher = (devices: number, paid: number, seat: SeatView, invited = false): ShareLinkView => ({
+const teacher = (devices: number, paid: number, seat: SeatView, invited = false, verified = invited): ShareLinkView => ({
   kind: "teacher",
   code: TEACHER_DEMO_CODE,
   school,
@@ -43,13 +51,16 @@ const teacher = (devices: number, paid: number, seat: SeatView, invited = false)
   seat,
   canChangeSchool: false,
   selfPaid: false,
+  verified,
   invited,
+  race: race(devices, paid),
 });
 
 export const TEACHER_DEMO_STATES = {
   start: () => teacher(0, 0, { state: "open" }),
   sharing: () => teacher(23, 1, { state: "open" }),
   invited: () => teacher(57, 2, { state: "open" }),
+  verified: () => teacher(60, 2, { state: "open" }, false, true),
   "invite-sent": () => teacher(64, 2, { state: "open" }, true),
   seat: () => teacher(61, 3, { state: "checking", recipient: { who: "none" } }, true),
   named: () => teacher(61, 3, { state: "checking", recipient: { who: "other", code: FRIEND_CODE } }, true),

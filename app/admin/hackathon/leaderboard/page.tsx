@@ -59,7 +59,7 @@ export default async function AdminLeaderboardPage() {
               <tr key={e.key} className="border-t">
                 <td className="py-2 pr-3 tabular-nums">{e.hidden ? "hidden" : (ranks.get(e.key) ?? "")}</td>
                 <td className="py-2 pr-3">
-                  {e.name ?? <span className="text-muted-foreground">(no name)</span>}
+                  {e.name ?? <span className="text-muted-foreground">(no board name yet, not listed)</span>}
                   {e.solo && <span className="ml-2 text-xs text-muted-foreground">solo</span>}
                 </td>
                 <td className="py-2 pr-3 text-muted-foreground">{e.schools.join(", ")}</td>

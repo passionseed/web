@@ -23,7 +23,7 @@ export function StyledTeamName({
 }) {
   if (!name) {
     return (
-      <span className={className} style={{ ...sizeStyle, color: EL.inkSoft, fontStyle: "italic", fontWeight: 300 }}>
+      <span className={className} style={{ color: EL.inkSoft, fontStyle: "italic", fontWeight: 300, ...sizeStyle }}>
         {placeholder}
       </span>
     );

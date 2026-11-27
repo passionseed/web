@@ -17,7 +17,18 @@ import { TextInput } from "./join/fields";
  * The team on a person's own page: who has joined and paid, and the invite
  * link to send friends (copy, the phone's share sheet, or LINE).
  */
-export function TeamInvite({ team, renameToken, demo }: { team: PublicTeam; renameToken?: string; demo?: boolean }) {
+export function TeamInvite({
+  team,
+  renameToken,
+  demo,
+  source,
+}: {
+  team: PublicTeam;
+  renameToken?: string;
+  demo?: boolean;
+  /** The inviter's share tag (share-<code>), so friends who join count toward their link; else "team". */
+  source?: string;
+}) {
   const [name, setName] = useState(team.name);
   const [origin, setOrigin] = useState("https://passionseed.org");
   const [copied, setCopied] = useState(false);
@@ -28,8 +39,9 @@ export function TeamInvite({ team, renameToken, demo }: { team: PublicTeam; rena
     setCanShare(typeof navigator.share === "function");
   }, []);
 
-  // src=team marks friends who arrive from an invite link in the funnel's sources.
-  const url = `${origin}/hackathon/join?team=${team.inviteCode}&src=team`;
+  // src marks friends who arrive from an invite link in the funnel's sources: the inviter's share tag while
+  // sharing runs (so they count toward the inviter's devices and paid seats), otherwise "team".
+  const url = `${origin}/hackathon/join?team=${team.inviteCode}&src=${source ?? "team"}`;
   const message = `มาเข้า${teamLabel(name)} ลง ${ELEMENTAL.edition} Hackathon ด้วยกัน สมัครที่ลิงก์นี้: ${url}`;
   const full = team.spotsLeft === 0;
 
@@ -64,7 +76,7 @@ export function TeamInvite({ team, renameToken, demo }: { team: PublicTeam; rena
             <button
               type="button"
               onClick={copy}
-              className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold"
+              className="inline-flex min-h-11 items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold"
               style={outline}
             >
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} {copied ? "คัดลอกแล้ว" : "คัดลอกลิงก์"}
@@ -76,7 +88,7 @@ export function TeamInvite({ team, renameToken, demo }: { team: PublicTeam; rena
                   trackElemental({ step: "invite_shared", detail: "share" }, { once: false });
                   navigator.share({ text: message }).catch(() => undefined);
                 }}
-                className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold"
+                className="inline-flex min-h-11 items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold"
                 style={outline}
               >
                 <Share2 className="h-4 w-4" /> แชร์
@@ -87,7 +99,7 @@ export function TeamInvite({ team, renameToken, demo }: { team: PublicTeam; rena
                 onClick={() => trackElemental({ step: "invite_shared", detail: "line" }, { once: false })}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold"
+                className="inline-flex min-h-11 items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold"
                 style={outline}
               >
                 <Share2 className="h-4 w-4" /> ส่งใน LINE
@@ -170,7 +182,7 @@ function TeamName({
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold disabled:opacity-70"
+            className="inline-flex min-h-11 items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold disabled:opacity-70"
             style={{ backgroundColor: EL.ink, color: EL.cream }}
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />} บันทึก
@@ -182,7 +194,7 @@ function TeamName({
               setError(null);
               setEditing(false);
             }}
-            className="rounded-full px-5 py-2.5 text-sm font-semibold"
+            className="min-h-11 rounded-full px-5 py-2 text-sm font-semibold"
             style={outline}
           >
             ยกเลิก
@@ -205,7 +217,7 @@ function TeamName({
               setDraft(name);
               setEditing(true);
             }}
-            className="text-sm underline underline-offset-4"
+            className="-my-3 py-3 text-sm underline underline-offset-4"
             style={{ color: EL.inkSoft }}
           >
             เปลี่ยนชื่อ

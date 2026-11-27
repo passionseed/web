@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { trirong } from "@/components/hackathon/elemental/fonts";
 import { TeacherView } from "@/components/hackathon/elemental/share/TeacherView";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
-import { demoPagesOn, shareOpen } from "@/lib/hackathon/elemental/share";
+import { demoPagesOn, sharePhase } from "@/lib/hackathon/elemental/share";
 import { teacherDemo } from "@/lib/hackathon/elemental/share-demo";
 import { TEACHER_TOKEN_RE, type ShareLinkView } from "@/lib/hackathon/elemental/share-rules";
 import { posterVersion } from "@/lib/hackathon/elemental/share-poster";
@@ -24,21 +24,31 @@ const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v
 
 /**
  * A teacher's private page. /hackathon/elemental/teacher/demo?s=<state> shows
- * made-up states where demo pages are on: start · sharing · invited ·
- * invite-sent · seat · named · given · taken (lib/hackathon/elemental/share-demo.ts).
+ * made-up states where demo pages are on: start · sharing · invited · verified ·
+ * invite-sent · seat · named · given · taken (lib/hackathon/elemental/share-demo.ts);
+ * &new=1 as right after the link was made, &phase=after-close after sign-up closes.
  */
 export default async function TeacherLinkPage({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: SearchParams }) {
   const { token } = await params;
+  const sp = await searchParams;
+  const fresh = first(sp.new) === "1";
   if (token === "demo" && demoPagesOn()) {
     return (
       <div className={trirong.variable}>
-        <TeacherView token="demo" demo open link={teacherDemo(first((await searchParams).s))} posterVersion={await posterVersion()} />
+        <TeacherView
+          token="demo"
+          demo
+          phase={first(sp.phase) === "after-close" ? "after-close" : "open"}
+          fresh={fresh}
+          link={teacherDemo(first(sp.s))}
+          posterVersion={await posterVersion()}
+        />
       </div>
     );
   }
   if (!TEACHER_TOKEN_RE.test(token)) notFound();
 
-  let open = shareOpen();
+  let phase = sharePhase();
   let found = true;
   let link: ShareLinkView | null = null;
   let version = "";
@@ -49,13 +59,13 @@ export default async function TeacherLinkPage({ params, searchParams }: { params
   } catch (error) {
     // No share tables yet, or the database is down: show "closed" rather than break.
     console.error("[elemental teacher] could not load the link", error);
-    open = false;
+    phase = "off";
   }
   if (!found) notFound();
 
   return (
     <div className={trirong.variable}>
-      <TeacherView token={token} open={open} link={link} posterVersion={version} />
+      <TeacherView token={token} phase={phase} fresh={fresh} link={link} posterVersion={version} />
     </div>
   );
 }

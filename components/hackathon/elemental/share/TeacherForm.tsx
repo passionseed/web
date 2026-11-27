@@ -5,13 +5,14 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { Field, TextInput } from "@/components/hackathon/elemental/join/fields";
-import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
+import { EL } from "@/components/hackathon/poster/elemental/brand";
 import { demoDayLine, ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { SHARE } from "@/lib/hackathon/elemental/share";
 import { parseOptionalPhone, parseTeacherContact } from "@/lib/hackathon/elemental/share-rules";
 import { isRudeTeamName } from "@/lib/hackathon/elemental/team-name";
 
 import { lineHelp } from "./copy-shared";
+import { DeviceStrip, PaidBlocks } from "./Progress";
 import { SchoolPicker, type SchoolChoice } from "./SchoolPicker";
 import { btn, ErrorLine, filled, hairline, Lead, Page, Title } from "./ui";
 
@@ -28,10 +29,12 @@ const COPY = {
   top: `${ELEMENTAL.edition} Hackathon · สำหรับคุณครู`,
   title: "ลิงก์แชร์ของคุณครู",
   lead: "สร้างโปสเตอร์และลิงก์ของคุณครูเอง ส่งให้นักเรียนในกลุ่ม LINE ไม่ต้องสมัครสมาชิก",
-  rewards: [
-    { n: `${SHARE.devicesGoal}`, what: "คนเปิดลิงก์", get: `เชิญคุณครูมา ${demoDayLine()}` },
-    { n: `+${SHARE.paidGoal}`, what: "คนสมัครแล้วจ่าย", get: "ที่นั่งฟรี 1 ที่ ให้นักเรียนที่คุณครูเลือก" },
-  ],
+  rewardsTitle: "สิ่งที่คุณครูได้",
+  rewardDevices: `${SHARE.devicesGoal} เครื่อง → Demo Day`,
+  rewardDevicesGet: `เชิญคุณครูมา ${demoDayLine()} ทีมงานยืนยันกับโรงเรียนก่อนส่งคำเชิญ`,
+  rewardPaid: `${SHARE.paidGoal} คนจ่าย → ที่นั่งฟรีของโรงเรียน`,
+  rewardPaidGet: `ครบ ${SHARE.devicesGoal} เครื่องด้วย ได้ที่นั่งฟรี 1 ที่ ให้นักเรียนที่คุณครูเลือก`,
+  wifi: "นับเป็นเครื่อง เปิดซ้ำจากเครื่องเดิมนับครั้งเดียว",
   seatRule: "ที่นั่งฟรีมีโรงเรียนละ 1 ที่ ลิงก์แรกในโรงเรียนที่ครบได้ นับทั้งลิงก์ครูและลิงก์นักเรียน",
   formHeading: "สร้างลิงก์",
   name: "ชื่อ-นามสกุล",
@@ -59,24 +62,27 @@ const COPY = {
 
 type Errors = Partial<Record<"name" | "school" | "contact" | "phone" | "form", string>>;
 
+/** The same meter the teacher will watch later, empty: what each goal earns. */
 function Rewards() {
   return (
-    <div className="mt-8 rounded-2xl border" style={{ borderColor: hairline }}>
-      {COPY.rewards.map((r, i) => (
-        <div key={r.what} className="flex items-center gap-4 p-5" style={i > 0 ? { borderTop: `1px solid ${hairline}` } : undefined}>
-          <span className="w-16 shrink-0 text-4xl tabular-nums" style={{ fontFamily: EL_FONT.display, fontWeight: 300, color: EL.flame }}>
-            {r.n}
-          </span>
-          <span className="min-w-0">
-            <span className="block text-sm" style={{ color: EL.inkSoft }}>
-              {r.what}
-            </span>
-            <span className="block text-base font-semibold">{r.get}</span>
-          </span>
-        </div>
-      ))}
-      <p className="px-5 pb-5 text-sm" style={{ color: EL.inkSoft }}>
-        {COPY.seatRule}
+    <div className="mt-8 space-y-5 rounded-2xl border p-5" style={{ borderColor: hairline }}>
+      <p className="text-xl font-semibold">{COPY.rewardsTitle}</p>
+      <div className="space-y-2">
+        <p className="text-base font-semibold">{COPY.rewardDevices}</p>
+        <DeviceStrip value={0} />
+        <p className="text-sm" style={{ color: EL.inkSoft }}>
+          {COPY.rewardDevicesGet}
+        </p>
+      </div>
+      <div className="space-y-2 border-t pt-5" style={{ borderColor: hairline }}>
+        <p className="text-base font-semibold">{COPY.rewardPaid}</p>
+        <PaidBlocks value={0} small />
+        <p className="text-sm" style={{ color: EL.inkSoft }}>
+          {COPY.rewardPaidGet}
+        </p>
+      </div>
+      <p className="border-t pt-4 text-sm" style={{ borderColor: hairline, color: EL.inkSoft }}>
+        {COPY.wifi} · {COPY.seatRule}
       </p>
     </div>
   );
@@ -114,7 +120,7 @@ export function TeacherForm({ open, demo }: { open: boolean; demo?: boolean }) {
     setBusy(true);
     try {
       if (demo) {
-        router.push("/hackathon/elemental/teacher/demo?s=start");
+        router.push("/hackathon/elemental/teacher/demo?s=start&new=1");
         return;
       }
       const res = await fetch("/api/hackathon/elemental/teacher", {
@@ -129,7 +135,7 @@ export function TeacherForm({ open, demo }: { open: boolean; demo?: boolean }) {
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.token) {
-        router.push(`/hackathon/elemental/teacher/${data.token}`);
+        router.push(`/hackathon/elemental/teacher/${data.token}?new=1`);
         return;
       }
       const field = data.error === "contact" || data.error === "phone" || data.error === "school" ? data.error : null;

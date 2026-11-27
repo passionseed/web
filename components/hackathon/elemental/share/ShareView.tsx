@@ -8,15 +8,15 @@ import { EL } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { formatThaiDate } from "@/lib/content/shift-cohort";
 import { SHARE, SHARE_DEMO_CODE } from "@/lib/hackathon/elemental/share";
-import { sharePhase, type ShareLinkView } from "@/lib/hackathon/elemental/share-rules";
+import { progressPhase, type ShareLinkView } from "@/lib/hackathon/elemental/share-rules";
 
 import { CodeEntry } from "./CodeEntry";
 import { lineHelp, recipientError } from "./copy-shared";
-import { PosterBlock } from "./PosterBlock";
-import { ShareProgress } from "./Progress";
+import { PosterBlock, ShareBar, usePosterShare } from "./PosterBlock";
+import { SeatMeter, type MeterMode } from "./Progress";
 import { SchoolPicker, type SchoolChoice } from "./SchoolPicker";
 import { SeatMessage, SeatNote } from "./SeatNote";
-import { btn, CodeText, ErrorLine, filled, Lead, Page, schoolLabel, TextLink, Title } from "./ui";
+import { btn, CodeText, ErrorLine, filled, hairline, Lead, outline, Page, schoolLabel, TextButton, TextLink, Title } from "./ui";
 import { usePollLink } from "./usePoll";
 
 /**
@@ -76,9 +76,15 @@ const COPY = {
   back: "กลับไปหน้าที่นั่งของฉัน",
   closedTitle: "แชร์รับที่นั่งฟรี",
   closed: "ตอนนี้ยังไม่เปิด",
+  afterClose: "ปิดรับสมัครแล้ว ลิงก์แชร์ปิดตามไปด้วย",
+  frozenNote: "ปิดรับสมัครแล้ว ตัวเลขหยุดนับตอนปิด ทีมงานยังเช็กและให้ที่นั่งฟรีได้ถึงวัน Demo Day",
+  teamHeading: "เป้าต่อไป: ทีมของคุณบนกระดาน",
+  teamHeadingShort: "เป้าต่อไป",
+  teamLead: "เครื่องที่เปิดลิงก์ของคุณยังนับให้ทีม ปลดล็อกสีและฟอนต์ชื่อทีม และไต่อันดับบนกระดาน",
+  board: "ดูกระดาน",
   cancelled: "การสมัครนี้ถูกยกเลิก แชร์รับที่นั่งไม่ได้",
   schoolError: {
-    locked: `เปลี่ยนโรงเรียนไม่ได้แล้ว เพราะลิงก์เริ่มมีคนเปิด ${lineHelp}`,
+    locked: `เปลี่ยนโรงเรียนไม่ได้แล้ว เพราะลิงก์เริ่มมีเครื่องเปิดแล้ว ${lineHelp}`,
     code_taken: `สร้างลิงก์ไม่ได้ ${lineHelp}`,
     invalid: "ใช้ชื่อโรงเรียนนี้ไม่ได้ ลองพิมพ์ใหม่",
     closed: "ตอนนี้ปิดแล้ว",
@@ -88,15 +94,21 @@ const COPY = {
 
 type Props = {
   token: string;
-  state: "open" | "closed" | "cancelled";
+  /** "after-close": read-only until the end of Demo Day (a friend can still be named). */
+  state: "open" | "after-close" | "closed" | "cancelled";
   link: ShareLinkView | null;
   /** Whether this sign-up has paid; for the words before a link exists. */
   selfPaid: boolean;
   /** The school typed at sign-up, to start the search with. */
   startQuery: string;
   posterVersion: string;
+  /** The team's row on the board (builder B's TeamStyleRow), shown once the school's seat is out of reach. */
+  teamRow?: React.ReactNode;
   demo?: boolean;
 };
+
+const meterMode = (link: ShareLinkView): MeterMode =>
+  link.seat.state === "rejected" ? "rejected" : link.seat.state === "taken" ? "gone" : "open";
 
 function titleFor(link: ShareLinkView): string {
   const t = COPY.titles;
@@ -105,7 +117,7 @@ function titleFor(link: ShareLinkView): string {
   if (s.state === "rejected") return t.rejected;
   if (s.state === "checking") return s.recipient.who === "self" ? t.checkingSelf : s.recipient.who === "none" ? t.checkingNone : t.checkingOther;
   if (s.state === "given") return s.recipient.who === "self" ? t.givenSelf : t.givenOther;
-  return t[sharePhase(link.progress)];
+  return t[progressPhase(link.progress)];
 }
 
 /** Steps for a student with no link yet. */
@@ -164,7 +176,9 @@ function PickSchool({
           seat: { state: "open" },
           canChangeSchool: true,
           selfPaid: false,
+          verified: false,
           invited: false,
+          race: { links: 1, leader: { devices: 0, paid: 0 }, youLead: true },
         });
       }
       const res = await fetch(`/api/hackathon/elemental/${token}/share`, {
@@ -194,9 +208,7 @@ function PickSchool({
       )}
       {error && <ErrorLine>{error}</ErrorLine>}
       {onCancel && (
-        <button type="button" onClick={onCancel} className="text-sm underline underline-offset-4" style={{ color: EL.inkSoft }}>
-          {COPY.cancelChange}
-        </button>
+        <TextButton onClick={onCancel}>{COPY.cancelChange}</TextButton>
       )}
     </div>
   );
@@ -241,9 +253,9 @@ function SeatBlock({ token, link, demo, onLink }: { token: string; link: ShareLi
         </div>
       )}
       {!naming && s.state === "checking" && s.recipient.who === "other" && (
-        <button type="button" onClick={() => setRenaming(true)} className="mt-3 text-sm underline underline-offset-4" style={{ color: EL.inkSoft }}>
-          {COPY.rename}
-        </button>
+        <div className="mt-3">
+          <TextButton onClick={() => setRenaming(true)}>{COPY.rename}</TextButton>
+        </div>
       )}
       {s.state === "given" && s.recipient.who === "self" && (
         <Link href={backHref} className={`${btn} mt-4 w-full`} style={filled}>
@@ -270,12 +282,90 @@ function Rules() {
   );
 }
 
+/** Once the school's seat is out of reach, the team's board row is the next goal. */
+function TeamNext({ teamRow }: { teamRow?: React.ReactNode }) {
+  return (
+    <section className="space-y-3 rounded-2xl border p-5" style={{ borderColor: hairline }}>
+      <h2 className="text-xl font-semibold">{teamRow ? COPY.teamHeadingShort : COPY.teamHeading}</h2>
+      {teamRow ?? <p style={{ color: EL.inkSoft }}>{COPY.teamLead}</p>}
+      {!teamRow && (
+        <Link href="/hackathon/elemental/leaderboard" className={`${btn} w-full`} style={outline}>
+          {COPY.board}
+        </Link>
+      )}
+    </section>
+  );
+}
+
+function StudentLink(props: Props & { link: ShareLinkView; onLink: (l: ShareLinkView) => void; onChange: () => void }) {
+  const { token, link, demo, onLink, state } = props;
+  const open = state === "open";
+  const poster = usePosterShare(link.code, "student", props.posterVersion);
+  const mode = meterMode(link);
+  const start = open && link.seat.state === "open" && progressPhase(link.progress) === "start";
+  const seatOpen = link.seat.state === "open";
+
+  const posterSection = open && (
+    <section className="space-y-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="text-xl font-semibold">{COPY.posterHeading}</h2>
+        <span className="text-sm" style={{ color: EL.inkSoft }}>
+          No. <CodeText code={link.code} />
+        </span>
+      </div>
+      <p style={{ color: EL.inkSoft }}>{COPY.posterLead}</p>
+      <PosterBlock poster={poster} />
+    </section>
+  );
+  const meter = (
+    <SeatMeter progress={link.progress} kind="student" mode={mode} race={link.race} live={open && !demo} frozen={!open} showTitle={mode === "open"} />
+  );
+
+  return (
+    <Page
+      top={COPY.top}
+      footer={
+        <div className="mt-12">
+          <TextLink href={`/hackathon/join/${token}`}>{COPY.back}</TextLink>
+        </div>
+      }
+      bar={open && seatOpen ? <ShareBar poster={poster} /> : undefined}
+    >
+      <Title>{titleFor(link)}</Title>
+      <p className="mt-3 text-lg">
+        {schoolLabel(link.school.name, link.school.province)}
+        {open && link.canChangeSchool && (
+          <>
+            {" "}
+            <TextButton onClick={props.onChange} className="whitespace-nowrap">
+              {COPY.change}
+            </TextButton>
+          </>
+        )}
+      </p>
+      {!open && <p className="mt-2 text-sm" style={{ color: EL.inkSoft }}>{COPY.frozenNote}</p>}
+
+      <div className="mt-6 space-y-6">
+        <SeatBlock token={token} link={link} demo={demo} onLink={onLink} />
+        {/* Nothing shared yet: the poster is the one thing to do, so it comes first. */}
+        {start ? posterSection : meter}
+        {(link.seat.state === "taken" || link.seat.state === "rejected") && <TeamNext teamRow={props.teamRow} />}
+      </div>
+
+      {open && <div className="mt-10">{start ? meter : posterSection}</div>}
+
+      <Rules />
+    </Page>
+  );
+}
+
 export function ShareView(props: Props) {
   const { token, state, demo } = props;
   const [link, setLink] = useState<ShareLinkView | null>(props.link);
   const [changing, setChanging] = useState(false);
   const onLink = useCallback((l: ShareLinkView) => setLink(l), []);
-  usePollLink(link && !demo && state === "open" ? `/api/hackathon/elemental/${token}/share` : null, onLink);
+  const live = state === "open" || state === "after-close";
+  usePollLink(link && !demo && live ? `/api/hackathon/elemental/${token}/share` : null, onLink);
 
   const footer = (
     <div className="mt-12">
@@ -283,11 +373,11 @@ export function ShareView(props: Props) {
     </div>
   );
 
-  if (state !== "open") {
+  if (!live || (state === "after-close" && !link)) {
     return (
       <Page top={COPY.top} footer={footer}>
         <Title>{COPY.closedTitle}</Title>
-        <Lead>{state === "cancelled" ? COPY.cancelled : COPY.closed}</Lead>
+        <Lead>{state === "cancelled" ? COPY.cancelled : state === "after-close" ? COPY.afterClose : COPY.closed}</Lead>
       </Page>
     );
   }
@@ -312,38 +402,5 @@ export function ShareView(props: Props) {
     );
   }
 
-  return (
-    <Page top={COPY.top} footer={footer}>
-      <Title>{titleFor(link)}</Title>
-      <p className="mt-3 text-lg">
-        {schoolLabel(link.school.name, link.school.province)}
-        {link.canChangeSchool && (
-          <>
-            {" "}
-            <button type="button" onClick={() => setChanging(true)} className="whitespace-nowrap text-sm underline underline-offset-4" style={{ color: EL.inkSoft }}>
-              {COPY.change}
-            </button>
-          </>
-        )}
-      </p>
-
-      <div className="mt-6 space-y-6">
-        <SeatBlock token={token} link={link} demo={demo} onLink={onLink} />
-        <ShareProgress progress={link.progress} kind="student" live={!demo} seatGone={link.seat.state === "taken" || link.seat.state === "rejected"} />
-      </div>
-
-      <section className="mt-10 space-y-3">
-        <div className="flex items-baseline justify-between gap-3">
-          <h2 className="text-xl font-semibold">{COPY.posterHeading}</h2>
-          <span className="text-sm" style={{ color: EL.inkSoft }}>
-            No. <CodeText code={link.code} />
-          </span>
-        </div>
-        <p style={{ color: EL.inkSoft }}>{COPY.posterLead}</p>
-        <PosterBlock code={link.code} kind="student" posterVersion={props.posterVersion} />
-      </section>
-
-      <Rules />
-    </Page>
-  );
+  return <StudentLink {...props} link={link} onLink={onLink} onChange={() => setChanging(true)} />;
 }

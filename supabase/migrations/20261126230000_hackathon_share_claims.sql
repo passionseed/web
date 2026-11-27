@@ -13,8 +13,11 @@
 --            page is /hackathon/elemental/teacher/<token>. Teachers are
 --            adults: their name and contact are stored for staff and never
 --            shown on a public page.
+-- A teacher at 50 devices is invited to Demo Day once staff have checked with
+-- the school (verified_at), then marked sent (invited_at).
 -- hackathon_school_seats: at most one live seat per school.
---   qualified -> confirmed (staff: the sign-up becomes free)
+--   qualified -> confirmed (staff: the sign-up becomes free, free_seat = true
+--                           on hackathon_event_registrations, see 20261127100000)
 --   qualified -> rejected  (staff: fraud; the link is rejected too, and the
 --                           next link to qualify at that school can get it)
 --
@@ -41,6 +44,10 @@ create table if not exists public.hackathon_share_links (
   -- email:<lowercase> or line:<lowercase id>: one live link per contact.
   teacher_contact_key text,
   teacher_phone text,
+  -- Staff checked with the school that this is a real teacher there; the
+  -- Demo Day invite can only be marked sent after this.
+  verified_at timestamptz,
+  verified_by text,
   invited_at timestamptz,
   invited_by text,
   -- rejected: staff turned the link down; it can no longer win a seat.

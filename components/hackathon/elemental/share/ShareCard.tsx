@@ -1,21 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useState } from "react";
-import { Check, Copy } from "lucide-react";
+import { useCallback, useState, type ReactNode } from "react";
+import { Check, Copy, Share2 } from "lucide-react";
 
 import { EL } from "@/components/hackathon/poster/elemental/brand";
-import { SHARE } from "@/lib/hackathon/elemental/share";
-import { remaining, type ShareLinkView } from "@/lib/hackathon/elemental/share-rules";
+import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
+import { linkUrl, SHARE } from "@/lib/hackathon/elemental/share";
+import type { ShareLinkView } from "@/lib/hackathon/elemental/share-rules";
 
-import { ShareProgressCompact } from "./Progress";
-import { btn, btnSmall, CodeText, hairline, outline, filled, schoolLabel } from "./ui";
+import { meterTitle, SeatMeter, type MeterMode } from "./Progress";
+import { btn, btnSmall, CodeText, filled, hairline, outline, schoolLabel } from "./ui";
 import { usePollLink } from "./usePoll";
 
 /**
- * The share card on a sign-up's own page (pay, slip waiting, or paid): how
- * far their link is, a way to the share page, and their own code, which a
- * friend or teacher types to give them a school's free seat.
+ * "ลิงก์ของฉัน": the one card on a sign-up's own page (pay, slip waiting, or
+ * paid) for everything that counts devices: the link, the house meter (50
+ * devices, 3 paid, the free seat), the team's row on the board (builder B's
+ * TeamStyleRow, passed in), and this sign-up's own code, which a friend or a
+ * teacher types to give them a school's free seat.
  */
 
 export type ShareCardData = {
@@ -27,101 +30,162 @@ export type ShareCardData = {
   code: string;
   selfPaid: boolean;
   link: ShareLinkView | null;
+  /** "after-close": numbers frozen at close, no new links, no share buttons. */
+  phase: "open" | "after-close";
 };
 
 // copy: placeholder — Angpao rewrites
 const COPY = {
-  title: "แชร์โปสเตอร์ ลุ้นที่นั่งฟรี",
-  lead: `ครบ ${SHARE.devicesGoal} คนเปิดลิงก์ และ ${SHARE.paidGoal} คนสมัครแล้วจ่าย ได้ที่นั่งฟรี โรงเรียนละ 1 ที่ ใครครบก่อนได้ก่อน`,
-  leadPaid: `จ่ายแล้วก็แชร์ได้ ครบ ${SHARE.devicesGoal} คนเปิดลิงก์ และ ${SHARE.paidGoal} คนจ่ายก่อนใครในโรงเรียน ยกที่นั่งฟรีให้เพื่อนได้ 1 ที่`,
-  start: "เลือกโรงเรียน รับโปสเตอร์",
+  title: "ลิงก์ของฉัน",
+  lead: `เลือกโรงเรียน รับลิงก์และโปสเตอร์ของคุณ ครบ ${SHARE.devicesGoal} เครื่อง + ${SHARE.paidGoal} คนจ่าย ได้ที่นั่งฟรี โรงเรียนละ 1 ที่ ใครครบก่อนได้ก่อน`,
+  leadClosed: "ปิดรับสมัครแล้ว ลิงก์แชร์ปิดตามไปด้วย",
+  start: "เลือกโรงเรียน รับลิงก์",
   open: "ดูโปสเตอร์และลิงก์ของฉัน",
+  openClosed: "ดูหน้าลิงก์ของฉัน",
   nameFriend: "ใส่รหัสเพื่อน",
-  left: (d: number, p: number) => [d > 0 && `อีก ${d} เครื่อง`, p > 0 && `อีก ${p} คนจ่าย`].filter(Boolean).join(" กับ"),
-  status: {
-    checkingSelf: "ครบแล้ว ทีมงานกำลังเช็ก",
-    checkingNone: "ครบแล้ว ใส่รหัสเพื่อนเพื่อยกที่นั่ง",
+  pendingLine: "จ่ายแล้วก็แชร์ต่อได้ ถ้าครบ ที่นั่งฟรียกให้เพื่อน",
+  copy: "คัดลอกลิงก์",
+  copied: "คัดลอกแล้ว",
+  line: "ส่งใน LINE",
+  message: (url: string) => `มาลง ${ELEMENTAL.edition} Hackathon กัน สมัครที่นี่ ${url}`,
+  news: {
+    checkingSelf: "ครบแล้ว ทีมงานกำลังเช็ก ผ่านแล้วไม่ต้องโอน",
+    checkingNone: "ครบแล้ว ใส่รหัสเพื่อนที่ยังไม่จ่าย เพื่อยกที่นั่งให้",
     checkingOther: "ยกให้เพื่อนแล้ว ทีมงานกำลังเช็ก",
     givenSelf: "ได้ที่นั่งฟรีแล้ว",
     givenOther: "ยกที่นั่งฟรีให้เพื่อนแล้ว",
-    taken: "ที่นั่งของโรงเรียนนี้มีคนได้แล้ว แชร์ต่อได้",
-    rejected: "ลิงก์นี้ไม่ได้ที่นั่งฟรี",
+    taken: "แชร์ต่อได้ เครื่องที่เปิดลิงก์ยังนับให้ทีมของคุณ",
+    rejected: "ทีมงานเช็กแล้วไม่ผ่าน",
   },
   myCode: "รหัสของฉัน",
   myCodeHint: "เพื่อนหรือครูที่ได้ที่นั่งฟรี ยกให้คุณได้ด้วยรหัสนี้",
-  copy: "คัดลอก",
-  copied: "คัดลอกแล้ว",
+  copyCode: "คัดลอก",
 };
 
-function statusLine(link: ShareLinkView): { text: string; news: boolean } {
+function meterMode(link: ShareLinkView): MeterMode {
+  return link.seat.state === "rejected" ? "rejected" : link.seat.state === "taken" ? "gone" : "open";
+}
+
+function news(link: ShareLinkView): string | null {
   const s = link.seat;
-  const t = COPY.status;
+  const n = COPY.news;
   switch (s.state) {
-    case "open": {
-      const r = remaining(link.progress);
-      return { text: COPY.left(r.devices, r.paid) || t.checkingSelf, news: false };
-    }
+    case "open":
+      return null;
     case "taken":
-      return { text: t.taken, news: false };
+      return n.taken;
     case "rejected":
-      return { text: t.rejected, news: false };
+      return n.rejected;
     case "checking":
-      return { text: s.recipient.who === "self" ? t.checkingSelf : s.recipient.who === "none" ? t.checkingNone : t.checkingOther, news: true };
+      return s.recipient.who === "self" ? n.checkingSelf : s.recipient.who === "none" ? n.checkingNone : n.checkingOther;
     case "given":
-      return { text: s.recipient.who === "self" ? t.givenSelf : t.givenOther, news: true };
+      return s.recipient.who === "self" ? n.givenSelf : n.givenOther;
   }
 }
 
-export function ShareCard({ share }: { share: ShareCardData }) {
-  const [link, setLink] = useState<ShareLinkView | null>(share.link);
+function CopyButton({ text, label, done }: { text: string; label: string; done: string }) {
   const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        await navigator.clipboard?.writeText(text).catch(() => undefined);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }}
+      className={btnSmall}
+      style={outline}
+    >
+      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} {copied ? done : label}
+    </button>
+  );
+}
+
+export function ShareCard({ share, teamRow }: { share: ShareCardData; teamRow?: ReactNode }) {
+  const [link, setLink] = useState<ShareLinkView | null>(share.link);
   const onLink = useCallback((l: ShareLinkView) => setLink(l), []);
   usePollLink(link ? share.pollUrl : null, onLink);
-
-  const copy = async () => {
-    await navigator.clipboard?.writeText(share.code.toUpperCase()).catch(() => undefined);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-  const status = link ? statusLine(link) : null;
+  const open = share.phase === "open";
   const needsFriend = link?.seat.state === "checking" && link.seat.recipient.who === "none";
+  // On an unpaid page, paying stays the main action: the share button is an outline.
+  const ctaStyle = needsFriend || (share.selfPaid && !link) ? filled : outline;
+  const url = link ? linkUrl(link.kind, link.code) : null;
 
   return (
     <section className="space-y-4 rounded-2xl border p-5 sm:p-6" style={{ borderColor: "rgba(29,33,31,0.2)" }}>
-      <h2 className="text-xl font-semibold">{COPY.title}</h2>
-      {link && status ? (
+      {link ? (
         <>
-          <p className="text-base" style={{ color: EL.inkSoft }}>
-            {schoolLabel(link.school.name)}
-          </p>
-          <ShareProgressCompact progress={link.progress} />
-          <p className="text-base" style={{ color: status.news ? EL.flame : EL.ink, fontWeight: status.news ? 600 : 400 }} aria-live="polite">
-            {status.text}
-          </p>
+          <div>
+            <h2 className="text-xl font-semibold">{meterTitle(link.progress, "student", meterMode(link), !open) ?? COPY.title}</h2>
+            <p className="mt-1 text-base" style={{ color: EL.inkSoft }}>
+              {COPY.title} · {schoolLabel(link.school.name)}
+            </p>
+          </div>
+          {news(link) && (
+            <p className="text-base font-semibold" style={{ color: link.seat.state === "rejected" || link.seat.state === "taken" ? EL.ink : EL.flame }} aria-live="polite">
+              {news(link)}
+            </p>
+          )}
+          <SeatMeter progress={link.progress} kind="student" mode={meterMode(link)} race={link.race} framed={false} showTitle={false} frozen={!open} />
         </>
       ) : (
-        <p style={{ color: EL.inkSoft }}>{share.selfPaid ? COPY.leadPaid : COPY.lead}</p>
-      )}
-      <Link href={share.href} className={`${btn} w-full`} style={!link || needsFriend ? filled : outline}>
-        {!link ? COPY.start : needsFriend ? COPY.nameFriend : COPY.open}
-      </Link>
-
-      <div className="flex items-center justify-between gap-3 border-t pt-4" style={{ borderColor: hairline }}>
-        <div className="min-w-0">
-          <p className="text-sm" style={{ color: EL.inkSoft }}>
-            {COPY.myCode}
+        <div>
+          <h2 className="text-xl font-semibold">{COPY.title}</h2>
+          <p className="mt-2" style={{ color: EL.inkSoft }}>
+            {open ? COPY.lead : COPY.leadClosed}
           </p>
-          <CodeText code={share.code} className="text-2xl" />
         </div>
-        <button type="button" onClick={copy} className={btnSmall} style={outline} aria-label={`${COPY.copy} ${COPY.myCode}`}>
-          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} {copied ? COPY.copied : COPY.copy}
-        </button>
-      </div>
-      {!share.selfPaid && (
-        <p className="-mt-2 text-sm" style={{ color: EL.inkSoft }}>
-          {COPY.myCodeHint}
-        </p>
       )}
+
+      {teamRow && (
+        <div className="border-t pt-4" style={{ borderColor: hairline }}>
+          {teamRow}
+        </div>
+      )}
+
+      {(link || open) && (
+        <div className="space-y-3 border-t pt-4" style={{ borderColor: hairline }}>
+          {link && url && open && (
+            <>
+              <p className="break-words text-sm" style={{ color: EL.inkSoft }}>
+                {url.replace(/^https:\/\/www\./, "").split("?")[0]}
+                <wbr />?{url.split("?")[1]}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <CopyButton text={url} label={COPY.copy} done={COPY.copied} />
+                <a href={`https://line.me/R/share?text=${encodeURIComponent(COPY.message(url))}`} target="_blank" rel="noopener noreferrer" className={btnSmall} style={outline}>
+                  <Share2 className="h-4 w-4" /> {COPY.line}
+                </a>
+              </div>
+            </>
+          )}
+          <Link href={share.href} className={`${btn} w-full`} style={ctaStyle}>
+            {!link ? COPY.start : needsFriend ? COPY.nameFriend : open ? COPY.open : COPY.openClosed}
+          </Link>
+          {!share.selfPaid && open && (
+            <p className="text-sm" style={{ color: EL.inkSoft }}>
+              {COPY.pendingLine}
+            </p>
+          )}
+        </div>
+      )}
+
+      <div className="border-t pt-4" style={{ borderColor: hairline }}>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm" style={{ color: EL.inkSoft }}>
+              {COPY.myCode}
+            </p>
+            <CodeText code={share.code} className="text-2xl" />
+          </div>
+          <CopyButton text={share.code.toUpperCase()} label={COPY.copyCode} done={COPY.copied} />
+        </div>
+        {!share.selfPaid && (
+          <p className="mt-2 text-sm" style={{ color: EL.inkSoft }}>
+            {COPY.myCodeHint}
+          </p>
+        )}
+      </div>
     </section>
   );
 }

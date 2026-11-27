@@ -7,6 +7,7 @@ import {
   SHARE_CODE_RE,
   shareCode,
   shareOpen,
+  sharePhase,
   shareUrl,
   type SchoolRow,
 } from "../share";
@@ -93,5 +94,24 @@ describe("demoPagesOn", () => {
     expect(demoPagesOn(env({ NODE_ENV: "production", VERCEL_ENV: "preview" }))).toBe(true);
     expect(demoPagesOn(env({ NODE_ENV: "production", VERCEL_ENV: "production" }))).toBe(false);
     expect(demoPagesOn(env({ NODE_ENV: "production" }))).toBe(false);
+  });
+});
+
+describe("sharePhase", () => {
+  const on = { ELEMENTAL_SHARE_OPEN: "1" } as unknown as NodeJS.ProcessEnv;
+  const off = {} as unknown as NodeJS.ProcessEnv;
+
+  it("is open until sign-up closes (Fri 4 Dec 23:59 Bangkok)", () => {
+    expect(sharePhase(on, new Date("2026-12-04T23:59:00+07:00"))).toBe("open");
+  });
+
+  it("is read-only from close to the end of Demo Day (Sat 12 Dec)", () => {
+    expect(sharePhase(on, new Date("2026-12-05T00:00:01+07:00"))).toBe("after-close");
+    expect(sharePhase(on, new Date("2026-12-12T23:59:00+07:00"))).toBe("after-close");
+    expect(sharePhase(on, new Date("2026-12-13T00:00:01+07:00"))).toBe("off");
+  });
+
+  it("is off whenever ELEMENTAL_SHARE_OPEN isn't 1", () => {
+    expect(sharePhase(off, new Date("2026-11-30T12:00:00+07:00"))).toBe("off");
   });
 });

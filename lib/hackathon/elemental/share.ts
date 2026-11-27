@@ -27,6 +27,26 @@ export function shareOpen(env: NodeJS.ProcessEnv = process.env, now: Date = new 
   return env.ELEMENTAL_SHARE_OPEN === "1" && elementalRegistrationOpen(now);
 }
 
+/** The end of Demo Day, Bangkok time: share pages stay up, read-only, until then. */
+export function shareReadOnlyEndsAt(): Date {
+  return new Date(`${ELEMENTAL.demoDay.date}T23:59:59+07:00`);
+}
+
+/**
+ * Where sharing is, with ELEMENTAL_SHARE_OPEN=1 as the master switch:
+ * - "open": until sign-up closes. Links can be made, shared and counted.
+ * - "after-close": from sign-up close to the end of Demo Day. Pages stay up
+ *   read-only (numbers frozen at close); a seat's recipient can still be
+ *   named and staff can still confirm. No new links, no poster actions.
+ * - "off": the switch is off, or Demo Day is over.
+ */
+export type SharePhase = "open" | "after-close" | "off";
+export function sharePhase(env: NodeJS.ProcessEnv = process.env, now: Date = new Date()): SharePhase {
+  if (env.ELEMENTAL_SHARE_OPEN !== "1") return "off";
+  if (elementalRegistrationOpen(now)) return "open";
+  return now.getTime() <= shareReadOnlyEndsAt().getTime() ? "after-close" : "off";
+}
+
 /**
  * A sharer's code: the first 8 characters of their sign-up's id, never the
  * pay token. It is printed on the poster and its QR code tags share-<code>,

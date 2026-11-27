@@ -3,6 +3,8 @@ import { shareCode, shareSource } from "../share";
 import {
   boardKey,
   buildBoard,
+  countsAsPaid,
+  offBoardReason,
   rankBoard,
   teamSchools,
   tidySchool,
@@ -12,59 +14,96 @@ import {
 } from "../team-style-board";
 import { DEFAULT_STYLE, TEAM_STYLE_TIERS } from "../team-style";
 
+const END = new Date("2026-12-04T23:59:59+07:00");
+const BEFORE = "2026-11-30T10:00:00+07:00";
+const AFTER = "2026-12-05T09:00:00+07:00";
+
 const id = (n: number) => `${String(n).padStart(8, "0")}-0000-4000-8000-000000000000`;
 const src = (n: number) => shareSource(shareCode(id(n)));
 
 function reg(n: number, over: Partial<BoardRegistrationRow> = {}): BoardRegistrationRow {
-  return { id: id(n), teamId: null, name: null, status: "pending", memberCount: 1, source: null, style: null, hidden: false, schools: [], ...over };
+  return {
+    id: id(n),
+    teamId: null,
+    boardName: null,
+    status: "pending",
+    memberCount: 1,
+    source: null,
+    freeSeat: false,
+    createdAt: BEFORE,
+    style: null,
+    hidden: false,
+    schools: [],
+    ...over,
+  };
 }
 
 /** n devices on one link, each on its own network so none are capped. */
-const views = (source: string, n: number, network = source): BoardView[] =>
-  Array.from({ length: n }, (_, i) => ({ source, ipHash: `${network}-${i}` }));
+const views = (source: string, n: number, createdAt = BEFORE): BoardView[] =>
+  Array.from({ length: n }, (_, i) => ({ source, ipHash: `${source}-${createdAt}-${i}`, createdAt }));
 
 function entry(over: Partial<BoardEntry>): BoardEntry {
-  return { key: "x", id: "x", solo: false, name: "x", style: DEFAULT_STYLE, schools: [], devices: 0, paid: 0, hidden: false, ...over };
+  return { key: "x", id: "x", solo: false, name: "x", style: DEFAULT_STYLE, schools: [], devices: 1, paid: 0, hidden: false, ...over };
 }
 
 describe("building the team board", () => {
   const T1 = "aaaaaaaa-1111-4111-8111-111111111111";
   const T2 = "bbbbbbbb-2222-4222-8222-222222222222";
+  const T3 = "cccccccc-3333-4333-8333-333333333333";
   const teams = [
-    { id: T1, name: "ไฟป่า", style: { font: "chakra", color: "flame", effect: "solid", color2: "flame" }, hidden: false },
-    { id: T2, name: "Team Mekong", style: null, hidden: true },
+    { id: T1, boardName: "ไฟป่า", style: { font: "chakra", color: "flame", effect: "solid" }, hidden: false },
+    { id: T2, boardName: "Team Mekong", style: null, hidden: true },
+    // Signed up as "ทีมมิว" by default, never set a board name.
+    { id: T3, boardName: null, style: null, hidden: false },
   ];
   const registrations = [
     reg(1, { teamId: T1, schools: ["โรงเรียนสตรีวิทยา"] }),
     reg(2, { teamId: T1, schools: ["สตรีวิทยา"], status: "paid" }),
     reg(3, { teamId: T2, schools: ["เตรียมอุดมศึกษา"] }),
-    reg(4, { name: "หมาป่าเดียวดาย", schools: ["บดินทรเดชา"] }),
+    reg(4, { boardName: "หมาป่าเดียวดาย", schools: ["บดินทรเดชา"] }),
     reg(5, { teamId: T1, status: "cancelled" }),
+    reg(6, { teamId: T3, schools: ["สามเสนวิทยาลัย"] }),
     // Friends who signed up through members' links.
     reg(10, { status: "paid", source: src(1) }),
     reg(11, { status: "paid", source: src(2), memberCount: 2 }),
     reg(12, { status: "pending", source: src(1) }),
     reg(13, { status: "paid", source: src(4) }),
     reg(14, { status: "paid", source: src(5) }),
+    // A free seat staff gave, and a sign-up after close: neither counts as paid.
+    reg(15, { status: "paid", source: src(1), freeSeat: true }),
+    reg(16, { status: "paid", source: src(1), createdAt: AFTER }),
   ];
   const board = buildBoard({
     teams,
     registrations,
-    views: [...views(src(1), 8), ...views(src(2), 6), ...views(src(4), 3), ...views(src(5), 40)],
+    views: [...views(src(1), 8), ...views(src(1), 30, AFTER), ...views(src(2), 6), ...views(src(4), 3), ...views(src(5), 40), ...views(src(6), 12)],
+    endsAt: END,
   });
   const byKey = new Map(board.map((e) => [e.key, e]));
+  const t1 = byKey.get(boardKey({ teamId: T1, registrationId: id(1) }))!;
 
   it("sums every member's link into the team", () => {
-    const t1 = byKey.get(boardKey({ teamId: T1, registrationId: id(1) }))!;
     expect(t1.devices).toBe(14);
-    expect(t1.paid).toBe(3);
     expect(t1.schools).toEqual(["สตรีวิทยา"]);
     expect(t1.solo).toBe(false);
+    expect(t1.name).toBe("ไฟป่า");
+  });
+
+  it("counts only real paid seats signed up by close", () => {
+    // reg 10 (1) + reg 11 (2). Not the free seat (15), not the late one (16), not the pending one (12).
+    expect(t1.paid).toBe(3);
+    expect(countsAsPaid({ status: "paid", freeSeat: true, createdAt: BEFORE }, END)).toBe(false);
+    expect(countsAsPaid({ status: "paid", freeSeat: false, createdAt: AFTER }, END)).toBe(false);
+    expect(countsAsPaid({ status: "paid", freeSeat: false, createdAt: BEFORE }, END)).toBe(true);
+  });
+
+  it("stops counting devices at close", () => {
+    // The 30 views after close on reg 1's link don't count.
+    expect(t1.devices).toBe(14);
   });
 
   it("leaves out cancelled members", () => {
-    const t1 = byKey.get(boardKey({ teamId: T1, registrationId: id(1) }))!;
-    // reg 5's 40 devices and 1 paid seat don't count.
+    // reg 5's 40 devices don't count.
     expect(t1.devices).toBeLessThan(40);
   });
 
@@ -74,24 +113,36 @@ describe("building the team board", () => {
   });
 
   it("shows only the part of a style the devices unlock", () => {
-    const t1 = byKey.get(boardKey({ teamId: T1, registrationId: id(1) }))!;
     expect(t1.devices).toBeGreaterThanOrEqual(TEAM_STYLE_TIERS.color);
     expect(t1.devices).toBeLessThan(TEAM_STYLE_TIERS.font);
     expect(t1.style).toEqual({ ...DEFAULT_STYLE, color: "flame" });
   });
 
   it("caps devices per network, the same way a single link is counted", () => {
-    const capped = buildBoard({ teams: [], registrations: [reg(20)], views: views(src(20), 30, "school-wifi").map((v) => ({ ...v, ipHash: "school-wifi" })) });
+    const capped = buildBoard({
+      teams: [],
+      registrations: [reg(20, { boardName: "x" })],
+      views: Array.from({ length: 30 }, () => ({ source: src(20), ipHash: "school-wifi" })),
+      endsAt: END,
+    });
     expect(capped[0].devices).toBe(PER_NETWORK_CAP);
+  });
+
+  it("never lists a team that hasn't set a board name, whatever its numbers", () => {
+    const t3 = byKey.get(boardKey({ teamId: T3, registrationId: id(6) }))!;
+    expect(t3.devices).toBe(12);
+    expect(t3.name).toBeNull();
+    expect(offBoardReason(t3)).toBe("name");
+    expect(rankBoard(board).some((e) => e.key === t3.key)).toBe(false);
   });
 
   it("keeps hidden teams in the numbers but off the public board", () => {
     const t2 = byKey.get(boardKey({ teamId: T2, registrationId: id(3) }))!;
-    expect(t2.hidden).toBe(true);
+    expect(offBoardReason(t2)).toBe("hidden");
     expect(rankBoard(board).some((e) => e.key === t2.key)).toBe(false);
   });
 
-  it("never puts a person's name on a public row", () => {
+  it("never puts an id or a person's name on a public row", () => {
     const json = JSON.stringify(rankBoard(board));
     expect(json).not.toContain(id(1));
     expect(json).not.toMatch(/"id":/);
@@ -127,11 +178,12 @@ describe("ranking the team board", () => {
     ]);
   });
 
-  it("shows only teams with at least one device that aren't hidden", () => {
+  it("shows only named teams with at least one device that aren't hidden", () => {
     const ranked = rankBoard([
       entry({ key: "a", devices: 0, paid: 0 }),
       entry({ key: "b", devices: 1 }),
       entry({ key: "c", devices: 50, paid: 4, hidden: true }),
+      entry({ key: "d", devices: 80, paid: 9, name: null }),
     ]);
     expect(ranked.map((e) => e.key)).toEqual(["b"]);
     expect(ranked[0].rank).toBe(1);

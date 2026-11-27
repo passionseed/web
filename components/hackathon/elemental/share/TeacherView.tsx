@@ -1,33 +1,40 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, Share2 } from "lucide-react";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { formatThaiDate } from "@/lib/content/shift-cohort";
 import { SHARE } from "@/lib/hackathon/elemental/share";
-import { reachedDevicesGoal, sharePhase, type ShareLinkView } from "@/lib/hackathon/elemental/share-rules";
+import { progressPhase, reachedDevicesGoal, type ShareLinkView } from "@/lib/hackathon/elemental/share-rules";
 
 import { CodeEntry } from "./CodeEntry";
 import { recipientError } from "./copy-shared";
-import { PosterBlock } from "./PosterBlock";
-import { ShareProgress } from "./Progress";
+import { PosterBlock, ShareBar, usePosterShare } from "./PosterBlock";
+import { SeatMeter, type MeterMode } from "./Progress";
 import { SeatMessage, SeatNote } from "./SeatNote";
-import { btnSmall, CodeText, hairline, Lead, outline, Page, schoolLabel, TextLink, Title } from "./ui";
+import { btn, CodeText, filled, Lead, outline, Page, schoolLabel, TextButton, TextLink, Title } from "./ui";
 import { usePollLink } from "./usePoll";
 
 /**
  * A teacher's private page (/hackathon/elemental/teacher/<token>): their
- * poster and link, the live numbers, the Demo Day invite at 50 devices, and,
- * if their link is first at the school to 50 devices and 3 paid, the
- * school's free seat for a student they name by code.
+ * poster and link, the live numbers, the Demo Day invite at 50 devices (after
+ * staff confirm with the school), and, if their link is first at the school
+ * to 50 devices and 3 paid, the school's free seat for a student they name by
+ * code. After sign-up closes it stays up read-only until the end of Demo Day.
  */
 
 // copy: placeholder — Angpao rewrites
 const COPY = {
   top: `${ELEMENTAL.edition} Hackathon · ลิงก์ของคุณครู`,
-  keep: "หน้านี้เป็นของคุณครูคนเดียว บุ๊กมาร์กไว้กลับมาดูตัวเลข",
+  keepTitle: "สร้างลิงก์แล้ว",
+  keep: "หน้านี้เป็นของคุณครูคนเดียว ส่งลิงก์หน้านี้เข้า LINE ตัวเองไว้ จะได้กลับมาดูตัวเลขได้",
+  keepLater: "หน้านี้เป็นของคุณครูคนเดียว เก็บลิงก์ไว้ใน LINE ตัวเอง จะได้กลับมาดูตัวเลขได้",
+  toLine: "ส่งลิงก์หน้านี้เข้า LINE ตัวเอง",
+  lineText: (url: string) => `ลิงก์ของคุณครู ${ELEMENTAL.edition} Hackathon (ส่วนตัว อย่าส่งต่อ): ${url}`,
+  copyPage: "คัดลอกลิงก์หน้านี้",
+  copied: "คัดลอกแล้ว",
   titles: {
     start: "ส่งลิงก์ให้นักเรียนเลย",
     early: "แชร์ต่อเลย",
@@ -42,7 +49,8 @@ const COPY = {
   },
   inviteTitle: "ได้รับเชิญมา Demo Day",
   inviteWhen: `${formatThaiDate(ELEMENTAL.demoDay.date)} ที่ ${ELEMENTAL.demoDay.venueTh}`,
-  invitePending: "ทีมงานจะส่งคำเชิญทางอีเมลหรือ LINE ที่ให้ไว้",
+  invitePending: "ทีมงานจะยืนยันกับโรงเรียนก่อน แล้วส่งคำเชิญทางอีเมลหรือ LINE ที่ให้ไว้",
+  inviteVerified: "ยืนยันกับโรงเรียนแล้ว ทีมงานจะส่งคำเชิญทางอีเมลหรือ LINE ที่ให้ไว้",
   inviteSent: "ทีมงานส่งคำเชิญแล้ว เช็กอีเมลหรือ LINE ที่ให้ไว้",
   studentLabel: "รหัสนักเรียน",
   studentHint: "นักเรียนดูรหัส 8 ตัวได้ที่หน้าที่นั่งของตัวเอง ต้องเป็นคนที่สมัครแล้วแต่ยังไม่จ่าย",
@@ -51,21 +59,23 @@ const COPY = {
   rename: "ใส่รหัสผิด เปลี่ยนรหัส",
   posterHeading: "โปสเตอร์ของคุณครู",
   posterLead: "QR บนโปสเตอร์คือลิงก์ของคุณครู ใครสแกนหรือกดลิงก์ ตัวเลขด้านบนจะขึ้น",
+  frozenNote: "ปิดรับสมัครแล้ว ตัวเลขหยุดนับตอนปิด หน้านี้เปิดดูได้ถึงวัน Demo Day",
   rulesHeading: "กติกา",
   rules: [
     "นับเป็นเครื่อง เปิดซ้ำจากเครื่องเดิมนับครั้งเดียว",
     "นับคนจ่ายจากนักเรียนที่สแกน QR หรือกดลิงก์ของคุณครู แล้วสมัครและจ่าย",
-    `ครบ ${SHARE.devicesGoal} เครื่อง ได้รับเชิญมา Demo Day`,
-    "ที่นั่งฟรีมีโรงเรียนละ 1 ที่ ลิงก์แรกที่ครบทั้งสองอย่างได้ นับทั้งลิงก์ครูและลิงก์นักเรียน",
+    `ครบ ${SHARE.devicesGoal} เครื่อง ได้รับเชิญมา Demo Day ทีมงานยืนยันกับโรงเรียนก่อนส่งคำเชิญ`,
+    `ที่นั่งฟรีมีโรงเรียนละ 1 ที่ ลิงก์แรกที่ครบ ${SHARE.devicesGoal} เครื่องและ ${SHARE.paidGoal} คนจ่ายได้ นับทั้งลิงก์ครูและลิงก์นักเรียน`,
     "ทีมงานเช็กก่อนให้ที่นั่งทุกครั้ง",
     `แชร์ได้ถึงวันปิดรับสมัคร ${formatThaiDate(ELEMENTAL.registrationClosesOn)}`,
   ],
-  copyPage: "คัดลอกลิงก์หน้านี้",
-  copied: "คัดลอกแล้ว",
   closedTitle: "ลิงก์ของคุณครู",
   closed: "ตอนนี้ปิดแล้ว",
   more: `ดูหน้า ${ELEMENTAL.edition} Hackathon`,
 };
+
+const meterMode = (link: ShareLinkView): MeterMode =>
+  link.seat.state === "rejected" ? "rejected" : link.seat.state === "taken" ? "gone" : "open";
 
 function titleFor(link: ShareLinkView): string {
   const t = COPY.titles;
@@ -76,11 +86,12 @@ function titleFor(link: ShareLinkView): string {
   if (s.state === "rejected") return t.rejected;
   if (invited) return t.invited;
   if (s.state === "taken") return t.taken;
-  return t[sharePhase(link.progress)];
+  return t[progressPhase(link.progress)];
 }
 
 /** The Demo Day invite. Its own title only when the page's title is about something else. */
-function InviteBlock({ invited, main }: { invited: boolean; main: boolean }) {
+function InviteBlock({ link, main }: { link: ShareLinkView; main: boolean }) {
+  const line = link.invited ? COPY.inviteSent : link.verified ? COPY.inviteVerified : COPY.invitePending;
   return (
     <SeatNote tone={main ? "flame" : "plain"}>
       {!main && (
@@ -90,8 +101,8 @@ function InviteBlock({ invited, main }: { invited: boolean; main: boolean }) {
       )}
       <p className="text-lg font-semibold">{COPY.inviteWhen}</p>
       <p className="mt-2 flex items-start gap-1.5 text-base" style={{ color: EL.inkSoft }}>
-        {invited && <Check className="mt-1 h-4 w-4 shrink-0" style={{ color: EL.flame }} strokeWidth={2.5} />}
-        {invited ? COPY.inviteSent : COPY.invitePending}
+        {(link.invited || link.verified) && <Check className="mt-1 h-4 w-4 shrink-0" style={{ color: EL.flame }} strokeWidth={2.5} />}
+        {line}
       </p>
     </SeatNote>
   );
@@ -134,95 +145,123 @@ function SeatBlock({ token, link, demo, onLink }: { token: string; link: ShareLi
         </div>
       )}
       {!naming && s.state === "checking" && s.recipient.who === "other" && (
-        <button type="button" onClick={() => setRenaming(true)} className="mt-3 text-sm underline underline-offset-4" style={{ color: EL.inkSoft }}>
-          {COPY.rename}
-        </button>
+        <div className="mt-3">
+          <TextButton onClick={() => setRenaming(true)}>{COPY.rename}</TextButton>
+        </div>
       )}
     </SeatNote>
   );
 }
 
-function CopyPageLink() {
-  const [copied, setCopied] = useState(false);
+/**
+ * Keep the private page: send it to their own LINE (LINE's browser has no
+ * bookmarks), or copy it. Up top right after the link is made, at the bottom later.
+ */
+function KeepPage({ fresh }: { fresh: boolean }) {
   const [href, setHref] = useState("");
-  useEffect(() => setHref(window.location.href.split("?")[0]), []);
+  const [copied, setCopied] = useState(false);
+  useEffect(() => setHref(`${window.location.origin}${window.location.pathname}`), []);
   return (
-    <button
-      type="button"
-      disabled={!href}
-      onClick={async () => {
-        await navigator.clipboard?.writeText(href).catch(() => undefined);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      }}
-      className={btnSmall}
-      style={outline}
-    >
-      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} {copied ? COPY.copied : COPY.copyPage}
-    </button>
+    <section className="space-y-3 rounded-2xl border p-5" style={fresh ? { borderColor: EL.flame, backgroundColor: "rgba(236,100,36,0.06)" } : { borderColor: "rgba(29,33,31,0.12)" }}>
+      {fresh && (
+        <p className="text-2xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
+          {COPY.keepTitle}
+        </p>
+      )}
+      <p className="text-base" style={{ color: fresh ? EL.ink : EL.inkSoft }}>
+        {fresh ? COPY.keep : COPY.keepLater}
+      </p>
+      <a
+        href={href ? `https://line.me/R/share?text=${encodeURIComponent(COPY.lineText(href))}` : undefined}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`${btn} w-full`}
+        style={fresh ? filled : outline}
+      >
+        <Share2 className="h-4 w-4" /> {COPY.toLine}
+      </a>
+      <button
+        type="button"
+        disabled={!href}
+        onClick={async () => {
+          await navigator.clipboard?.writeText(href).catch(() => undefined);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        }}
+        className={`${btn} w-full`}
+        style={outline}
+      >
+        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} {copied ? COPY.copied : COPY.copyPage}
+      </button>
+    </section>
   );
 }
 
-export function TeacherView({
+function TeacherLink({
   token,
-  open,
-  link: initial,
+  phase,
+  link,
   posterVersion,
   demo,
+  fresh,
+  onLink,
 }: {
   token: string;
-  open: boolean;
-  link: ShareLinkView | null;
+  phase: "open" | "after-close";
+  link: ShareLinkView;
   posterVersion: string;
   demo?: boolean;
+  fresh: boolean;
+  onLink: (l: ShareLinkView) => void;
 }) {
-  const [link, setLink] = useState<ShareLinkView | null>(initial);
-  const onLink = useCallback((l: ShareLinkView) => setLink(l), []);
-  usePollLink(link && open && !demo ? `/api/hackathon/elemental/teacher/${token}` : null, onLink);
-
-  const footer = (
-    <div className="mt-12">
-      <TextLink href="/hackathon/elemental">{COPY.more}</TextLink>
-    </div>
-  );
-
-  if (!open || !link) {
-    return (
-      <Page top={COPY.top} footer={footer}>
-        <Title>{COPY.closedTitle}</Title>
-        <Lead>{COPY.closed}</Lead>
-      </Page>
-    );
-  }
-
+  const open = phase === "open";
+  const poster = usePosterShare(link.code, "teacher", posterVersion);
+  const mode = meterMode(link);
   const invited = reachedDevicesGoal(link.progress) && link.seat.state !== "rejected";
   const title = titleFor(link);
-  const seatGone = link.seat.state === "taken" || link.seat.state === "rejected";
+  const start = open && link.seat.state === "open" && progressPhase(link.progress) === "start";
+
+  const posterSection = open && (
+    <section className="space-y-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="text-xl font-semibold">{COPY.posterHeading}</h2>
+        <span className="text-sm" style={{ color: EL.inkSoft }}>
+          No. <CodeText code={link.code} />
+        </span>
+      </div>
+      <p style={{ color: EL.inkSoft }}>{COPY.posterLead}</p>
+      <PosterBlock poster={poster} />
+    </section>
+  );
+  const meter = <SeatMeter progress={link.progress} kind="teacher" mode={mode} race={link.race} live={open && !demo} frozen={!open} />;
+
   return (
-    <Page top={COPY.top} footer={footer}>
+    <Page
+      top={COPY.top}
+      footer={
+        <div className="mt-12">
+          <TextLink href="/hackathon/elemental">{COPY.more}</TextLink>
+        </div>
+      }
+      bar={open && link.seat.state === "open" ? <ShareBar poster={poster} /> : undefined}
+    >
+      {fresh && (
+        <div className="mb-8">
+          <KeepPage fresh />
+        </div>
+      )}
       <Title>{title}</Title>
       <p className="mt-3 text-lg">{schoolLabel(link.school.name, link.school.province)}</p>
-      <p className="mt-1 text-sm" style={{ color: EL.inkSoft }}>
-        {COPY.keep}
-      </p>
+      {!open && <p className="mt-2 text-sm" style={{ color: EL.inkSoft }}>{COPY.frozenNote}</p>}
 
       <div className="mt-6 space-y-6">
         {link.seat.state !== "taken" && <SeatBlock token={token} link={link} demo={demo} onLink={onLink} />}
-        {invited && <InviteBlock invited={link.invited} main={title === COPY.titles.invited} />}
+        {invited && <InviteBlock link={link} main={title === COPY.titles.invited} />}
         {link.seat.state === "taken" && <SeatBlock token={token} link={link} demo={demo} onLink={onLink} />}
-        <ShareProgress progress={link.progress} kind="teacher" live={!demo} seatGone={seatGone} />
+        {start ? posterSection : meter}
       </div>
 
-      <section className="mt-10 space-y-3">
-        <div className="flex items-baseline justify-between gap-3">
-          <h2 className="text-xl font-semibold">{COPY.posterHeading}</h2>
-          <span className="text-sm" style={{ color: EL.inkSoft }}>
-            No. <CodeText code={link.code} />
-          </span>
-        </div>
-        <p style={{ color: EL.inkSoft }}>{COPY.posterLead}</p>
-        <PosterBlock code={link.code} kind="teacher" posterVersion={posterVersion} />
-      </section>
+      {open && <div className="mt-10">{start ? meter : posterSection}</div>}
 
       <section className="mt-12 space-y-3">
         <h2 className="text-xl font-semibold">{COPY.rulesHeading}</h2>
@@ -236,9 +275,49 @@ export function TeacherView({
         </ul>
       </section>
 
-      <div className="mt-10 border-t pt-6" style={{ borderColor: hairline }}>
-        <CopyPageLink />
-      </div>
+      {!fresh && (
+        <div className="mt-10">
+          <KeepPage fresh={false} />
+        </div>
+      )}
     </Page>
   );
+}
+
+export function TeacherView({
+  token,
+  phase,
+  link: initial,
+  posterVersion,
+  demo,
+  fresh = false,
+}: {
+  token: string;
+  phase: "open" | "after-close" | "off";
+  link: ShareLinkView | null;
+  posterVersion: string;
+  demo?: boolean;
+  /** Just made (?new=1): keeping the page comes first. */
+  fresh?: boolean;
+}) {
+  const [link, setLink] = useState<ShareLinkView | null>(initial);
+  const onLink = useCallback((l: ShareLinkView) => setLink(l), []);
+  usePollLink(link && phase !== "off" && !demo ? `/api/hackathon/elemental/teacher/${token}` : null, onLink);
+
+  if (phase === "off" || !link) {
+    return (
+      <Page
+        top={COPY.top}
+        footer={
+          <div className="mt-12">
+            <TextLink href="/hackathon/elemental">{COPY.more}</TextLink>
+          </div>
+        }
+      >
+        <Title>{COPY.closedTitle}</Title>
+        <Lead>{COPY.closed}</Lead>
+      </Page>
+    );
+  }
+  return <TeacherLink token={token} phase={phase} link={link} posterVersion={posterVersion} demo={demo} fresh={fresh} onLink={onLink} />;
 }

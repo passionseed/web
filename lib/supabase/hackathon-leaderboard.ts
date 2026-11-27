@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createAdminClient } from "@/utils/supabase/admin";
+import { elementalCountingEndsAt } from "@/lib/hackathon/elemental/link-views-shared";
 import {
   buildBoard,
   rankBoard,
@@ -11,15 +12,16 @@ import {
   type LeaderboardPayload,
   type PublicBoardEntry,
 } from "@/lib/hackathon/elemental/team-style-board";
+import type { BoardPhase } from "@/lib/hackathon/elemental/team-style-phase";
 
 /**
  * The Elemental team board's numbers (service role; rules in
  * lib/hackathon/elemental/team-style-board.ts). Reads every share-link view
- * and every sign-up of the event, so the result is kept for MEMO_MS per
- * server instance; the API adds a short CDN cache on top.
+ * and every sign-up of the event up to sign-up close, so the result is kept
+ * for MEMO_MS per server instance; the API adds a short CDN cache on top.
  *
- * Works before the 20261127110000 migration is applied: without the style
- * columns, names show plain and nothing is hidden.
+ * Before the 20261127110000 migration is applied there are no board names,
+ * so nothing is listed; the page still works.
  */
 
 const PAGE = 1000;
@@ -38,14 +40,14 @@ async function allRows<T>(page: (from: number, to: number) => Page<T>): Promise<
   }
 }
 
-/** The style columns aren't there yet (migration not applied). */
+/** A column the query asked for isn't there yet (a migration not applied). */
 export function isMissingColumn(error: unknown): boolean {
   const e = error as { code?: string; message?: string } | null;
   return e?.code === "42703" || e?.code === "PGRST204" || /column .* does not exist|could not find .* column/i.test(e?.message ?? "");
 }
 
-/** Run with the style columns; if they don't exist yet, run again without them. */
-async function withStyleFallback<T>(run: (styled: boolean) => Promise<T>): Promise<T> {
+/** Run with the newer columns; if they don't exist yet, run again without them. */
+async function withColumnFallback<T>(run: (full: boolean) => Promise<T>): Promise<T> {
   try {
     return await run(true);
   } catch (error) {
@@ -54,45 +56,47 @@ async function withStyleFallback<T>(run: (styled: boolean) => Promise<T>): Promi
   }
 }
 
-type TeamDbRow = { id: string; name: string; name_style?: unknown; leaderboard_hidden?: boolean | null };
+type TeamDbRow = { id: string; board_name?: string | null; name_style?: unknown; leaderboard_hidden?: boolean | null };
 type RegDbRow = {
   id: string;
   team_id: string | null;
-  team_name: string | null;
   status: string;
   member_count: number | null;
   source: string | null;
+  created_at: string;
+  free_seat?: boolean | null;
+  board_name?: string | null;
   name_style?: unknown;
-  leaderboard_name?: string | null;
   leaderboard_hidden?: boolean | null;
   hackathon_event_registration_members: { school: string | null }[] | null;
 };
 
 async function loadTeams(eventSlug: string): Promise<BoardTeamRow[]> {
   const db = createAdminClient();
-  const rows = await withStyleFallback((styled) =>
+  const rows = await withColumnFallback((full) =>
     allRows<TeamDbRow>((from, to) =>
       db
         .from("hackathon_event_teams")
-        .select(styled ? "id, name, name_style, leaderboard_hidden" : "id, name")
+        .select(full ? "id, board_name, name_style, leaderboard_hidden" : "id")
         .eq("event_slug", eventSlug)
         .order("id")
         .range(from, to) as unknown as Page<TeamDbRow>,
     ),
   );
-  return rows.map((t) => ({ id: t.id, name: t.name, style: t.name_style ?? null, hidden: Boolean(t.leaderboard_hidden) }));
+  return rows.map((t) => ({ id: t.id, boardName: t.board_name ?? null, style: t.name_style ?? null, hidden: Boolean(t.leaderboard_hidden) }));
 }
 
-async function loadRegistrations(eventSlug: string): Promise<BoardRegistrationRow[]> {
+async function loadRegistrations(eventSlug: string, endsAt: string): Promise<BoardRegistrationRow[]> {
   const db = createAdminClient();
-  const base = "id, team_id, team_name, status, member_count, source, hackathon_event_registration_members(school)";
-  const rows = await withStyleFallback((styled) =>
+  const base = "id, team_id, status, member_count, source, created_at, hackathon_event_registration_members(school)";
+  const rows = await withColumnFallback((full) =>
     allRows<RegDbRow>((from, to) =>
       db
         .from("hackathon_event_registrations")
-        .select(styled ? `${base}, name_style, leaderboard_name, leaderboard_hidden` : base)
+        .select(full ? `${base}, free_seat, board_name, name_style, leaderboard_hidden` : base)
         .eq("event_slug", eventSlug)
         .neq("status", "cancelled")
+        .lte("created_at", endsAt)
         .order("id")
         .range(from, to) as unknown as Page<RegDbRow>,
     ),
@@ -100,17 +104,19 @@ async function loadRegistrations(eventSlug: string): Promise<BoardRegistrationRo
   return rows.map((r) => ({
     id: r.id,
     teamId: r.team_id,
-    name: r.leaderboard_name || r.team_name || null,
+    boardName: r.board_name ?? null,
     status: r.status,
     memberCount: r.member_count ?? 1,
     source: r.source,
+    freeSeat: Boolean(r.free_seat),
+    createdAt: r.created_at,
     style: r.name_style ?? null,
     hidden: Boolean(r.leaderboard_hidden),
     schools: (r.hackathon_event_registration_members ?? []).map((m) => m.school ?? "").filter(Boolean),
   }));
 }
 
-async function loadViews(eventSlug: string): Promise<BoardView[]> {
+async function loadViews(eventSlug: string, endsAt: string): Promise<BoardView[]> {
   const db = createAdminClient();
   const rows = await allRows<{ source: string; ip_hash: string }>((from, to) =>
     db
@@ -118,6 +124,7 @@ async function loadViews(eventSlug: string): Promise<BoardView[]> {
       .select("source, ip_hash")
       .eq("event_slug", eventSlug)
       .like("source", "share-%")
+      .lte("created_at", endsAt)
       .order("id")
       .range(from, to) as unknown as Page<{ source: string; ip_hash: string }>,
   );
@@ -126,12 +133,14 @@ async function loadViews(eventSlug: string): Promise<BoardView[]> {
 
 const memo = new Map<string, { at: number; entries: Promise<BoardEntry[]> }>();
 
-/** Every team's numbers, hidden ones included. Kept for MEMO_MS. */
+/** Every team's numbers, hidden and unnamed ones included, counted up to sign-up close. Kept for MEMO_MS. */
 export async function loadBoardEntries(eventSlug: string): Promise<BoardEntry[]> {
   const hit = memo.get(eventSlug);
   if (hit && Date.now() - hit.at < MEMO_MS) return hit.entries;
-  const entries = Promise.all([loadTeams(eventSlug), loadRegistrations(eventSlug), loadViews(eventSlug)]).then(
-    ([teams, registrations, views]) => buildBoard({ teams, registrations, views }),
+  const endsAt = elementalCountingEndsAt();
+  const iso = endsAt.toISOString();
+  const entries = Promise.all([loadTeams(eventSlug), loadRegistrations(eventSlug, iso), loadViews(eventSlug, iso)]).then(
+    ([teams, registrations, views]) => buildBoard({ teams, registrations, views, endsAt }),
   );
   memo.set(eventSlug, { at: Date.now(), entries });
   entries.catch(() => memo.delete(eventSlug));
@@ -148,14 +157,15 @@ export async function loadLeaderboard(eventSlug: string): Promise<PublicBoardEnt
   return rankBoard(await loadBoardEntries(eventSlug));
 }
 
-/** The board page's and API's answer. Never throws: a failed load is "unavailable". */
-export async function leaderboardPayload(eventSlug: string, open: boolean): Promise<LeaderboardPayload> {
+/** The board page's and API's answer for a phase (team-style-phase.ts). Never throws: a failed load is "unavailable". */
+export async function leaderboardPayload(eventSlug: string, phase: BoardPhase): Promise<LeaderboardPayload> {
   const updatedAt = new Date().toISOString();
-  if (!open) return { state: "closed", teams: [], updatedAt };
+  const countedUntil = elementalCountingEndsAt().toISOString();
+  if (phase === "soon") return { state: "soon", teams: [], updatedAt, countedUntil };
   try {
-    return { state: "live", teams: await loadLeaderboard(eventSlug), updatedAt };
+    return { state: phase, teams: await loadLeaderboard(eventSlug), updatedAt, countedUntil };
   } catch (error) {
     console.error("[elemental leaderboard] failed to load", error);
-    return { state: "unavailable", teams: [], updatedAt };
+    return { state: "unavailable", teams: [], updatedAt, countedUntil };
   }
 }

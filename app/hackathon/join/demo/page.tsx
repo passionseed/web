@@ -28,8 +28,10 @@ const STATES: RegistrationStatus[] = ["pending", "review", "paid", "cancelled"];
  * (n: the place in sign-up order inside the team, so each teammate's ticket can be seen)
  * &discord=joined|not_member|taken|error shows each Discord state on the paid page.
  * &share=1|<state> shows the share card (1: no school yet; a state from lib/hackathon/elemental/share-demo.ts,
- *   like early, close, qualified, taken, given or friend) on the pending, review or paid page.
- * &style=locked|colors|fonts|all shows the team name style card at that unlock level; &edit=1 opens its editor.
+ *   like early, close, qualified, taken, given or friend) on the pending, review or paid page;
+ *   &phase=after-close shows it read-only, as after sign-up closes.
+ * &style=unnamed|locked|colors|fonts|all|final gives the share card the team's board row at that level
+ * (unnamed: no board name yet; final: after sign-up close); &edit=1 opens its editor.
  */
 export default async function PayDemoPage({ searchParams }: { searchParams: SearchParams }) {
   if (!demoPagesOn()) notFound();
@@ -64,7 +66,7 @@ export default async function PayDemoPage({ searchParams }: { searchParams: Sear
         qrSrc={state === "pending" ? await elementalPayQr(amountBaht) : null}
         links={{ line: "https://line.me/ti/g/demo", discord: "https://discord.gg/demo" }}
         discordOutcome={parseElementalDiscordOutcome(first(params.discord))}
-        teamStyle={styleLevel ? demoStyleCard(styleLevel, { solo: !inTeam, teamName: team?.name ?? null }) : null}
+        teamStyle={styleLevel ? demoStyleCard(styleLevel, { solo: !inTeam }) : null}
         share={
           first(params.share)
             ? {
@@ -73,6 +75,7 @@ export default async function PayDemoPage({ searchParams }: { searchParams: Sear
                 code: SHARE_DEMO_CODE,
                 selfPaid: state === "paid" || state === "review",
                 link: studentDemo(first(params.share)),
+                phase: first(params.phase) === "after-close" ? "after-close" : "open",
               }
             : null
         }

@@ -1,5 +1,5 @@
 import { PER_NETWORK_CAP } from "./link-views-shared";
-import { SHARE, SHARE_CODE_RE, shareCode, type ShareKind } from "./share";
+import { foldSchoolName, SHARE, SHARE_CODE_RE, shareCode, type ShareKind } from "./share";
 
 /**
  * The rules for Elemental share links (Big, 2026-11-27). Pure and safe to
@@ -35,13 +35,13 @@ export function remaining(p: Progress, goals: Goals = GOALS): Progress {
   return { devices: Math.max(0, goals.devices - p.devices), paid: Math.max(0, goals.paid - p.paid) };
 }
 
-export type SharePhase = "start" | "early" | "close" | "done";
+export type ProgressPhase = "start" | "early" | "close" | "done";
 
 /**
  * Which words the page uses: nothing yet, under way, nearly there (70% of
  * the way on both goals together), or both goals met.
  */
-export function sharePhase(p: Progress, goals: Goals = GOALS): SharePhase {
+export function progressPhase(p: Progress, goals: Goals = GOALS): ProgressPhase {
   if (qualifies(p, goals)) return "done";
   if (p.devices === 0 && p.paid === 0) return "start";
   const share = (Math.min(p.devices, goals.devices) / goals.devices + Math.min(p.paid, goals.paid) / goals.paid) / 2;
@@ -50,8 +50,19 @@ export function sharePhase(p: Progress, goals: Goals = GOALS): SharePhase {
 
 /** One device that opened a link (a row of hackathon_link_views). */
 export type ViewEvent = { ipHash: string; at: string };
-/** One paid sign-up that came through a link: its seats, and when it was paid. */
+/** One paid sign-up that came through a link: its seats, and when it paid (see paidAt). */
 export type PaidEvent = { seats: number; at: string };
+
+/**
+ * When a sign-up paid, for the seat race: when its slip was uploaded (the
+ * slip's file name starts with the upload time in ms), or else when it signed
+ * up. Never when staff happened to approve it, so a slow check can't cost a
+ * link its place.
+ */
+export function paidAt(r: { slipPath: string | null; createdAt: string }): string {
+  const ms = Number(r.slipPath?.match(/\/(\d{12,14})-/)?.[1]);
+  return Number.isFinite(ms) && ms > 0 ? new Date(ms).toISOString() : r.createdAt;
+}
 
 const byTime = <T extends { at: string }>(rows: readonly T[]) => [...rows].sort((a, b) => a.at.localeCompare(b.at));
 
@@ -97,11 +108,19 @@ export function linkProgress(
   return { devices: d.devices, paid: p.paid, qualifiedAt };
 }
 
-export type SeatCandidate = { linkId: string; qualifiedAt: string | null; createdAt: string; rejected?: boolean };
+export type SeatCandidate = {
+  linkId: string;
+  qualifiedAt: string | null;
+  createdAt: string;
+  /** Staff turned the link down. */
+  rejected?: boolean;
+  /** The student's sign-up was cancelled. */
+  cancelled?: boolean;
+};
 
 /** The link that gets a school's seat: the earliest to qualify; on a tie, the older link. Null if none has. */
 export function pickSeatWinner(candidates: readonly SeatCandidate[]): SeatCandidate | null {
-  const ready = candidates.filter((c) => c.qualifiedAt && !c.rejected);
+  const ready = candidates.filter((c) => c.qualifiedAt && !c.rejected && !c.cancelled);
   ready.sort((a, b) => a.qualifiedAt!.localeCompare(b.qualifiedAt!) || a.createdAt.localeCompare(b.createdAt));
   return ready[0] ?? null;
 }
@@ -240,6 +259,56 @@ export function parseOptionalPhone(raw: string | undefined | null): { ok: true; 
   return /^\d{9,15}$/.test(digits) ? { ok: true, value } : { ok: false };
 }
 
+/** How far along a link is, as one number from 0 to 1, for "who's leading" at a school. */
+export function raceScore(p: Progress, goals: Goals = GOALS): number {
+  return (Math.min(p.devices, goals.devices) / goals.devices + Math.min(p.paid, goals.paid) / goals.paid) / 2;
+}
+
+/** The race at one school, anonymous: how many links, and the leading link's numbers. */
+export type Race = { links: number; leader: Progress | null; youLead: boolean };
+
+export function schoolRace(links: readonly { id: string; progress: Progress; out?: boolean }[], ownId: string): Race {
+  const live = links.filter((l) => !l.out);
+  let leader: (typeof live)[number] | null = null;
+  for (const l of live) {
+    if (!leader) leader = l;
+    else {
+      const d = raceScore(l.progress) - raceScore(leader.progress);
+      if (d > 0 || (d === 0 && l.progress.devices > leader.progress.devices)) leader = l;
+    }
+  }
+  if (leader && leader.progress.devices === 0 && leader.progress.paid === 0) leader = live.find((l) => l.id === ownId) ?? leader;
+  return { links: live.length, leader: leader ? { ...leader.progress } : null, youLead: !!leader && leader.id === ownId };
+}
+
+/** For the admin fraud check: how a link's devices came in. */
+export function trafficStats(views: readonly ViewEvent[], now: Date): { networks: number; last24h: number; peakHour: number } {
+  const since = now.getTime() - 24 * 3600_000;
+  const hours = new Map<string, number>();
+  let last24h = 0;
+  for (const v of views) {
+    if (new Date(v.at).getTime() >= since) last24h += 1;
+    const h = v.at.slice(0, 13);
+    hours.set(h, (hours.get(h) ?? 0) + 1);
+  }
+  return { networks: new Set(views.map((v) => v.ipHash)).size, last24h, peakHour: Math.max(0, ...hours.values()) };
+}
+
+const digits = (p: string | null | undefined) => (p ?? "").replace(/\D/g, "").replace(/^66/, "0").slice(-9);
+
+/** Whether any phone in one list is the same number as any in the other (ignores spaces, dashes and +66). */
+export function phonesMatch(a: readonly (string | null | undefined)[], b: readonly (string | null | undefined)[]): boolean {
+  const left = new Set(a.map(digits).filter((d) => d.length >= 8));
+  return b.map(digits).some((d) => d.length >= 8 && left.has(d));
+}
+
+/** Whether two school names are the same school, loosely (one folded name inside the other). */
+export function sameSchool(a: string | null | undefined, b: string | null | undefined): boolean {
+  const x = foldSchoolName(a ?? "");
+  const y = foldSchoolName(b ?? "");
+  return !!x && !!y && (x.includes(y) || y.includes(x));
+}
+
 /** What a share page shows about one link. Nothing in it names a person. */
 export type ShareLinkView = {
   kind: ShareKind;
@@ -250,6 +319,10 @@ export type ShareLinkView = {
   canChangeSchool: boolean;
   /** Students: whether their own sign-up has paid. */
   selfPaid: boolean;
+  /** Teachers: staff checked with the school. */
+  verified: boolean;
   /** Teachers: staff have sent the Demo Day invite. */
   invited: boolean;
+  /** The other links at the same school, anonymous. */
+  race: Race;
 };

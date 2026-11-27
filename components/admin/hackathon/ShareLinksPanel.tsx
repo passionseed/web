@@ -1,12 +1,12 @@
 import { Badge } from "@/components/ui/badge";
 import { formatBangkokDateTime } from "@/lib/admin/queue-tools/format";
 import { linkSource, shareCode } from "@/lib/hackathon/elemental/share";
-import { GOALS, reachedDevicesGoal, seatRecipientId } from "@/lib/hackathon/elemental/share-rules";
+import { GOALS, phonesMatch, reachedDevicesGoal, sameSchool, seatRecipientId } from "@/lib/hackathon/elemental/share-rules";
 import type { AdminShareLink } from "@/lib/supabase/hackathon-share-links";
 import { cn } from "@/lib/utils";
 
 import { ShareSeatActions } from "./ShareSeatActions";
-import { ShareCopyTeacherLink, ShareInviteToggle } from "./ShareTeacherTools";
+import { ShareCopyTeacherLink, ShareTeacherMarks } from "./ShareTeacherTools";
 
 /**
  * Every Elemental share link, students and teachers: school, devices, paid,
@@ -15,9 +15,27 @@ import { ShareCopyTeacherLink, ShareInviteToggle } from "./ShareTeacherTools";
  * Staff only: names and contacts show here and nowhere public.
  */
 
-export type ShareRegInfo = { name: string; status: string };
+export type ShareRegInfo = {
+  name: string;
+  status: string;
+  /** The first member's school, as typed at sign-up. */
+  school: string;
+  /** The contact phone and every parent phone on the sign-up. */
+  phones: string[];
+  source: string | null;
+  seats: number;
+};
 
-export type ShareSummary = { links: number; students: number; teachers: number; qualified: number; confirmed: number; teachersAtGoal: number; invited: number };
+export type ShareSummary = {
+  links: number;
+  students: number;
+  teachers: number;
+  qualified: number;
+  confirmed: number;
+  teachersAtGoal: number;
+  verified: number;
+  invited: number;
+};
 
 export function shareSummary(links: AdminShareLink[]): ShareSummary {
   const teachers = links.filter((l) => l.kind === "teacher");
@@ -28,6 +46,7 @@ export function shareSummary(links: AdminShareLink[]): ShareSummary {
     qualified: links.filter((l) => l.seat?.status === "qualified").length,
     confirmed: links.filter((l) => l.seat?.status === "confirmed").length,
     teachersAtGoal: teachers.filter((l) => reachedDevicesGoal(l.progress)).length,
+    verified: teachers.filter((l) => l.verifiedAt).length,
     invited: teachers.filter((l) => l.invitedAt).length,
   };
 }
@@ -66,9 +85,50 @@ function recipientLine(l: AdminShareLink, regs: Map<string, ShareRegInfo>): { te
     };
   }
   const r = regs.get(id);
-  const who = id === l.registrationId ? "their own sign-up" : `${r?.name ?? "?"} (code ${shareCode(id).toUpperCase()})`;
+  const who =
+    id === l.registrationId
+      ? "their own sign-up"
+      : `${r?.name ?? "?"} (code ${shareCode(id).toUpperCase()}${r?.school ? `, ${r.school}` : ""})`;
   const ok = r?.status === "pending";
   return { text: `Goes to ${who}${r ? `, ${r.status === "pending" ? "unpaid" : `now ${r.status}: ask for another code`}` : ""}.`, ok };
+}
+
+/** What staff check before confirming: who paid through the link, shared phones, the school, and how the devices came in. */
+function FraudCheck({ l, regs }: { l: AdminShareLink; regs: Map<string, ShareRegInfo> }) {
+  const src = linkSource(l.kind, l.code);
+  const own = l.registrationId ? regs.get(l.registrationId) : undefined;
+  const sharerPhones = l.kind === "teacher" ? [l.teacherPhone] : (own?.phones ?? []);
+  const payers = [...regs.entries()].filter(([, r]) => r.source === src && r.status === "paid");
+  const schoolMismatch = l.kind === "student" && own && !sameSchool(l.schoolName, own.school);
+  const t = l.traffic;
+  return (
+    <div className="space-y-1.5 rounded-md border bg-background p-3">
+      <p className="font-medium">Fraud check</p>
+      {schoolMismatch && (
+        <p className="text-destructive">
+          School doesn&apos;t match: the link says {l.schoolName}, the sign-up says {own.school}.
+        </p>
+      )}
+      <p>
+        Devices: {l.progress.devices} from {t.networks} network{t.networks === 1 ? "" : "s"} · {t.last24h} in the last 24 hours · busiest hour{" "}
+        {t.peakHour}
+        {t.networks > 0 && l.progress.devices / t.networks >= 4 && " · many devices per network: look closer"}
+      </p>
+      <p>Paid through this link ({payers.reduce((n, [, r]) => n + r.seats, 0)} seats):</p>
+      <ul className="list-disc space-y-0.5 pl-5">
+        {payers.map(([id, r]) => {
+          const shared = phonesMatch(sharerPhones, r.phones);
+          return (
+            <li key={id} className={cn(shared && "text-destructive")}>
+              {r.name} · {r.school} · {r.seats} {r.seats === 1 ? "seat" : "seats"}
+              {shared && " · same phone as the sharer"}
+            </li>
+          );
+        })}
+        {payers.length === 0 && <li className="text-muted-foreground">none</li>}
+      </ul>
+    </div>
+  );
 }
 
 function LinkRow({ l, regs }: { l: AdminShareLink; regs: Map<string, ShareRegInfo> }) {
@@ -100,6 +160,7 @@ function LinkRow({ l, regs }: { l: AdminShareLink; regs: Map<string, ShareRegInf
           ? [l.teacherName, l.teacherContact, l.teacherPhone].filter(Boolean).join(" · ")
           : `${own?.name ?? "?"}${own ? ` (sign-up ${own.status})` : ""}`}
       </p>
+      {status === "qualified" && <FraudCheck l={l} regs={regs} />}
       {status === "qualified" && recipient && (
         <div className="flex flex-wrap items-center gap-3">
           <span>{recipient.text}</span>
@@ -109,9 +170,8 @@ function LinkRow({ l, regs }: { l: AdminShareLink; regs: Map<string, ShareRegInf
       {status === "confirmed" && recipient && <p>{recipient.text.replace(/^Goes to/, "Given to")}</p>}
       {l.kind === "teacher" && (
         <div className="flex flex-wrap items-center gap-2">
-          {reachedDevicesGoal(l.progress) || l.invitedAt ? (
-            <ShareInviteToggle id={l.id} invited={!!l.invitedAt} />
-          ) : (
+          <ShareTeacherMarks id={l.id} verified={!!l.verifiedAt} invited={!!l.invitedAt} canInvite={reachedDevicesGoal(l.progress)} />
+          {!reachedDevicesGoal(l.progress) && !l.invitedAt && (
             <span className="text-muted-foreground">Demo Day invite at {GOALS.devices} devices</span>
           )}
           {l.invitedAt && <span className="text-muted-foreground">invite sent {formatBangkokDateTime(l.invitedAt, { year: false })}</span>}

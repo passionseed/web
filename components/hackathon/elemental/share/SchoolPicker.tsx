@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Search, X } from "lucide-react";
 
 import { EL } from "@/components/hackathon/poster/elemental/brand";
 
-import { btnSmall, line, outline, schoolLabel } from "./ui";
+import { btnSmall, hairline, inlineTap, line, outline, schoolLabel } from "./ui";
 
 /**
  * Search the 11,246-school open-data list, or type the name when the school
@@ -32,6 +33,7 @@ const COPY = {
   backToSearch: "กลับไปค้นหา",
   customNote: "ทีมงานจะเช็กชื่อโรงเรียนก่อนให้ที่นั่งฟรี",
   change: "เปลี่ยน",
+  clear: "ล้างคำค้น",
 };
 
 export function SchoolPicker({
@@ -82,7 +84,7 @@ export function SchoolPicker({
             </span>
           )}
         </span>
-        <button type="button" onClick={() => onChange(null)} className="shrink-0 text-sm underline underline-offset-4" style={{ color: EL.inkSoft }}>
+        <button type="button" onClick={() => onChange(null)} className={`${inlineTap} shrink-0 px-2`} style={{ color: EL.inkSoft }}>
           {COPY.change}
         </button>
       </div>
@@ -120,7 +122,7 @@ export function SchoolPicker({
           >
             {COPY.useName}
           </button>
-          <button type="button" onClick={() => setCustom(false)} className="text-sm underline underline-offset-4" style={{ color: EL.inkSoft }}>
+          <button type="button" onClick={() => setCustom(false)} className={inlineTap} style={{ color: EL.inkSoft }}>
             {COPY.backToSearch}
           </button>
         </div>
@@ -133,24 +135,43 @@ export function SchoolPicker({
 
   return (
     <div className="space-y-3">
-      <input
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder={COPY.search}
-        aria-label={COPY.label}
-        className="w-full rounded-xl border bg-white px-4 py-3.5 text-lg outline-none"
-        style={{ borderColor: line, color: EL.ink }}
-      />
+      {/* Stays on screen while the results scroll under it. */}
+      <div className="sticky top-0 z-10 -mx-1 px-1 py-1" style={{ backgroundColor: EL.cream }}>
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2" style={{ color: EL.inkSoft }} aria-hidden="true" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={COPY.search}
+            aria-label={COPY.label}
+            type="search"
+            enterKeyHint="search"
+            className="w-full rounded-xl bg-white py-3.5 pl-12 pr-12 text-lg outline-none [&::-webkit-search-cancel-button]:hidden"
+            style={{ boxShadow: `inset 0 0 0 1.5px ${EL.ink}`, color: EL.ink }}
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              aria-label={COPY.clear}
+              className="absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full"
+              style={{ color: EL.inkSoft }}
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
+        </div>
+      </div>
       {schools && schools.length === 0 && <p style={{ color: EL.inkSoft }}>{COPY.none}</p>}
       {schools && schools.length > 0 && (
-        <ul className="space-y-2" aria-label="โรงเรียน">
-          {schools.map((s) => (
-            <li key={s.key}>
+        <ul className="overflow-hidden rounded-xl border bg-white" style={{ borderColor: line }} aria-label="โรงเรียน">
+          {schools.map((s, i) => (
+            <li key={s.key} style={i > 0 ? { borderTop: `1px solid ${hairline}` } : undefined}>
               <button
                 type="button"
                 onClick={() => onChange(s)}
-                className="flex w-full items-center justify-between gap-3 rounded-xl border bg-white px-4 py-3 text-left"
-                style={{ borderColor: line, color: EL.ink }}
+                className="flex min-h-14 w-full items-center justify-between gap-3 px-4 py-3 text-left"
+                style={{ color: EL.ink }}
               >
                 <span className="min-w-0">
                   โรงเรียน{s.name}
@@ -168,7 +189,7 @@ export function SchoolPicker({
           ))}
         </ul>
       )}
-      <button type="button" onClick={() => setCustom(true)} className="text-sm underline underline-offset-4" style={{ color: EL.inkSoft }}>
+      <button type="button" onClick={() => setCustom(true)} className={inlineTap} style={{ color: EL.inkSoft }}>
         {COPY.missing}
       </button>
     </div>

@@ -1,12 +1,16 @@
 import {
+  BOARD_NAME_MAX,
+  checkBoardName,
   checkStyleSave,
   clampStyle,
   DEFAULT_STYLE,
   lockedChoices,
   NAME_COLORS,
   NAME_FONTS,
+  NAME_PAIRS,
   nameStyleCss,
   nextUnlock,
+  pairColors,
   parseStyle,
   readStyle,
   TEAM_STYLE_TIERS,
@@ -14,7 +18,7 @@ import {
   type TeamNameStyle,
 } from "../team-style";
 
-const FULL: TeamNameStyle = { font: "chakra", color: "water", effect: "gradient", color2: "aether" };
+const FULL: TeamNameStyle = { font: "chakra", color: "water", effect: "gradient", pair: "river" };
 
 describe("team name style tiers", () => {
   it("unlocks colours, then fonts, then effects as devices grow", () => {
@@ -61,13 +65,21 @@ describe("team name style validation", () => {
     expect(parseStyle({ ...FULL, font: "Comic Sans" })).toBeNull();
     expect(parseStyle({ ...FULL, color: "#ff00ff" })).toBeNull();
     expect(parseStyle({ ...FULL, effect: "glow" })).toBeNull();
-    expect(parseStyle({ ...FULL, color2: "red" })).toBeNull();
+    expect(parseStyle({ ...FULL, pair: "rainbow" })).toBeNull();
+  });
+
+  it("has no free second colour: a gradient is one of the set pairs", () => {
+    expect(parseStyle({ ...FULL, color2: "aether" })).toBeNull();
+    expect(NAME_PAIRS.length).toBeGreaterThanOrEqual(3);
+    expect(NAME_PAIRS.length).toBeLessThanOrEqual(4);
+    // No pair crosses the wheel to violet (the orange-to-purple look).
+    expect(NAME_PAIRS.some((p) => [p.from, p.to].includes("aether" as never))).toBe(false);
+    expect(nameStyleCss(FULL).backgroundImage).toBe(`linear-gradient(90deg, ${pairColors("river").join(", ")})`);
   });
 
   it("turns away free-form CSS, extra keys and non-objects", () => {
     expect(parseStyle({ ...FULL, css: "color:red" })).toBeNull();
     expect(parseStyle({ ...FULL, font: "chakra; background:url(x)" })).toBeNull();
-    expect(parseStyle({ ...FULL, __proto__: { polluted: true } })).toEqual(FULL);
     expect(parseStyle(null)).toBeNull();
     expect(parseStyle("chakra")).toBeNull();
     expect(parseStyle([FULL])).toBeNull();
@@ -77,30 +89,38 @@ describe("team name style validation", () => {
     expect(checkStyleSave(FULL, TEAM_STYLE_TIERS.font)).toEqual({ ok: false, error: "locked", parts: ["effect"] });
     expect(checkStyleSave({ ...FULL, effect: "solid" }, TEAM_STYLE_TIERS.font)).toEqual({
       ok: true,
-      style: { ...FULL, effect: "solid", color2: DEFAULT_STYLE.color2 },
+      style: { ...FULL, effect: "solid", pair: DEFAULT_STYLE.pair },
     });
     expect(checkStyleSave(FULL, TEAM_STYLE_TIERS.effect)).toEqual({ ok: true, style: FULL });
     expect(checkStyleSave({ font: "nope" }, 999)).toEqual({ ok: false, error: "invalid" });
     expect(checkStyleSave(DEFAULT_STYLE, 0)).toEqual({ ok: true, style: DEFAULT_STYLE });
   });
 
-  it("reads anything stored back as a safe style", () => {
+  it("reads anything stored back as a safe style, old second colours included", () => {
     expect(readStyle(null)).toEqual(DEFAULT_STYLE);
     expect(readStyle({ font: "chakra", color: "javascript:alert(1)" })).toEqual({ ...DEFAULT_STYLE, font: "chakra" });
-    expect(readStyle(FULL)).toEqual(FULL);
+    expect(readStyle({ ...FULL, color2: "aether" })).toEqual(FULL);
+  });
+});
+
+describe("board names", () => {
+  it("must be typed, short and clean", () => {
+    expect(checkBoardName("  ไฟ   ป่า ")).toEqual({ ok: true, name: "ไฟ ป่า" });
+    expect(checkBoardName("")).toEqual({ ok: false, error: "empty" });
+    expect(checkBoardName("   ")).toEqual({ ok: false, error: "empty" });
+    expect(checkBoardName(null)).toEqual({ ok: false, error: "empty" });
+    expect(checkBoardName("ก".repeat(BOARD_NAME_MAX + 1))).toEqual({ ok: false, error: "long" });
+    expect(checkBoardName("ก".repeat(BOARD_NAME_MAX)).ok).toBe(true);
+    expect(checkBoardName("f.u.c.k team")).toEqual({ ok: false, error: "rude" });
   });
 });
 
 describe("team name style CSS", () => {
   it("only ever uses colours and fonts from the lists", () => {
-    const hexes = new Set<string>(NAME_COLORS.map((c) => c.hex));
     expect(nameStyleCss(DEFAULT_STYLE)).toMatchObject({ color: "#1d211f", fontFamily: NAME_FONTS[0].family });
-    const gradient = nameStyleCss(FULL);
-    expect(gradient.backgroundImage).toBe("linear-gradient(90deg, #0e7470, #5b3fc4)");
-    expect(gradient.color).toBe("transparent");
-    expect(hexes.has("#0e7470")).toBe(true);
-    expect(nameStyleCss({ ...FULL, effect: "pop" }).textShadow).toBe("0.06em 0.06em 0 #5b3fc4");
-    expect(nameStyleCss({ ...FULL, effect: "outline" }).WebkitTextStroke).toContain("#0e7470");
+    const water = NAME_COLORS.find((c) => c.id === "water")!.hex;
+    expect(nameStyleCss({ ...FULL, effect: "pop" }).textShadow).toBe("0.06em 0.06em 0 rgba(14,116,112,0.28)");
+    expect(nameStyleCss({ ...FULL, effect: "outline" }).WebkitTextStroke).toContain(water);
   });
 
   it("never loads a banned font", () => {

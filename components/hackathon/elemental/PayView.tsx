@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
 import { SHIFT_PAYMENT } from "@/lib/content/shift-cohort";
+import { shareSource } from "@/lib/hackathon/elemental/share";
 import type { ElementalDiscordOutcome } from "@/lib/hackathon/elemental/discordLink";
 import { teamLabel } from "@/lib/hackathon/elemental/team-name";
 import type { TeamStyleCardData } from "@/lib/hackathon/elemental/team-style";
@@ -16,8 +17,8 @@ import { placeFor, ticketNumber } from "./places";
 import { TeamInvite } from "./TeamInvite";
 import { Ticket } from "./Ticket";
 import { ShareCard, type ShareCardData } from "./share/ShareCard";
+import { TeamStyleRow } from "./team-style/TeamStyleRow";
 import { TrackStep } from "./TrackStep";
-import { TeamStyleCard } from "./team-style/TeamStyleCard";
 
 /**
  * One person's own page after signing up: pay, wait for a check, or the
@@ -34,7 +35,11 @@ type Props = {
   discordOutcome?: ElementalDiscordOutcome | null;
   /** Share-for-a-free-seat card (./share/ShareCard), while sharing is open; paid or not. */
   share?: ShareCardData | null;
-  /** The team's name style and board rank (./team-style), while sharing is open. */
+  /**
+   * The team's board name, style and rank, once the board has launched. Rendered as
+   * <TeamStyleRow token={token} data={teamStyle} demo={demo} /> (./team-style/TeamStyleRow)
+   * inside the share card.
+   */
   teamStyle?: TeamStyleCardData | null;
   demo?: boolean;
 };
@@ -79,27 +84,22 @@ function BuddySection({ reg }: { reg: Props["reg"] }) {
 }
 
 /** The team card; the person who started the team can rename it from here. */
-function Team({ token, reg, demo }: Props) {
+function Team({ token, reg, demo, share }: Props) {
   if (!reg.team) return null;
-  return <TeamInvite team={reg.team} renameToken={reg.isTeamStarter ? token : undefined} demo={demo} />;
+  // While sharing runs, the invite carries this person's share tag, so friends who join count toward their link.
+  const source = share ? shareSource(share.code) : undefined;
+  return <TeamInvite team={reg.team} renameToken={reg.isTeamStarter ? token : undefined} demo={demo} source={source} />;
 }
 
-/** The team's name style for the board and its rank, while sharing is open. */
-function TeamStyleSlot({ token, teamStyle, demo, className }: Props & { className?: string }) {
-  if (!teamStyle) return null;
-  return (
-    <div className={className}>
-      <TeamStyleCard token={token} data={teamStyle} demo={demo} />
-    </div>
-  );
-}
-
-/** The share-for-a-free-seat card, under the payment so paying stays the first thing. */
-function ShareSlot({ share, className }: Props & { className?: string }) {
+/**
+ * "ลิงก์ของฉัน": the one card for the link, its meter and the team's board
+ * row, under the payment so paying stays the first thing.
+ */
+function ShareSlot({ token, share, teamStyle, demo, className }: Props & { className?: string }) {
   if (!share) return null;
   return (
     <div className={className}>
-      <ShareCard share={share} />
+      <ShareCard share={share} teamRow={teamStyle ? <TeamStyleRow token={token} data={teamStyle} demo={demo} /> : undefined} />
     </div>
   );
 }
@@ -176,7 +176,6 @@ function PaidSection(props: Props) {
       <Team {...props} />
       <BuddySection reg={reg} />
       <ShareSlot {...props} />
-      <TeamStyleSlot {...props} />
       <p className="text-sm" style={{ color: EL.inkSoft }}>
         มีคำถามทักไลน์ {SHIFT_PAYMENT.lineId} ·{" "}
         <Link href="/hackathon/elemental" className="underline underline-offset-4">
@@ -199,7 +198,6 @@ function ReviewSection(props: Props) {
       <Team {...props} />
       <BuddySection reg={props.reg} />
       <ShareSlot {...props} />
-      <TeamStyleSlot {...props} />
     </section>
   );
 }
@@ -242,7 +240,6 @@ function PendingSection(props: Props) {
         </div>
       )}
       <ShareSlot {...props} className="mt-10" />
-      <TeamStyleSlot {...props} className="mt-10" />
     </section>
   );
 }

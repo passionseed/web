@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
-import { shareOpen } from "@/lib/hackathon/elemental/share";
+import { sharePhase, type SharePhase } from "@/lib/hackathon/elemental/share";
 import { resolveSchool, schoolBody } from "@/lib/hackathon/elemental/share-school";
 import { safeServerError } from "@/lib/security/route-guards";
 import { isTrustedAdminRequest } from "@/lib/security/request-origin";
@@ -21,10 +21,14 @@ type Guarded = { ok: true; reg: ShareContext } | { ok: false; response: NextResp
 
 const noStore = { "Cache-Control": "no-store" };
 
-/** Same-site for changes, sharing open, a real sign-up that isn't cancelled. Paid or not, anyone signed up can share. */
-async function guard(request: NextRequest, token: string): Promise<Guarded> {
+/**
+ * Same-site for changes, a real sign-up that isn't cancelled, and sharing in
+ * one of `phases` ("open", or also "after-close" for reading and naming a
+ * friend). Paid or not, anyone signed up can share.
+ */
+async function guard(request: NextRequest, token: string, phases: SharePhase[] = ["open", "after-close"]): Promise<Guarded> {
   if (!isTrustedAdminRequest(request)) return { ok: false, response: NextResponse.json({ error: "forbidden" }, { status: 403 }) };
-  if (!shareOpen()) return { ok: false, response: NextResponse.json({ error: "closed" }, { status: 409 }) };
+  if (!phases.includes(sharePhase())) return { ok: false, response: NextResponse.json({ error: "closed" }, { status: 409 }) };
   const reg = await getShareContext(token);
   if (!reg) return { ok: false, response: NextResponse.json({ error: "not_found" }, { status: 404 }) };
   if (reg.status === "cancelled") return { ok: false, response: NextResponse.json({ error: "cancelled" }, { status: 409 }) };
@@ -44,11 +48,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-/** Pick a school (makes the link), or change it while the link has barely started. */
+/** Pick a school (makes the link), or change it while the link has barely started. Only while sign-up is open. */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   try {
     const { token } = await params;
-    const g = await guard(request, token);
+    const g = await guard(request, token, ["open"]);
     if (!g.ok) return g.response;
 
     const parsed = schoolBody.safeParse(await request.json().catch(() => null));

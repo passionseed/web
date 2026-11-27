@@ -8,7 +8,7 @@ import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { elementalCommunityLinks } from "@/lib/hackathon/elemental/community-links";
 import { parseElementalDiscordOutcome } from "@/lib/hackathon/elemental/discordLink";
 import { elementalPayQr } from "@/lib/hackathon/elemental/pay-qr";
-import { shareCode, shareOpen } from "@/lib/hackathon/elemental/share";
+import { shareCode, sharePhase } from "@/lib/hackathon/elemental/share";
 import { hasPaid } from "@/lib/hackathon/elemental/share-rules";
 import { getRegistrationByToken } from "@/lib/supabase/hackathon-event-registrations";
 import { loadTeamStyleCard } from "@/lib/supabase/hackathon-team-style";
@@ -40,13 +40,13 @@ export default async function ElementalPayPage({
   const qrSrc = pending ? await elementalPayQr(reg.amountBaht) : null;
   // Only a paid page renders these.
   const links = reg.status === "paid" ? elementalCommunityLinks() : { line: null, discord: null };
-  // Paid or not, anyone signed up can share for a school's free seat.
-  const share = reg.status !== "cancelled" && shareOpen() ? await shareCard(token, reg) : null;
-  // The team's name style and board rank. Null on any error, so this page never breaks because of it.
+  // Paid or not, anyone signed up can share for a school's free seat; read-only from close to Demo Day.
+  const phase = sharePhase();
+  const share = reg.status !== "cancelled" && phase !== "off" ? await shareCard(token, reg, phase) : null;
+  // The team's board name, style and rank, once the board has launched (live, or final after close).
+  // Null on any error, so this page never breaks because of it.
   const teamStyle =
-    reg.status !== "cancelled" && shareOpen()
-      ? await loadTeamStyleCard(ELEMENTAL.slug, reg, `/hackathon/join/${token}/share`)
-      : null;
+    reg.status !== "cancelled" ? await loadTeamStyleCard(ELEMENTAL.slug, reg, `/hackathon/join/${token}/share`) : null;
 
   return (
     <div className={`${trirong.variable} ${teamStyleFonts}`}>
@@ -56,7 +56,7 @@ export default async function ElementalPayPage({
 }
 
 /** The share card's state. Never breaks the pay page: on any error there is no card. */
-async function shareCard(token: string, reg: { id: string; status: string }): Promise<ShareCardData | null> {
+async function shareCard(token: string, reg: { id: string; status: string }, phase: "open" | "after-close"): Promise<ShareCardData | null> {
   try {
     const own = await getStudentLink(reg.id);
     return {
@@ -65,6 +65,7 @@ async function shareCard(token: string, reg: { id: string; status: string }): Pr
       code: shareCode(reg.id),
       selfPaid: hasPaid(reg.status),
       link: own ? await linkView(ELEMENTAL.slug, own, reg) : null,
+      phase,
     };
   } catch (error) {
     console.error("[elemental share] no share card", error);

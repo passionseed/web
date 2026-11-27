@@ -3,11 +3,14 @@ import { notFound } from "next/navigation";
 
 import { trirong } from "@/components/hackathon/elemental/fonts";
 import { ShareView } from "@/components/hackathon/elemental/share/ShareView";
+import { teamStyleFonts } from "@/components/hackathon/elemental/team-style/fonts";
+import { TeamStyleRow } from "@/components/hackathon/elemental/team-style/TeamStyleRow";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
-import { shareOpen } from "@/lib/hackathon/elemental/share";
+import { sharePhase } from "@/lib/hackathon/elemental/share";
 import { hasPaid, type ShareLinkView } from "@/lib/hackathon/elemental/share-rules";
 import { posterVersion } from "@/lib/hackathon/elemental/share-poster";
 import { getShareContext, getStudentLink, linkView } from "@/lib/supabase/hackathon-share-links";
+import { loadTeamStyleCard } from "@/lib/supabase/hackathon-team-style";
 
 export const dynamic = "force-dynamic";
 
@@ -24,14 +27,21 @@ export default async function ElementalSharePage({ params }: { params: Promise<{
   const reg = await getShareContext(token);
   if (!reg) notFound();
 
-  let state: "open" | "closed" | "cancelled" = reg.status === "cancelled" ? "cancelled" : shareOpen() ? "open" : "closed";
+  const phase = sharePhase();
+  let state: "open" | "after-close" | "closed" | "cancelled" = reg.status === "cancelled" ? "cancelled" : phase === "off" ? "closed" : phase;
   let link: ShareLinkView | null = null;
   let version = "";
-  if (state === "open") {
+  let teamRow: React.ReactNode = null;
+  if (state === "open" || state === "after-close") {
     try {
       const [own, v] = await Promise.all([getStudentLink(reg.id), posterVersion()]);
       link = own ? await linkView(ELEMENTAL.slug, own, reg) : null;
       version = v;
+      // Once the school's seat is out of reach, the team's board row is the next goal. Null on any error.
+      if (link && (link.seat.state === "taken" || link.seat.state === "rejected")) {
+        const style = await loadTeamStyleCard(ELEMENTAL.slug, { id: reg.id, team: reg.teamId ? { id: reg.teamId } : null }, `/hackathon/join/${token}/share`);
+        if (style) teamRow = <TeamStyleRow token={token} data={style} />;
+      }
     } catch (error) {
       // No share tables yet, or the database is down: show "not open" rather than break.
       console.error("[elemental share] could not load the share state", error);
@@ -40,7 +50,7 @@ export default async function ElementalSharePage({ params }: { params: Promise<{
   }
 
   return (
-    <div className={trirong.variable}>
+    <div className={`${trirong.variable} ${teamStyleFonts}`}>
       <ShareView
         token={token}
         state={state}
@@ -48,6 +58,7 @@ export default async function ElementalSharePage({ params }: { params: Promise<{
         selfPaid={hasPaid(reg.status)}
         startQuery={reg.school ?? ""}
         posterVersion={version}
+        teamRow={teamRow}
       />
     </div>
   );
