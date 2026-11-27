@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { motion, useReducedMotion, useTransform } from "framer-motion";
 
@@ -11,6 +10,7 @@ import { ELEMENTAL, prizeTotal } from "@/components/hackathon/poster/elemental/f
 import { BeginnerJourneySection } from "./BeginnerJourneySection";
 import styles from "./elemental-cinema.module.css";
 import { ElementalHero } from "./ElementalHero";
+import { ElementalTopBar } from "./ElementalTopBar";
 import { ElementalPlacesShowcase } from "./ElementalPlacesShowcase";
 import { ELEMENT_CHAPTERS, KEY_VISUAL_MEDIA } from "./media";
 import { ScrollHookStatement } from "./ScrollHookStatement";
@@ -207,45 +207,14 @@ function ElementalExperienceInner({
       <div className={styles.filmGrain} aria-hidden="true" />
 
       {/* Minimal Header: ink on sky over hero, solid black + cream once past */}
-      <header
+      <ElementalTopBar
         ref={headerRef}
-        className="fixed inset-x-0 top-0 z-40 transition-colors duration-200"
-        style={{
-          backgroundColor: pastHero ? "#0c0d0c" : "transparent",
-          color: pastHero ? EL.cream : EL.ink,
-          borderBottom: pastHero ? "1px solid rgba(243,239,230,0.12)" : "1px solid transparent",
-        }}
-      >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-10">
-          {/* Who runs it: The Next Decade × PassionSeed, as on the poster */}
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            <a href="#top" aria-label={`${ELEMENTAL.series}: กลับขึ้นด้านบน`}>
-              <Image
-                src="/hackathon/HackLogo-header.png"
-                alt={ELEMENTAL.series}
-                width={70}
-                height={28}
-                priority
-                className="block h-6 w-auto sm:h-7"
-                style={{
-                  filter: pastHero ? "brightness(0) invert(1)" : "brightness(0)",
-                  opacity: 0.85,
-                  transition: "filter 200ms ease",
-                }}
-              />
-            </a>
-            <span className="text-[11px] opacity-60" style={{ fontFamily: EL_FONT.mono }} aria-hidden="true">
-              ×
-            </span>
-            <Link href="/" className="flex items-center gap-1.5">
-              <Image src="/passion-seed-logo-84.png" alt="" width={28} height={28} priority className="block h-6 w-6 sm:h-7 sm:w-7" />
-              <span className="text-[15px] sm:text-[17px]" style={{ fontFamily: EL_FONT.display, fontWeight: 400 }}>
-                PassionSeed
-              </span>
-            </Link>
-          </div>
-
-          {open ? (
+        tone={pastHero ? "ground" : "sky"}
+        position="fixed"
+        homeHref="#top"
+        homeLabel={`${ELEMENTAL.series}: กลับขึ้นด้านบน`}
+        right={
+          open ? (
             <Link
               href={joinHref}
               className={`${styles.textLink} text-[15px] italic`}
@@ -260,9 +229,9 @@ function ElementalExperienceInner({
             >
               ปิดรับสมัครแล้ว
             </span>
-          )}
-        </div>
-      </header>
+          )
+        }
+      />
 
       {/* Single subtle sound control (default ON) */}
       <GlobalSoundControl />

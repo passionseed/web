@@ -63,8 +63,73 @@ export const EL = {
 
 export const EL_FONT = {
   display: "var(--font-trirong), 'Noto Serif Thai', serif",
-  mono: "var(--font-space-mono), ui-monospace, monospace",
+  /**
+   * Space Mono has no Thai, so Thai inside a [tag] falls back to the body
+   * font (Bai Jamjuree), not to the system's monospace.
+   */
+  mono: "var(--font-space-mono), var(--font-bai-jamjuree), monospace",
+  /** Body and UI text on the Elemental pages (the root layout loads Bai Jamjuree). */
+  body: "var(--font-bai-jamjuree), sans-serif",
 } as const;
+
+/**
+ * The dark ground of the landing page, for the pages that live in it (share,
+ * teacher, team editor, board) and for the dark slabs on the cream pay page.
+ * Merged design direction, 2026-11-27. Never put light text on EL.flame
+ * (about 3:1); the action colour is flameCore with ground-coloured text.
+ */
+export const EL_GROUND = {
+  bg: "#0c0d0c",
+  inputFill: "#1a1b19",
+  text: EL.cream,
+  number: "#faf8f4",
+  secondary: "#d6d0c4",
+  fine: "rgba(243,239,230,0.55)",
+  rule: "rgba(243,239,230,0.18)",
+  ruleSoft: "rgba(243,239,230,0.10)",
+  cell: "rgba(243,239,230,0.10)",
+  outline: "rgba(243,239,230,0.55)",
+  inputBorder: "rgba(243,239,230,0.28)",
+  action: EL.flameCore,
+  actionInk: "#0c0d0c",
+  actionPressed: EL.flameLight,
+  focus: EL.flameCore,
+  error: EL.flameLight,
+  /** The ink title on the sky band. */
+  skyInk: EL.ink,
+  /** The sticky bottom bar. */
+  bar: "rgba(12,13,12,0.94)",
+} as const;
+
+export type SurfaceTokens = Record<keyof typeof EL_GROUND, string>;
+
+/**
+ * The cream pay page, in the same roles. The action is flame with ink text
+ * (about 5:1); cream text on flame is only about 3:1.
+ */
+export const EL_PAPER: SurfaceTokens = {
+  bg: EL.cream,
+  inputFill: "rgba(255,255,255,0.6)",
+  text: EL.ink,
+  number: EL.ink,
+  secondary: EL.inkSoft,
+  fine: "rgba(29,33,31,0.6)",
+  rule: "rgba(29,33,31,0.2)",
+  ruleSoft: "rgba(29,33,31,0.08)",
+  cell: "rgba(29,33,31,0.09)",
+  outline: EL.ink,
+  inputBorder: "rgba(29,33,31,0.28)",
+  action: EL.flame,
+  actionInk: EL.ink,
+  actionPressed: EL.flameLight,
+  focus: EL.ink,
+  error: EL.ember,
+  skyInk: EL.ink,
+  bar: "rgba(243,239,230,0.96)",
+};
+
+/** Corruption pixels, newest (hottest) to oldest. */
+export const EL_FIRE = [EL.flameWhite, EL.flameCore, EL.flameLight, EL.flame, EL.ember] as const;
 
 export const BACKGROUND = {
   src: "/hackathon/poster/elemental/bg/river-joana-abreu-unsplash.jpg",

@@ -2,6 +2,10 @@ import { Trirong } from "next/font/google";
 import QRCode from "qrcode";
 import { EL, EL_FONT } from "./brand";
 import { ELEMENTAL, prizeTotal, thaiDayRange } from "./facts";
+import { GlyphLetter, ICON, Pixels, TITLE_GLYPHS } from "./pixel-art";
+
+/** The pixel helpers live in ./pixel-art so pages can use them without the poster (and its font and QR code). */
+export { ICON, Pixels } from "./pixel-art";
 
 /**
  * Elemental Hackathon key visual, 1080x1350.
@@ -187,113 +191,6 @@ const TROPHIES = {
 export type TrophyDesign = keyof typeof TROPHIES;
 const TROPHY_FILL: Record<string, string> = { "#": EL.ink, h: "#ffffff", b: EL.ink };
 
-/**
- * The title plays on its own word: four letters of "Elemental" are
- * corrupted into pixel glyphs of the elements, the e into toxic water, the
- * m into e-waste (Earth), the a into a gust of smoke (Air) and the last l
- * into fire. Each still reads as its letter. The GIF glitches them in one by
- * one as each element arrives (scripts/render-elemental-gif.mjs --story).
- */
-type GlyphElement = "water" | "earth" | "air" | "fire";
-const GLYPHS: Record<GlyphElement, { rows: string[]; fill: Record<string, string>; up?: number; cell?: number }> = {
-  water: {
-    // The finer "e" from the poster image Angpao shared on 2026-11-23 ("make e
-    // the same one as this"): 13 x 13 cells, read off that image cell by cell.
-    rows: [
-      "...GLLGGB....",
-      "..GLDG.BLGL..",
-      ".GLD..B.BDL..",
-      ".DGD.....BDL.",
-      "DGD......BGB.",
-      "DDGGDGGDBDDB.",
-      "DDDGGGDDDGDL.",
-      "LDD..........",
-      "DDD..........",
-      ".DDL.........",
-      ".LLD.........",
-      "..LGG.....DL.",
-      "....GLGDLL...",
-    ],
-    fill: { D: "#1c4e13", G: "#2e6425", L: "#45852a", B: "#84c22e" },
-    cell: 5.2,
-  },
-  earth: {
-    rows: [
-      "PP.PPPP...PPPP..",
-      "PTPP.TPP.PT.TPP.",
-      "PP....PgPP....Pg",
-      "Pg.....PP.....PP",
-      "PP.....TP.....TP",
-      "PT.....PP.....PP",
-      "PP.....Pg.....PP",
-      "cP.....PP.....Pc",
-      "PP.....PT.....PP",
-      "KKc...cKKc...cKK",
-    ],
-    fill: { P: "#33603e", T: "#7aa266", g: "#d2a63a", K: "#141414", c: "#c9c4b8" },
-  },
-  air: {
-    rows: ["..sSSSs..", ".S.....S.", ".......S.", "..sSSSSS.", ".S..w..S.", "S..w.w.S.", "S...w.SS.", ".S...S.S.", "..SSS..SS", "........."],
-    fill: { S: "#3a3733", s: "#6b6761", w: "#8f8a80" },
-    up: -1,
-  },
-  fire: {
-    rows: ["..W..", ".WY..", ".YY..", "..YO.", ".OY..", ".OO..", "..OR.", ".RO..", ".RR..", "..RR.", ".RR..", ".RD..", ".RR..", ".DR..", "DDDD."],
-    fill: { W: "#fff4dc", Y: "#ffd57a", O: "#ec6424", R: "#e2461b", D: "#8e2410" },
-  },
-};
-/** Which letters of the edition name turn into which element. */
-const TITLE_GLYPHS: Record<number, GlyphElement> = { 2: "water", 3: "earth", 7: "air", 8: "fire" };
-
-/**
- * One letter that the pixels have taken over. The real letter stays in the
- * line, see-through, so spacing and the baseline don't move, and the glyph
- * sits on it. data-glyph lets the GIF script switch each one on and off.
- */
-function GlyphLetter({ ch, el, on }: { ch: string; el: GlyphElement; on: boolean }) {
-  const g = GLYPHS[el];
-  const cell = g.cell ?? 6;
-  const w = g.rows[0].length;
-  const h = g.rows.length;
-  return (
-    <span data-glyph={el} data-on={on ? "1" : "0"} style={{ position: "relative", display: "inline-block" }}>
-      <span data-glyph-letter style={{ color: on ? "transparent" : undefined }}>{ch}</span>
-      <svg
-        data-glyph-pixels
-        width={w * cell}
-        height={h * cell}
-        viewBox={`0 0 ${w} ${h}`}
-        shapeRendering="crispEdges"
-        aria-hidden="true"
-        style={{ position: "absolute", left: "50%", bottom: `calc(0.215em + ${(g.up ?? 0) * cell}px)`, transform: "translateX(-50%)", visibility: on ? "visible" : "hidden" }}
-      >
-        {g.rows.flatMap((row, y) => Array.from(row).map((c, x) => (g.fill[c] ? <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={g.fill[c]} /> : null)))}
-      </svg>
-    </span>
-  );
-}
-
-/** Pixel art from rows of characters, one cell per character. */
-function Pixels({ rows, fill, cell }: { rows: readonly string[]; fill: Record<string, string>; cell: number }) {
-  const w = rows[0].length;
-  const h = rows.length;
-  return (
-    <svg width={w * cell} height={h * cell} viewBox={`0 0 ${w} ${h}`} shapeRendering="crispEdges" aria-hidden="true" style={{ display: "block", flex: "none" }}>
-      {rows.flatMap((row, y) => Array.from(row).map((c, x) => (fill[c] ? <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={fill[c]} /> : null)))}
-    </svg>
-  );
-}
-
-/** The small icons in the facts row, 9x9. */
-const ICON = {
-  date: ["#.......#", "#########", "#########", "#.......#", "#.#.#.#.#", "#.......#", "#.#.#.#.#", "#.......#", "#########"],
-  online: ["..#####..", ".#.....#.", "#..###..#", "..#...#..", ".#..#..#.", "...#.#...", "....#....", ".........", "....#...."],
-  prize: ["#########", "#.#####.#", ".#.###.#.", "...###...", "....#....", "....#....", "..#####..", ".#######.", "........."],
-  friends: [".##...##.", "####.####", ".##...##.", ".........", "###...###", "####.####", "####.####", ".........", "........."],
-  workshop: ["#########", "#.......#", "#.##....#", "#....##.#", "#.###...#", "#.......#", "#########", "...#.#...", "..#...#.."],
-  /** A graduation cap with its tassel: who the hackathon is for. */
-  school: ["....#....", "...###...", ".#######.", "#########", ".#######.", "#..###...", "#.#...#..", "#..###...", "........."],
-} as const;
 
 /** One fact in the bottom row: an icon and a few words, all the same size. */
 /** The prize's colour: flame yellow, so it leads the bottom block. */
