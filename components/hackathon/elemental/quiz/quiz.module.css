@@ -25,6 +25,27 @@
   }
 }
 
+/* A question scene's idle: two frames, 600 ms each, offset the same way. */
+.idle,
+.idleKey {
+  animation-name: idleFrame;
+  animation-timing-function: steps(1, end);
+}
+
+.idle {
+  opacity: 0;
+}
+
+@keyframes idleFrame {
+  0% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
 .pixelIn {
   animation: pixelIn 1ms steps(1, end) both;
 }
@@ -256,11 +277,13 @@
 /* No motion: every still holds, nothing moves or flashes. The picked answer still lights. */
 @media (prefers-reduced-motion: reduce) {
   .fx,
+  .idle,
   .flash {
     display: none;
   }
 
   .fxKey,
+  .idleKey,
   .pixelIn,
   .glowIn,
   .hitFire,

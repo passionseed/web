@@ -12,7 +12,7 @@ import { QUIZ_ELEMENTS, QUIZ_QUESTIONS, QUIZ_RESULTS, scoreQuiz } from "@/lib/ha
 import { sfxBack, sfxBuild, sfxElement, sfxPick, sfxStart } from "@/lib/hackathon/elemental/quiz-sfx";
 
 import { hitClass, hitStyle } from "./hit";
-import { IconAssemble, IconFlash, IconFx } from "./PixelArt";
+import { IconAssemble, IconFlash, IconFx, QuestionScene } from "./PixelArt";
 import { PlayableIcon } from "./PlayableIcon";
 import fx from "./quiz.module.css";
 import { play, stop } from "./sound";
@@ -27,6 +27,14 @@ const BUILD_MS = 700;
 const HOLD_MS = 800;
 
 const nameOf = (el: ElementKey) => elementLabel(QUIZ_RESULTS[el].th);
+
+/** Each question's scene at a whole number of px a pixel that fits the column: 7, 8, 9, then 12 wider up. */
+const SCENE_SIZES = [
+  { cell: 7, show: "min-[375px]:hidden" },
+  { cell: 8, show: "hidden min-[375px]:block min-[390px]:hidden" },
+  { cell: 9, show: "hidden min-[390px]:block sm:hidden" },
+  { cell: 12, show: "hidden sm:block" },
+];
 
 /**
  * The quiz itself: an intro, then one question per screen, then a short
@@ -114,7 +122,16 @@ export function ElementalQuiz({ source }: { source?: string }) {
           <SoundToggle color={EL.creamSoft} />
         </div>
 
-        <div key={index} className={`${direction === "forward" ? fx.stepFromRight : fx.stepFromLeft} relative flex flex-1 flex-col justify-center py-10`}>
+        <div key={index} className={`${direction === "forward" ? fx.stepFromRight : fx.stepFromLeft} relative flex flex-1 flex-col justify-center py-8`}>
+          {/* The situation, never an answer: see docs/hackathon/elemental-quiz-pixel-art.md, "Scenes". Under 720 px
+              tall (iPhone SE) the answers need the room, so the scene steps aside. */}
+          <div className="mb-6 [@media(max-height:719px)]:hidden" aria-hidden="true">
+            {SCENE_SIZES.map(({ cell, show }) => (
+              <div key={cell} className={show}>
+                <QuestionScene question={index} cell={cell} />
+              </div>
+            ))}
+          </div>
           <h2
             ref={heading}
             tabIndex={-1}

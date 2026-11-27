@@ -66,6 +66,25 @@ aether's faintest pixels come first. It lands on one beat (see Motion), holds
 0.8 s with its effect playing, and the result page opens. With reduced motion
 it lands at once.
 
+## Scenes
+
+Each question has a small scene above it: the situation the question puts
+you in (`QUIZ_SCENES` in `lib/hackathon/elemental/quiz-scene-art.ts`).
+
+- 38x14, shown at 9 px a pixel on phones (342 x 126), 8 at 375 px wide, 7
+  under that, 12 wider up. Under 720 px tall (iPhone SE) the scene steps
+  aside so all five answers fit.
+- Neutrals (`d s a k`), one flame accent (`f l c`) for the light the eye
+  lands on, and toxic green (`G`) only for pollution, in the river and the
+  environment scenes. People are silhouettes in one shared design.
+- **Never steer.** A scene shows the situation, never an answer, and never
+  an element's symbol: the flame accent is a lamp, a screen, the sun.
+- An optional second frame is a tiny idle (1 to 6 pixels: a drip, a blink,
+  a screen flicker), 600 ms a frame for about 5 s, then the still.
+
+Drawn by Gemini 4 Neon (seven), Codex (the midnight desk) and Claude (the
+phone, redrawn so the person reads) from one brief with a shared checker.
+
 ## Motion
 
 The page moves by the same rules as the art: whole steps (`steps()` in

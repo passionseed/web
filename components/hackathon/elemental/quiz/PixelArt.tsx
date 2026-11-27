@@ -8,6 +8,10 @@ import {
   ICON_EFFECTS,
   ICON_SIZE,
   QUIZ_CRESTS,
+  QUIZ_SCENES,
+  SCENE_COLS,
+  SCENE_FRAME_MS,
+  SCENE_ROWS,
   fxFrame,
   fxRuns,
   iconPixels,
@@ -137,6 +141,38 @@ export function IconFx({ element, cell, id, still = false }: { element: ElementK
         );
       })}
     </Stage>
+  );
+}
+
+/**
+ * The small scene above question `question`: the situation it puts you in.
+ * `cell` screen pixels per art pixel. A scene with a second frame idles
+ * between the two (600 ms each) for about 5 s, then rests on its still.
+ */
+export function QuestionScene({ question, cell }: { question: number; cell: number }) {
+  const { frames } = QUIZ_SCENES[question];
+  const c = whole(cell);
+  const idles = frames.length > 1;
+  const loops = Math.max(2, Math.floor(FX_PLAY_MS / (frames.length * SCENE_FRAME_MS)));
+  return (
+    <svg width={SCENE_COLS * c} height={SCENE_ROWS * c} viewBox={`0 0 ${SCENE_COLS} ${SCENE_ROWS}`} aria-hidden="true" style={{ display: "block" }}>
+      {frames.map((art, n) => (
+        <g
+          key={n}
+          shapeRendering="crispEdges"
+          className={idles ? (n === 0 ? styles.idleKey : styles.idle) : undefined}
+          style={
+            idles
+              ? { animationDuration: `${frames.length * SCENE_FRAME_MS}ms`, animationDelay: `-${n * SCENE_FRAME_MS}ms`, animationIterationCount: loops + n / frames.length }
+              : undefined
+          }
+        >
+          {pixelRuns(art).map(([x, y, length, color]) => (
+            <rect key={`${x}-${y}`} x={x} y={y} width={length} height={1} fill={color} />
+          ))}
+        </g>
+      ))}
+    </svg>
   );
 }
 

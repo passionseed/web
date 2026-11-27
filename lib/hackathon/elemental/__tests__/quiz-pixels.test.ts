@@ -1,7 +1,29 @@
 import { ELEMENT_ICON_ROWS } from "@/components/hackathon/poster/elemental/element-icons";
 
-import { QUIZ_ELEMENTS } from "../quiz";
-import { CREST_COLS, CREST_ROWS, FX_FRAMES, FX_OFFSET, FX_STAGE, ICON_EFFECTS, PIXEL_PALETTE, QUIZ_CRESTS, fxFrame, fxRuns, iconPixels, pixelRuns, revealCells } from "../quiz-pixels";
+import { QUIZ_ELEMENTS, QUIZ_QUESTIONS } from "../quiz";
+import {
+  CREST_COLS,
+  CREST_ROWS,
+  FX_FRAMES,
+  FX_OFFSET,
+  FX_STAGE,
+  ICON_EFFECTS,
+  PIXEL_PALETTE,
+  QUIZ_CRESTS,
+  QUIZ_SCENES,
+  SCENE_COLS,
+  SCENE_ROWS,
+  fxFrame,
+  fxRuns,
+  iconPixels,
+  pixelRuns,
+  revealCells,
+} from "../quiz-pixels";
+
+/** The scenes' colours: neutrals, one flame accent, and toxic green for pollution. */
+const SCENE_COLOURS = "dsakflcG";
+/** Only the river (question 5) and the environment question (8) may show pollution. */
+const POLLUTION_SCENES = new Set([4, 7]);
 
 /** The colours each element may use: its own ramp, plus cream as the one shared highlight (not on aether). */
 const ALLOWED: Record<(typeof QUIZ_ELEMENTS)[number], string> = {
@@ -72,6 +94,28 @@ describe("Elemental quiz pixel art", () => {
         const pixels = fxFrame(el, n);
         expect(fxRuns(pixels).reduce((sum, [, , length]) => sum + length, 0)).toBe(pixels.length);
       }
+    }
+  });
+
+  it("draws a scene for every question", () => {
+    expect(QUIZ_SCENES).toHaveLength(QUIZ_QUESTIONS.length);
+  });
+
+  it.each(QUIZ_SCENES.map((scene, q) => [q + 1, scene.title, q] as const))("draws scene %i (%s) at 38x14 in the scene colours, with at most a tiny idle", (_, __, q) => {
+    const { frames } = QUIZ_SCENES[q];
+    expect(frames.length === 1 || frames.length === 2).toBe(true);
+    for (const frame of frames) {
+      expect(frame).toHaveLength(SCENE_ROWS);
+      for (const row of frame) {
+        expect(row).toHaveLength(SCENE_COLS);
+        for (const ch of row) if (ch !== ".") expect(SCENE_COLOURS).toContain(ch);
+        if (!POLLUTION_SCENES.has(q)) expect(row).not.toContain("G");
+      }
+    }
+    if (frames.length === 2) {
+      const changed = frames[0].join("").split("").filter((ch, i) => ch !== frames[1].join("")[i]).length;
+      expect(changed).toBeGreaterThanOrEqual(1);
+      expect(changed).toBeLessThanOrEqual(6);
     }
   });
 

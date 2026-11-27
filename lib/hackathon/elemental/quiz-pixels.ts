@@ -3,8 +3,9 @@ import { EL } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENT_ICON_COLOR, ELEMENT_ICON_ROWS } from "@/components/hackathon/poster/elemental/element-icons";
 
 import { ICON_EFFECTS, QUIZ_CRESTS, type IconEffect, type PixelArt } from "./quiz-pixel-art";
+import { QUIZ_SCENES, type QuizScene } from "./quiz-scene-art";
 
-export { ICON_EFFECTS, QUIZ_CRESTS, type IconEffect, type PixelArt };
+export { ICON_EFFECTS, QUIZ_CRESTS, QUIZ_SCENES, type IconEffect, type PixelArt, type QuizScene };
 
 /**
  * The Elemental quiz's pixel art. Each result keeps the brand's flat 9x9 icon
@@ -32,6 +33,7 @@ export const PIXEL_PALETTE: Readonly<Record<string, string>> = {
   b: EL.burnt,
   r: EL.toxicRust,
   y: EL.toxicYellow,
+  d: EL.smokeDark,
   s: EL.smoke,
   a: EL.ash,
   g: EL.aetherGrey,
@@ -48,6 +50,11 @@ export const ICON_SIZE = 9;
 export const FX_STAGE = 15;
 export const FX_OFFSET = 3;
 export const FX_FRAMES = 8;
+
+/** A question's scene: 38x14, above the question. A second frame, if any, alternates with the still every 600 ms. */
+export const SCENE_COLS = 38;
+export const SCENE_ROWS = 14;
+export const SCENE_FRAME_MS = 600;
 
 /** A run of same-coloured pixels on one row: [x, y, length, colour]. Drawing runs, not single cells, leaves no hairline seams. */
 export type PixelRun = readonly [x: number, y: number, length: number, color: string];
