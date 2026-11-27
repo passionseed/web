@@ -7,6 +7,9 @@ import styles from "@/components/hackathon/elemental/join/join.module.css";
 import { EL } from "@/components/hackathon/poster/elemental/brand";
 import type { ElementKey } from "@/components/hackathon/elemental/media";
 import { daysLeftToSignUp } from "@/lib/hackathon/elemental/quiz";
+import { sfxChime } from "@/lib/hackathon/elemental/quiz-sfx";
+
+import { play, unlock } from "./sound";
 
 import { trackElemental } from "../track";
 
@@ -14,40 +17,69 @@ import { trackElemental } from "../track";
  * Share the 9:16 card. On phones the share sheet takes the image itself, so
  * it can go straight into an IG Story; elsewhere it downloads. LINE and copy
  * share the result page, whose link preview is the card.
+ *
+ * The card is fetched when the page opens, not on the tap: a browser only
+ * opens the share sheet straight from a tap, and a slow fetch in between
+ * (iPhone, the Instagram browser) would make the button silently do nothing.
  */
 export function QuizShare({ element, shareText }: { element: ElementKey; shareText: string }) {
   const [copied, setCopied] = useState(false);
+  const [manualLink, setManualLink] = useState<string | null>(null);
+  const [card, setCard] = useState<File | null>(null);
   const imageUrl = `/hackathon/elemental/quiz/${element}/story`;
+  const fileName = `elemental-${element}.png`;
   const pageUrl = () => `${window.location.origin}/hackathon/elemental/quiz/${element}`;
 
+  useEffect(() => {
+    let alive = true;
+    fetch(imageUrl)
+      .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))))
+      .then((blob) => alive && setCard(new File([blob], fileName, { type: "image/png" })))
+      .catch(() => {
+        // The tap falls back to saving the image from its URL.
+      });
+    return () => {
+      alive = false;
+    };
+  }, [imageUrl, fileName]);
+
+  function saveImage() {
+    const a = document.createElement("a");
+    a.href = card ? URL.createObjectURL(card) : imageUrl;
+    a.download = fileName;
+    a.click();
+    if (card) setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    trackElemental({ step: "quiz_shared", detail: "download" }, { once: false });
+  }
+
   async function shareImage() {
+    unlock();
+    if (!card || !navigator.canShare?.({ files: [card] })) {
+      saveImage();
+      return;
+    }
     try {
-      const blob = await fetch(imageUrl).then((r) => r.blob());
-      const file = new File([blob], `elemental-${element}.png`, { type: "image/png" });
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], text: `${shareText} ${pageUrl()}` });
-        trackElemental({ step: "quiz_shared", detail: "image" }, { once: false });
-        return;
-      }
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = file.name;
-      a.click();
-      URL.revokeObjectURL(a.href);
-      trackElemental({ step: "quiz_shared", detail: "download" }, { once: false });
-    } catch {
-      // The person closed the share sheet: nothing to do.
+      await navigator.share({ files: [card], text: `${shareText} ${pageUrl()}` });
+      play(sfxChime);
+      trackElemental({ step: "quiz_shared", detail: "image" }, { once: false });
+    } catch (e) {
+      // Closing the share sheet is a choice, not a failure. Anything else: save the image instead.
+      if (e instanceof DOMException && e.name === "AbortError") return;
+      saveImage();
     }
   }
 
   async function copyLink() {
+    unlock();
     try {
       await navigator.clipboard.writeText(pageUrl());
+      play(sfxChime);
       setCopied(true);
       trackElemental({ step: "quiz_shared", detail: "copy" }, { once: false });
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Clipboard blocked: the link is in the address bar anyway.
+      // Clipboard blocked (some in-app browsers): show the link to copy by hand.
+      setManualLink(pageUrl());
     }
   }
 
@@ -88,6 +120,17 @@ export function QuizShare({ element, shareText }: { element: ElementKey; shareTe
           <Download className="h-4 w-4" /> เซฟรูป
         </a>
       </div>
+      {manualLink && (
+        <input
+          readOnly
+          value={manualLink}
+          aria-label="ลิงก์ผลของคุณ"
+          onFocus={(e) => e.currentTarget.select()}
+          autoFocus
+          className="w-full rounded-full border bg-transparent px-4 py-3 text-sm"
+          style={{ borderColor: "rgba(243,239,230,0.25)" }}
+        />
+      )}
     </div>
   );
 }

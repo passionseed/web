@@ -1,20 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 
 import styles from "@/components/hackathon/elemental/join/join.module.css";
-import type { ElementKey } from "@/components/hackathon/elemental/media";
+import { elementLabel, type ElementKey } from "@/components/hackathon/elemental/media";
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ElementIcon } from "@/components/hackathon/poster/elemental/element-icons";
 import { QUIZ_ELEMENTS, QUIZ_QUESTIONS, QUIZ_RESULTS, scoreQuiz } from "@/lib/hackathon/elemental/quiz";
+import { sfxBack, sfxBuild, sfxElement, sfxPick, sfxStart } from "@/lib/hackathon/elemental/quiz-sfx";
+
+import { hitClass, hitStyle } from "./hit";
+import { IconAssemble, IconFlash, IconFx } from "./PixelArt";
+import { PlayableIcon } from "./PlayableIcon";
+import fx from "./quiz.module.css";
+import { play, stop } from "./sound";
+import { SoundToggle } from "./SoundToggle";
 
 import { trackElemental } from "../track";
 
-/** How long the five icons cycle before the result opens. */
-const REVEAL_MS = 1400;
-const line = "rgba(243,239,230,0.18)";
+/** How long a picked answer stays lit before the next question: long enough to see, short enough to repeat eight times. */
+const PICK_MS = 100;
+/** How long the icon takes to build itself, then how long it holds, landed, before the result opens. */
+const BUILD_MS = 700;
+const HOLD_MS = 800;
+
+const nameOf = (el: ElementKey) => elementLabel(QUIZ_RESULTS[el].th);
 
 /**
  * The quiz itself: an intro, then one question per screen, then a short
@@ -27,44 +39,60 @@ const line = "rgba(243,239,230,0.18)";
  * belongs to would steer people to the element they want.
  */
 export function ElementalQuiz({ source }: { source?: string }) {
-  const router = useRouter();
   const [picks, setPicks] = useState<ElementKey[]>([]);
   const [started, setStarted] = useState(false);
   const [direction, setDirection] = useState<"forward" | "back">("forward");
   const [result, setResult] = useState<ElementKey | null>(null);
+  const [chosen, setChosen] = useState<ElementKey | null>(null);
+  // Set the instant an answer is tapped, so a second tap in the same frame can't pick twice.
+  const pending = useRef(false);
+  const pickTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => () => clearTimeout(pickTimer.current), []);
 
   const index = picks.length;
   const total = QUIZ_QUESTIONS.length;
 
+  // Each new question takes focus, so keyboard and screen reader users land on it, not on the page.
   useEffect(() => {
-    if (!result) return;
-    const t = setTimeout(() => router.push(`/hackathon/elemental/quiz/${result}?me=1`), REVEAL_MS);
-    return () => clearTimeout(t);
-  }, [result, router]);
+    if (started && !result) heading.current?.focus({ preventScroll: true });
+  }, [started, result, index]);
 
   function start() {
     setStarted(true);
     trackElemental({ step: "quiz_start", source });
+    play(sfxStart);
   }
 
+  /** The answer lights and plays its question's note, then the next question comes in. */
   function pick(el: ElementKey) {
-    const next = [...picks, el];
-    setDirection("forward");
-    setPicks(next);
-    if (next.length < total) return;
-    const scored = scoreQuiz(next);
-    trackElemental({ step: "quiz_done", detail: scored, source });
-    setResult(scored);
+    if (pending.current) return;
+    pending.current = true;
+    setChosen(el);
+    pickTimer.current = setTimeout(() => {
+      pending.current = false;
+      const next = [...picks, el];
+      setChosen(null);
+      setDirection("forward");
+      setPicks(next);
+      if (next.length < total) return;
+      const scored = scoreQuiz(next);
+      setResult(scored);
+      trackElemental({ step: "quiz_done", detail: scored, source });
+    }, PICK_MS);
+    play((o, t) => sfxPick(o, t, index));
   }
 
   function back() {
+    if (pending.current) return;
     setDirection("back");
     if (picks.length === 0) setStarted(false);
     else setPicks(picks.slice(0, -1));
+    play(sfxBack);
   }
 
   let screen;
-  if (result) screen = <Reveal />;
+  if (result) screen = <Reveal element={result} />;
   else if (!started) screen = <Intro onStart={start} />;
   else {
     const q = QUIZ_QUESTIONS[index];
@@ -73,20 +101,26 @@ export function ElementalQuiz({ source }: { source?: string }) {
     screen = (
       <section className="relative mx-auto flex min-h-[100dvh] max-w-xl flex-col overflow-hidden px-6 py-8">
         <div className="pointer-events-none absolute -bottom-6 -right-12 opacity-[0.05]" aria-hidden="true">
-          <ElementIcon element={mark} size={260} color={EL.cream} />
+          <ElementIcon element={mark} size={270} color={EL.cream} />
         </div>
-        <div className="relative flex items-center gap-4">
-          <button type="button" onClick={back} aria-label="ย้อนกลับ" className="rounded-full p-2" style={{ color: EL.creamSoft }}>
+        <div className="relative flex items-center gap-3">
+          <button type="button" onClick={back} aria-label="ย้อนกลับ" className="rounded-full p-3.5" style={{ color: EL.creamSoft }}>
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <PixelProgress done={index} total={total} />
+          <PixelProgress done={index} total={total} pop={direction === "forward"} />
           <span className="text-sm tabular-nums" style={{ fontFamily: EL_FONT.mono, color: EL.creamSoft }}>
             {index + 1}/{total}
           </span>
+          <SoundToggle color={EL.creamSoft} />
         </div>
 
-        <div key={index} className={`${direction === "forward" ? styles.stepForward : styles.stepBack} relative flex flex-1 flex-col justify-center py-10`}>
-          <h2 className="text-balance text-3xl sm:text-4xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300, lineHeight: 1.3 }}>
+        <div key={index} className={`${direction === "forward" ? fx.stepFromRight : fx.stepFromLeft} relative flex flex-1 flex-col justify-center py-10`}>
+          <h2
+            ref={heading}
+            tabIndex={-1}
+            className="text-balance text-3xl outline-none sm:text-4xl"
+            style={{ fontFamily: EL_FONT.display, fontWeight: 300, lineHeight: 1.3 }}
+          >
             {q.th}
           </h2>
           <div className="mt-8 grid gap-3">
@@ -95,8 +129,7 @@ export function ElementalQuiz({ source }: { source?: string }) {
                 key={a.element}
                 type="button"
                 onClick={() => pick(a.element)}
-                className={`${styles.choice} rounded-2xl border px-5 py-4 text-left text-lg hover:border-[#ec6424] active:border-[#ec6424]`}
-                style={{ borderColor: line, backgroundColor: "rgba(243,239,230,0.04)" }}
+                className={`${fx.answer} ${chosen === a.element ? fx.picked : chosen ? fx.dimmed : ""} rounded-2xl border px-5 py-4 text-left text-lg`}
               >
                 {a.th}
               </button>
@@ -109,18 +142,37 @@ export function ElementalQuiz({ source }: { source?: string }) {
 
   return (
     <div className="min-h-[100dvh]" style={{ backgroundColor: EL.char, color: EL.cream }}>
+      {/* Always mounted, so screen readers announce the result when it arrives. */}
+      <p className="sr-only" role="status">
+        {result ? `คุณคือ${nameOf(result)}` : ""}
+      </p>
       {screen}
     </div>
   );
 }
 
 function Intro({ onStart }: { onStart: () => void }) {
+  // Each icon at three sizes, so the row always fits: 4 px a pixel under 390 px wide, 5 on phones, 6 wider up.
+  const sizes = [
+    { cell: 4, show: "min-[390px]:hidden", key: "s" },
+    { cell: 5, show: "hidden min-[390px]:block sm:hidden", key: "m" },
+    { cell: 6, show: "hidden sm:block", key: "l" },
+  ];
   return (
-    <section className="mx-auto flex min-h-[100dvh] max-w-xl flex-col justify-center px-6 py-16">
-      <div className="flex items-end gap-4 sm:gap-6">
+    <section className="relative mx-auto flex min-h-[100dvh] max-w-xl flex-col justify-center px-6 py-16">
+      <div className="absolute right-2 top-2">
+        <SoundToggle color={EL.creamSoft} />
+      </div>
+      {/* The five icons, each with its effect playing; tap one to hear it. They arrive one at a time, whole.
+          An effect reaches 3 pixels past its icon, so the gaps leave room for it, and gap-6 keeps each label clear. */}
+      <div className="flex items-end gap-4 min-[390px]:gap-6 sm:gap-10">
         {QUIZ_ELEMENTS.map((el, i) => (
-          <div key={el} className={`${styles.pop} flex flex-col items-center gap-2`} style={{ animationDelay: `${i * 90}ms` }}>
-            <ElementIcon element={el} size={52} id={`intro-${el}`} />
+          <div key={el} className={`${fx.pixelIn} flex flex-col items-center gap-6`} style={{ animationDelay: `${i * 90}ms` }}>
+            {sizes.map(({ cell, show, key }) => (
+              <div key={key} className={show}>
+                <PlayableIcon element={el} cell={cell} id={`intro-${key}-${el}`} label={`ฟังเสียง${nameOf(el)}`} />
+              </div>
+            ))}
             <span className="text-xs" style={{ color: EL.creamSoft }}>
               {el === "aether" ? "มองไม่เห็น" : QUIZ_RESULTS[el].th}
             </span>
@@ -151,40 +203,88 @@ function Intro({ onStart }: { onStart: () => void }) {
   );
 }
 
-/** Progress as a row of pixels, one per question, lit in each element's colour as you go. */
-function PixelProgress({ done, total }: { done: number; total: number }) {
+/**
+ * Progress as a row of square pixels, one per question, lit in the elements'
+ * colours as you go. The square just lit pops (when moving forward), and the
+ * one you're on blinks like a cursor.
+ */
+function PixelProgress({ done, total, pop }: { done: number; total: number; pop: boolean }) {
+  const lit = [EL.toxicRust, EL.toxicCyan, EL.toxicYellow, EL.flame, EL.aetherViolet];
   return (
-    <div className="flex flex-1 gap-1.5" aria-hidden="true">
+    <div className="flex flex-1 items-center gap-1.5" aria-hidden="true">
       {Array.from({ length: total }, (_, i) => (
         <span
           key={i}
-          className={`${styles.progress} h-2.5 flex-1`}
-          style={{ backgroundColor: i < done ? [EL.toxicRust, EL.toxicCyan, EL.toxicYellow, EL.flame, EL.aetherViolet][i % 5] : "rgba(243,239,230,0.14)" }}
+          className={`block h-3 w-3 ${pop && i === done - 1 ? fx.pixelPop : i === done ? fx.cursor : ""}`}
+          style={{ backgroundColor: i < done ? lit[i % lit.length] : i === done ? "rgba(243,239,230,0.5)" : "rgba(243,239,230,0.14)" }}
         />
       ))}
     </div>
   );
 }
 
-/** The five icons light up one after another while the result loads. */
-function Reveal() {
-  const [lit, setLit] = useState(0);
+/**
+ * The result's icon builds itself pixel by pixel while three dots fill in
+ * step with it, ticking once a row. Then it lands on one beat: a flash, its
+ * element's hit, its name and its sound, and its effect starts. The result
+ * page opens 800 ms later. One timeline: everything is timed from mount, and
+ * leaving cancels the timers and the sound together. With reduced motion it
+ * lands at once.
+ */
+function Reveal({ element }: { element: ElementKey }) {
+  const router = useRouter();
+  const [still] = useState(() => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true);
+  const [landed, setLanded] = useState(still);
   useEffect(() => {
-    const t = setInterval(() => setLit((n) => n + 1), 140);
-    return () => clearInterval(t);
-  }, []);
+    const href = `/hackathon/elemental/quiz/${element}?me=1`;
+    router.prefetch(href);
+    const build = still ? 0 : BUILD_MS;
+    play(
+      (o, t) => {
+        if (!still) sfxBuild(o, t, element, BUILD_MS);
+        sfxElement(o, t + build / 1000, element);
+      },
+      { channel: "reveal", replace: true },
+    );
+    const land = setTimeout(() => setLanded(true), build);
+    const leave = setTimeout(() => router.push(href), build + HOLD_MS);
+    return () => {
+      clearTimeout(land);
+      clearTimeout(leave);
+      stop("reveal");
+    };
+  }, [element, router, still]);
   return (
-    <section className="mx-auto flex min-h-[100dvh] max-w-xl flex-col items-center justify-center px-6" role="status">
-      <div className="flex gap-5">
-        {QUIZ_ELEMENTS.map((el, i) => (
-          <div key={el} style={{ opacity: lit % QUIZ_ELEMENTS.length === i ? 1 : 0.2, transition: "opacity 120ms ease" }}>
-            <ElementIcon element={el} size={48} id={`reveal-${el}`} />
-          </div>
-        ))}
+    <section className="relative mx-auto flex min-h-[100dvh] max-w-xl flex-col items-center justify-center px-6">
+      <div className="absolute right-2 top-2">
+        <SoundToggle color={EL.creamSoft} />
       </div>
-      <p className="mt-8 text-xl" style={{ fontFamily: EL_FONT.display }}>
-        กำลังอ่านธาตุของคุณ
-      </p>
+      {landed ? (
+        <div className={`relative ${hitClass(element) ?? ""}`} style={hitStyle(18)}>
+          <IconFx element={element} cell={18} id="reveal" />
+          <div className="absolute inset-0">
+            <IconFlash element={element} cell={18} />
+          </div>
+        </div>
+      ) : (
+        <IconAssemble element={element} cell={18} durationMs={BUILD_MS} id="reveal" />
+      )}
+      {/* mt-20 clears the effect, which reaches 3 pixels (54 px) below the icon; h-14 holds the line still when the name replaces it. */}
+      <div className="mt-20 flex h-14 items-center" style={{ fontFamily: EL_FONT.display }} aria-hidden="true">
+        {landed ? (
+          <p className="text-4xl">{nameOf(element)}</p>
+        ) : (
+          <p className="flex items-baseline gap-2 text-xl">
+            กำลังอ่านธาตุของคุณ
+            <span className="flex gap-1.5">
+              {/* One dot per quarter of the build, so the third lights just before the icon lands. */}
+              {[1, 2, 3].map((n) => (
+                <span key={n} className={`block h-1.5 w-1.5 ${fx.pixelIn}`} style={{ backgroundColor: EL.cream, animationDelay: `${(n * BUILD_MS) / 4}ms` }} />
+              ))}
+            </span>
+          </p>
+        )}
+      </div>
     </section>
   );
 }

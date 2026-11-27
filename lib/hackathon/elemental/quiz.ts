@@ -185,41 +185,20 @@ export const QUIZ_RESULTS: Record<ElementKey, QuizResult> = {
   },
 };
 
-export type QuizPalette = { bg: string; ink: string; soft: string; accent: string; pixels: readonly string[] };
+export type QuizPalette = { bg: string; ink: string; soft: string; accent: string };
 
 /**
  * Each result's colours, on the cards and the result page. A dark ground and
  * cream type like Instagram slide 2; the element's own icon colour and its
- * pixels carry the difference.
+ * pixel art (./quiz-pixels.ts) carry the difference.
  */
 export const QUIZ_PALETTE: Record<ElementKey, QuizPalette> = {
-  fire: { bg: EL.char, ink: EL.cream, soft: EL.creamSoft, accent: ELEMENT_ICON_COLOR.fire, pixels: [EL.ember, EL.flame, EL.flameLight, EL.flameCore] },
-  water: { bg: EL.oil, ink: EL.cream, soft: EL.creamSoft, accent: ELEMENT_ICON_COLOR.water, pixels: [EL.toxicCyan, EL.toxicGreen, "#1f6f6b", EL.toxicCyan] },
-  earth: { bg: "#241912", ink: EL.cream, soft: EL.creamSoft, accent: ELEMENT_ICON_COLOR.earth, pixels: [EL.burnt, EL.toxicRust, EL.toxicYellow, EL.burnt] },
-  air: { bg: EL.smokeDark, ink: EL.cream, soft: EL.creamSoft, accent: ELEMENT_ICON_COLOR.air, pixels: [EL.smoke, EL.ash, EL.toxicYellow, EL.smoke] },
-  aether: { bg: EL.ink, ink: EL.cream, soft: EL.creamSoft, accent: ELEMENT_ICON_COLOR.aether, pixels: [EL.aetherViolet, EL.aetherLilac, EL.aetherGrey, EL.aetherViolet] },
+  fire: { bg: EL.char, ink: EL.cream, soft: EL.creamSoft, accent: ELEMENT_ICON_COLOR.fire },
+  water: { bg: EL.oil, ink: EL.cream, soft: EL.creamSoft, accent: ELEMENT_ICON_COLOR.water },
+  earth: { bg: "#241912", ink: EL.cream, soft: EL.creamSoft, accent: ELEMENT_ICON_COLOR.earth },
+  air: { bg: EL.smokeDark, ink: EL.cream, soft: EL.creamSoft, accent: ELEMENT_ICON_COLOR.air },
+  aether: { bg: EL.ink, ink: EL.cream, soft: EL.creamSoft, accent: ELEMENT_ICON_COLOR.aether },
 };
-
-/**
- * The pixel band along the top of a card or result page: blocks that eat in
- * from the top edge and thin out downwards (the campaign's "pixels corrupt a
- * calm place"). Seeded by the element, so it never changes. Returns
- * [column, row, colour] for each block.
- */
-export function pixelBandCells(key: ElementKey, cols: number, rows: number): [number, number, string][] {
-  const colors = QUIZ_PALETTE[key].pixels;
-  let seed = [...key].reduce((s, c) => s * 31 + c.charCodeAt(0), 7) >>> 0;
-  const rand = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32;
-  const out: [number, number, string][] = [];
-  for (let r = 0; r < rows; r++) {
-    const density = 0.75 * (1 - r / rows) ** 1.6;
-    for (let c = 0; c < cols; c++) {
-      if (rand() > density) continue;
-      out.push([c, r, colors[Math.floor(rand() * colors.length)]]);
-    }
-  }
-  return out;
-}
 
 export function isQuizElement(v: string): v is ElementKey {
   return (QUIZ_ELEMENTS as readonly string[]).includes(v);

@@ -6,8 +6,11 @@ import { ArrowRight } from "lucide-react";
 import { ANY_PROBLEM_NOTE, ELEMENT_DETAILS } from "@/components/hackathon/elemental/challenges";
 import { trirong } from "@/components/hackathon/elemental/fonts";
 import { elementLabel } from "@/components/hackathon/elemental/media";
-import { PixelBand } from "@/components/hackathon/elemental/quiz/PixelBand";
+import { PixelCrest } from "@/components/hackathon/elemental/quiz/PixelArt";
+import { PlayableIcon } from "@/components/hackathon/elemental/quiz/PlayableIcon";
+import fx from "@/components/hackathon/elemental/quiz/quiz.module.css";
 import { DaysLeft, QuizShare } from "@/components/hackathon/elemental/quiz/QuizShare";
+import { SoundToggle } from "@/components/hackathon/elemental/quiz/SoundToggle";
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ElementIcon } from "@/components/hackathon/poster/elemental/element-icons";
 import { ELEMENTAL, prizeTotal, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
@@ -57,18 +60,30 @@ export default async function QuizResultPage({ params, searchParams }: { params:
   const shareText = `ฉันคือ${r.th} “${r.roastTh}” คุณคือธาตุอะไร`;
 
   return (
-    <main className={`${trirong.variable} min-h-[100dvh]`} style={{ backgroundColor: p.bg, color: p.ink }}>
-      <PixelBand element={element} />
+    <main className={`${trirong.variable} min-h-[100dvh] overflow-x-clip`} style={{ backgroundColor: p.bg, color: p.ink }}>
+      {/* The crest, 12 px a pixel on phones and 16 px wider up: whole pixels, never stretched. It drips in a row at a time. */}
+      <div className={`mb-8 ${fx.crestIn}`}>
+        <div className="sm:hidden">
+          <PixelCrest element={element} cell={12} />
+        </div>
+        <div className="hidden sm:block">
+          <PixelCrest element={element} cell={16} />
+        </div>
+      </div>
       <div className="mx-auto max-w-xl px-6 pb-12">
         <div className="flex items-start justify-between gap-6">
           <div>
-            <p className={tag} style={{ fontFamily: EL_FONT.mono, color: p.soft }}>
-              [{r.en.toUpperCase()}]
-            </p>
+            {/* The speaker sits by the tag: tapping the icon plays its sound, so the page needs a way to turn it off. */}
+            <div className="-my-[15px] flex items-center gap-1">
+              <p className={tag} style={{ fontFamily: EL_FONT.mono, color: p.soft }}>
+                [{r.en.toUpperCase()}]
+              </p>
+              <SoundToggle color={p.soft} />
+            </div>
             <p className="mt-6 text-xl">{me ? "คุณคือ" : "เพื่อนคุณคือ"}</p>
           </div>
           <div className="shrink-0 pt-1">
-            <ElementIcon element={element} size={112} id="hero" />
+            <PlayableIcon element={element} cell={12} id="hero" label={`ฟังเสียง${elementLabel(r.th)}`} />
           </div>
         </div>
         <h1 className="mt-2 text-balance text-7xl sm:text-8xl" style={{ fontFamily: EL_FONT.display, fontWeight: 200, lineHeight: 1.15 }}>
@@ -83,11 +98,11 @@ export default async function QuizResultPage({ params, searchParams }: { params:
 
         <div className="mt-8 rounded-2xl border p-5" style={{ borderColor: p.accent }}>
           <div className="flex items-center gap-3">
-            <ElementIcon element={element} size={40} id="need-me" />
+            <ElementIcon element={element} size={36} id="need-me" />
             <span className="text-2xl" style={{ color: p.soft }} aria-hidden="true">
               +
             </span>
-            <ElementIcon element={r.needs} size={40} id="need-them" />
+            <ElementIcon element={r.needs} size={36} id="need-them" />
           </div>
           <p className="mt-4 text-2xl" style={{ fontFamily: EL_FONT.display }}>
             {r.th}ต้องการ{need.th}
@@ -124,7 +139,7 @@ export default async function QuizResultPage({ params, searchParams }: { params:
 
         <section className="mt-12 border-t pt-8" style={{ borderColor: line }}>
           <div className="flex items-center gap-3">
-            <ElementIcon element={element} size={24} id="brief" />
+            <ElementIcon element={element} size={27} id="brief" />
             <p className={tag} style={{ fontFamily: EL_FONT.mono, color: p.soft }}>
               [โจทย์ของ{elementLabel(r.th)}]
             </p>
@@ -144,7 +159,7 @@ export default async function QuizResultPage({ params, searchParams }: { params:
           <section className="mt-10 rounded-2xl p-6" style={{ backgroundColor: EL.cream, color: EL.ink }}>
             <div className="flex gap-2" aria-hidden="true">
               {QUIZ_ELEMENTS.map((el) => (
-                <ElementIcon key={el} element={el} size={22} id={`cta-${el}`} />
+                <ElementIcon key={el} element={el} size={18} id={`cta-${el}`} />
               ))}
             </div>
             <p className="mt-4 text-2xl" style={{ fontFamily: EL_FONT.display, lineHeight: 1.4 }}>
@@ -182,7 +197,7 @@ export default async function QuizResultPage({ params, searchParams }: { params:
                 className="flex flex-col items-center gap-2 rounded-xl border px-1 py-3 text-center text-xs"
                 style={{ borderColor: el === element ? QUIZ_PALETTE[el].accent : line }}
               >
-                <ElementIcon element={el} size={32} id={`all-${el}`} />
+                <ElementIcon element={el} size={36} id={`all-${el}`} />
                 {el === "aether" ? "มองไม่เห็น" : QUIZ_RESULTS[el].th}
               </Link>
             ))}
