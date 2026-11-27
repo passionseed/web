@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { ButtonHTMLAttributes, CSSProperties, InputHTMLAttributes, ReactNode, Ref } from "react";
+import { isValidElement, type ButtonHTMLAttributes, type CSSProperties, type InputHTMLAttributes, type ReactNode, type Ref } from "react";
 
 import { EL, EL_FONT, EL_GROUND, EL_PAPER, type SurfaceTokens } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
@@ -585,6 +585,8 @@ export function Page({ children, surface, top, back, topBarRight, sky, footer, b
   if (!surface) return <LegacyPage top={top ?? ""} footer={footer} bar={bar}>{children}</LegacyPage>;
 
   const ground = surface === "ground";
+  // A sky band without facts ends on its own fade, so the content can start closer to it.
+  const skyHasFacts = isValidElement<{ facts?: unknown }>(sky) && Boolean(sky.props.facts);
   return (
     <main
       className={`${trirong.variable} ${shell.surface} ${ground ? cinema.cinemaRoot : "overflow-x-clip"} min-h-[100dvh]`}
@@ -593,7 +595,7 @@ export function Page({ children, surface, top, back, topBarRight, sky, footer, b
       {ground && <div className={cinema.filmGrain} aria-hidden="true" />}
       <ElementalTopBar tone={surface} back={back} right={topBarRight} />
       {ground && sky}
-      <div className={`mx-auto ${wide ? "max-w-3xl" : "max-w-xl"} px-5 pb-12 sm:px-8 ${ground && sky ? "pt-8" : "pt-10"}`}>
+      <div className={`mx-auto ${wide ? "max-w-3xl" : "max-w-xl"} px-5 pb-12 sm:px-8 ${ground && sky ? (skyHasFacts ? "pt-8" : "pt-6") : "pt-10"}`}>
         {children}
         {footer}
       </div>

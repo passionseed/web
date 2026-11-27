@@ -1,5 +1,6 @@
 import "server-only";
 
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -8,6 +9,7 @@ import QRCode from "qrcode";
 import sharp from "sharp";
 
 import { EL } from "@/components/hackathon/poster/elemental/brand";
+import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 
 import { linkUrl, type ShareKind } from "./share";
 
@@ -63,9 +65,14 @@ export async function posterVersion(): Promise<string> {
   return (await load()).meta.version;
 }
 
-/** The Story base's version, for ?v= on format=story links (it can change without the 4:5 poster changing). */
+/**
+ * The Story's version, for ?v= on format=story links: the base image's
+ * version and the words drawn in the sticker box, so a change to either gives
+ * new links (it can change without the 4:5 poster changing).
+ */
 export async function storyVersion(): Promise<string> {
-  return (await load()).story.version;
+  const { story } = await load();
+  return createHash("sha1").update(`${story.version}|${STORY_STICKER_LABEL}`).digest("hex").slice(0, 8);
 }
 
 const fontsFor = ({ mono, thai }: Pick<Assets, "mono" | "thai">) => [
@@ -145,8 +152,13 @@ export async function renderSharePoster(code: string, kind: ShareKind = "student
 }
 
 // copy: placeholder — Angpao rewrites
-/** What the dashed box on the Story says: put Instagram's link sticker (with the sharer's link) here. */
-export const STORY_STICKER_LABEL = "แปะลิงก์ตรงนี้";
+/**
+ * What the dashed box on the Story says. The student covers it with
+ * Instagram's link sticker (carrying their own link); if they don't, it still
+ * reads as the poster's sign-up line, so a Story posted without the sticker
+ * never shows an empty instruction. The share page calls it "the dashed box".
+ */
+export const STORY_STICKER_LABEL = `สมัครที่ ${ELEMENTAL.url}`;
 
 /** The words in the sticker box, the same for everyone, so they're drawn once per server. */
 let stickerLabel: Promise<Buffer> | undefined;
@@ -155,8 +167,8 @@ function stickerLayer(story: StoryBase, fonts: Pick<Assets, "mono" | "thai">): P
   return (stickerLabel ??= new ImageResponse(
     (
       <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ fontFamily: "Space Mono, Trirong", fontSize: 26 * s, lineHeight: `${34 * s}px`, color: EL.cream, opacity: 0.72 }}>
-          [{STORY_STICKER_LABEL}]
+        <span style={{ fontFamily: "Space Mono, Trirong", fontSize: 24 * s, lineHeight: `${32 * s}px`, color: EL.cream, opacity: 0.8 }}>
+          {STORY_STICKER_LABEL}
         </span>
       </div>
     ),

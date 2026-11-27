@@ -278,6 +278,27 @@ export function MeterCard({
         )}
       </div>
 
+      {/* Each style's number under its line ([10] [25] [50]); the next one in the action colour, so the count above reads as "toward that one". */}
+      {isTeam && !m.allUnlocked && !preview && (
+        <div aria-hidden="true" className="relative mt-1.5 h-5">
+          {m.tiers.map((t) => {
+            const edge = tierEdge(t.at);
+            const isNext = !m.frozen && m.next?.at === t.at;
+            return (
+              <span
+                key={t.part}
+                className="absolute top-0"
+                style={edge >= 1 ? { right: 0 } : { left: `${edge * 100}%`, transform: "translateX(-50%)" }}
+              >
+                <Tag tone={isNext ? "action" : "secondary"} className={t.unlocked ? "opacity-50" : undefined}>
+                  {t.at}
+                </Tag>
+              </span>
+            );
+          })}
+        </div>
+      )}
+
       {isTeam && !preview && !m.solo && (
         <Body secondary className="mt-3">
           {COPY.yourLink(m.linkDevices)}
