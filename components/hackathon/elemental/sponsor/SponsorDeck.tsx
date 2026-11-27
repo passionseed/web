@@ -33,8 +33,6 @@ import { PrintButton } from "./PrintButton";
  *   It prints nothing (Angpao, 2026-11-20); it stays in the source as a note.
  * Remove a marker only when a person confirms the line.
  *
- * The CSII co-host deck (../csii/CsiiDeck.tsx) reuses the exported parts below.
- *
  * Editing: on `next dev`, open the page with ?edit (or the button at the
  * bottom right), click any text and type, then Save. DeckEditor.tsx and
  * deck-edits.ts write the change into this file. Keep deck text as plain
