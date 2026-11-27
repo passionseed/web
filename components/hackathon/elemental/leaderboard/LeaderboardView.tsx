@@ -33,8 +33,8 @@ const COPY = {
   youNeedName: "ตั้งชื่อบนกระดานก่อน แล้วทีมจะขึ้นเมื่อมีคนเปิดลิงก์แชร์เครื่องแรก",
   youNeedDevices: (n: number) => `อีก ${n} เครื่องที่เปิดลิงก์แชร์ ทีมคุณก็ขึ้นกระดาน`,
   youSetName: "ตั้งชื่อทีม",
-  shareMine: "ส่งลิงก์ของฉัน →",
-  signUp: "สมัคร →",
+  shareMine: "ส่งลิงก์ของฉัน",
+  signUp: "สมัคร",
   emptyTitle: "ยังไม่มีทีมบนกระดาน",
   empty: "ทีมแรกที่ตั้งชื่อและมีคนเปิดลิงก์แชร์ ขึ้นกระดานทันที",
   emptyFinal: "ไม่มีทีมบนกระดาน",
@@ -173,7 +173,7 @@ export function LeaderboardView({
       </StickyBar>
     ) : !you ? (
       <StickyBar>
-        <PrimaryButton href="/hackathon/join" full>
+        <PrimaryButton href="/hackathon/join" full arrow>
           {COPY.signUp}
         </PrimaryButton>
       </StickyBar>

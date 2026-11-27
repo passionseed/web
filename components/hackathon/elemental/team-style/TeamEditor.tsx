@@ -69,7 +69,7 @@ const COPY = {
   save: "บันทึก",
   saving: "กำลังบันทึก…",
   saved: "บันทึกแล้ว",
-  seeBoard: "ดูบนกระดาน →",
+  seeBoard: "ดูบนกระดาน",
   failed: "บันทึกไม่สำเร็จ ลองอีกครั้ง",
   closed: "ตอนนี้แก้ไม่ได้แล้ว",
   closedBack: "กลับหน้าของฉัน",
@@ -190,7 +190,7 @@ export function TeamEditor({
         )}
         {editable && justSaved && !nameChanged && !styleChanged ? (
           // Saved and untouched since: the next step is to see it on the board. The next edit brings "บันทึก" back.
-          <PrimaryButton href={boardHref} full>
+          <PrimaryButton href={boardHref} full arrow>
             {COPY.seeBoard}
           </PrimaryButton>
         ) : editable ? (
