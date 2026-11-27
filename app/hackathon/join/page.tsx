@@ -8,14 +8,23 @@ import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
 import { parseBuddyOwe } from "@/lib/hackathon/elemental/buddy-pass";
 import { elementalRegistrationOpen, normalizeSource } from "@/lib/hackathon/elemental/registration";
+import { elementalShareDescription } from "@/lib/hackathon/elemental/share";
 import { teamLabel } from "@/lib/hackathon/elemental/team-name";
 import { getBuddyPass, getTeamByInviteCode } from "@/lib/supabase/hackathon-event-registrations";
 
+const TITLE = `สมัคร ${ELEMENTAL.edition} Hackathon`;
+const DESCRIPTION = elementalShareDescription();
+
 export const metadata: Metadata = {
-  title: `สมัคร ${ELEMENTAL.edition} Hackathon`,
-  description: `สมัคร ${ELEMENTAL.edition} Hackathon ${thaiDateLine()}`,
+  title: TITLE,
+  description: DESCRIPTION,
   robots: { index: false, follow: true },
   referrer: "no-referrer",
+  // Team invite links (?team=...) are shared in LINE: without these the
+  // preview showed the site-wide English title. No og:url, so a share keeps
+  // its invite code. The image is ./opengraph-image.ts.
+  openGraph: { type: "website", siteName: "PassionSeed", locale: "th_TH", title: TITLE, description: DESCRIPTION },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };
 
 export const dynamic = "force-dynamic";
