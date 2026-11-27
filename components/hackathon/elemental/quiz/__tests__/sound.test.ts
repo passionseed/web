@@ -1,11 +1,13 @@
 /** @jest-environment jsdom */
 
-type Event = { kind: string; value: number; at: number };
+export {};
+
+type ParamEvent = { kind: string; value: number; at: number };
 
 /** Just enough of an AudioContext to see what the quiz's sound player does with it. */
 class FakeParam {
   value = 1;
-  events: Event[] = [];
+  events: ParamEvent[] = [];
   setValueAtTime(value: number, at: number) {
     this.events.push({ kind: "set", value, at });
   }
