@@ -3,22 +3,23 @@ import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { elementalRegistrationOpen } from "./registration";
 
 /**
- * Share the poster in your school's LINE group, get a free seat
- * (company-brain decisions/log.md, 2026-11-26):
- * - the group is a whole school or a year group with 100+ members;
- * - one free seat per school, and only the first 30 count (Big, 2026-11-26:
- *   "only 1 per school", "first 30");
- * - each sharer gets their own poster, whose QR code tags ?src=share-<code>.
- * The 24-hour hold is Claude's pick: long enough to get the poster into the
- * group, short enough that a school isn't blocked by someone who never posts.
+ * Share links for a free seat (Big, 2026-11-27, replacing the one-claim-per-
+ * school rules of 2026-11-26):
+ * - any signed-up student, paid or not, and any teacher can make a link for
+ *   their school; many links per school are fine;
+ * - a link qualifies at 50 real devices and 3 paid seats from it;
+ * - each school has one free seat: the first link there to qualify gets it,
+ *   and staff confirm it (a quick fraud check) before it is given;
+ * - a teacher whose link reaches 50 devices is invited to Demo Day.
+ * Rules and their tests: ./share-rules.ts.
  */
 export const SHARE = {
-  seats: 30,
-  minMembers: 100,
-  holdHours: 24,
-  /** Where sharers send their screenshot: PassionSeed's IG inbox, which staff share. */
-  proofUrl: "https://ig.me/m/passion_seed.th",
-  proofHandle: "@passion_seed.th",
+  /** Real devices that opened the link (lib/hackathon/elemental/link-views.ts). */
+  devicesGoal: 50,
+  /** Paid seats from sign-ups that came through the link. */
+  paidGoal: 3,
+  /** How often an open share page refreshes its numbers. */
+  pollMs: 20_000,
 } as const;
 
 /** The share page is on only when ELEMENTAL_SHARE_OPEN=1 and sign-up is still open. */
@@ -35,8 +36,9 @@ export function shareCode(registrationId: string): string {
   return registrationId.replace(/-/g, "").slice(0, 8).toLowerCase();
 }
 export const SHARE_CODE_RE = /^[0-9a-f]{8}$/;
-/** The code the demo (/hackathon/join/demo/share) uses; its poster works without a claim where demos are on. */
+/** The codes the demo pages use; their posters work without a link where demos are on. */
 export const SHARE_DEMO_CODE = "1a2b3c4d";
+export const TEACHER_DEMO_CODE = "7e4c0b2a";
 
 /**
  * The made-up demo pages (/hackathon/join/demo, /hackathon/join/demo/share):
@@ -46,8 +48,14 @@ export const SHARE_DEMO_CODE = "1a2b3c4d";
 export function demoPagesOn(env: NodeJS.ProcessEnv = process.env): boolean {
   return env.NODE_ENV === "development" || env.VERCEL_ENV === "preview";
 }
+export type ShareKind = "student" | "teacher";
+
 export const shareSource = (code: string) => `share-${code}`;
-export const shareUrl = (code: string) => `https://www.${ELEMENTAL.url}?src=${shareSource(code)}`;
+/** A teacher's link tags ?src=t-<code>, so the admin page can tell the two apart. */
+export const teacherSource = (code: string) => `t-${code}`;
+export const linkSource = (kind: ShareKind, code: string) => (kind === "teacher" ? teacherSource(code) : shareSource(code));
+export const linkUrl = (kind: ShareKind, code: string) => `https://www.${ELEMENTAL.url}?src=${linkSource(kind, code)}`;
+export const shareUrl = (code: string) => linkUrl("student", code);
 
 /** What a free seat does to a sign-up: one seat's price comes off; at ฿0 it is paid. */
 export function freeSeatOutcome(amountBaht: number, memberCount: number): { amountBaht: number; paid: boolean } {

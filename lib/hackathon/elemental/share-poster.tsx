@@ -9,14 +9,15 @@ import sharp from "sharp";
 
 import { EL } from "@/components/hackathon/poster/elemental/brand";
 
-import { shareUrl } from "./share";
+import { linkUrl, type ShareKind } from "./share";
 
 /**
  * One sharer's poster: the key poster exported without its QR code
  * (scripts/render-share-poster-base.mjs), with the sharer's own QR code drawn
  * into the empty cream block and their code under it, like the numbered
- * printed copies ("No. 101"). The QR code goes on top of the grain, so it
- * stays sharp after LINE shrinks the image.
+ * printed copies ("No. 101"). A teacher's says "ครู · No. CODE" and its QR
+ * code tags ?src=t-<code>. The QR code goes on top of the grain, so it stays
+ * sharp after LINE shrinks the image.
  */
 
 export type PosterBase = {
@@ -29,13 +30,16 @@ export type PosterBase = {
 };
 
 const DIR = path.join(process.cwd(), "lib/hackathon/elemental/share");
-let assets: Promise<{ meta: PosterBase; image: Buffer; mono: Buffer }> | undefined;
+const FONTS = path.join(process.cwd(), "lib/og/fonts");
+let assets: Promise<{ meta: PosterBase; image: Buffer; mono: Buffer; thai: Buffer }> | undefined;
 function load() {
   return (assets ??= Promise.all([
     readFile(path.join(DIR, "poster-base.json"), "utf8"),
     readFile(path.join(DIR, "poster-base.jpg")),
-    readFile(path.join(process.cwd(), "lib/og/fonts/SpaceMono-Regular.ttf")),
-  ]).then(([meta, image, mono]) => ({ meta: JSON.parse(meta) as PosterBase, image, mono })));
+    readFile(path.join(FONTS, "SpaceMono-Regular.ttf")),
+    // Space Mono has no Thai: "ครู" falls back to Trirong, the poster's Thai face.
+    readFile(path.join(FONTS, "Trirong-Regular.ttf")),
+  ]).then(([meta, image, mono, thai]) => ({ meta: JSON.parse(meta) as PosterBase, image, mono, thai })));
 }
 
 export async function posterVersion(): Promise<string> {
@@ -51,14 +55,15 @@ function qrSvg(url: string, px: number): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${px}" height="${px}" viewBox="0 0 ${n} ${n}" shape-rendering="crispEdges"><path d="${d}" fill="${EL.ink}"/></svg>`;
 }
 
-export const posterLabel = (code: string) => `No. ${code.toUpperCase()}`;
+export const posterLabel = (code: string, kind: ShareKind = "student") =>
+  `${kind === "teacher" ? "ครู · " : ""}No. ${code.toUpperCase()}`;
 
 /** A JPEG of the poster with this sharer's QR code and code. */
-export async function renderSharePoster(code: string): Promise<Buffer> {
-  const { meta, image, mono } = await load();
+export async function renderSharePoster(code: string, kind: ShareKind = "student"): Promise<Buffer> {
+  const { meta, image, mono, thai } = await load();
   const s = meta.scale;
   const qrPx = Math.round(meta.qr.size * s);
-  const qr = Buffer.from(qrSvg(shareUrl(code), qrPx));
+  const qr = Buffer.from(qrSvg(linkUrl(kind, code), qrPx));
 
   // The code under the block, right-aligned with it, in Space Mono (satori, so the font is the poster's).
   const labelW = Math.round(meta.block.width * s);
@@ -66,12 +71,19 @@ export async function renderSharePoster(code: string): Promise<Buffer> {
   const label = await new ImageResponse(
     (
       <div style={{ width: "100%", height: "100%", display: "flex", justifyContent: "flex-end", alignItems: "flex-start" }}>
-        <span style={{ fontFamily: "Space Mono", fontSize: 14 * s, lineHeight: `${18 * s}px`, letterSpacing: "0.04em", color: EL.cream, opacity: 0.8 }}>
-          {posterLabel(code)}
+        <span style={{ fontFamily: "Space Mono, Trirong", fontSize: 14 * s, lineHeight: `${18 * s}px`, letterSpacing: "0.04em", color: EL.cream, opacity: 0.8 }}>
+          {posterLabel(code, kind)}
         </span>
       </div>
     ),
-    { width: labelW, height: labelH, fonts: [{ name: "Space Mono", data: mono, weight: 400, style: "normal" }] },
+    {
+      width: labelW,
+      height: labelH,
+      fonts: [
+        { name: "Space Mono", data: mono, weight: 400, style: "normal" },
+        { name: "Trirong", data: thai, weight: 400, style: "normal" },
+      ],
+    },
   ).arrayBuffer();
 
   return sharp(image)

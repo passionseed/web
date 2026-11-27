@@ -1,125 +1,171 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
+import { Loader2 } from "lucide-react";
 
-import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
+import { EL } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
+import { formatThaiDate } from "@/lib/content/shift-cohort";
 import { SHARE, SHARE_DEMO_CODE } from "@/lib/hackathon/elemental/share";
+import { sharePhase, type ShareLinkView } from "@/lib/hackathon/elemental/share-rules";
+
+import { CodeEntry } from "./CodeEntry";
+import { lineHelp, recipientError } from "./copy-shared";
+import { PosterBlock } from "./PosterBlock";
+import { ShareProgress } from "./Progress";
+import { SchoolPicker, type SchoolChoice } from "./SchoolPicker";
+import { SeatMessage, SeatNote } from "./SeatNote";
+import { btn, CodeText, ErrorLine, filled, Lead, Page, schoolLabel, TextLink, Title } from "./ui";
+import { usePollLink } from "./usePoll";
 
 /**
- * The share page: pick your school, get your own poster, post it in the
- * school's LINE group, send the screenshot. One free seat per school, first
- * 30 (company-brain decisions/log.md, 2026-11-26).
- * Thai copy: Claude's placeholder until Angpao writes it.
+ * A signed-up student's share page (Big, 2026-11-27): pick your school, get
+ * your own poster and link, watch the numbers fill. 50 devices and 3 paid
+ * sign-ups from your link, first at your school: the school's free seat.
+ * Paid or not, anyone signed up can share; a paid student gives the seat to
+ * an unpaid friend by the friend's code.
  */
 
-export type ShareClaimView = {
-  code: string;
-  schoolName: string;
-  province: string | null;
-  status: "held" | "sent" | "won";
-  heldUntil: string;
+// copy: placeholder — Angpao rewrites
+const COPY = {
+  top: `${ELEMENTAL.edition} Hackathon · แชร์รับที่นั่งฟรี`,
+  pickTitle: "แชร์รับที่นั่งฟรี",
+  changeTitle: "เปลี่ยนโรงเรียน",
+  steps: [
+    "เลือกโรงเรียน ได้โปสเตอร์ที่มี QR ของคุณเอง",
+    "ส่งในกลุ่ม LINE ของโรงเรียน หรือให้เพื่อนช่วยส่งต่อ",
+    `ครบ ${SHARE.devicesGoal} เครื่อง และ ${SHARE.paidGoal} คนจ่าย ได้ที่นั่งฟรี 1 ที่ โรงเรียนละ 1 ที่ ใครครบก่อนได้ก่อน`,
+  ],
+  paidNote: "จ่ายแล้วก็แชร์ได้ ถ้าครบก่อน ยกที่นั่งฟรีให้เพื่อนที่ยังไม่จ่าย",
+  pickHeading: "โรงเรียนของคุณ",
+  confirm: "ยืนยัน แล้วรับโปสเตอร์",
+  confirmChange: "เปลี่ยนเป็นโรงเรียนนี้",
+  saving: "กำลังบันทึก…",
+  cancelChange: "ไม่เปลี่ยนแล้ว",
+  change: "เปลี่ยนโรงเรียน",
+  titles: {
+    start: "ส่งโปสเตอร์ของคุณเลย",
+    early: "แชร์ต่อเลย",
+    close: "อีกนิดเดียว",
+    done: "ครบแล้ว รอทีมงานเช็ก",
+    checkingSelf: "ครบแล้ว รอทีมงานเช็ก",
+    checkingNone: "ครบแล้ว ยกที่นั่งให้เพื่อน",
+    checkingOther: "รอทีมงานเช็ก",
+    givenSelf: "ได้ที่นั่งฟรีแล้ว",
+    givenOther: "ยกที่นั่งให้เพื่อนแล้ว",
+    taken: "ที่นั่งฟรีของโรงเรียนนี้มีคนได้แล้ว",
+    rejected: "ลิงก์นี้ไม่ได้ที่นั่งฟรี",
+  },
+  friendLabel: "รหัสของเพื่อน",
+  friendHint: "ขอรหัส 8 ตัวจากหน้าที่นั่งของเพื่อน ต้องเป็นคนที่สมัครแล้วแต่ยังไม่จ่าย",
+  friendSubmit: "ยกที่นั่งให้เพื่อน",
+  friend: "เพื่อน",
+  rename: "ใส่รหัสผิด เปลี่ยนรหัส",
+  mySeat: "ดูที่นั่งของฉัน",
+  posterHeading: "โปสเตอร์ของคุณ",
+  posterLead: "QR บนโปสเตอร์คือลิงก์ของคุณ ใครสแกนหรือกดลิงก์ ตัวเลขด้านบนจะขึ้น",
+  rulesHeading: "กติกา",
+  rules: [
+    "นับเป็นเครื่อง เปิดซ้ำจากเครื่องเดิมนับครั้งเดียว",
+    "นับคนจ่ายจากคนที่สแกน QR หรือกดลิงก์ของคุณ แล้วสมัครและจ่าย",
+    "โรงเรียนละ 1 ที่ ลิงก์แรกที่ครบได้ ทั้งลิงก์นักเรียนและลิงก์ครู",
+    "ทีมงานเช็กก่อนให้ที่นั่งทุกครั้ง",
+    `แชร์ได้ถึงวันปิดรับสมัคร ${formatThaiDate(ELEMENTAL.registrationClosesOn)}`,
+  ],
+  back: "กลับไปหน้าที่นั่งของฉัน",
+  closedTitle: "แชร์รับที่นั่งฟรี",
+  closed: "ตอนนี้ยังไม่เปิด",
+  cancelled: "การสมัครนี้ถูกยกเลิก แชร์รับที่นั่งไม่ได้",
+  schoolError: {
+    locked: `เปลี่ยนโรงเรียนไม่ได้แล้ว เพราะลิงก์เริ่มมีคนเปิด ${lineHelp}`,
+    code_taken: `สร้างลิงก์ไม่ได้ ${lineHelp}`,
+    invalid: "ใช้ชื่อโรงเรียนนี้ไม่ได้ ลองพิมพ์ใหม่",
+    closed: "ตอนนี้ปิดแล้ว",
+  } as Record<string, string>,
+  tryAgain: "ยังบันทึกไม่ได้ ลองอีกครั้ง",
 };
-
-type School = { key: string; name: string; province: string; taken: boolean };
-type Choice = { key: string; name: string; province: string } | { custom: true; name: string; province: string };
 
 type Props = {
   token: string;
-  /** "open": can share. Otherwise why not. */
-  state: "open" | "closed" | "paid";
-  claim: ShareClaimView | null;
-  seatsLeft: number;
+  state: "open" | "closed" | "cancelled";
+  link: ShareLinkView | null;
+  /** Whether this sign-up has paid; for the words before a link exists. */
+  selfPaid: boolean;
   /** The school typed at sign-up, to start the search with. */
   startQuery: string;
   posterVersion: string;
   demo?: boolean;
 };
 
-const primary = "inline-flex items-center justify-center rounded-full px-6 py-3.5 text-base font-semibold disabled:opacity-50";
-const filled = { backgroundColor: EL.flame, color: EL.flameWhite };
-const outline = { boxShadow: `inset 0 0 0 1px ${EL.ink}` };
-const line = "rgba(29,33,31,0.2)";
+function titleFor(link: ShareLinkView): string {
+  const t = COPY.titles;
+  const s = link.seat;
+  if (s.state === "taken") return t.taken;
+  if (s.state === "rejected") return t.rejected;
+  if (s.state === "checking") return s.recipient.who === "self" ? t.checkingSelf : s.recipient.who === "none" ? t.checkingNone : t.checkingOther;
+  if (s.state === "given") return s.recipient.who === "self" ? t.givenSelf : t.givenOther;
+  return t[sharePhase(link.progress)];
+}
 
-const schoolLabel = (name: string, province?: string | null) => `โรงเรียน${name}${province ? ` · ${province}` : ""}`;
-const bangkokTime = (iso: string) =>
-  new Intl.DateTimeFormat("th-TH", { timeZone: "Asia/Bangkok", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
-
-function Title({ children }: { children: React.ReactNode }) {
+/** Steps for a student with no link yet. */
+function HowItWorks({ selfPaid }: { selfPaid: boolean }) {
   return (
-    <h1 className="text-4xl sm:text-5xl" style={{ fontFamily: EL_FONT.display, fontWeight: 200, lineHeight: 1.1 }}>
-      {children}
-    </h1>
+    <div className="mt-6 space-y-3">
+      <ol className="space-y-3">
+        {COPY.steps.map((s, i) => (
+          <li key={i} className="flex gap-3 text-base">
+            <span
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold"
+              style={{ backgroundColor: i === 2 ? EL.flame : EL.ink, color: i === 2 ? EL.flameWhite : EL.cream }}
+            >
+              {i + 1}
+            </span>
+            <span className="pt-0.5">{s}</span>
+          </li>
+        ))}
+      </ol>
+      {selfPaid && <p style={{ color: EL.inkSoft }}>{COPY.paidNote}</p>}
+    </div>
   );
 }
 
-function BackLink({ token }: { token: string }) {
-  return (
-    <Link href={`/hackathon/join/${token}`} className="mt-10 block text-sm underline underline-offset-4" style={{ color: EL.inkSoft }}>
-      กลับไปหน้าที่นั่งของฉัน
-    </Link>
-  );
-}
-
-function Rules({ seatsLeft }: { seatsLeft: number }) {
-  return (
-    <ul className="mt-5 space-y-1.5 text-base" style={{ color: EL.inkSoft }}>
-      <li>· กลุ่มทั้งโรงเรียนหรือทั้งระดับชั้น สมาชิก {SHARE.minMembers} คนขึ้นไป</li>
-      <li>· โรงเรียนละ 1 คน ใครเลือกโรงเรียนก่อนได้ก่อน</li>
-      <li>
-        · {SHARE.seats} ที่เท่านั้น{" "}
-        <span style={{ color: EL.ink, fontWeight: 600 }}>เหลือ {seatsLeft} ที่</span>
-      </li>
-      <li>· เลือกแล้วมีเวลาโพสต์ {SHARE.holdHours} ชั่วโมง</li>
-    </ul>
-  );
-}
-
-/** Step 1: search the open-data school list, or type the name if it's missing. */
-function SchoolPicker({ token, startQuery, seatsLeft: initialLeft, demo, onClaimed }: Pick<Props, "token" | "startQuery" | "seatsLeft" | "demo"> & { onClaimed: (c: ShareClaimView) => void }) {
-  const [query, setQuery] = useState(startQuery);
-  const [schools, setSchools] = useState<School[] | null>(null);
-  const [left, setLeft] = useState(initialLeft);
-  const [pick, setPick] = useState<Choice | null>(null);
-  const [custom, setCustom] = useState(false);
-  const [customName, setCustomName] = useState("");
-  const [customProvince, setCustomProvince] = useState("");
+/** Pick (or change) the school, then save it. */
+function PickSchool({
+  token,
+  startQuery,
+  changing,
+  demo,
+  onSaved,
+  onCancel,
+}: {
+  token: string;
+  startQuery: string;
+  changing: boolean;
+  demo?: boolean;
+  onSaved: (link: ShareLinkView) => void;
+  onCancel?: () => void;
+}) {
+  const [pick, setPick] = useState<SchoolChoice | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const seq = useRef(0);
 
-  useEffect(() => {
-    if (custom) return;
-    const q = query.trim();
-    if (q.length < 2) {
-      setSchools(null);
-      return;
-    }
-    const n = ++seq.current;
-    const t = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/hackathon/elemental/${token}/share/schools?q=${encodeURIComponent(q)}`, { cache: "no-store" });
-        if (!res.ok) throw new Error();
-        const data = (await res.json()) as { schools: School[]; seatsLeft: number };
-        if (n !== seq.current) return;
-        setSchools(data.schools);
-        setLeft(data.seatsLeft);
-      } catch {
-        if (n === seq.current) setSchools([]);
-      }
-    }, 250);
-    return () => clearTimeout(t);
-  }, [query, custom, token]);
-
-  const confirm = async () => {
+  const save = async () => {
     if (!pick) return;
     setBusy(true);
     setError(null);
     try {
       if (demo) {
-        onClaimed({ code: SHARE_DEMO_CODE, schoolName: pick.name, province: pick.province || null, status: "held", heldUntil: new Date(Date.now() + SHARE.holdHours * 3600_000).toISOString() });
-        return;
+        return onSaved({
+          kind: "student",
+          code: SHARE_DEMO_CODE,
+          school: { name: pick.name, province: pick.province || null },
+          progress: { devices: 0, paid: 0 },
+          seat: { state: "open" },
+          canChangeSchool: true,
+          selfPaid: false,
+          invited: false,
+        });
       }
       const res = await fetch(`/api/hackathon/elemental/${token}/share`, {
         method: "POST",
@@ -127,304 +173,177 @@ function SchoolPicker({ token, startQuery, seatsLeft: initialLeft, demo, onClaim
         body: JSON.stringify("custom" in pick ? { customName: pick.name, province: pick.province || undefined } : { schoolKey: pick.key }),
       });
       const data = await res.json().catch(() => ({}));
-      if (res.ok) return onClaimed(data.claim as ShareClaimView);
-      setError(
-        data.error === "taken"
-          ? "มีคนเลือกโรงเรียนนี้ไปแล้ว"
-          : data.error === "full"
-            ? `ที่นั่งฟรีครบ ${SHARE.seats} ที่แล้ว`
-            : data.error === "already"
-              ? "เลือกโรงเรียนไปแล้ว รีเฟรชหน้านี้"
-              : "ยังเลือกไม่ได้ ลองอีกครั้ง",
-      );
-      if (data.error === "taken") setPick(null);
+      if (res.ok && data.link) return onSaved(data.link as ShareLinkView);
+      setError(COPY.schoolError[data.error] ?? COPY.tryAgain);
     } catch {
-      setError("ยังเลือกไม่ได้ ลองอีกครั้ง");
+      setError(COPY.tryAgain);
     } finally {
       setBusy(false);
     }
   };
 
-  if (left <= 0) {
-    return <p className="mt-8 text-lg">ที่นั่งฟรีครบ {SHARE.seats} ที่แล้ว ขอบคุณที่ช่วยแชร์</p>;
-  }
-
   return (
     <div className="mt-8 space-y-4">
-      <Rules seatsLeft={left} />
-      <h2 className="pt-4 text-xl font-semibold">1. เลือกโรงเรียน</h2>
-      {!custom ? (
-        <>
-          <input
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setPick(null);
-            }}
-            placeholder="พิมพ์ชื่อโรงเรียน"
-            aria-label="ชื่อโรงเรียน"
-            className="w-full rounded-xl border bg-white px-4 py-3.5 text-lg outline-none"
-            style={{ borderColor: line, color: EL.ink }}
-          />
-          {schools && schools.length === 0 && <p style={{ color: EL.inkSoft }}>ไม่เจอในรายชื่อ ลองพิมพ์สั้นลง หรือพิมพ์ชื่อเองด้านล่าง</p>}
-          {schools && schools.length > 0 && (
-            <ul className="space-y-2" role="radiogroup" aria-label="โรงเรียน">
-              {schools.map((s) => {
-                const on = pick && !("custom" in pick) && pick.key === s.key;
-                return (
-                  <li key={s.key}>
-                    <button
-                      type="button"
-                      role="radio"
-                      aria-checked={!!on}
-                      disabled={s.taken}
-                      onClick={() => setPick({ key: s.key, name: s.name, province: s.province })}
-                      className="flex w-full items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left disabled:cursor-not-allowed"
-                      style={{ borderColor: on ? EL.flame : line, backgroundColor: on ? "rgba(236,100,36,0.08)" : "white", color: s.taken ? EL.inkSoft : EL.ink }}
-                    >
-                      <span>
-                        โรงเรียน{s.name}
-                        <span className="block text-sm" style={{ color: EL.inkSoft }}>
-                          {s.province}
-                        </span>
-                      </span>
-                      {s.taken && <span className="shrink-0 text-sm">มีคนเลือกแล้ว</span>}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-          <button type="button" onClick={() => { setCustom(true); setPick(null); }} className="text-sm underline underline-offset-4" style={{ color: EL.inkSoft }}>
-            ไม่มีโรงเรียนของฉันในรายชื่อ
-          </button>
-        </>
-      ) : (
-        <div className="space-y-3">
-          <input
-            value={customName}
-            onChange={(e) => { setCustomName(e.target.value); setPick(null); }}
-            placeholder="ชื่อโรงเรียน"
-            aria-label="ชื่อโรงเรียน"
-            maxLength={120}
-            className="w-full rounded-xl border bg-white px-4 py-3.5 text-lg outline-none"
-            style={{ borderColor: line, color: EL.ink }}
-          />
-          <input
-            value={customProvince}
-            onChange={(e) => { setCustomProvince(e.target.value); setPick(null); }}
-            placeholder="จังหวัด"
-            aria-label="จังหวัด"
-            maxLength={60}
-            className="w-full rounded-xl border bg-white px-4 py-3.5 text-lg outline-none"
-            style={{ borderColor: line, color: EL.ink }}
-          />
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              disabled={customName.trim().length < 2}
-              onClick={() => setPick({ custom: true, name: customName.trim().replace(/^(โรงเรียน|รร\.?)\s*/, ""), province: customProvince.trim() })}
-              className={primary}
-              style={outline}
-            >
-              ใช้ชื่อนี้
-            </button>
-            <button type="button" onClick={() => { setCustom(false); setPick(null); }} className="text-sm underline underline-offset-4" style={{ color: EL.inkSoft }}>
-              กลับไปค้นหา
-            </button>
-          </div>
-          <p className="text-sm" style={{ color: EL.inkSoft }}>ทีมงานจะเช็กชื่อโรงเรียนกับกลุ่ม LINE ตอนตรวจแคป</p>
-        </div>
-      )}
-
+      <h2 className="text-xl font-semibold">{COPY.pickHeading}</h2>
+      <SchoolPicker startQuery={startQuery} value={pick} onChange={setPick} />
       {pick && (
-        <div className="space-y-3 rounded-2xl border p-5" style={{ borderColor: EL.flame }}>
-          <p className="text-lg">{schoolLabel(pick.name, pick.province)}</p>
-          <button type="button" disabled={busy} onClick={confirm} className={`${primary} w-full`} style={filled}>
-            {busy ? "กำลังเลือก…" : "ยืนยัน แล้วรับโปสเตอร์"}
-          </button>
-          <p className="text-sm" style={{ color: EL.inkSoft }}>
-            เก็บโรงเรียนนี้ไว้ให้ {SHARE.holdHours} ชั่วโมง ถ้าไม่ได้ส่งแคป คนอื่นเลือกต่อได้
-          </p>
-        </div>
+        <button type="button" disabled={busy} onClick={save} className={`${btn} w-full`} style={filled}>
+          {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+          {busy ? COPY.saving : changing ? COPY.confirmChange : COPY.confirm}
+        </button>
       )}
-      {error && (
-        <p role="alert" style={{ color: EL.flame }}>
-          {error}
-        </p>
+      {error && <ErrorLine>{error}</ErrorLine>}
+      {onCancel && (
+        <button type="button" onClick={onCancel} className="text-sm underline underline-offset-4" style={{ color: EL.inkSoft }}>
+          {COPY.cancelChange}
+        </button>
       )}
     </div>
   );
 }
 
-/** Steps 2 to 4: the poster, how to share it, and "I sent the screenshot". */
-function Claimed({ token, claim, posterVersion, demo, onChange }: Pick<Props, "token" | "posterVersion" | "demo"> & { claim: ShareClaimView; onChange: (c: ShareClaimView | null) => void }) {
-  const src = `/api/hackathon/elemental/share/poster/${claim.code}?v=${posterVersion}`;
-  const download = `${src}&download=1`;
-  const [file, setFile] = useState<File | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const code = claim.code.toUpperCase();
+/** What happens with the school's seat, when there's news: checking, given, taken, or turned down. */
+function SeatBlock({ token, link, demo, onLink }: { token: string; link: ShareLinkView; demo?: boolean; onLink: (l: ShareLinkView) => void }) {
+  const [renaming, setRenaming] = useState(false);
+  const s = link.seat;
+  const backHref = `/hackathon/join/${token}`;
 
-  // Fetch the image first: iOS only opens the share sheet straight from a tap.
-  useEffect(() => {
-    let live = true;
-    fetch(src)
-      .then((r) => (r.ok ? r.blob() : null))
-      .then((b) => {
-        if (live && b) setFile(new File([b], `elemental-${claim.code}.jpg`, { type: b.type || "image/jpeg" }));
-      })
-      .catch(() => {});
-    return () => {
-      live = false;
-    };
-  }, [src, claim.code]);
-  const canShareFile = typeof navigator !== "undefined" && !!file && !!navigator.canShare?.({ files: [file] });
-
-  const patch = async (action: "sent" | "release") => {
-    setBusy(true);
-    setError(null);
+  const nameFriend = async (code: string): Promise<string | null> => {
+    if (demo) {
+      onLink({ ...link, seat: { state: "checking", recipient: { who: "other", code } } });
+      setRenaming(false);
+      return null;
+    }
     try {
-      if (demo) return onChange(action === "sent" ? { ...claim, status: "sent" } : null);
       const res = await fetch(`/api/hackathon/elemental/${token}/share`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ friendCode: code }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error);
-      onChange(data.claim);
-    } catch (e) {
-      setError(e instanceof Error && e.message === "expired" ? "เลย 24 ชั่วโมงแล้ว รีเฟรชแล้วเลือกโรงเรียนใหม่" : "ยังบันทึกไม่ได้ ลองอีกครั้ง");
-    } finally {
-      setBusy(false);
+      if (!res.ok) return recipientError(data.error, COPY.friend);
+      onLink(data.link as ShareLinkView);
+      setRenaming(false);
+      return null;
+    } catch {
+      return recipientError(undefined, COPY.friend);
     }
   };
 
+  if (s.state === "open") return null;
+  const naming = s.state === "checking" && (s.recipient.who === "none" || renaming);
   return (
-    <div className="mt-6 space-y-8">
-      <p className="text-lg">{schoolLabel(claim.schoolName, claim.province)}</p>
-
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">2. โพสต์โปสเตอร์นี้</h2>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={`โปสเตอร์ ${ELEMENTAL.edition} Hackathon รหัส ${code}`} width={1080} height={1350} className="w-full rounded-xl" style={{ aspectRatio: "4 / 5", backgroundColor: EL.ink }} />
-        <div className="grid gap-3 sm:grid-cols-2">
-          {canShareFile ? (
-            <button type="button" className={primary} style={filled} onClick={() => navigator.share({ files: [file!] }).catch(() => {})}>
-              แชร์รูปนี้ไป LINE
-            </button>
-          ) : null}
-          <a href={download} download={`elemental-${claim.code}.jpg`} className={primary} style={canShareFile ? outline : filled}>
-            บันทึกรูป
-          </a>
+    <SeatNote tone={s.state === "given" || s.state === "checking" ? "flame" : "plain"}>
+      <SeatMessage kind="student" seat={s} />
+      {naming && (
+        <div className="mt-5">
+          <CodeEntry label={COPY.friendLabel} hint={COPY.friendHint} submitLabel={COPY.friendSubmit} onSubmit={nameFriend} />
         </div>
-        <p style={{ color: EL.inkSoft }}>
-          โพสต์ในกลุ่ม LINE ของทั้งโรงเรียนหรือทั้งระดับชั้น ที่มีสมาชิก {SHARE.minMembers} คนขึ้นไป ขอให้ครูช่วยโพสต์ก็ได้
-        </p>
-      </div>
-
-      <div className="space-y-3">
-        <h2 className="text-xl font-semibold">3. ส่งแคปหน้าจอ</h2>
-        <p style={{ color: EL.inkSoft }}>แคปให้เห็นชื่อกลุ่ม จำนวนสมาชิก และโปสเตอร์ในแชท บังชื่อคนอื่นได้เลย ส่งทาง IG พร้อมรหัสนี้</p>
-        <button
-          type="button"
-          onClick={() => navigator.clipboard?.writeText(code).then(() => setCopied(true)).catch(() => {})}
-          className="w-full rounded-xl border py-3 text-2xl tracking-[0.2em]"
-          style={{ borderColor: line, fontFamily: EL_FONT.mono }}
-          aria-label={`รหัส ${code} กดเพื่อคัดลอก`}
-        >
-          {code}
-          <span className="block text-xs tracking-normal" style={{ color: EL.inkSoft, fontFamily: "inherit" }}>
-            {copied ? "คัดลอกแล้ว" : "กดเพื่อคัดลอก"}
-          </span>
+      )}
+      {!naming && s.state === "checking" && s.recipient.who === "other" && (
+        <button type="button" onClick={() => setRenaming(true)} className="mt-3 text-sm underline underline-offset-4" style={{ color: EL.inkSoft }}>
+          {COPY.rename}
         </button>
-        <a href={SHARE.proofUrl} target="_blank" rel="noopener noreferrer" className={`${primary} w-full`} style={outline}>
-          ส่งทาง IG {SHARE.proofHandle}
-        </a>
-      </div>
+      )}
+      {s.state === "given" && s.recipient.who === "self" && (
+        <Link href={backHref} className={`${btn} mt-4 w-full`} style={filled}>
+          {COPY.mySeat}
+        </Link>
+      )}
+    </SeatNote>
+  );
+}
 
-      <div className="space-y-3">
-        <h2 className="text-xl font-semibold">4. บอกเราว่าส่งแล้ว</h2>
-        {claim.status === "held" ? (
-          <>
-            <button type="button" disabled={busy} onClick={() => patch("sent")} className={`${primary} w-full`} style={filled}>
-              ส่งแคปแล้ว
-            </button>
-            <p className="text-sm" style={{ color: EL.inkSoft }}>
-              เก็บโรงเรียนนี้ไว้ให้ถึง {bangkokTime(claim.heldUntil)}
-            </p>
-            <button type="button" disabled={busy} onClick={() => patch("release")} className="text-sm underline underline-offset-4" style={{ color: EL.inkSoft }}>
-              เลือกโรงเรียนผิด เปลี่ยนโรงเรียน
-            </button>
-          </>
-        ) : (
-          <p className="text-lg">ส่งแล้ว ทีมงานกำลังตรวจ ผ่านเมื่อไหร่ที่นั่งเป็นของคุณ หน้าที่นั่งจะเปลี่ยนเป็นจ่ายแล้ว</p>
-        )}
-        {error && (
-          <p role="alert" style={{ color: EL.flame }}>
-            {error}
-          </p>
-        )}
-      </div>
-    </div>
+function Rules() {
+  return (
+    <section className="mt-12 space-y-3">
+      <h2 className="text-xl font-semibold">{COPY.rulesHeading}</h2>
+      <ul className="space-y-1.5 text-base" style={{ color: EL.inkSoft }}>
+        {COPY.rules.map((r) => (
+          <li key={r} className="flex gap-2">
+            <span aria-hidden="true">·</span>
+            <span>{r}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
 export function ShareView(props: Props) {
   const { token, state, demo } = props;
-  const [claim, setClaim] = useState<ShareClaimView | null>(props.claim);
+  const [link, setLink] = useState<ShareLinkView | null>(props.link);
+  const [changing, setChanging] = useState(false);
+  const onLink = useCallback((l: ShareLinkView) => setLink(l), []);
+  usePollLink(link && !demo && state === "open" ? `/api/hackathon/elemental/${token}/share` : null, onLink);
 
-  let body: React.ReactNode;
-  if (claim?.status === "won") {
-    body = (
-      <>
-        <Title>ได้ที่นั่งฟรีแล้ว</Title>
-        <p className="mt-3 text-lg" style={{ color: EL.inkSoft }}>
-          ขอบคุณที่แชร์ให้{schoolLabel(claim.schoolName)}
-        </p>
-      </>
+  const footer = (
+    <div className="mt-12">
+      <TextLink href={`/hackathon/join/${token}`}>{COPY.back}</TextLink>
+    </div>
+  );
+
+  if (state !== "open") {
+    return (
+      <Page top={COPY.top} footer={footer}>
+        <Title>{COPY.closedTitle}</Title>
+        <Lead>{state === "cancelled" ? COPY.cancelled : COPY.closed}</Lead>
+      </Page>
     );
-  } else if (state === "paid") {
-    body = (
-      <>
-        <Title>แชร์รับที่นั่งฟรี</Title>
-        <p className="mt-3 text-lg" style={{ color: EL.inkSoft }}>ที่นั่งฟรีสำหรับคนที่ยังไม่ได้จ่าย ที่นั่งนี้จ่ายแล้ว</p>
-      </>
-    );
-  } else if (state === "closed") {
-    body = (
-      <>
-        <Title>แชร์รับที่นั่งฟรี</Title>
-        <p className="mt-3 text-lg" style={{ color: EL.inkSoft }}>ตอนนี้ยังไม่เปิด</p>
-      </>
-    );
-  } else {
-    body = (
-      <>
-        <Title>แชร์ให้ทั้งโรงเรียน ได้ที่นั่งฟรี</Title>
-        <p className="mt-3 text-pretty text-lg" style={{ color: EL.inkSoft }}>
-          โพสต์โปสเตอร์ของตัวเองในกลุ่ม LINE ของโรงเรียน ได้ที่นั่งฟรี 1 ที่
-        </p>
-        {claim ? (
-          <Claimed token={token} claim={claim} posterVersion={props.posterVersion} demo={demo} onChange={setClaim} />
-        ) : (
-          <SchoolPicker token={token} startQuery={props.startQuery} seatsLeft={props.seatsLeft} demo={demo} onClaimed={setClaim} />
-        )}
-      </>
+  }
+
+  if (!link || changing) {
+    return (
+      <Page top={COPY.top} footer={footer}>
+        <Title>{changing ? COPY.changeTitle : COPY.pickTitle}</Title>
+        {!changing && <HowItWorks selfPaid={props.selfPaid} />}
+        <PickSchool
+          token={token}
+          startQuery={changing ? "" : props.startQuery}
+          changing={changing}
+          demo={demo}
+          onSaved={(l) => {
+            setLink(l);
+            setChanging(false);
+          }}
+          onCancel={changing ? () => setChanging(false) : undefined}
+        />
+      </Page>
     );
   }
 
   return (
-    <main className="min-h-[100dvh] px-5 py-10 sm:px-8 sm:py-16" style={{ backgroundColor: EL.cream, color: EL.ink }}>
-      <div className="mx-auto max-w-xl">
-        <p className="text-sm" style={{ color: EL.inkSoft }}>
-          {ELEMENTAL.edition} Hackathon · แชร์รับที่นั่งฟรี
-        </p>
-        <div className="mt-6">{body}</div>
-        <BackLink token={token} />
+    <Page top={COPY.top} footer={footer}>
+      <Title>{titleFor(link)}</Title>
+      <p className="mt-3 text-lg">
+        {schoolLabel(link.school.name, link.school.province)}
+        {link.canChangeSchool && (
+          <>
+            {" "}
+            <button type="button" onClick={() => setChanging(true)} className="whitespace-nowrap text-sm underline underline-offset-4" style={{ color: EL.inkSoft }}>
+              {COPY.change}
+            </button>
+          </>
+        )}
+      </p>
+
+      <div className="mt-6 space-y-6">
+        <SeatBlock token={token} link={link} demo={demo} onLink={onLink} />
+        <ShareProgress progress={link.progress} kind="student" live={!demo} seatGone={link.seat.state === "taken" || link.seat.state === "rejected"} />
       </div>
-    </main>
+
+      <section className="mt-10 space-y-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="text-xl font-semibold">{COPY.posterHeading}</h2>
+          <span className="text-sm" style={{ color: EL.inkSoft }}>
+            No. <CodeText code={link.code} />
+          </span>
+        </div>
+        <p style={{ color: EL.inkSoft }}>{COPY.posterLead}</p>
+        <PosterBlock code={link.code} kind="student" posterVersion={props.posterVersion} />
+      </section>
+
+      <Rules />
+    </Page>
   );
 }

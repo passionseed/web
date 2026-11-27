@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { trirong } from "@/components/hackathon/elemental/fonts";
-import { ShareView, type ShareClaimView } from "@/components/hackathon/elemental/share/ShareView";
+import { ShareView } from "@/components/hackathon/elemental/share/ShareView";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { shareOpen } from "@/lib/hackathon/elemental/share";
+import { hasPaid, type ShareLinkView } from "@/lib/hackathon/elemental/share-rules";
 import { posterVersion } from "@/lib/hackathon/elemental/share-poster";
-import { getLiveClaim, getShareContext, releaseExpiredHolds, seatsLeft } from "@/lib/supabase/hackathon-share-claims";
+import { getShareContext, getStudentLink, linkView } from "@/lib/supabase/hackathon-share-links";
 
 export const dynamic = "force-dynamic";
 
@@ -17,33 +18,37 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
 };
 
-/** One sign-up's share page: pick a school, get a poster with their own QR code. */
+/** One sign-up's share page: pick a school, get a poster and link with their own code, watch the numbers. */
 export default async function ElementalSharePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const reg = await getShareContext(token);
   if (!reg) notFound();
 
-  let claim: ShareClaimView | null = null;
-  let left = 0;
+  let state: "open" | "closed" | "cancelled" = reg.status === "cancelled" ? "cancelled" : shareOpen() ? "open" : "closed";
+  let link: ShareLinkView | null = null;
   let version = "";
-  let state: "open" | "closed" | "paid" = shareOpen() ? (reg.status === "pending" ? "open" : "paid") : "closed";
-  try {
-    await releaseExpiredHolds(ELEMENTAL.slug);
-    const [c, n, v] = await Promise.all([getLiveClaim(reg.id), seatsLeft(ELEMENTAL.slug), posterVersion()]);
-    if (c && c.status !== "released") {
-      claim = { code: c.code, schoolName: c.schoolName, province: c.province, status: c.status, heldUntil: c.heldUntil };
+  if (state === "open") {
+    try {
+      const [own, v] = await Promise.all([getStudentLink(reg.id), posterVersion()]);
+      link = own ? await linkView(ELEMENTAL.slug, own, reg) : null;
+      version = v;
+    } catch (error) {
+      // No share tables yet, or the database is down: show "not open" rather than break.
+      console.error("[elemental share] could not load the share state", error);
+      state = "closed";
     }
-    left = n;
-    version = v;
-  } catch (error) {
-    // No claims table yet, or the database is down: show "not open" rather than break.
-    console.error("[elemental share] could not load the share state", error);
-    state = "closed";
   }
 
   return (
     <div className={trirong.variable}>
-      <ShareView token={token} state={state} claim={claim} seatsLeft={left} startQuery={reg.school ?? ""} posterVersion={version} />
+      <ShareView
+        token={token}
+        state={state}
+        link={link}
+        selfPaid={hasPaid(reg.status)}
+        startQuery={reg.school ?? ""}
+        posterVersion={version}
+      />
     </div>
   );
 }

@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { trirong } from "@/components/hackathon/elemental/fonts";
-import { ShareView, type ShareClaimView } from "@/components/hackathon/elemental/share/ShareView";
-import { demoPagesOn, SHARE, SHARE_DEMO_CODE } from "@/lib/hackathon/elemental/share";
+import { ShareView } from "@/components/hackathon/elemental/share/ShareView";
+import { demoPagesOn } from "@/lib/hackathon/elemental/share";
+import { studentDemo } from "@/lib/hackathon/elemental/share-demo";
 import { posterVersion } from "@/lib/hackathon/elemental/share-poster";
 
 export const dynamic = "force-dynamic";
@@ -13,33 +14,24 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
 /**
- * Development and PR previews only: the share page with made-up data, nothing saved.
- * /hackathon/join/demo/share?claim=none|held|sent|won&state=open|closed|paid&school=<typed at sign-up>&left=<seats>
- * The school search uses the real list; nothing is saved or held.
+ * Development and PR previews only: the student share page with made-up data, nothing saved.
+ * /hackathon/join/demo/share?s=<state>&paid=1&school=<typed at sign-up>&closed=1
+ * s: (none) picks a school · start · early · close · qualified · taken · given ·
+ *    friend · friend-named · friend-given · rejected (lib/hackathon/elemental/share-demo.ts)
+ * The school search uses the real list.
  */
 export default async function ShareDemoPage({ searchParams }: { searchParams: SearchParams }) {
   if (!demoPagesOn()) notFound();
   const p = await searchParams;
-  const claimState = first(p.claim) ?? "none";
-  const state = (["open", "closed", "paid"] as const).find((s) => s === first(p.state)) ?? "open";
-  const claim: ShareClaimView | null =
-    claimState === "held" || claimState === "sent" || claimState === "won"
-      ? {
-          code: SHARE_DEMO_CODE,
-          schoolName: "เตรียมอุดมศึกษา",
-          province: "กรุงเทพมหานคร",
-          status: claimState,
-          heldUntil: new Date(Date.now() + SHARE.holdHours * 3600_000).toISOString(),
-        }
-      : null;
+  const link = studentDemo(first(p.s));
   return (
     <div className={trirong.variable}>
       <ShareView
         token="demo"
         demo
-        state={state}
-        claim={claim}
-        seatsLeft={Number(first(p.left) ?? 27)}
+        state={first(p.closed) ? "closed" : "open"}
+        link={link}
+        selfPaid={link?.selfPaid ?? first(p.paid) === "1"}
         startQuery={first(p.school) ?? "เตรียมอุดม"}
         posterVersion={await posterVersion()}
       />

@@ -3,13 +3,16 @@ import { notFound } from "next/navigation";
 
 import { trirong } from "@/components/hackathon/elemental/fonts";
 import { PayView, type ShareCardData } from "@/components/hackathon/elemental/PayView";
+import { teamStyleFonts } from "@/components/hackathon/elemental/team-style/fonts";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { elementalCommunityLinks } from "@/lib/hackathon/elemental/community-links";
 import { parseElementalDiscordOutcome } from "@/lib/hackathon/elemental/discordLink";
 import { elementalPayQr } from "@/lib/hackathon/elemental/pay-qr";
-import { shareOpen } from "@/lib/hackathon/elemental/share";
+import { shareCode, shareOpen } from "@/lib/hackathon/elemental/share";
+import { hasPaid } from "@/lib/hackathon/elemental/share-rules";
 import { getRegistrationByToken } from "@/lib/supabase/hackathon-event-registrations";
-import { getLiveClaim, releaseExpiredHolds, seatsLeft } from "@/lib/supabase/hackathon-share-claims";
+import { loadTeamStyleCard } from "@/lib/supabase/hackathon-team-style";
+import { getStudentLink, linkView } from "@/lib/supabase/hackathon-share-links";
 
 export const dynamic = "force-dynamic";
 
@@ -37,26 +40,31 @@ export default async function ElementalPayPage({
   const qrSrc = pending ? await elementalPayQr(reg.amountBaht) : null;
   // Only a paid page renders these.
   const links = reg.status === "paid" ? elementalCommunityLinks() : { line: null, discord: null };
-  const share = pending && shareOpen() ? await shareCard(token, reg.id) : null;
+  // Paid or not, anyone signed up can share for a school's free seat.
+  const share = reg.status !== "cancelled" && shareOpen() ? await shareCard(token, reg) : null;
+  // The team's name style and board rank. Null on any error, so this page never breaks because of it.
+  const teamStyle =
+    reg.status !== "cancelled" && shareOpen()
+      ? await loadTeamStyleCard(ELEMENTAL.slug, reg, `/hackathon/join/${token}/share`)
+      : null;
 
   return (
-    <div className={trirong.variable}>
-      <PayView token={token} reg={reg} qrSrc={qrSrc} links={links} discordOutcome={discordOutcome} share={share} />
+    <div className={`${trirong.variable} ${teamStyleFonts}`}>
+      <PayView token={token} reg={reg} qrSrc={qrSrc} links={links} discordOutcome={discordOutcome} share={share} teamStyle={teamStyle} />
     </div>
   );
 }
 
 /** The share card's state. Never breaks the pay page: on any error there is no card. */
-async function shareCard(token: string, registrationId: string): Promise<ShareCardData | null> {
+async function shareCard(token: string, reg: { id: string; status: string }): Promise<ShareCardData | null> {
   try {
-    await releaseExpiredHolds(ELEMENTAL.slug);
-    const [claim, left] = await Promise.all([getLiveClaim(registrationId), seatsLeft(ELEMENTAL.slug)]);
-    const live = claim && (claim.status === "held" || claim.status === "sent") ? claim : null;
+    const own = await getStudentLink(reg.id);
     return {
       href: `/hackathon/join/${token}/share`,
-      seatsLeft: left,
-      schoolName: live?.schoolName ?? null,
-      status: live ? (live.status as "held" | "sent") : null,
+      pollUrl: `/api/hackathon/elemental/${token}/share`,
+      code: shareCode(reg.id),
+      selfPaid: hasPaid(reg.status),
+      link: own ? await linkView(ELEMENTAL.slug, own, reg) : null,
     };
   } catch (error) {
     console.error("[elemental share] no share card", error);

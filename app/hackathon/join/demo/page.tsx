@@ -3,11 +3,14 @@ import { notFound } from "next/navigation";
 
 import { trirong } from "@/components/hackathon/elemental/fonts";
 import { PayView } from "@/components/hackathon/elemental/PayView";
+import { DEMO_STYLE_LEVELS, demoStyleCard } from "@/components/hackathon/elemental/team-style/demo";
+import { teamStyleFonts } from "@/components/hackathon/elemental/team-style/fonts";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { parseElementalDiscordOutcome } from "@/lib/hackathon/elemental/discordLink";
 import { elementalPayQr } from "@/lib/hackathon/elemental/pay-qr";
 import { elementalPriceBaht } from "@/lib/hackathon/elemental/registration";
-import { demoPagesOn } from "@/lib/hackathon/elemental/share";
+import { demoPagesOn, SHARE_DEMO_CODE } from "@/lib/hackathon/elemental/share";
+import { studentDemo } from "@/lib/hackathon/elemental/share-demo";
 import type { RegistrationStatus } from "@/lib/supabase/hackathon-event-registrations";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +27,9 @@ const STATES: RegistrationStatus[] = ["pending", "review", "paid", "cancelled"];
  * /hackathon/join/demo?state=pending|review|paid|cancelled&mode=solo|create|join&n=0..4
  * (n: the place in sign-up order inside the team, so each teammate's ticket can be seen)
  * &discord=joined|not_member|taken|error shows each Discord state on the paid page.
- * &share=1|held shows the share-for-a-free-seat card on the pending page (none picked, or a school held).
+ * &share=1|<state> shows the share card (1: no school yet; a state from lib/hackathon/elemental/share-demo.ts,
+ *   like early, close, qualified, taken, given or friend) on the pending, review or paid page.
+ * &style=locked|colors|fonts|all shows the team name style card at that unlock level; &edit=1 opens its editor.
  */
 export default async function PayDemoPage({ searchParams }: { searchParams: SearchParams }) {
   if (!demoPagesOn()) notFound();
@@ -48,8 +53,10 @@ export default async function PayDemoPage({ searchParams }: { searchParams: Sear
       }
     : null;
 
+  const styleLevel = DEMO_STYLE_LEVELS.find((l) => l === first(params.style));
+
   return (
-    <div className={trirong.variable}>
+    <div className={`${trirong.variable} ${teamStyleFonts}`}>
       <PayView
         token="demo"
         demo
@@ -57,13 +64,15 @@ export default async function PayDemoPage({ searchParams }: { searchParams: Sear
         qrSrc={state === "pending" ? await elementalPayQr(amountBaht) : null}
         links={{ line: "https://line.me/ti/g/demo", discord: "https://discord.gg/demo" }}
         discordOutcome={parseElementalDiscordOutcome(first(params.discord))}
+        teamStyle={styleLevel ? demoStyleCard(styleLevel, { solo: !inTeam, teamName: team?.name ?? null }) : null}
         share={
           first(params.share)
             ? {
-                href: "/hackathon/join/demo/share",
-                seatsLeft: 27,
-                schoolName: first(params.share) === "held" ? "เตรียมอุดมศึกษา" : null,
-                status: first(params.share) === "held" ? "held" : null,
+                href: `/hackathon/join/demo/share${studentDemo(first(params.share)) ? `?s=${first(params.share)}` : ""}`,
+                pollUrl: null,
+                code: SHARE_DEMO_CODE,
+                selfPaid: state === "paid" || state === "review",
+                link: studentDemo(first(params.share)),
               }
             : null
         }

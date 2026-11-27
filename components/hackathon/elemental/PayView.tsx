@@ -4,9 +4,9 @@ import type { ReactNode } from "react";
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
 import { SHIFT_PAYMENT } from "@/lib/content/shift-cohort";
-import { SHARE } from "@/lib/hackathon/elemental/share";
 import type { ElementalDiscordOutcome } from "@/lib/hackathon/elemental/discordLink";
 import { teamLabel } from "@/lib/hackathon/elemental/team-name";
+import type { TeamStyleCardData } from "@/lib/hackathon/elemental/team-style";
 import type { PublicRegistration } from "@/lib/supabase/hackathon-event-registrations";
 
 import { BuddyPass, IouSlip } from "./BuddyPass";
@@ -15,7 +15,9 @@ import { PayWithSlip } from "./PayWithSlip";
 import { placeFor, ticketNumber } from "./places";
 import { TeamInvite } from "./TeamInvite";
 import { Ticket } from "./Ticket";
+import { ShareCard, type ShareCardData } from "./share/ShareCard";
 import { TrackStep } from "./TrackStep";
+import { TeamStyleCard } from "./team-style/TeamStyleCard";
 
 /**
  * One person's own page after signing up: pay, wait for a check, or the
@@ -30,18 +32,14 @@ type Props = {
   links: { line: string | null; discord: string | null };
   /** How the last Discord sign-in from this page went (?discord=…). */
   discordOutcome?: ElementalDiscordOutcome | null;
-  /** Share-for-a-free-seat card, when sharing is open and this sign-up hasn't paid. */
+  /** Share-for-a-free-seat card (./share/ShareCard), while sharing is open; paid or not. */
   share?: ShareCardData | null;
+  /** The team's name style and board rank (./team-style), while sharing is open. */
+  teamStyle?: TeamStyleCardData | null;
   demo?: boolean;
 };
 
-export type ShareCardData = {
-  href: string;
-  seatsLeft: number;
-  /** The school this sign-up holds, if it picked one. */
-  schoolName: string | null;
-  status: "held" | "sent" | null;
-};
+export type { ShareCardData };
 
 function Title({ children }: { children: ReactNode }) {
   return (
@@ -84,6 +82,26 @@ function BuddySection({ reg }: { reg: Props["reg"] }) {
 function Team({ token, reg, demo }: Props) {
   if (!reg.team) return null;
   return <TeamInvite team={reg.team} renameToken={reg.isTeamStarter ? token : undefined} demo={demo} />;
+}
+
+/** The team's name style for the board and its rank, while sharing is open. */
+function TeamStyleSlot({ token, teamStyle, demo, className }: Props & { className?: string }) {
+  if (!teamStyle) return null;
+  return (
+    <div className={className}>
+      <TeamStyleCard token={token} data={teamStyle} demo={demo} />
+    </div>
+  );
+}
+
+/** The share-for-a-free-seat card, under the payment so paying stays the first thing. */
+function ShareSlot({ share, className }: Props & { className?: string }) {
+  if (!share) return null;
+  return (
+    <div className={className}>
+      <ShareCard share={share} />
+    </div>
+  );
 }
 
 const DISCORD_FAILED = "เชื่อม Discord ไม่สำเร็จ ลองอีกครั้ง หรือทักไลน์ทีมงาน";
@@ -157,6 +175,8 @@ function PaidSection(props: Props) {
       </div>
       <Team {...props} />
       <BuddySection reg={reg} />
+      <ShareSlot {...props} />
+      <TeamStyleSlot {...props} />
       <p className="text-sm" style={{ color: EL.inkSoft }}>
         มีคำถามทักไลน์ {SHIFT_PAYMENT.lineId} ·{" "}
         <Link href="/hackathon/elemental" className="underline underline-offset-4">
@@ -178,6 +198,8 @@ function ReviewSection(props: Props) {
       <LineButton label={`มีคำถาม ทักไลน์ ${SHIFT_PAYMENT.lineId}`} style={outline} />
       <Team {...props} />
       <BuddySection reg={props.reg} />
+      <ShareSlot {...props} />
+      <TeamStyleSlot {...props} />
     </section>
   );
 }
@@ -192,35 +214,8 @@ function CancelledSection() {
   );
 }
 
-/**
- * Share the poster in a school group, get a free seat (decisions/log.md,
- * 2026-11-26). Under the payment, so paying stays the first thing.
- * Thai copy: Claude's placeholder until Angpao writes it.
- */
-function ShareCard({ share }: { share: ShareCardData }) {
-  if (!share.schoolName && share.seatsLeft <= 0) return null;
-  return (
-    <section className="space-y-3 rounded-2xl border p-5 sm:p-6" style={{ borderColor: "rgba(29,33,31,0.2)" }}>
-      <h2 className="text-xl font-semibold">แชร์ให้ทั้งโรงเรียน ได้ที่นั่งฟรี</h2>
-      {share.schoolName ? (
-        <p style={{ color: EL.inkSoft }}>
-          โรงเรียน{share.schoolName} · {share.status === "sent" ? "ส่งแคปแล้ว ทีมงานกำลังตรวจ" : "โพสต์แล้วส่งแคปภายใน 24 ชั่วโมง"}
-        </p>
-      ) : (
-        <p style={{ color: EL.inkSoft }}>
-          โพสต์โปสเตอร์ของตัวเองในกลุ่ม LINE ของทั้งโรงเรียนหรือทั้งระดับชั้น สมาชิก {SHARE.minMembers} คนขึ้นไป ได้ที่นั่งฟรี 1 ที่
-          โรงเรียนละ 1 คน เหลือ {share.seatsLeft} ที่
-        </p>
-      )}
-      <Link href={share.href} className={`${primary} w-full`} style={outline}>
-        {share.schoolName ? "ดูโปสเตอร์ของฉัน" : "เลือกโรงเรียน รับโปสเตอร์"}
-      </Link>
-    </section>
-  );
-}
-
 function PendingSection(props: Props) {
-  const { token, reg, qrSrc, demo, share } = props;
+  const { token, reg, qrSrc, demo } = props;
   return (
     <section className="mt-6">
       {!demo && <TrackStep step="pay" />}
@@ -246,11 +241,8 @@ function PendingSection(props: Props) {
           <Team {...props} />
         </div>
       )}
-      {share && (
-        <div className="mt-10">
-          <ShareCard share={share} />
-        </div>
-      )}
+      <ShareSlot {...props} className="mt-10" />
+      <TeamStyleSlot {...props} className="mt-10" />
     </section>
   );
 }
