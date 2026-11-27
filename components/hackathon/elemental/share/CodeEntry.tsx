@@ -65,8 +65,8 @@ export function CodeEntry({
         maxLength={20}
         style={{ fontFamily: EL_FONT.mono, fontSize: 18, letterSpacing: value ? "0.12em" : undefined, textTransform: value ? "uppercase" : undefined }}
       />
-      <PrimaryButton type="submit" disabled={busy} full>
-        {busy ? COPY.busy : `${submitLabel} →`}
+      <PrimaryButton type="submit" disabled={busy} full arrow={!busy}>
+        {busy ? COPY.busy : submitLabel}
       </PrimaryButton>
     </form>
   );

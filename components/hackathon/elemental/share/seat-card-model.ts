@@ -1,5 +1,7 @@
 import { seatGoal, TEACHER_INVITE_DEVICES, type SeatProgressView, type SeatSlotView } from "@/lib/hackathon/elemental/share-rules";
 
+import { EL, EL_FIRE } from "@/components/hackathon/poster/elemental/brand";
+
 import { seedFromKey } from "../scrub-dissolve";
 import { PLACES, placeFor, type RecoveredPlace } from "../places";
 
@@ -37,6 +39,9 @@ export type SeatCardModel = {
   /** Seats earned so far (any status). */
   earned: number;
   maxSeats: number;
+  /** No more seats to aim for, though the link isn't maxed: seats are closed event-wide, or staff shut the link. */
+  noNext: boolean;
+  linkRejected: boolean;
 };
 
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
@@ -49,8 +54,10 @@ export function seatCardModel(view: SeatProgressView): SeatCardModel {
   const maxed = view.maxed || !view.next;
   const inSeat = maxed ? rule.devicesPerSeat : clamp(view.devices - from.devices, 0, rule.devicesPerSeat);
   const paidInSeat = maxed ? rule.paidPerSeat : clamp(view.paid - from.paid, 0, rule.paidPerSeat);
-  const devicesLeft = maxed ? 0 : (view.next?.devicesLeft ?? 0);
-  const paidLeft = maxed ? 0 : (view.next?.paidLeft ?? 0);
+  // Seats closed (switch or cap) or the link shut: nothing more to promise.
+  const noNext = !maxed && (!!view.seatsClosed || !!view.linkRejected);
+  const devicesLeft = maxed || noNext ? 0 : (view.next?.devicesLeft ?? 0);
+  const paidLeft = maxed || noNext ? 0 : (view.next?.paidLeft ?? 0);
   const frozen = view.phase === "after-close";
   return {
     index,
@@ -67,30 +74,43 @@ export function seatCardModel(view: SeatProgressView): SeatCardModel {
     frozen,
     earned,
     maxSeats: rule.maxSeatsPerLink,
+    noNext,
+    linkRejected: !!view.linkRejected,
   };
 }
+
+/**
+ * Keeps "+ 1 คนจ่าย" and "อีก 38 เครื่อง" whole when the title wraps: no-break
+ * spaces, and a word joiner inside "คนจ่าย" (Thai breaks between words without spaces).
+ */
+const nb = (s: string) => s.replace(/ /g, "\u00a0").replace("คนจ่าย", "คน\u2060จ่าย");
 
 // copy: placeholder — Angpao rewrites
 const COPY = {
   seatName: (i: number) => (i > 1 ? `ที่นั่งที่ ${i}` : "ที่นั่งฟรี"),
-  left: (d: number, i: number) => `อีก ${d} เครื่อง ได้${COPY.seatName(i)}`,
-  lastFew: (d: number, p: number) => `อีกแค่ ${d} เครื่อง${p > 0 ? ` + ${p} คนจ่าย` : ""}`,
-  paidOnly: (p: number, i: number) => `อีก ${p} คนจ่าย ได้${COPY.seatName(i)}`,
+  // The paid half is always said while it's missing: "อีก 38 เครื่อง + 1 คนจ่าย ได้ที่นั่งฟรี".
+  left: (d: number, p: number, i: number) => `${nb(`อีก ${d} เครื่อง`)}${p > 0 ? ` ${nb(`+ ${p} คนจ่าย`)}` : ""} ได้${COPY.seatName(i)}`,
+  lastFew: (d: number, p: number) => `${nb(`อีกแค่ ${d} เครื่อง`)}${p > 0 ? ` ${nb(`+ ${p} คนจ่าย`)}` : ""}`,
+  paidOnly: (p: number, i: number) => `${nb(`อีก ${p} คนจ่าย`)} ได้${COPY.seatName(i)}`,
   ready: "ครบแล้ว รอทีมงานเช็ก",
   maxed: (n: number) => `ได้ครบ ${n} ที่แล้ว`,
   closed: "ปิดนับแล้ว",
   closedWith: (n: number) => `ปิดนับแล้ว · ได้ ${n} ที่`,
+  seatsClosed: "ที่นั่งฟรีหมดแล้ว",
+  linkRejected: "ทีมงานปิดลิงก์นี้แล้ว",
 };
 
 /** What's left, in one short line: the share page's title and the pay slab's headline. */
 export function seatHeadline(view: SeatProgressView): string {
   const m = seatCardModel(view);
   if (m.frozen) return m.earned ? COPY.closedWith(m.earned) : COPY.closed;
+  if (m.linkRejected) return COPY.linkRejected;
   if (m.maxed) return COPY.maxed(m.earned);
+  if (m.noNext) return COPY.seatsClosed;
   if (m.devicesLeft === 0 && m.paidLeft === 0) return COPY.ready;
   if (m.devicesDone) return COPY.paidOnly(m.paidLeft, m.index);
   if (m.last) return COPY.lastFew(m.devicesLeft, m.paidLeft);
-  return COPY.left(m.devicesLeft, m.index);
+  return COPY.left(m.devicesLeft, m.paidLeft, m.index);
 }
 
 /** mulberry32: a small seeded random. */
@@ -123,16 +143,22 @@ export function clearOrder(code: string, seatIndex: number, cells = GRID_COLUMNS
   return rank;
 }
 
+/** Smoke, the other half of the poster's corruption (brand.ts: Air is the pixel smoke staining the sky). */
+const SMOKE = [EL.smokeDark, EL.smoke, EL.ash] as const;
+
 /**
- * Each corruption pixel's colour: index into EL_FIRE (0 hottest), weighted
- * toward the deep reds like the poster's fire. Never 0 (#fff4dc): at rest it
- * reads as a blank cell; it's the colour a cell flashes as it clears.
+ * Each corruption pixel's colour, seeded: about 70% fire (weighted toward the
+ * deep reds, like the poster) and 30% smoke. Never the hottest fire
+ * (#fff4dc): at rest it reads as a blank cell; it's the colour a cell
+ * flashes as it clears.
  */
-export function cellHeat(code: string, seatIndex: number, cells = GRID_COLUMNS * GRID_ROWS): number[] {
+export function cellColors(code: string, seatIndex: number, cells = GRID_COLUMNS * GRID_ROWS): string[] {
   const next = random(seedFromKey(`${code}:heat${seatIndex}`));
   return Array.from({ length: cells }, () => {
     const r = next();
-    return r < 0.08 ? 1 : r < 0.33 ? 2 : r < 0.7 ? 3 : 4;
+    if (r < 0.3) return SMOKE[Math.floor((r / 0.3) * SMOKE.length)];
+    const f = (r - 0.3) / 0.7;
+    return EL_FIRE[f < 0.08 ? 1 : f < 0.33 ? 2 : f < 0.7 ? 3 : 4];
   });
 }
 
@@ -148,7 +174,7 @@ export type StubTone = "checking" | "naming" | "given" | "rejected";
 export function stubTone(seat: SeatSlotView): StubTone {
   if (seat.status === "confirmed") return "given";
   if (seat.status === "rejected") return "rejected";
-  if (seat.status === "needs_recipient") return "naming";
+  if (seat.status === "needs_recipient" || seat.recipientPaid) return "naming";
   return "checking";
 }
 

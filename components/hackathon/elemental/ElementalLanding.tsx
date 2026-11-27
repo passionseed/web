@@ -7,6 +7,6 @@ import { trirong } from "./fonts";
  * visual scene, and five corrupted-place films. All dates, prices, prizes, and
  * schedule rows come strictly from ../poster/elemental/facts.ts.
  */
-export function ElementalLanding({ joinHref, open }: { joinHref: string; open: boolean }) {
-  return <ElementalExperience joinHref={joinHref} open={open} fontClassName={trirong.variable} />;
+export function ElementalLanding({ joinHref, open, shareLive = false }: { joinHref: string; open: boolean; shareLive?: boolean }) {
+  return <ElementalExperience joinHref={joinHref} open={open} fontClassName={trirong.variable} shareLive={shareLive} />;
 }

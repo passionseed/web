@@ -124,7 +124,7 @@ export function ShareBar({ poster, label = COPY.line }: { poster: PosterShare; l
   return (
     <StickyBar>
       <PrimaryButton href={poster.lineHref} external icon="chat" full className="min-w-0 flex-1">
-        {label} →
+        {label}
       </PrimaryButton>
       <CopyIconButton text={poster.url} />
     </StickyBar>

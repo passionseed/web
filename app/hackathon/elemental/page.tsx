@@ -6,7 +6,7 @@ import { TrackStep } from "@/components/hackathon/elemental/TrackStep";
 import { ELEMENTAL, prizeTotal, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
 import { elementalRegistrationOpen, normalizeSource } from "@/lib/hackathon/elemental/registration";
 import posterBase from "@/lib/hackathon/elemental/share/poster-base.json";
-import { demoPagesOn, SHARE_DEMO_CODE, TEACHER_DEMO_CODE, type ShareKind } from "@/lib/hackathon/elemental/share";
+import { demoPagesOn, SHARE_DEMO_CODE, shareOpen, TEACHER_DEMO_CODE, type ShareKind } from "@/lib/hackathon/elemental/share";
 import { CANONICAL_ORIGIN } from "@/lib/seo/canonical-origin";
 import { findLinkKind } from "@/lib/supabase/hackathon-share-links";
 
@@ -119,7 +119,7 @@ export default async function ElementalPage({ searchParams }: { searchParams: Se
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(eventSchema(open)) }} />
       <TrackStep step="landing" source={src} />
       <TrackLinkView source={src} />
-      <ElementalLanding joinHref={joinHref} open={open} />
+      <ElementalLanding joinHref={joinHref} open={open} shareLive={shareOpen()} />
     </>
   );
 }

@@ -92,8 +92,8 @@ function Primitives({ surface }: { surface: Surface }) {
       </Section>
 
       <Section title="ปุ่ม">
-        <PrimaryButton icon="chat" full>
-          ส่งใน LINE →
+        <PrimaryButton icon="chat" full arrow>
+          ส่งใน LINE
         </PrimaryButton>
         <div className="grid grid-cols-2 gap-2">
           <SecondaryButton icon="copy">คัดลอกลิงก์</SecondaryButton>
@@ -150,7 +150,7 @@ function Primitives({ surface }: { surface: Surface }) {
           <Swatch color={t.error} name="ผิดพลาด" />
         </div>
         <div>
-          <Fine>pixel ไฟ ใหม่ → เก่า</Fine>
+          <Fine>pixel ไฟ ใหม่ถึงเก่า</Fine>
           <div className="mt-2 flex gap-[3px]">
             {EL_FIRE.map((c) => (
               <span key={c} className="h-8 w-8" style={{ backgroundColor: c }} />
@@ -170,8 +170,8 @@ export default async function DesignDemoPage({ searchParams }: { searchParams: S
 
   const bar = (
     <StickyBar>
-      <PrimaryButton icon="chat" full className="flex-1">
-        ส่งใน LINE →
+      <PrimaryButton icon="chat" full arrow className="flex-1">
+        ส่งใน LINE
       </PrimaryButton>
       <SecondaryButton icon="copy" className="w-[52px] shrink-0 px-0" aria-label="คัดลอกลิงก์">
         <span className="sr-only">คัดลอกลิงก์</span>
@@ -194,8 +194,8 @@ export default async function DesignDemoPage({ searchParams }: { searchParams: S
           </div>
           <Fine className="mt-3">+ จ่ายผ่านลิงก์ 1/3</Fine>
           <div className="mt-5 space-y-3">
-            <PrimaryButton icon="chat" full>
-              ส่งโปสเตอร์ →
+            <PrimaryButton icon="chat" full arrow>
+              ส่งโปสเตอร์
             </PrimaryButton>
             <EditorialLink href="/hackathon/join/demo/share?s=early" size="sm">
               ดูหน้าแชร์

@@ -18,6 +18,10 @@ import { seatProgressView, type SeatRow, type SeatSlotStatus, type SeatProgressV
  *   maxed                both seats: own given, a friend's given
  *   paid-naming-friend   a paid student earned seat 1: types a friend's code
  *   after-close          sign-up closed with seat 1 given (read-only)
+ *   gifted               a friend already gave this student a seat: their own seat 1 goes to another friend
+ *   seats-closed         seat 1 given, then no more seats event-wide (the cap): no next goal
+ *   friend-paid          a paid student named a friend who has paid since: name someone else
+ *   link-rejected        staff shut the link: no next goal, the open seat turned down
  * Pay page card: /hackathon/join/demo?share=<same state> (&share=1: no school yet)
  * Teacher page: /hackathon/elemental/teacher/demo?s=<state>
  *   start · sharing · invited · invite-sent · seat-naming · named · given
@@ -28,15 +32,30 @@ const FRIEND_ID = "5e6f7a8b-0000-4000-8000-000000000002";
 const FRIEND2_ID = "9c0d1e2f-0000-4000-8000-000000000003";
 const school = { name: "เตรียมอุดมศึกษา", province: "กรุงเทพมหานคร" };
 
-const row = (index: number, status: SeatSlotStatus, recipient: string | null = null): SeatRow => ({ id: `demo-${index}`, index, status, recipientRegistrationId: recipient });
+const row = (index: number, status: SeatSlotStatus, recipient: string | null = null, recipientStatus: string | null = null): SeatRow => ({
+  id: `demo-${index}`,
+  index,
+  status,
+  recipientRegistrationId: recipient,
+  recipientStatus,
+});
 
-function seats(devices: number, paid: number, rows: SeatRow[], opts: { own?: string | null; selfPaid?: boolean; phase?: SeatProgressView["phase"] } = {}) {
+type SeatOpts = Pick<Parameters<typeof seatProgressView>[0], "giftedToYou" | "seatsClosedReason" | "linkRejected"> & {
+  own?: string | null;
+  selfPaid?: boolean;
+  phase?: SeatProgressView["phase"];
+};
+
+function seats(devices: number, paid: number, rows: SeatRow[], opts: SeatOpts = {}) {
   return seatProgressView({
     progress: { devices, paid },
     rows,
     ownRegistrationId: opts.own ?? null,
     selfPaid: opts.selfPaid ?? false,
     phase: opts.phase ?? "open",
+    giftedToYou: opts.giftedToYou,
+    seatsClosedReason: opts.seatsClosedReason,
+    linkRejected: opts.linkRejected,
   });
 }
 
@@ -62,6 +81,10 @@ export const STUDENT_DEMO_STATES = {
   maxed: () => student(seats(112, 3, [row(1, "confirmed", OWN_ID), row(2, "confirmed", FRIEND_ID)], { own: OWN_ID, selfPaid: true }), true),
   "paid-naming-friend": () => student(seats(51, 1, [row(1, "needs_recipient")], { own: OWN_ID, selfPaid: true }), true),
   "after-close": () => student(seats(74, 1, [row(1, "confirmed", OWN_ID)], { own: OWN_ID, selfPaid: true, phase: "after-close" }), true),
+  gifted: () => student(seats(54, 1, [row(1, "needs_recipient")], { own: OWN_ID, giftedToYou: true })),
+  "seats-closed": () => student(seats(62, 1, [row(1, "confirmed", OWN_ID)], { own: OWN_ID, selfPaid: true, seatsClosedReason: "cap" }), true),
+  "friend-paid": () => student(seats(57, 1, [row(1, "qualified", FRIEND_ID, "paid")], { own: OWN_ID, selfPaid: true }), true),
+  "link-rejected": () => student(seats(61, 1, [row(1, "rejected", OWN_ID)], { own: OWN_ID, linkRejected: true })),
 } as const;
 export type StudentDemoState = keyof typeof STUDENT_DEMO_STATES;
 

@@ -2,32 +2,37 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Copy, Loader2, Share2 } from "lucide-react";
 
-import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { isRudeTeamName, teamLabel } from "@/lib/hackathon/elemental/team-name";
+import { DEFAULT_STYLE, type TeamNameStyle } from "@/lib/hackathon/elemental/team-style";
 import type { PublicTeam } from "@/lib/supabase/hackathon-event-registrations";
 
 import { TEAM_NAME_RUDE } from "./join/draft";
+import { Body, EditorialLink, ItemTitle, PrimaryButton, SecondaryButton, Tag, TextInput, v } from "./share/ui";
+import { StyledTeamName } from "./team-style/StyledTeamName";
 import { trackElemental } from "./track";
-import { TextInput } from "./join/fields";
 
 /**
  * The team on a person's own page: who has joined and paid, and the invite
- * link to send friends (copy, the phone's share sheet, or LINE).
+ * link to send friends (copy, the phone's share sheet, or LINE). On the cream
+ * pay page: a square card with a 1px rule; the name in the team's own board
+ * style (StyledTeamName), as the share slab's TeamLine draws it.
  */
 export function TeamInvite({
   team,
   renameToken,
   demo,
   source,
+  nameStyle,
 }: {
   team: PublicTeam;
   renameToken?: string;
   demo?: boolean;
   /** The inviter's share tag (share-<code>), so friends who join count toward their link; else "team". */
   source?: string;
+  /** The team's board style, once the board is on; else the plain Trirong default. */
+  nameStyle?: TeamNameStyle;
 }) {
   const [name, setName] = useState(team.name);
   const [origin, setOrigin] = useState("https://passionseed.org");
@@ -53,59 +58,54 @@ export function TeamInvite({
   };
 
   return (
-    <section className="space-y-4 rounded-2xl border p-5 sm:p-6" style={{ borderColor: "rgba(29,33,31,0.18)" }}>
-      <TeamName name={name} onRenamed={setName} renameToken={renameToken} demo={demo} count={team.roster.length} />
+    <section className="space-y-4 rounded-[2px] border p-5 sm:p-6" style={{ borderColor: v.rule }}>
+      <TeamName name={name} nameStyle={nameStyle} onRenamed={setName} renameToken={renameToken} demo={demo} count={team.roster.length} />
 
-      <ul className="space-y-1.5 text-sm">
+      <ul className="space-y-1">
         {team.roster.map((m, i) => (
           <li key={i} className="flex items-center justify-between gap-3">
-            <span>{m.name}</span>
-            <span style={{ color: m.paid ? EL.ink : EL.inkSoft }}>{m.paid ? "จ่ายแล้ว" : "ยังไม่จ่าย"}</span>
+            <Body as="span">{m.name}</Body>
+            <Body as="span" secondary={!m.paid}>
+              {m.paid ? "จ่ายแล้ว" : "ยังไม่จ่าย"}
+            </Body>
           </li>
         ))}
       </ul>
 
       {full ? (
-        <p className="text-sm" style={{ color: EL.inkSoft }}>ทีมครบแล้ว</p>
+        <Body secondary>ทีมครบแล้ว</Body>
       ) : (
-        <div className="space-y-3 border-t pt-4" style={{ borderColor: "rgba(29,33,31,0.12)" }}>
-          {/* Labelled by purpose: the share card's link is "ชวนคนอื่นสมัคร". copy: placeholder — Angpao rewrites */}
-          <p className="text-base font-semibold">ชวนเข้าทีม</p>
-          <p className="text-sm">
+        <div className="space-y-3 border-t pt-4" style={{ borderColor: v.rule }}>
+          {/* Labelled by purpose: the share slab's link is the poster. copy: placeholder — Angpao rewrites */}
+          <ItemTitle as="h3">ชวนเข้าทีม</ItemTitle>
+          <Body secondary>
             ส่งลิงก์ให้เพื่อนอีก {team.spotsLeft} คน แต่ละคนสมัครและจ่ายเอง คนละ ฿{ELEMENTAL.groupPriceBaht}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={copy}
-              className="inline-flex min-h-11 items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold"
-              style={outline}
-            >
-              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} {copied ? "คัดลอกแล้ว" : "คัดลอกลิงก์"}
-            </button>
+          </Body>
+          <div className="grid grid-cols-2 gap-2">
+            <SecondaryButton icon={copied ? "check" : "copy"} onClick={copy} className="!px-3">
+              {copied ? "คัดลอกแล้ว" : "คัดลอกลิงก์"}
+            </SecondaryButton>
             {canShare ? (
-              <button
-                type="button"
+              <SecondaryButton
+                icon="share"
+                className="!px-3"
                 onClick={() => {
                   trackElemental({ step: "invite_shared", detail: "share" }, { once: false });
                   navigator.share({ text: message }).catch(() => undefined);
                 }}
-                className="inline-flex min-h-11 items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold"
-                style={outline}
               >
-                <Share2 className="h-4 w-4" /> แชร์
-              </button>
+                แชร์
+              </SecondaryButton>
             ) : (
-              <a
+              <SecondaryButton
+                icon="chat"
+                className="!px-3"
                 href={`https://line.me/R/share?text=${encodeURIComponent(message)}`}
+                external
                 onClick={() => trackElemental({ step: "invite_shared", detail: "line" }, { once: false })}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex min-h-11 items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold"
-                style={outline}
               >
-                <Share2 className="h-4 w-4" /> ส่งใน LINE
-              </a>
+                ส่งใน LINE
+              </SecondaryButton>
             )}
           </div>
         </div>
@@ -114,17 +114,17 @@ export function TeamInvite({
   );
 }
 
-const outline = { boxShadow: `inset 0 0 0 1px ${EL.ink}` };
-
 /** The team's name, and for the person who started it, a way to change it. */
 function TeamName({
   name,
+  nameStyle,
   onRenamed,
   renameToken,
   demo,
   count,
 }: {
   name: string;
+  nameStyle?: TeamNameStyle;
   onRenamed: (name: string) => void;
   renameToken?: string;
   demo?: boolean;
@@ -162,45 +162,32 @@ function TeamName({
 
   if (editing) {
     return (
-      <form onSubmit={save} className="space-y-2">
+      <form onSubmit={save} className="space-y-3">
         <TextInput
+          id="team-rename"
           autoFocus
           aria-label="ชื่อทีม"
           value={draft}
           maxLength={80}
-          invalid={!!error}
+          error={error}
           onChange={(e) => {
             setDraft(e.target.value);
             setError(null);
           }}
-          className="!mt-0"
         />
-        {error && (
-          <p role="alert" className="text-sm" style={{ color: EL.ember }}>
-            {error}
-          </p>
-        )}
-        <div className="flex gap-2">
-          <button
-            type="submit"
-            disabled={saving}
-            className="inline-flex min-h-11 items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold disabled:opacity-70"
-            style={{ backgroundColor: EL.ink, color: EL.cream }}
-          >
-            {saving && <Loader2 className="h-4 w-4 animate-spin" />} บันทึก
-          </button>
-          <button
-            type="button"
+        <div className="grid grid-cols-2 gap-2">
+          <PrimaryButton type="submit" disabled={saving}>
+            {saving ? "กำลังบันทึก…" : "บันทึก"}
+          </PrimaryButton>
+          <SecondaryButton
             onClick={() => {
               setDraft(name);
               setError(null);
               setEditing(false);
             }}
-            className="min-h-11 rounded-full px-5 py-2 text-sm font-semibold"
-            style={outline}
           >
             ยกเลิก
-          </button>
+          </SecondaryButton>
         </div>
       </form>
     );
@@ -208,26 +195,23 @@ function TeamName({
 
   return (
     <div className="flex items-baseline justify-between gap-3">
-      <p className="min-w-0 break-words text-2xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
-        {teamLabel(name)}
-      </p>
-      <div className="flex shrink-0 items-baseline gap-3">
+      <StyledTeamName name={teamLabel(name)} style={nameStyle ?? DEFAULT_STYLE} surface="paper" className="min-w-0" sizeStyle={{ fontSize: 28, lineHeight: 1.3 }} />
+      <div className="flex shrink-0 items-baseline gap-4">
         {renameToken && (
-          <button
-            type="button"
+          <EditorialLink
+            size="sm"
+            arrow={false}
             onClick={() => {
               setDraft(name);
               setEditing(true);
             }}
-            className="-my-3 py-3 text-sm underline underline-offset-4"
-            style={{ color: EL.inkSoft }}
           >
             เปลี่ยนชื่อ
-          </button>
+          </EditorialLink>
         )}
-        <p className="text-xs" style={{ fontFamily: EL_FONT.mono, color: EL.inkSoft }}>
+        <Tag bracket={false}>
           {count}/{ELEMENTAL.maxGroupSize}
-        </p>
+        </Tag>
       </div>
     </div>
   );

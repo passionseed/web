@@ -24,6 +24,8 @@ const COPY = {
   otherCheckingTail: "ทีมงานกำลังเช็ก",
   otherGiven: "เป็นของ",
   rejected: `ทีมงานเช็กแล้วไม่ผ่าน ถ้าคิดว่าผิดพลาด ${lineHelp}`,
+  gifted: "คุณได้ที่นั่งจากเพื่อนแล้ว ยกที่นั่งนี้ให้เพื่อนอีกคน",
+  recipientPaid: { student: "เพื่อนคนนี้จ่ายแล้ว ใส่รหัสคนอื่น", teacher: "นักเรียนคนนี้จ่ายแล้ว ใส่รหัสคนอื่น" },
   needs: {
     student: "ยกให้เพื่อนที่สมัครแล้วแต่ยังไม่จ่าย 1 คน",
     teacher: "ให้นักเรียนที่สมัครแล้วแต่ยังไม่จ่าย 1 คน",
@@ -44,20 +46,30 @@ function SeatLine({
   kind,
   seat,
   phase,
+  gifted,
   backHref,
   onName,
 }: {
   kind: Kind;
   seat: SeatSlotView;
   phase: SeatProgressView["phase"];
+  /** The owner already has a seat from a friend: this one, their own first, goes to another friend. */
+  gifted: boolean;
   backHref?: string;
   onName: (index: number, code: string) => Promise<string | null>;
 }) {
   const [renaming, setRenaming] = useState(false);
-  const naming = canNameSeat(seat, phase) && (seat.status === "needs_recipient" || renaming);
+  // A named friend who has paid since can't take it: the code field opens again.
+  const naming = canNameSeat(seat, phase) && (seat.status === "needs_recipient" || !!seat.recipientPaid || renaming);
   let text: ReactNode;
   if (seat.status === "rejected") text = COPY.rejected;
-  else if (seat.status === "needs_recipient") text = COPY.needs[kind];
+  else if (seat.status === "needs_recipient") text = gifted ? COPY.gifted : COPY.needs[kind];
+  else if (seat.recipientPaid)
+    text = (
+      <>
+        {COPY.otherChecking} <CodeText code={seat.recipientCode ?? ""} className="whitespace-nowrap" /> · {COPY.recipientPaid[kind]}
+      </>
+    );
   else if (seat.mine) text = seat.status === "confirmed" ? COPY.mineGiven : COPY.mineChecking;
   else
     text = (
@@ -69,7 +81,7 @@ function SeatLine({
 
   return (
     <li className="space-y-2 border-t py-5" style={{ borderColor: v.rule }}>
-      <Tag tone={seat.status === "needs_recipient" ? "action" : "secondary"}>{COPY.seat[kind](seat.index)}</Tag>
+      <Tag tone={seat.status === "needs_recipient" || seat.recipientPaid ? "action" : "secondary"}>{COPY.seat[kind](seat.index)}</Tag>
       <Body as="div" className={seat.status === "rejected" ? "opacity-70" : undefined}>
         {text}
       </Body>
@@ -87,7 +99,7 @@ function SeatLine({
           />
         </div>
       )}
-      {!naming && seat.status === "qualified" && !seat.mine && canNameSeat(seat, phase) && (
+      {!naming && seat.status === "qualified" && !seat.mine && !seat.recipientPaid && canNameSeat(seat, phase) && (
         <EditorialLink size="sm" arrow={false} onClick={() => setRenaming(true)}>
           {COPY.rename}
         </EditorialLink>
@@ -119,12 +131,13 @@ export function SeatList({
     <section aria-label={COPY.heading} className="border-b" style={{ borderColor: v.rule }}>
       <ul>
         {view.seats.map((seat) => (
-          <SeatLine key={seat.index} kind={kind} seat={seat} phase={view.phase} backHref={backHref} onName={onName} />
+          <SeatLine key={seat.index} kind={kind} seat={seat} phase={view.phase} gifted={kind === "student" && !!view.giftedToYou && seat.index === 1} backHref={backHref} onName={onName} />
         ))}
       </ul>
     </section>
   );
 }
 
-/** Whether any seat still needs its owner to type a code (that's the page's one action then). */
-export const needsName = (view: SeatProgressView) => view.seats.some((s) => s.status === "needs_recipient" && canNameSeat(s, view.phase));
+/** Whether any seat still needs its owner to type a code (that's the page's one action then): no one named yet, or the named friend paid. */
+export const needsName = (view: SeatProgressView) =>
+  view.seats.some((s) => (s.status === "needs_recipient" || s.recipientPaid) && canNameSeat(s, view.phase));

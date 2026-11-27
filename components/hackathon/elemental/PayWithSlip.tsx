@@ -3,20 +3,21 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Download, ImageUp, Loader2, RotateCcw } from "lucide-react";
-
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { SHIFT_PAYMENT } from "@/lib/content/shift-cohort";
 import { prepareSlip } from "@/lib/hackathon/elemental/slip-image";
 
 import styles from "./join/join.module.css";
+import { Body, Fine, ItemTitle, PixelIcon, PrimaryButton, SecondaryButton, Tag, v } from "./share/ui";
 import { trackElemental } from "./track";
 
 /**
  * Pay for a sign-up in two moves: scan the QR (the amount is already in it
  * when PROMPTPAY_ID is set), then hand over the slip: tap to pick it, drop
  * it, or paste it. The server checks it (RDCW or SlipOK) and answers right
- * away, and the page turns into the seat.
+ * away, and the page turns into the seat. On the pay page's cream paper
+ * (share/ui.tsx surface colours): square panels, the slip button is the
+ * page's one primary.
  */
 
 type Result =
@@ -80,18 +81,12 @@ function SaveQrButton({ src }: { src: string }) {
   };
 
   return (
-    <button
-      type="button"
-      onClick={save}
-      className={`${styles.choice} flex w-full items-center justify-center gap-3 rounded-full px-6 py-3 text-left`}
-      style={{ backgroundColor: EL.ink, color: EL.cream }}
-    >
-      <Download className="h-5 w-5 shrink-0" />
-      <span>
-        <span className="block text-base font-semibold">บันทึก QR ลงรูปภาพ</span>
-        <span className="block text-sm" style={{ color: EL.creamSoft }}>แล้วเปิดสแกนจากรูปในแอปธนาคาร</span>
-      </span>
-    </button>
+    <div>
+      <SecondaryButton icon="download" full onClick={save}>
+        บันทึก QR ลงรูปภาพ
+      </SecondaryButton>
+      <Fine className="mt-1.5 text-center">แล้วเปิดสแกนจากรูปในแอปธนาคาร</Fine>
+    </div>
   );
 }
 
@@ -182,14 +177,17 @@ export function PayWithSlip({ token, amountBaht, qrSrc, demo }: Props) {
   return (
     <div className="space-y-4">
       {/* 1. Pay */}
-      <section className="rounded-3xl bg-white p-5 shadow-[0_1px_0_rgba(29,33,31,0.06)] sm:p-7">
-        <p className="text-sm font-medium" style={{ color: EL.flame }}>1 · โอน</p>
-        <p className="mt-1 text-6xl tabular-nums" style={{ fontFamily: EL_FONT.display, fontWeight: 200, lineHeight: 1 }}>
+      <section className="rounded-[2px] border bg-white p-5 sm:p-7" style={{ borderColor: v.rule }}>
+        <ItemTitle as="h2" className="flex items-baseline gap-2.5">
+          <Tag tone="action">1</Tag>
+          โอน
+        </ItemTitle>
+        <p className="mt-2 text-6xl tabular-nums" style={{ fontFamily: EL_FONT.display, fontWeight: 200, lineHeight: 1 }}>
           {amount}
         </p>
-        <p className="mt-2 text-sm" style={{ color: EL.inkSoft }}>
+        <Body secondary className="mt-2">
           {filled ? "สแกนแล้วยอดขึ้นเอง" : "สแกนแล้วใส่ยอดนี้ให้ตรงทุกบาท"}
-        </p>
+        </Body>
         {/* On a phone the QR is on the same screen as the bank app, so saving it comes first. */}
         <div className="mt-5 sm:hidden">
           <SaveQrButton src={qrSrc ?? SHIFT_PAYMENT.qrSrc} />
@@ -202,7 +200,7 @@ export function PayWithSlip({ token, amountBaht, qrSrc, demo }: Props) {
             <Image src={SHIFT_PAYMENT.qrCardSrc} alt="QR พร้อมเพย์ PassionSeed สำหรับโอนค่าสมัคร" width={800} height={760} className="h-auto w-full" />
           )}
         </div>
-        <p className="mt-2 text-center text-xs" style={{ color: EL.inkSoft }}>บริษัท แพชชั่นซี้ด · พร้อมเพย์</p>
+        <Fine className="mt-2 text-center">บริษัท แพชชั่นซี้ด · พร้อมเพย์</Fine>
       </section>
 
       {/* 2. Slip */}
@@ -213,14 +211,17 @@ export function PayWithSlip({ token, amountBaht, qrSrc, demo }: Props) {
         }}
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
-        className={`${styles.drop} rounded-3xl border-2 border-dashed p-5 sm:p-7`}
+        className={`${styles.drop} rounded-[2px] border border-dashed p-5 sm:p-7`}
         style={{
-          borderColor: passed ? EL.toxicGreen : dragging ? EL.flame : "rgba(29,33,31,0.18)",
+          borderColor: passed ? EL.toxicGreen : dragging ? EL.flame : "rgba(29,33,31,0.32)",
           backgroundColor: dragging ? "rgba(236,100,36,0.06)" : "transparent",
         }}
       >
-        <p className="text-sm font-medium" style={{ color: EL.flame }}>2 · ส่งสลิป</p>
-        <p className="mt-1 text-lg">อัปโหลดรูปสลิปจากแอปธนาคาร ระบบตรวจให้ทันที</p>
+        <ItemTitle as="h2" className="flex items-baseline gap-2.5">
+          <Tag tone="action">2</Tag>
+          ส่งสลิป
+        </ItemTitle>
+        <Body className="mt-1">อัปโหลดรูปสลิปจากแอปธนาคาร ระบบตรวจให้ทันที</Body>
 
         <input
           ref={input}
@@ -230,37 +231,36 @@ export function PayWithSlip({ token, amountBaht, qrSrc, demo }: Props) {
           onChange={(e) => upload(e.target.files?.[0])}
         />
         {passed ? (
-          <p className={`${styles.pop} mt-5 inline-flex items-center gap-2 text-lg font-semibold`} role="status">
-            <CheckCircle2 className="h-6 w-6" style={{ color: EL.toxicGreen }} /> สลิปผ่านแล้ว
-          </p>
+          <div className={`${styles.pop} mt-5 inline-flex items-center gap-2`} role="status">
+            <PixelIcon name="check" color={EL.toxicGreen} />
+            <ItemTitle as="p">สลิปผ่านแล้ว</ItemTitle>
+          </div>
         ) : (
-          <button
-            type="button"
+          <PrimaryButton
             disabled={busy}
+            aria-busy={busy}
             onClick={() => input.current?.click()}
-            className={`${styles.choice} mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full px-7 py-4 text-lg font-semibold disabled:opacity-80`}
-            style={{ backgroundColor: EL.flame, color: EL.flameWhite }}
+            icon={busy ? undefined : "share"}
+            full
+            className="mt-5"
           >
-            {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : error ? <RotateCcw className="h-5 w-5" /> : <ImageUp className="h-5 w-5" />}
-            {busy ? "กำลังตรวจสลิป" : error ? "เลือกสลิปใหม่" : "เลือกรูปสลิป"}
-          </button>
+            {busy ? "กำลังตรวจสลิป…" : error ? "เลือกสลิปใหม่" : "เลือกรูปสลิป"}
+          </PrimaryButton>
         )}
-        <p className="mt-3 hidden text-center text-sm sm:block" style={{ color: EL.inkSoft }}>
-          หรือลากรูปมาวาง หรือกด ⌘V
-        </p>
+        <Fine className="mt-3 hidden text-center sm:block">หรือลากรูปมาวาง หรือกด ⌘V</Fine>
         {error && (
-          <p role="alert" className="mt-4 rounded-xl p-4 text-sm leading-relaxed" style={{ backgroundColor: "rgba(184,48,26,0.08)", color: EL.ember }}>
+          <p role="alert" className="mt-4 py-1 pl-3" style={{ boxShadow: `inset 2px 0 0 ${v.error}`, color: v.error, fontSize: 14, lineHeight: "22px" }}>
             {error}
           </p>
         )}
       </section>
 
-      <p className="px-1 text-xs leading-relaxed" style={{ color: EL.inkSoft }}>
+      <Fine className="px-1">
         เก็บลิงก์หน้านี้ไว้ กลับมาอัปโหลดสลิปทีหลังได้ เราส่งลิงก์ไปที่อีเมลแล้ว · ชำระแล้วไม่มีการคืนเงิน · มีปัญหาทักไลน์{" "}
         <a href={SHIFT_PAYMENT.lineUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
           {SHIFT_PAYMENT.lineId}
         </a>
-      </p>
+      </Fine>
     </div>
   );
 }

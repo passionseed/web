@@ -1,6 +1,6 @@
 import { seatProgressView, type SeatRow } from "@/lib/hackathon/elemental/share-rules";
 
-import { cellHeat, clearOrder, freshCells, inviteState, MAX_ANIMATED, seatCardModel, seatHeadline, seatPlace } from "../seat-card-model";
+import { cellColors, clearOrder, freshCells, inviteState, MAX_ANIMATED, seatCardModel, seatHeadline as headline, seatPlace } from "../seat-card-model";
 
 const me = "aaaaaaaa-0000-4000-8000-000000000001";
 const friend = "5e6f7a8b-0000-4000-8000-000000000002";
@@ -31,18 +31,33 @@ describe("seatCardModel: the grid counts toward the seat in progress", () => {
 });
 
 describe("seatHeadline: what's left, in one short line", () => {
+  // The headline glues its phrases with non-breaking spaces; read them as spaces here.
+  const seatHeadline = (v: Parameters<typeof headline>[0]) => headline(v).replace(/\u00a0/g, " ").replace(/\u2060/g, "");
   it("counts down, then nearly there, then the paid sign-up", () => {
-    expect(seatHeadline(view(12, 0))).toBe("อีก 38 เครื่อง ได้ที่นั่งฟรี");
+    expect(seatHeadline(view(12, 0))).toBe("อีก 38 เครื่อง + 1 คนจ่าย ได้ที่นั่งฟรี");
+    expect(seatHeadline(view(12, 1))).toBe("อีก 38 เครื่อง ได้ที่นั่งฟรี");
     expect(seatHeadline(view(44, 0))).toBe("อีกแค่ 6 เครื่อง + 1 คนจ่าย");
     expect(seatHeadline(view(44, 1))).toBe("อีกแค่ 6 เครื่อง");
     expect(seatHeadline(view(50, 0))).toBe("อีก 1 คนจ่าย ได้ที่นั่งฟรี");
   });
 
+  it("keeps the phrases whole when the title wraps", () => {
+    expect(headline(view(12, 0))).toBe("อีก\u00a038\u00a0เครื่อง +\u00a01\u00a0คน\u2060จ่าย ได้ที่นั่งฟรี");
+  });
+
   it("names seat 2, the maximum, and close", () => {
-    expect(seatHeadline(view(62, 1, [row(1, "confirmed", me)]))).toBe("อีก 38 เครื่อง ได้ที่นั่งที่ 2");
+    expect(seatHeadline(view(62, 1, [row(1, "confirmed", me)]))).toBe("อีก 38 เครื่อง + 1 คนจ่าย ได้ที่นั่งที่ 2");
     expect(seatHeadline(view(112, 3, [row(1, "confirmed", me), row(2, "qualified", friend)]))).toBe("ได้ครบ 2 ที่แล้ว");
     expect(seatHeadline(view(44, 1, [], "after-close"))).toBe("ปิดนับแล้ว");
     expect(seatHeadline(view(74, 1, [row(1, "confirmed", me)], "after-close"))).toBe("ปิดนับแล้ว · ได้ 1 ที่");
+  });
+
+  it("promises nothing once seats are closed or the link is shut", () => {
+    const closed = seatProgressView({ progress: { devices: 62, paid: 1 }, rows: [row(1, "confirmed", me)], ownRegistrationId: me, selfPaid: true, phase: "open", seatsClosedReason: "cap" });
+    expect(seatHeadline(closed)).toBe("ที่นั่งฟรีหมดแล้ว");
+    expect(seatCardModel(closed)).toMatchObject({ noNext: true, devicesLeft: 0, paidLeft: 0, last: false, devicesDone: false });
+    const shut = seatProgressView({ progress: { devices: 61, paid: 1 }, rows: [row(1, "rejected", me)], ownRegistrationId: me, selfPaid: false, phase: "open", linkRejected: true });
+    expect(seatHeadline(shut)).toBe("ทีมงานปิดลิงก์นี้แล้ว");
   });
 });
 
@@ -52,8 +67,12 @@ describe("the grid's pattern is the link's own", () => {
     expect([...rank].sort((a, b) => a - b)).toEqual(Array.from({ length: 50 }, (_, i) => i));
     expect(clearOrder("1a2b3c4d", 1)).toEqual(rank);
     expect(clearOrder("1a2b3c4d", 2)).not.toEqual(rank);
-    expect(cellHeat("1a2b3c4d", 1)).toEqual(cellHeat("1a2b3c4d", 1));
-    expect(cellHeat("1a2b3c4d", 1).every((h) => h >= 1 && h <= 4)).toBe(true);
+    const colors = cellColors("1a2b3c4d", 1);
+    expect(cellColors("1a2b3c4d", 1)).toEqual(colors);
+    expect(colors).not.toContain("#fff4dc");
+    const smoke = colors.filter((c) => ["#2a2826", "#6b6761", "#c9c4bb"].includes(c)).length;
+    expect(smoke).toBeGreaterThan(5);
+    expect(smoke).toBeLessThan(25);
   });
 
   it("heals a different place for seat 2", () => {

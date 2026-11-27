@@ -20,6 +20,7 @@ const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v
  * Development and PR previews only: the student share page with made-up data, nothing saved.
  * /hackathon/join/demo/share?s=<state>&paid=1&school=<typed at sign-up>&phase=off
  * s: (none) picks a school · start · early · close · devices-done · seat1-ready · seat1-given · seat2-progress ·
+ *    gifted · seats-closed · friend-paid · link-rejected ·
  *    maxed · paid-naming-friend · after-close (lib/hackathon/elemental/share-demo.ts)
  * &style=<level> gives maxed and after-close the team's board row (team-style/demo.ts levels).
  * The school search uses the real list.
@@ -29,6 +30,9 @@ export default async function ShareDemoPage({ searchParams }: { searchParams: Se
   const p = await searchParams;
   const link = studentDemo(first(p.s));
   const level = DEMO_STYLE_LEVELS.find((l) => l === first(p.style));
+  const selfPaid = link?.selfPaid ?? first(p.paid) === "1";
+  // "← หน้าของฉัน" opens the demo pay page in the same state, so a walkthrough stays on one story.
+  const backHref = `/hackathon/join/demo?state=${selfPaid ? "paid" : "pending"}&mode=solo&share=${first(p.s) ?? "1"}${level ? `&style=${level}` : ""}`;
   return (
     <div className={`${trirong.variable} ${teamStyleFonts}`}>
       <ShareView
@@ -37,7 +41,8 @@ export default async function ShareDemoPage({ searchParams }: { searchParams: Se
         state={first(p.phase) === "off" ? "closed" : link?.seats.phase === "after-close" || first(p.phase) === "after-close" ? "after-close" : "open"}
         link={link}
         code={SHARE_DEMO_CODE}
-        selfPaid={link?.selfPaid ?? first(p.paid) === "1"}
+        selfPaid={selfPaid}
+        backHref={backHref}
         startQuery={first(p.school) ?? "เตรียมอุดม"}
         posterVersion={await posterVersion()}
         teamRow={level ? <TeamLine token="demo" demo data={demoStyleCard(level, { solo: false })} /> : undefined}

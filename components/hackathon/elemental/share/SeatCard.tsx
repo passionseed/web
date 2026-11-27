@@ -3,15 +3,17 @@
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { EL, EL_FIRE, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
+import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { formatThaiDate } from "@/lib/content/shift-cohort";
 import type { SeatProgressView } from "@/lib/hackathon/elemental/share-rules";
 
+import { lineHelp } from "./copy-shared";
+
 import { KEY_VISUAL_MEDIA } from "../media";
 import styles from "./seat-card.module.css";
 import {
-  cellHeat,
+  cellColors,
   clearOrder,
   freshCells,
   GRID_COLUMNS,
@@ -25,7 +27,7 @@ import {
   type InviteState,
   type StubTone,
 } from "./seat-card-model";
-import { BigCount, Body, Fine, Tag, v } from "./ui";
+import { Body, Fine, RollingNumber, Tag, v } from "./ui";
 
 /**
  * The meter on every share surface (merged direction §6–7): a corrupted place
@@ -54,12 +56,16 @@ const COPY = {
   } satisfies Record<StubTone, string>,
   invite: { todo: "", earned: "รอยืนยัน", verified: "ยืนยันแล้ว", sent: "ส่งแล้ว" } satisfies Record<InviteState, string>,
   maxedTag: (n: number) => `ครบ ${n} ที่`,
+  totalTag: "รวม",
   devicesUnit: "เครื่อง",
   paid: "+ จ่ายผ่านลิงก์",
   paidLeft: (n: number) => `+ อีก ${n} คนจ่ายผ่านลิงก์`,
   total: (n: number) => `รวม ${n} เครื่อง`,
   maxed: "แชร์ต่อยังนับให้ทีมบนกระดาน",
   stamp: `ปิดนับ ${formatThaiDate(ELEMENTAL.registrationClosesOn, false)}`,
+  seatsClosed: "ที่นั่งฟรีหมดแล้ว",
+  linkRejected: "ปิดลิงก์แล้ว",
+  linkRejectedLine: `ทีมงานปิดลิงก์นี้แล้ว ถ้าคิดว่าผิดพลาด ${lineHelp}`,
   label: "ที่นั่งฟรีจากลิงก์นี้",
   describe: (inSeat: number, per: number, seat: string, paid: number, paidPer: number, earned: number, max: number) =>
     `${seat}: ${inSeat} จาก ${per} เครื่อง, จ่ายผ่านลิงก์ ${paid} จาก ${paidPer} คน. ได้แล้ว ${earned} จาก ${max} ที่`,
@@ -69,7 +75,7 @@ const COPY = {
 
 type Size = "full" | "mini";
 
-/** One stub in the earned row: a tiny Ticket (photo, tear line with notches, the seat's name). A dashed ghost until earned. */
+/** One stub in the earned row: a tiny Ticket (photo, tear line with notches, the seat's name). Until earned, a dashed ghost of just the name. */
 function Stub({
   label,
   tag,
@@ -88,18 +94,23 @@ function Stub({
 }) {
   const ghost = !photo;
   const notch = "absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full";
+  if (ghost) {
+    return (
+      <div className="min-w-0 flex-1 rounded-[2px] border border-dashed" style={{ borderColor: "rgba(243,239,230,0.28)" }}>
+        <p className="truncate px-2.5 py-1.5" style={{ fontFamily: EL_FONT.body, fontWeight: 600, fontSize: 13, lineHeight: "20px", color: v.fine }}>
+          {label}
+        </p>
+      </div>
+    );
+  }
   return (
     <div
-      className={`relative min-w-0 flex-1 overflow-hidden rounded-[2px] ${ghost ? "border border-dashed" : ""} ${entering ? styles.stubIn : ""}`}
-      style={ghost ? { borderColor: "rgba(243,239,230,0.28)" } : { backgroundColor: EL.char }}
+      className={`relative min-w-0 flex-1 overflow-hidden rounded-[2px] ${entering ? styles.stubIn : ""}`}
+      style={{ backgroundColor: EL.char }}
     >
       <div className={`relative ${size === "mini" ? "h-9" : "h-12"}`}>
-        {photo && (
-          <>
-            <Image src={photo} alt="" fill sizes="180px" className="object-cover" style={tone === "grey" ? { filter: "grayscale(1) brightness(0.7)" } : undefined} />
-            <div aria-hidden="true" className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(12,13,12,0.85) 0%, rgba(12,13,12,0) 75%)" }} />
-          </>
-        )}
+        <Image src={photo} alt="" fill sizes="180px" className="object-cover" style={tone === "grey" ? { filter: "grayscale(1) brightness(0.7)" } : undefined} />
+        <div aria-hidden="true" className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(12,13,12,0.85) 0%, rgba(12,13,12,0) 75%)" }} />
         {tag && (
           <span className="absolute bottom-0.5 left-2">
             <Tag tone={tone === "action" ? "action" : "secondary"}>{tag}</Tag>
@@ -113,7 +124,7 @@ function Stub({
       </div>
       <p
         className={`truncate px-2.5 ${size === "mini" ? "py-1" : "py-1.5"}`}
-        style={{ fontFamily: EL_FONT.body, fontWeight: 600, fontSize: 13, lineHeight: "20px", color: ghost ? v.fine : v.text }}
+        style={{ fontFamily: EL_FONT.body, fontWeight: 600, fontSize: 13, lineHeight: "20px", color: v.text }}
       >
         {label}
       </p>
@@ -121,24 +132,30 @@ function Stub({
   );
 }
 
-/** The count, with the new number stepping in and a "+2" for a moment. */
-function LiveCount({ value, goal, unit, plus }: { value: number; goal?: number; unit?: string; plus: number }) {
+const COUNT = { fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 44, lineHeight: 1, color: v.number } as const;
+const GOAL = { fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 20, lineHeight: 1, color: v.secondary } as const;
+
+/**
+ * "12/50" (BigCount's type), with the number in the shared RollingNumber: a
+ * change rolls (the old number slides up and fades) and "+2" shows under it.
+ * Under reduced motion RollingNumber keeps the "+2" and drops it after 2.4s.
+ */
+function LiveCount({ value, goal, unit }: { value: number; goal?: number; unit?: string }) {
   return (
-    <span className="relative inline-flex items-baseline gap-2">
-      {plus > 0 && (
-        <span key={`plus-${value}`} className={styles.plus} aria-hidden="true" style={{ fontFamily: EL_FONT.body, fontSize: 14, lineHeight: "20px", color: v.action }}>
-          +{plus}
+    <span className="inline-flex items-baseline whitespace-nowrap" aria-hidden="true">
+      <RollingNumber value={value} style={COUNT} />
+      {goal != null && <span style={GOAL}>/{goal}</span>}
+      {unit && (
+        <span className="ml-1.5" style={GOAL}>
+          {unit}
         </span>
       )}
-      <span key={value} className={plus > 0 ? styles.countIn : undefined}>
-        <BigCount value={value} goal={goal} unit={unit} />
-      </span>
     </span>
   );
 }
 
-type Motion = { fresh: Set<number>; wave: boolean; plus: number; newStub: number | null; announce: string };
-const STILL: Motion = { fresh: new Set(), wave: false, plus: 0, newStub: null, announce: "" };
+type Motion = { fresh: Set<number>; wave: boolean; newStub: number | null; announce: string };
+const STILL: Motion = { fresh: new Set(), wave: false, newStub: null, announce: "" };
 
 export function SeatCard({
   view,
@@ -161,11 +178,13 @@ export function SeatCard({
   const m = seatCardModel(view);
   const place = seatPlace(code, m.index);
   const rank = useMemo(() => clearOrder(code, m.index), [code, m.index]);
-  const heat = useMemo(() => cellHeat(code, m.index), [code, m.index]);
+  const colors = useMemo(() => cellColors(code, m.index), [code, m.index]);
   const seatName = COPY.seat[kind];
 
   // Animate from what this phone saw last. The page renders the current state; the effect only adds the flourish.
   const [motion, setMotion] = useState<Motion>(STILL);
+  // The count shown, when it isn't the live one: the last count this phone saw, for one frame, so it rolls up from there.
+  const [shownCount, setShownCount] = useState<number | null>(null);
   const seen = useRef<{ devices: number; seats: number } | null>(null);
   useEffect(() => {
     if (preview) return;
@@ -177,34 +196,37 @@ export function SeatCard({
     };
     const added = prev ? now.devices - prev.devices : 0;
     const seatUp = !!prev && now.seats > prev.seats;
-    if (!prev || (added <= 0 && !seatUp) || m.frozen) {
+    // Nothing to celebrate once counting stopped, seats closed or the link was shut.
+    if (!prev || (added <= 0 && !seatUp) || m.frozen || m.noNext) {
       remember();
       return;
     }
     const from = view.devices - m.inSeat;
     const announce = seatUp ? COPY.announceSeat(now.seats) : COPY.announce(added, m.inSeat, m.perSeat);
-    // Motion off: nothing moves, but the hidden line still says what changed.
+    // Motion off: the cells don't move, but the count still says "+2" (RollingNumber) and the hidden line what changed.
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const next: Motion = still
       ? { ...STILL, announce }
-      : {
-          fresh: freshCells(rank, m.inSeat, Math.max(0, prev.devices - from)),
-          wave: seatUp,
-          plus: Math.max(0, added),
-          newStub: seatUp ? now.seats : null,
-          announce,
-        };
+      : { fresh: freshCells(rank, m.inSeat, Math.max(0, prev.devices - from)), wave: seatUp, newStub: seatUp ? now.seats : null, announce };
+    // The count rolls from the last one seen in the same grid (a new seat starts a new grid: no roll).
+    const rollFrom = !seatUp && added > 0 ? (m.maxed ? prev.devices : Math.max(0, prev.devices - from)) : null;
     // Remembered only once it plays, so a cancelled run (React's dev double effect, a quick re-render) plays it again.
+    let roll: ReturnType<typeof setTimeout> | undefined;
     const start = setTimeout(() => {
       remember();
       setMotion(next);
+      if (rollFrom != null) {
+        setShownCount(rollFrom);
+        roll = setTimeout(() => setShownCount(null), 60);
+      }
     }, 0);
-    const stop = setTimeout(() => setMotion((cur) => ({ ...cur, plus: 0, wave: false, fresh: new Set(), newStub: null })), 2400);
+    const stop = setTimeout(() => setMotion((cur) => ({ ...cur, wave: false, fresh: new Set(), newStub: null })), 2400);
     return () => {
       clearTimeout(start);
       clearTimeout(stop);
+      if (roll) clearTimeout(roll);
     };
-  }, [preview, code, view.devices, m.earned, m.frozen, m.inSeat, m.perSeat, rank]);
+  }, [preview, code, view.devices, m.earned, m.frozen, m.noNext, m.inSeat, m.maxed, m.perSeat, rank]);
 
   // The earned row: a teacher's Demo Day, then one slot per seat.
   const stubs: React.ReactNode[] = [];
@@ -223,6 +245,8 @@ export function SeatCard({
   }
   for (let i = 1; i <= m.maxSeats; i++) {
     const seat = view.seats.find((s) => s.index === i);
+    // Seats closed or the link shut: no ghost for a seat that can't come.
+    if (!seat && m.noNext) continue;
     const tone = seat ? stubTone(seat) : null;
     stubs.push(
       <Stub
@@ -238,6 +262,12 @@ export function SeatCard({
   }
 
   const cells = GRID_COLUMNS * GRID_ROWS;
+  // Nothing more to earn here: the link has its seats, seats closed, or the link was shut.
+  const ended = m.maxed || m.noNext;
+  const grey = m.frozen || m.noNext;
+  // The stamp on the grid says why it stopped; the tag just labels the total.
+  const endTag = m.noNext ? COPY.totalTag : COPY.maxedTag(m.earned);
+  const stamp = m.frozen ? COPY.stamp : m.linkRejected ? COPY.linkRejected : m.noNext ? COPY.seatsClosed : null;
   return (
     <section aria-label={COPY.label}>
       <p className="sr-only">{COPY.describe(m.inSeat, m.perSeat, seatName(m.index), m.paidInSeat, m.paidPerSeat, m.earned, m.maxSeats)}</p>
@@ -245,24 +275,21 @@ export function SeatCard({
         {motion.announce}
       </p>
 
-      {!preview && (
-        <div aria-hidden="true" className="flex gap-2">
+      {!preview && stubs.length > 0 && (
+        <div aria-hidden="true" className={`flex gap-2 ${size === "mini" ? "mb-4" : "mb-6"}`}>
           {stubs}
         </div>
       )}
 
-      <div aria-hidden="true" className={`flex items-end justify-between gap-3 ${preview ? "" : size === "mini" ? "mt-4" : "mt-6"}`}>
-        <Tag>{m.maxed ? COPY.maxedTag(m.earned) : seatName(m.index)}</Tag>
-        {m.maxed ? (
-          <LiveCount value={view.devices} unit={COPY.devicesUnit} plus={motion.plus} />
-        ) : (
-          <LiveCount value={m.inSeat} goal={m.perSeat} plus={motion.plus} />
-        )}
+      <div aria-hidden="true" className="flex items-end justify-between gap-3">
+        <Tag>{ended ? endTag : seatName(m.index)}</Tag>
+        {ended ? <LiveCount value={shownCount ?? view.devices} unit={COPY.devicesUnit} /> : <LiveCount value={shownCount ?? m.inSeat} goal={m.perSeat} />}
       </div>
 
-      <div aria-hidden="true" className="relative mt-3 overflow-hidden rounded-[2px]" style={{ aspectRatio: "2 / 1", filter: m.frozen ? "grayscale(1) brightness(0.72)" : undefined }}>
+      {/* mt-5: room for RollingNumber's "+2" under the count, off the pixels. */}
+      <div aria-hidden="true" className="relative mt-5 overflow-hidden rounded-[2px]" style={{ aspectRatio: "2 / 1", filter: grey ? "grayscale(1) brightness(0.72)" : undefined }}>
         <Image src={place.src} alt="" fill sizes="(min-width: 640px) 576px, 100vw" className="object-cover" />
-        <div className="absolute inset-0 grid gap-[2px]" style={{ gridTemplateColumns: `repeat(${GRID_COLUMNS}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${GRID_ROWS}, minmax(0, 1fr))` }}>
+        <div className="absolute inset-0 grid" style={{ gridTemplateColumns: `repeat(${GRID_COLUMNS}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${GRID_ROWS}, minmax(0, 1fr))` }}>
           {Array.from({ length: cells }, (_, cell) => {
             const clear = rank[cell] < m.inSeat;
             if (clear) {
@@ -281,23 +308,24 @@ export function SeatCard({
                 style={
                   m.last
                     ? { backgroundColor: "rgba(12,13,12,0.5)", boxShadow: `inset 0 0 0 2px ${EL.flameCore}` }
-                    : { backgroundColor: EL_FIRE[heat[cell]], opacity: heat[cell] === 4 ? 0.94 : 1 }
+                    : // A little of the place shows through even at 0/50.
+                      { backgroundColor: colors[cell], opacity: 0.88 }
                 }
               />
             );
           })}
         </div>
-        {m.frozen && (
+        {stamp && (
           <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-1.5" style={{ backgroundColor: "#0c0d0c", boxShadow: "inset 0 0 0 1px rgba(243,239,230,0.55)" }}>
-            <Tag tone="text">{COPY.stamp}</Tag>
+            <Tag tone="text">{stamp}</Tag>
           </span>
         )}
       </div>
 
       <div aria-hidden="true" className={`mt-3 items-center justify-between gap-3 ${preview ? "hidden" : "flex"}`}>
-        {m.maxed ? (
+        {ended ? (
           <Body secondary as="span">
-            {m.frozen ? "" : COPY.maxed}
+            {m.linkRejected ? COPY.linkRejectedLine : m.frozen ? "" : COPY.maxed}
           </Body>
         ) : (
           <span className="inline-flex items-center gap-2.5" style={{ fontFamily: EL_FONT.body, fontSize: 14, lineHeight: "22px", color: m.devicesDone ? v.action : v.secondary, fontWeight: m.devicesDone ? 600 : 400 }}>
@@ -320,7 +348,7 @@ export function SeatCard({
             </span>
           </span>
         )}
-        {!m.maxed && view.devices !== m.inSeat && <Fine as="span">{COPY.total(view.devices)}</Fine>}
+        {!ended && view.devices !== m.inSeat && <Fine as="span">{COPY.total(view.devices)}</Fine>}
       </div>
     </section>
   );

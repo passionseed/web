@@ -10,6 +10,7 @@ import { ELEMENTAL, prizeTotal } from "@/components/hackathon/poster/elemental/f
 import { BeginnerJourneySection } from "./BeginnerJourneySection";
 import styles from "./elemental-cinema.module.css";
 import { ElementalHero } from "./ElementalHero";
+import { EditorialLink } from "./share/ui";
 import { ElementalTopBar } from "./ElementalTopBar";
 import { ElementalPlacesShowcase } from "./ElementalPlacesShowcase";
 import { ELEMENT_CHAPTERS, KEY_VISUAL_MEDIA } from "./media";
@@ -169,10 +170,13 @@ function ElementalExperienceInner({
   joinHref,
   open,
   fontClassName,
+  shareLive = false,
 }: {
   joinHref: string;
   open: boolean;
   fontClassName: string;
+  /** Sharing and the team board are live (shareOpen()): link the board and the teacher page. */
+  shareLive?: boolean;
 }) {
   const [pastHero, setPastHero] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
@@ -386,6 +390,13 @@ function ElementalExperienceInner({
             ))}
           </ol>
 
+          {/* While sharing runs: the team board, as proof other students are in. */}
+          {shareLive && (
+            <div className="mt-10">
+              <EditorialLink href="/hackathon/elemental/leaderboard">กระดานทีม</EditorialLink>
+            </div>
+          )}
+
           {/* Policy: three plain lines, no box, no icon */}
           <div
             className="mt-12 space-y-2 border-t border-[#1d211f]/15 pt-8 text-sm leading-relaxed"
@@ -425,6 +436,11 @@ function ElementalExperienceInner({
               <Link href="/hackathon/elemental/sponsor" className="underline underline-offset-4 hover:text-[#faf8f4]">
                 ข้อมูลสำหรับผู้สนับสนุน
               </Link>
+              {shareLive && (
+                <Link href="/hackathon/elemental/teacher" className="underline underline-offset-4 hover:text-[#faf8f4]">
+                  คุณครู: สร้างลิงก์แชร์
+                </Link>
+              )}
             </div>
             <span className="text-xs text-[#cfc9bd]" style={{ fontFamily: EL_FONT.mono }}>
               {ELEMENTAL.series} × PassionSeed · {ELEMENTAL.url}
@@ -447,14 +463,16 @@ export function ElementalExperience({
   joinHref,
   open,
   fontClassName,
+  shareLive = false,
 }: {
   joinHref: string;
   open: boolean;
   fontClassName: string;
+  shareLive?: boolean;
 }) {
   return (
     <ElementalSoundProvider>
-      <ElementalExperienceInner joinHref={joinHref} open={open} fontClassName={fontClassName} />
+      <ElementalExperienceInner joinHref={joinHref} open={open} fontClassName={fontClassName} shareLive={shareLive} />
     </ElementalSoundProvider>
   );
 }

@@ -39,12 +39,12 @@ const COPY = {
   title: "ลิงก์ของฉัน",
   lead: `ทุก ${SEAT_RULE.devicesPerSeat} เครื่อง + ${SEAT_RULE.paidPerSeat} คนจ่ายผ่านลิงก์ = ที่นั่งฟรี 1 ที่ ได้สูงสุด ${SEAT_RULE.maxSeatsPerLink} ที่`,
   leadClosed: "ปิดรับสมัครแล้ว ลิงก์แชร์ปิดตามไปด้วย",
-  start: "เลือกโรงเรียน ลุ้นที่นั่งฟรี →",
-  poster: "ส่งโปสเตอร์ →",
-  line: "ส่งใน LINE →",
+  start: "เลือกโรงเรียน ลุ้นที่นั่งฟรี",
+  poster: "ส่งโปสเตอร์",
+  line: "ส่งใน LINE",
   openPage: "เปิดหน้าลิงก์ของฉัน",
   openClosed: "ดูหน้าลิงก์ของฉัน",
-  nameFriend: "ใส่รหัสเพื่อน →",
+  nameFriend: "ใส่รหัสเพื่อน",
   naming: "ได้ที่นั่งฟรีแล้ว ใส่รหัสเพื่อน",
   checking: "ได้ที่นั่งฟรีแล้ว รอทีมงานเช็ก",
   myCode: "รหัสของฉัน",
@@ -71,15 +71,15 @@ export function ShareCard({ share, teamRow }: { share: ShareCardData; teamRow?: 
   if (!link) {
     if (open)
       action = share.selfPaid ? (
-        <PrimaryButton href={share.href} full>
+        <PrimaryButton href={share.href} full arrow>
           {COPY.start}
         </PrimaryButton>
       ) : (
-        <SecondaryButton href={share.href} full>
+        <SecondaryButton href={share.href} full arrow>
           {COPY.start}
         </SecondaryButton>
       );
-  } else if (!open) {
+  } else if (!open || link.seats.linkRejected) {
     action = (
       <EditorialLink size="sm" href={share.href}>
         {COPY.openClosed}
@@ -87,7 +87,7 @@ export function ShareCard({ share, teamRow }: { share: ShareCardData; teamRow?: 
     );
   } else if (needsName(link.seats)) {
     action = (
-      <PrimaryButton href={share.href} full>
+      <PrimaryButton href={share.href} full arrow>
         {COPY.nameFriend}
       </PrimaryButton>
     );
@@ -107,7 +107,7 @@ export function ShareCard({ share, teamRow }: { share: ShareCardData; teamRow?: 
     );
   } else {
     action = (
-      <SecondaryButton href={share.href} full>
+      <SecondaryButton href={share.href} full arrow>
         {COPY.poster}
       </SecondaryButton>
     );

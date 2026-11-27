@@ -37,7 +37,7 @@ const COPY = {
   contact: "อีเมล หรือ LINE ID",
   contactHint: "ทีมงานใช้ติดต่อเรื่อง Demo Day",
   privacy: "ชื่อและช่องทางติดต่อของคุณครูเห็นเฉพาะทีมงาน ไม่แสดงบนหน้าไหน",
-  submit: "สร้างลิงก์ →",
+  submit: "สร้างลิงก์",
   busy: "กำลังสร้าง…",
   closedTitle: "ลิงก์แชร์ของคุณครู",
   closed: "ตอนนี้ยังไม่เปิด",
@@ -141,7 +141,7 @@ export function TeacherForm({ open, demo }: { open: boolean; demo?: boolean }) {
       sky={sky}
       bar={
         <StickyBar>
-          <PrimaryButton type="submit" form={FORM_ID} disabled={busy} full>
+          <PrimaryButton type="submit" form={FORM_ID} disabled={busy} full arrow={!busy}>
             {busy ? COPY.busy : COPY.submit}
           </PrimaryButton>
         </StickyBar>

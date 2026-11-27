@@ -35,8 +35,8 @@ const COPY = {
   changeTitle: "เปลี่ยนโรงเรียน",
   paidNote: "จ่ายแล้วก็แชร์ได้ ที่นั่งฟรีที่ได้ ยกให้เพื่อนที่ยังไม่จ่าย",
   pickLabel: "โรงเรียนของคุณ",
-  confirm: "ยืนยัน รับโปสเตอร์ →",
-  confirmChange: "เปลี่ยนเป็นโรงเรียนนี้ →",
+  confirm: "ยืนยัน รับโปสเตอร์",
+  confirmChange: "เปลี่ยนเป็นโรงเรียนนี้",
   saving: "กำลังบันทึก…",
   cancelChange: "ไม่เปลี่ยนแล้ว",
   change: "เปลี่ยน",
@@ -84,6 +84,8 @@ type Props = {
   posterVersion: string;
   /** The team's line on the board (TeamLine), once the link has all its seats or sign-up closed. */
   teamRow?: ReactNode;
+  /** "← หน้าของฉัน": the pay page. Demos pass the demo pay page in the matching state. */
+  backHref?: string;
   demo?: boolean;
 };
 
@@ -113,6 +115,7 @@ function ErrorText({ children }: { children: ReactNode }) {
 /** Pick (or change) the school; the sticky bar saves it. */
 function PickSchool({
   token,
+  backHref,
   code,
   startQuery,
   changing,
@@ -122,6 +125,7 @@ function PickSchool({
   onCancel,
 }: {
   token: string;
+  backHref: string;
   code: string;
   startQuery: string;
   changing: boolean;
@@ -169,12 +173,12 @@ function PickSchool({
   return (
     <Page
       surface="ground"
-      back={{ href: `/hackathon/join/${token}` }}
+      back={{ href: backHref }}
       sky={<SkyBand title={<H1>{changing ? COPY.changeTitle : COPY.pickTitle}</H1>} lead={changing ? undefined : COPY.pickLead} height={200} />}
       bar={
         pick ? (
           <StickyBar>
-            <PrimaryButton onClick={save} disabled={busy} full>
+            <PrimaryButton onClick={save} disabled={busy} full arrow={!busy}>
               {busy ? COPY.saving : changing ? COPY.confirmChange : COPY.confirm}
             </PrimaryButton>
           </StickyBar>
@@ -203,7 +207,7 @@ function PickSchool({
 }
 
 /** The link's earned seats, with a code field where a friend still needs to be named. */
-function Seats({ token, link, demo, onLink }: { token: string; link: ShareLinkView; demo?: boolean; onLink: (l: ShareLinkView) => void }) {
+function Seats({ token, backHref, link, demo, onLink }: { token: string; backHref: string; link: ShareLinkView; demo?: boolean; onLink: (l: ShareLinkView) => void }) {
   const nameFriend = async (index: number, code: string): Promise<string | null> => {
     if (demo) {
       onLink({
@@ -226,11 +230,12 @@ function Seats({ token, link, demo, onLink }: { token: string; link: ShareLinkVi
       return recipientError(undefined, COPY.friend);
     }
   };
-  return <SeatList kind="student" view={link.seats} backHref={`/hackathon/join/${token}`} onName={nameFriend} />;
+  return <SeatList kind="student" view={link.seats} backHref={backHref} onName={nameFriend} />;
 }
 
 function StudentLink(props: Props & { link: ShareLinkView; onLink: (l: ShareLinkView) => void; onChange: () => void }) {
   const { token, link, demo, onLink, state } = props;
+  const backHref = props.backHref ?? `/hackathon/join/${token}`;
   const open = state === "open";
   const poster = usePosterShare(link.code, "student", props.posterVersion);
   // The page's phase wins (a link loaded just before close still reads as closed).
@@ -240,15 +245,17 @@ function StudentLink(props: Props & { link: ShareLinkView; onLink: (l: ShareLink
 
   const card = <SeatCard view={view} code={link.code} kind="student" />;
   const shown = { ...link, seats: view };
-  const seats = <Seats token={token} link={link} demo={demo} onLink={onLink} />;
-  const posterBlock = open ? <Poster poster={poster} /> : null;
+  const seats = <Seats token={token} backHref={backHref} link={link} demo={demo} onLink={onLink} />;
+  // A link staff shut earns nothing more: no poster, no share bar.
+  const sharing = open && !view.linkRejected;
+  const posterBlock = sharing ? <Poster poster={poster} /> : null;
   // Nothing yet: the poster is the thing to do. A seat waiting for a code: that comes first. Otherwise the numbers lead.
   const blocks = naming ? [seats, card, posterBlock] : start ? [posterBlock, card] : [card, seats, posterBlock];
 
   return (
     <Page
       surface="ground"
-      back={{ href: `/hackathon/join/${token}` }}
+      back={{ href: backHref }}
       sky={
         <SkyBand
           title={<H1>{titleFor(shown, open)}</H1>}
@@ -265,9 +272,10 @@ function StudentLink(props: Props & { link: ShareLinkView; onLink: (l: ShareLink
               )}
             </span>
           }
+          height={200}
         />
       }
-      bar={open && !naming ? <ShareBar poster={poster} /> : undefined}
+      bar={sharing && !naming ? <ShareBar poster={poster} /> : undefined}
     >
       {!open && <Fine className="mb-6">{COPY.frozenNote}</Fine>}
       <div className="space-y-10">
@@ -281,6 +289,7 @@ function StudentLink(props: Props & { link: ShareLinkView; onLink: (l: ShareLink
 
 export function ShareView(props: Props) {
   const { token, state, demo } = props;
+  const backHref = props.backHref ?? `/hackathon/join/${token}`;
   const [link, setLink] = useState<ShareLinkView | null>(props.link);
   const [changing, setChanging] = useState(false);
   const onLink = useCallback((l: ShareLinkView) => setLink(l), []);
@@ -291,10 +300,10 @@ export function ShareView(props: Props) {
     return (
       <Page
         surface="ground"
-        back={{ href: `/hackathon/join/${token}` }}
+        back={{ href: backHref }}
         sky={<SkyBand title={<H1>{COPY.closedTitle}</H1>} lead={state === "cancelled" ? COPY.cancelled : state === "after-close" ? COPY.afterClose : COPY.closed} />}
       >
-        <EditorialLink href={`/hackathon/join/${token}`}>{COPY.back}</EditorialLink>
+        <EditorialLink href={backHref}>{COPY.back}</EditorialLink>
       </Page>
     );
   }
@@ -303,6 +312,7 @@ export function ShareView(props: Props) {
     return (
       <PickSchool
         token={token}
+        backHref={backHref}
         code={link?.code ?? props.code}
         startQuery={changing ? "" : props.startQuery}
         changing={changing}

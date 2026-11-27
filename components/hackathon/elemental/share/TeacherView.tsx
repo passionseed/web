@@ -32,7 +32,7 @@ const COPY = {
   keepTitle: "เก็บหน้านี้ไว้ใน LINE",
   keepLead: "หน้านี้เป็นของคุณครูคนเดียว ส่งเข้า LINE ตัวเองไว้ จะได้กลับมาดูตัวเลขได้",
   keepNote: "ลิงก์หน้านี้เป็นของคุณครูคนเดียว อย่าส่งต่อ",
-  toLine: "ส่งเข้า LINE ตัวเอง →",
+  toLine: "ส่งเข้า LINE ตัวเอง",
   skip: "ข้าม",
   copyPage: "คัดลอกลิงก์หน้านี้",
   keepLater: "เก็บหน้านี้ไว้ใน LINE",
@@ -203,14 +203,16 @@ function TeacherLink({
     </div>
   );
   const seats = <Seats token={token} link={link} demo={demo} onLink={onLink} />;
-  const posterBlock = open ? <Poster poster={poster} /> : null;
+  // A link staff shut earns nothing more: no poster, no share bar.
+  const sharing = open && !view.linkRejected;
+  const posterBlock = sharing ? <Poster poster={poster} /> : null;
   const blocks = naming ? [seats, card, posterBlock] : start ? [posterBlock, card] : [card, seats, posterBlock];
 
   return (
     <Page
       surface="ground"
-      sky={<SkyBand title={<H1>{titleFor(shown, open)}</H1>} lead={schoolLabel(link.school.name, link.school.province)} />}
-      bar={open && !naming ? <ShareBar poster={poster} label={COPY.barLine} /> : undefined}
+      sky={<SkyBand title={<H1>{titleFor(shown, open)}</H1>} lead={schoolLabel(link.school.name, link.school.province)} height={200} />}
+      bar={sharing && !naming ? <ShareBar poster={poster} label={COPY.barLine} /> : undefined}
     >
       {!open && <Fine className="mb-6">{COPY.frozenNote}</Fine>}
       <div className="space-y-10">{blocks.map((b, i) => (b ? <div key={i}>{b}</div> : null))}</div>
