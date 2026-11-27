@@ -109,6 +109,8 @@ export const ELEMENTAL = {
   venueTh: "ออนไลน์ทาง Discord, Demo Day ที่ BAScii จุฬาฯ",
   /** The same, short enough for a ticket stub. */
   venueShort: "Discord + BAScii",
+  /** The format in a poster's facts row: online, then the one onsite day. */
+  formatShortTh: "ออนไลน์ + Demo Day ที่จุฬาฯ",
   /** The one onsite day. */
   demoDay: {
     date: "2026-12-12",
