@@ -30,9 +30,21 @@ describe("journeySteps", () => {
     const byIcon = Object.fromEntries(steps.map((s) => [s.icon, s]));
     expect(byIcon.signup.whenTh).toBe(`ภายใน ${thaiDayDate(ELEMENTAL.registrationClosesOn)}`);
     expect(byIcon.discord.whenTh).toBe("ศ. 4 ธ.ค. 19:00");
-    expect(byIcon.talk).toMatchObject({ whenTh: "ส. 5 ธ.ค.", helpTh: "เวิร์กช็อปสอนสัมภาษณ์ 10:00" });
-    expect(byIcon.build).toMatchObject({ whenTh: "ส. 5 ธ.ค. ถึง อา. 6 ธ.ค.", helpTh: "เวิร์กช็อปพาสร้าง ส. 19:00" });
-    expect(byIcon.submit).toMatchObject({ whenTh: "จ. 7 ธ.ค. ก่อน 23:00", helpTh: "เวิร์กช็อปการนำเสนอ อา. 19:00" });
+    expect(byIcon.talk.whenTh).toBe("ส. 5 ธ.ค.");
+    expect(byIcon.build.whenTh).toBe("ส. 5 ธ.ค. ถึง พฤ. 10 ธ.ค.");
+    expect(byIcon.submit.whenTh).toBe("พฤ. 10 ธ.ค. ก่อน 23:00");
+  });
+
+  it("names each workshop, with its time only once facts.ts has one", () => {
+    const byIcon = Object.fromEntries(steps.map((s) => [s.icon, s]));
+    const timed = ELEMENTAL.schedule.some((s) => s.kind === "workshop");
+    if (timed) {
+      expect(byIcon.talk.helpTh).toMatch(/^เวิร์กช็อปสอนสัมภาษณ์ \d/);
+    } else {
+      expect(byIcon.talk.helpTh).toBe("มีเวิร์กช็อปสอนสัมภาษณ์");
+      expect(byIcon.build.helpTh).toBe("มีเวิร์กช็อปพาสร้าง");
+      expect(byIcon.submit.helpTh).toBe("มีเวิร์กช็อปการนำเสนอ");
+    }
   });
 
   it("links the first two steps to the board and the sign-up", () => {

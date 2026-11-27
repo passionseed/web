@@ -112,17 +112,22 @@ function OwnerTile({ chapter, problem, index, onOpen }: { chapter: ElementChapte
   );
 }
 
-/** A slim row on phones, a full tile in the desktop grid. */
-function LockedTile({ chapter, seed }: { chapter: ElementChapter; seed: number }) {
+/**
+ * A slim row on phones, a full tile in the desktop grid. When the brief
+ * already names the element's owner (ElementDetail.owner), the tile says
+ * whose problem is coming; their own tile opens once they confirm it.
+ */
+function LockedTile({ chapter, ownerName, seed }: { chapter: ElementChapter; ownerName?: string; seed: number }) {
+  const label = ownerName ? `รอโจทย์จาก ${ownerName}` : "รอเจ้าของโจทย์";
   return (
     <div
       className={`${TILE} min-h-[4.5rem] items-center gap-2.5 overflow-hidden lg:min-h-[10rem] lg:flex-col lg:items-start lg:justify-end`}
-      aria-label={`ช่องที่ยังล็อก: รอเจ้าของโจทย์${elementLabel(chapter.th)}ยืนยัน`}
+      aria-label={`ช่องที่ยังล็อก: ${ownerName ? label : `รอเจ้าของโจทย์${elementLabel(chapter.th)}ยืนยัน`}`}
     >
       <LockedPixels color={chapter.color} seed={seed} />
-      <Lock aria-hidden="true" className="relative h-5 w-5 text-[#f3efe6]/45" />
+      <Lock aria-hidden="true" className="relative h-5 w-5 shrink-0 text-[#f3efe6]/45" />
       <span className="relative text-sm text-[#f3efe6]/55" style={{ fontFamily: BODY_FONT }}>
-        รอเจ้าของโจทย์
+        {label}
       </span>
     </div>
   );
@@ -131,7 +136,7 @@ function LockedTile({ chapter, seed }: { chapter: ElementChapter; seed: number }
 function Tile({ column, tile, index, seed, onOpen }: { column: BoardColumn; tile: BoardTile; index: number; seed: number; onOpen: (key: string) => void }) {
   if (tile.kind === "starter") return <StarterTile column={column} onOpen={() => onOpen(tile.key)} />;
   if (tile.kind === "owner") return <OwnerTile chapter={column.chapter} problem={tile.problem} index={index} onOpen={() => onOpen(tile.key)} />;
-  return <LockedTile chapter={column.chapter} seed={seed} />;
+  return <LockedTile chapter={column.chapter} ownerName={column.detail.owner?.name} seed={seed} />;
 }
 
 /** What each tile icon means, with how many of each: the board's scoreboard. */
@@ -154,6 +159,28 @@ function Legend({ counts }: { counts: ReturnType<typeof boardCounts> }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+/**
+ * What counts as this element: the landing's one-line scope, then its
+ * examples as a short list, each kept on one line so Thai never breaks
+ * mid-word. Students pick any problem of the kind, so this is the part that
+ * tells them what "the kind" is.
+ */
+function ElementScope({ chapter }: { chapter: ElementChapter }) {
+  const examples = chapter.examplesTh.split(" · ");
+  return (
+    <div className="mt-3" style={{ fontFamily: BODY_FONT }}>
+      <p className="text-[15px] leading-snug text-[#faf8f4]">{chapter.subtitleTh}</p>
+      <ul className={`mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[13px] leading-snug ${CREAM_DIM}`} aria-label={`ตัวอย่างปัญหา${elementLabel(chapter.th)}`}>
+        {examples.map((example) => (
+          <li key={example} className="whitespace-nowrap before:mr-1.5 before:content-['·'] before:text-[#f3efe6]/35">
+            {example}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -246,15 +273,18 @@ export function ProblemBoard({
               aria-labelledby={`board-${column.chapter.key}`}
               className={`flex flex-col border-b border-r ${LINE}`}
             >
-              <div className="flex items-center gap-3 px-5 pb-5 pt-6">
-                <ElementIcon element={column.chapter.key} size={30} id={`board-icon-${column.chapter.key}`} />
-                <h2
-                  id={`board-${column.chapter.key}`}
-                  className="text-3xl"
-                  style={{ fontFamily: EL_FONT.display, fontWeight: 300, color: column.chapter.color, lineHeight: 1.1 }}
-                >
-                  {elementLabel(column.chapter.th)}
-                </h2>
+              <div className="px-5 pb-5 pt-6 lg:min-h-[13rem]">
+                <div className="flex items-center gap-3">
+                  <ElementIcon element={column.chapter.key} size={30} id={`board-icon-${column.chapter.key}`} />
+                  <h2
+                    id={`board-${column.chapter.key}`}
+                    className="text-3xl"
+                    style={{ fontFamily: EL_FONT.display, fontWeight: 300, color: column.chapter.color, lineHeight: 1.1 }}
+                  >
+                    {elementLabel(column.chapter.th)}
+                  </h2>
+                </div>
+                <ElementScope chapter={column.chapter} />
               </div>
               <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-1">
                 {column.tiles.map((tile, i) => (

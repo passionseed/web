@@ -11,7 +11,7 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
  * Every date and time comes from ELEMENTAL (facts.ts). The help lines reuse
  * what the page already promises: a starter brief that finishes in the
  * hackathon's days, solo sign-ups matched into teams, mentors throughout,
- * and the three workshops.
+ * and the three workshops (their times once facts.ts has them).
  */
 
 export type StepIcon = "pick" | "signup" | "discord" | "talk" | "build" | "submit";
@@ -41,20 +41,42 @@ const startTime = (time: string) => time.split("–")[0];
 
 type Slot = (typeof ELEMENTAL.schedule)[number];
 
+/**
+ * The slots the steps need. The workshops are optional: their times are
+ * (fill in) since the 12 Dec extension, so facts.ts lists none for now. Once
+ * they are added back there, in the order interview, build, pitch, their
+ * times show up in the help lines on their own.
+ */
 function slots() {
   const of = (kind: Slot["kind"]) => ELEMENTAL.schedule.filter((s) => s.kind === kind);
   const [opening] = of("open");
+  const builds = of("build");
+  // The last deadline is the final hand-in; the first is sign-up closing.
+  const handIn = of("due").at(-1);
   const [interview, build, pitch] = of("workshop");
-  const [due] = of("due");
-  if (!opening || !interview || !build || !pitch || !due) {
-    throw new Error("journey-steps: ELEMENTAL.schedule needs an opening, three workshops and a deadline");
+  if (!opening?.time || builds.length === 0 || !handIn?.time) {
+    throw new Error("journey-steps: ELEMENTAL.schedule needs a timed opening, build days and a timed hand-in");
   }
-  return { opening, interview, build, pitch, due };
+  return {
+    opening: { date: opening.date, time: opening.time },
+    buildFrom: builds[0].date,
+    buildTo: handIn.date,
+    handIn: { date: handIn.date, time: handIn.time },
+    interview,
+    build,
+    pitch,
+  };
+}
+
+/** "เวิร์กช็อปพาสร้าง ส. 19:00", or "มีเวิร์กช็อปพาสร้าง" while its time isn't set. */
+function workshopHelp(nameTh: string, slot: Slot | undefined, withWeekday: boolean): string {
+  if (!slot?.time) return `มี${nameTh}`;
+  const day = withWeekday ? `${thaiDayDate(slot.date).split(" ")[0]} ` : "";
+  return `${nameTh} ${day}${startTime(slot.time)}`;
 }
 
 export function journeySteps(): JourneyStep[] {
-  const { opening, interview, build, pitch, due } = slots();
-  const weekday = (iso: string) => thaiDayDate(iso).split(" ")[0];
+  const { opening, buildFrom, buildTo, handIn, interview, build, pitch } = slots();
   return [
     {
       icon: "pick",
@@ -79,20 +101,20 @@ export function journeySteps(): JourneyStep[] {
     {
       icon: "talk",
       doTh: "คุยกับคนที่เจอปัญหาจริง",
-      whenTh: thaiDayDate(interview.date),
-      helpTh: `เวิร์กช็อปสอนสัมภาษณ์ ${startTime(interview.time)}`,
+      whenTh: thaiDayDate(interview?.date ?? buildFrom),
+      helpTh: workshopHelp("เวิร์กช็อปสอนสัมภาษณ์", interview, false),
     },
     {
       icon: "build",
       doTh: "สร้าง แล้วให้เขาลองใช้",
-      whenTh: `${thaiDayDate(build.date)} ถึง ${thaiDayDate(pitch.date)}`,
-      helpTh: `เวิร์กช็อปพาสร้าง ${weekday(build.date)} ${startTime(build.time)}`,
+      whenTh: `${thaiDayDate(buildFrom)} ถึง ${thaiDayDate(buildTo)}`,
+      helpTh: workshopHelp("เวิร์กช็อปพาสร้าง", build, true),
     },
     {
       icon: "submit",
       doTh: "อัดคลิป ส่งผลงาน",
-      whenTh: `${thaiDayDate(due.date)} ก่อน ${due.time}`,
-      helpTh: `เวิร์กช็อปการนำเสนอ ${weekday(pitch.date)} ${startTime(pitch.time)}`,
+      whenTh: `${thaiDayDate(handIn.date)} ก่อน ${handIn.time}`,
+      helpTh: workshopHelp("เวิร์กช็อปการนำเสนอ", pitch, true),
     },
   ];
 }
