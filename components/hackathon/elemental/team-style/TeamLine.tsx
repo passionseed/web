@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
 import {
   nextUnlock,
@@ -24,6 +24,8 @@ import { StyledTeamName } from "./StyledTeamName";
  * progress is the text line. Colours come from the surface's CSS variables;
  * the name's colour variant follows the surface around it (the dark ground
  * unless the background is light), or pass surface.
+ * compact (or inside <CompactTeamLine>): the name, the rank and "กระดาน →"
+ * only, for a page whose meter already says the rest (the share page).
  * Usage: <TeamLine token={token} data={teamStyle} demo={demo} />
  */
 
@@ -40,7 +42,7 @@ const COPY = {
   unlocked: (part: string) => `ปลดล็อก${part}แล้ว`,
   next: (left: number, part: string) => `อีก ${left} เครื่อง ปลดล็อก${part}`,
   allOpen: "ปลดล็อกครบแล้ว",
-  story: "ปลดล็อกจากสตอรี่ IG",
+  story: "ปลดล็อกครบแล้ว จากสตอรี่ IG",
   frozen: "ปิดนับแล้ว custom ชื่อได้ถึงวัน Demo Day",
   closed: "ปิดแก้ไขแล้ว",
   edit: "custom ชื่อทีม",
@@ -72,6 +74,23 @@ export function teamLineParts(
   return [...(rank ? [rank] : []), ...progress];
 }
 
+/** The compact line's text: the rank, or what keeps the team off the board. Progress lives on the page's meter. */
+export function teamLineCompactText(data: Pick<TeamStyleCardData, "boardName" | "rank" | "teamsOnBoard" | "final">): string {
+  if (data.rank) return (data.final ? COPY.finalRank : COPY.rank)(data.rank, data.teamsOnBoard);
+  return data.boardName ? COPY.offBoard : COPY.setToJoin;
+}
+
+const CompactContext = createContext(false);
+
+/**
+ * Makes every TeamLine inside it compact. The share page wraps the team line
+ * the route hands it in this, since its meter already says the progress and
+ * links to the editor.
+ */
+export function CompactTeamLine({ children }: { children: ReactNode }) {
+  return <CompactContext.Provider value>{children}</CompactContext.Provider>;
+}
+
 /** Light or dark, from the --el-bg the surface set (ui.tsx surfaceVars). */
 function surfaceFrom(el: HTMLElement | null): NameSurface | null {
   if (!el) return null;
@@ -88,6 +107,7 @@ export function TeamLine({
   data,
   demo,
   surface,
+  compact = false,
 }: {
   token: string;
   data: TeamStyleCardData;
@@ -96,7 +116,14 @@ export function TeamLine({
   hideMeter?: boolean;
   /** The name's colour variant. Without it, read from the surface around it. */
   surface?: NameSurface;
+  /**
+   * Name, rank and "กระดาน →" only: for a page whose meter already shows the
+   * progress and the editor link (the share page). Also set by CompactTeamLine.
+   */
+  compact?: boolean;
 }) {
+  const compactFromPage = useContext(CompactContext);
+  const isCompact = compact || compactFromPage;
   const ref = useRef<HTMLDivElement>(null);
   const [detected, setDetected] = useState<NameSurface>("ground");
   useEffect(() => {
@@ -132,15 +159,17 @@ export function TeamLine({
       />
       {/* Each part moves to the next line whole, so Thai never breaks inside "ปลดล็อก…". */}
       <Body secondary className="mt-1">
-        {teamLineParts(data).map((part, i) => (
-          <span key={i}>
-            {i > 0 && " · "}
-            <span className="inline-block">{part}</span>
-          </span>
-        ))}
+        {isCompact
+          ? teamLineCompactText(data)
+          : teamLineParts(data).map((part, i) => (
+              <span key={i}>
+                {i > 0 && " · "}
+                <span className="inline-block">{part}</span>
+              </span>
+            ))}
       </Body>
       <div className="mt-3 flex flex-wrap items-center gap-x-6">
-        {data.editable && (
+        {data.editable && !isCompact && (
           <EditorialLink href={editHref} size="sm" tone="action">
             {named ? (data.solo ? COPY.editSolo : COPY.edit) : COPY.setName}
           </EditorialLink>

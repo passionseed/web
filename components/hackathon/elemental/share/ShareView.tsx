@@ -20,6 +20,7 @@ import { SchoolPicker, type SchoolChoice } from "./SchoolPicker";
 import { StoryShare } from "./StoryShare";
 import { EditorialLink, Fine, H1, Page, PrimaryButton, schoolLabel, SkyBand, StickyBar, v } from "./ui";
 import { usePollLink } from "./usePoll";
+import { CompactTeamLine } from "../team-style/TeamLine";
 
 /**
  * A signed-up student's share page, on the landing's dark ground. Sharing
@@ -255,7 +256,12 @@ function StudentLink(props: Props & { link: ShareLinkView; onChange: () => void;
       <div className="space-y-10">
         {blocks.map((b, i) => (b ? <div key={i}>{b}</div> : null))}
         {story}
-        {props.teamRow && <section className="border-t pt-6" style={{ borderColor: v.rule }}>{props.teamRow}</section>}
+        {/* Compact: the meter above already says the team's progress and links to the editor. */}
+        {props.teamRow && (
+          <section className="border-t pt-6" style={{ borderColor: v.rule }}>
+            <CompactTeamLine>{props.teamRow}</CompactTeamLine>
+          </section>
+        )}
       </div>
       <Rules rules={COPY.rules} />
     </Page>

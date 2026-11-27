@@ -50,7 +50,8 @@ const COPY = {
   countSolo: (n: number) => `${n} เครื่องที่เปิดลิงก์ของฉัน`,
   next: (left: number, part: string) => `อีก ${left} เครื่อง ปลดล็อก${part}`,
   allOpen: "ปลดล็อกครบแล้ว custom ได้ทุกแบบ",
-  story: "ปลดล็อกจากสตอรี่ IG",
+  story: "ปลดล็อกครบแล้ว",
+  storyTag: "จากสตอรี่ IG",
   storyHint: "หรือลงสตอรี่ IG ปลดล็อกทุกแบบทันที",
   frozen: "ปิดนับแล้ว ตัวเลขหยุดนับ custom ชื่อได้ถึงวัน Demo Day",
   preview: "ตัวอย่างบนกระดาน",
@@ -221,8 +222,10 @@ export function TeamEditor({
         ) : data.final ? (
           COPY.frozen
         ) : story ? (
-          <span className="inline-block" style={{ color: v.action }}>
-            {COPY.story}
+          // The share page's meter says it the same way: "ปลดล็อกครบแล้ว [จากสตอรี่ IG]".
+          <span className="inline-flex flex-wrap items-baseline gap-x-2">
+            <span>{COPY.story}</span>
+            <Tag tone="action">{COPY.storyTag}</Tag>
           </span>
         ) : next ? (
           COPY.next(next.left, STYLE_PART_TH[next.part])

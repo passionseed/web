@@ -28,11 +28,13 @@ const COPY = {
   step1: "บันทึกรูปสตอรี่",
   save: "บันทึกรูป",
   step2: "ใส่ลิงก์ด้วยสติกเกอร์ลิงก์",
-  step2Hint: "แปะในกรอบ [แปะลิงก์ตรงนี้] บนรูป",
+  /** Points at the dashed box on the Story poster (its label is STORY_STICKER_LABEL in lib/hackathon/elemental/share-poster.tsx, so it isn't quoted here). */
+  step2Hint: "แปะสติกเกอร์ลิงก์ทับกรอบเส้นประบนรูป",
   copy: "คัดลอกลิงก์",
   copied: "คัดลอกแล้ว",
   step3: `ครบ ${STORY_PROOF_MIN_VIEWS} วิว ส่งภาพหน้าจอ`,
   step3Hint: "ครอปให้เห็นแค่ตัวเลขวิว รายชื่อคนดูเป็นชื่อของคนอื่น ไม่ต้องให้ติดมา",
+  privacy: "ทีมงานเท่านั้นที่เห็นรูปนี้ และสุ่มตรวจ · ลบทั้งหมดหลัง Demo Day",
   upload: "ส่งภาพหน้าจอ",
   uploadAgain: "ส่งภาพใหม่",
   uploading: "กำลังส่ง…",
@@ -182,6 +184,7 @@ export function StoryShare({
           {busy ? COPY.uploading : status === "revoked" ? COPY.uploadAgain : COPY.upload}
         </SecondaryButton>
         <Fine>{COPY.step3Hint}</Fine>
+        <Fine>{COPY.privacy}</Fine>
         {error && (
           <p role="alert" className="py-1 pl-3" style={{ boxShadow: `inset 2px 0 0 ${v.error}`, color: v.error, fontSize: 14, lineHeight: "22px" }}>
             {error}
@@ -203,7 +206,8 @@ export function StoryShare({
           </Body>
         </div>
       </div>
-      <ol className="mt-5 border-b" style={{ borderColor: v.rule }}>
+      {/* No closing rule: the next section opens with its own. */}
+      <ol className="mt-5">
         <Step n={1} title={COPY.step1}>
           <SecondaryButton icon="download" full onClick={saveImage}>
             {COPY.save}

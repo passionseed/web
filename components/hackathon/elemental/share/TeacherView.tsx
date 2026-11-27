@@ -14,6 +14,12 @@ import { Rules } from "./Rules";
 import { EditorialLink, Fine, H1, Page, PrimaryButton, schoolLabel, SkyBand, StickyBar, Tag } from "./ui";
 import { usePollLink } from "./usePoll";
 
+/** "passionseed.org/hackathon/elemental?src=t-7e4c0b2a" → the path and "?src=…", so a line break never splits the code. */
+const splitLink = (url: string): string[] => {
+  const q = url.indexOf("?");
+  return q < 0 ? [url] : [url.slice(0, q), url.slice(q)];
+};
+
 /**
  * A teacher's private page (/hackathon/elemental/teacher/<token>), on the
  * dark ground like the student's: their poster with its QR code, the link as
@@ -119,8 +125,18 @@ function TeacherLink({ phase, link, posterVersion }: { phase: "open" | "after-cl
       <Poster poster={poster} />
       <div>
         <Tag>{COPY.linkLabel}</Tag>
-        <p className="mt-1 break-all" style={{ fontFamily: "var(--font-space-mono), monospace", fontSize: 13, lineHeight: "20px" }}>
-          {poster.url.replace(/^https:\/\/www\./, "")}
+        {/* Breaks only before "?src=", never inside the code. */}
+        <p className="mt-1" style={{ fontFamily: "var(--font-space-mono), monospace", fontSize: 13, lineHeight: "20px" }}>
+          {splitLink(poster.url.replace(/^https:\/\/www\./, "")).map((part, i) =>
+            i === 0 ? (
+              <span key={i}>{part}</span>
+            ) : (
+              <span key={i}>
+                <wbr />
+                <span className="whitespace-nowrap">{part}</span>
+              </span>
+            ),
+          )}
         </p>
       </div>
     </div>

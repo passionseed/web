@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { DEFAULT_STYLE, TEAM_STYLE_TIERS, type TeamStyleCardData } from "@/lib/hackathon/elemental/team-style";
 
 import { demoStyleCard } from "../demo";
-import { TeamLine, teamLineParts } from "../TeamLine";
+import { CompactTeamLine, TeamLine, teamLineCompactText, teamLineParts } from "../TeamLine";
 
 const base: TeamStyleCardData = {
   key: "tabc",
@@ -39,9 +39,9 @@ describe("the team line's text", () => {
   });
 
   it("says a member's Instagram Story unlocked everything, instead of the device tiers", () => {
-    expect(teamLineParts({ ...base, rank: 17, devices: 6, storyUnlocked: true })).toEqual(["อันดับ 17 จาก 23", "ปลดล็อกจากสตอรี่ IG"]);
-    expect(teamLineParts({ ...base, boardName: null, devices: 6, storyUnlocked: true })).toEqual(["ตั้งชื่อเพื่อขึ้นกระดาน", "ปลดล็อกจากสตอรี่ IG"]);
-    expect(teamLineParts({ ...base, devices: 0, storyUnlocked: true })).toEqual(["ยังไม่ขึ้นกระดาน", "อีก 1 เครื่องขึ้นกระดาน", "ปลดล็อกจากสตอรี่ IG"]);
+    expect(teamLineParts({ ...base, rank: 17, devices: 6, storyUnlocked: true })).toEqual(["อันดับ 17 จาก 23", "ปลดล็อกครบแล้ว จากสตอรี่ IG"]);
+    expect(teamLineParts({ ...base, boardName: null, devices: 6, storyUnlocked: true })).toEqual(["ตั้งชื่อเพื่อขึ้นกระดาน", "ปลดล็อกครบแล้ว จากสตอรี่ IG"]);
+    expect(teamLineParts({ ...base, devices: 0, storyUnlocked: true })).toEqual(["ยังไม่ขึ้นกระดาน", "อีก 1 เครื่องขึ้นกระดาน", "ปลดล็อกครบแล้ว จากสตอรี่ IG"]);
   });
 
   it("says final after close, and whether names can still change", () => {
@@ -65,5 +65,31 @@ describe("TeamLine", () => {
     unmount();
     render(<TeamLine token="demo" demo data={demoStyleCard("fonts", { solo: true })} />);
     expect(screen.getByRole("link", { name: /custom ชื่อ/ }).getAttribute("href")).toBe("/hackathon/join/demo/team?style=fonts&mode=solo");
+  });
+});
+
+describe("the compact team line (the share page)", () => {
+  it("says only the rank, or what keeps the team off the board", () => {
+    expect(teamLineCompactText({ ...base, rank: 5 })).toBe("อันดับ 5 จาก 23");
+    expect(teamLineCompactText({ ...base, rank: 1, final: true })).toBe("ผลสุดท้าย อันดับ 1 จาก 23");
+    expect(teamLineCompactText(base)).toBe("ยังไม่ขึ้นกระดาน");
+    expect(teamLineCompactText({ ...base, boardName: null })).toBe("ตั้งชื่อเพื่อขึ้นกระดาน");
+  });
+
+  it("drops the progress and the editor link, keeping the board link, by prop or inside CompactTeamLine", () => {
+    const data = { ...base, rank: 5, devices: 31 };
+    const { unmount } = render(<TeamLine token="t" data={data} compact />);
+    expect(screen.queryByRole("link", { name: /custom/ })).toBeNull();
+    expect(screen.getByRole("link", { name: /กระดาน/ })).toBeTruthy();
+    expect(screen.getByText("อันดับ 5 จาก 23")).toBeTruthy();
+    expect(screen.queryByText(/ปลดล็อก/)).toBeNull();
+    unmount();
+    render(
+      <CompactTeamLine>
+        <TeamLine token="t" data={data} />
+      </CompactTeamLine>,
+    );
+    expect(screen.queryByRole("link", { name: /custom/ })).toBeNull();
+    expect(screen.queryByText(/ปลดล็อก/)).toBeNull();
   });
 });
