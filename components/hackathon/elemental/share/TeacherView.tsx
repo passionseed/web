@@ -8,17 +8,17 @@ import { PER_NETWORK_CAP } from "@/lib/hackathon/elemental/link-views-shared";
 import { SHARE } from "@/lib/hackathon/elemental/share";
 import type { ShareLinkView } from "@/lib/hackathon/elemental/share-rules";
 
-import { MeterCard } from "./MeterCard";
-import { meterHeadline } from "./meter-model";
+import { DeviceCount } from "./MeterCard";
 import { CopyIconButton, lineShareHref, Poster, ShareBar, usePosterShare } from "./PosterBlock";
 import { Rules } from "./Rules";
-import { EditorialLink, Fine, H1, Page, PrimaryButton, schoolLabel, SkyBand, StickyBar } from "./ui";
+import { EditorialLink, Fine, H1, Page, PrimaryButton, schoolLabel, SkyBand, StickyBar, Tag } from "./ui";
 import { usePollLink } from "./usePoll";
 
 /**
  * A teacher's private page (/hackathon/elemental/teacher/<token>), on the
- * dark ground like the student's: their poster with its QR code and link, and
- * the MeterCard (devices). No rewards (Big, 2026-11-27). Right after the link
+ * dark ground like the student's: their poster with its QR code, the link as
+ * text, and how many devices opened it. Nothing else: no rewards (Big,
+ * 2026-11-27). Right after the link
  * is made, one screen asks them to keep the page in their own LINE first
  * (LINE's browser has no bookmarks). After sign-up closes it stays up
  * read-only until the end of Demo Day.
@@ -39,6 +39,8 @@ const COPY = {
   },
   barLine: "ส่งให้นักเรียนใน LINE",
   frozenNote: "ปิดรับสมัครแล้ว ตัวเลขหยุดนับตอนปิด หน้านี้เปิดดูได้ถึงวัน Demo Day",
+  closedHeadline: (n: number) => `ปิดนับแล้ว · ${n}\u00a0เครื่อง`,
+  linkLabel: "ลิงก์ของคุณครู",
   rules: [
     "นับเป็นเครื่อง เปิดซ้ำจากเครื่องเดิมนับครั้งเดียว",
     `wifi เดียวกันนับได้ไม่เกิน ${PER_NETWORK_CAP} เครื่อง`,
@@ -51,7 +53,7 @@ const COPY = {
 
 /** Open: the action. After close: the frozen count. */
 function titleFor(link: ShareLinkView, open: boolean): string {
-  return open ? COPY.titles.start : meterHeadline(link);
+  return open ? COPY.titles.start : COPY.closedHeadline(link.devices);
 }
 
 /** This page's own address (no ?new=1), once on the client. */
@@ -111,11 +113,21 @@ function TeacherLink({ phase, link, posterVersion }: { phase: "open" | "after-cl
   const href = usePageUrl();
   // The page's phase wins (a link loaded just before close still reads as closed).
   const view: ShareLinkView = open ? link : { ...link, phase: "after-close" };
-  const start = open && view.devices === 0 && view.paid === 0;
-
-  const card = <MeterCard view={view} code={link.code} />;
-  const posterBlock = open ? <Poster poster={poster} /> : null;
-  const blocks = start ? [posterBlock, card] : [card, posterBlock];
+  // The poster (its QR code), the link as text for slides and chats, and the count.
+  const posterBlock = open ? (
+    <div className="space-y-4">
+      <Poster poster={poster} />
+      <div>
+        <Tag>{COPY.linkLabel}</Tag>
+        <p className="mt-1 break-all" style={{ fontFamily: "var(--font-space-mono), monospace", fontSize: 13, lineHeight: "20px" }}>
+          {poster.url.replace(/^https:\/\/www\./, "")}
+        </p>
+      </div>
+    </div>
+  ) : null;
+  const count = <DeviceCount link={view} code={link.code} />;
+  // Nothing yet: the poster is the thing to do. Otherwise the count leads.
+  const blocks = open && view.devices === 0 ? [posterBlock, count] : [count, posterBlock];
 
   return (
     <Page

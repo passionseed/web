@@ -8,7 +8,8 @@ import { TeamLine } from "@/components/hackathon/elemental/team-style/TeamLine";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { shareCode, sharePhase } from "@/lib/hackathon/elemental/share";
 import type { ShareLinkView } from "@/lib/hackathon/elemental/share-rules";
-import { posterVersion } from "@/lib/hackathon/elemental/share-poster";
+import { posterVersion, storyVersion } from "@/lib/hackathon/elemental/share-poster";
+import type { TeamStyleCardData } from "@/lib/hackathon/elemental/team-style";
 import { getShareContext, getStudentLink, linkView } from "@/lib/supabase/hackathon-share-links";
 import { loadTeamStyleCard } from "@/lib/supabase/hackathon-team-style";
 
@@ -31,16 +32,19 @@ export default async function ElementalSharePage({ params }: { params: Promise<{
   let state: "open" | "after-close" | "closed" | "cancelled" = reg.status === "cancelled" ? "cancelled" : phase === "off" ? "closed" : phase;
   let link: ShareLinkView | null = null;
   let version = "";
+  let story = "";
+  let team: TeamStyleCardData | null = null;
   let teamRow: React.ReactNode = null;
   if (state === "open" || state === "after-close") {
     try {
-      const [own, v] = await Promise.all([getStudentLink(reg.id), posterVersion()]);
+      const [own, v, sv] = await Promise.all([getStudentLink(reg.id), posterVersion(), storyVersion()]);
       link = own ? await linkView(ELEMENTAL.slug, own) : null;
       version = v;
-      // The team's line on the board: sharing earns its name styles. Null before the board launches or on any error.
+      story = sv;
+      // The team's styles: what sharing earns (the meter counts toward the next one). Null before the board launches or on any error.
       if (link) {
-        const style = await loadTeamStyleCard(ELEMENTAL.slug, { id: reg.id, team: reg.teamId ? { id: reg.teamId } : null }, `/hackathon/join/${token}/share`);
-        if (style) teamRow = <TeamLine token={token} data={style} />;
+        team = await loadTeamStyleCard(ELEMENTAL.slug, { id: reg.id, team: reg.teamId ? { id: reg.teamId } : null }, `/hackathon/join/${token}/share`);
+        if (team) teamRow = <TeamLine token={token} data={team} />;
       }
     } catch (error) {
       // No share tables yet, or the database is down: show "not open" rather than break.
@@ -58,6 +62,8 @@ export default async function ElementalSharePage({ params }: { params: Promise<{
         code={shareCode(reg.id)}
         startQuery={reg.school ?? ""}
         posterVersion={version}
+        storyVersion={story}
+        team={team}
         teamRow={teamRow}
       />
     </div>

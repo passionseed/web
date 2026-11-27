@@ -24,9 +24,9 @@ const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v
 
 /**
  * A teacher's private page. /hackathon/elemental/teacher/demo?s=<state> shows
- * made-up states where demo pages are on: start · sharing · many
+ * made-up states where demo pages are on: start · sharing · many · after-close
  * (lib/hackathon/elemental/share-demo.ts);
- * &new=1 as right after the link was made, &phase=after-close after sign-up closes.
+ * &new=1 as right after the link was made; s=after-close (or &phase=after-close) after sign-up closes.
  */
 export default async function TeacherLinkPage({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: SearchParams }) {
   const { token } = await params;
@@ -38,7 +38,7 @@ export default async function TeacherLinkPage({ params, searchParams }: { params
         <TeacherView
           token="demo"
           demo
-          phase={first(sp.phase) === "after-close" ? "after-close" : "open"}
+          phase={first(sp.phase) === "after-close" || teacherDemo(first(sp.s)).phase === "after-close" ? "after-close" : "open"}
           fresh={fresh}
           link={teacherDemo(first(sp.s))}
           posterVersion={await posterVersion()}

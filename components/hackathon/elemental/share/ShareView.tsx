@@ -8,23 +8,28 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
 import { PER_NETWORK_CAP } from "@/lib/hackathon/elemental/link-views-shared";
 import { SHARE } from "@/lib/hackathon/elemental/share";
 import type { ShareLinkView } from "@/lib/hackathon/elemental/share-rules";
+import { STORY_PROOF_MIN_VIEWS, type StoryProofStatus } from "@/lib/hackathon/elemental/story-proof";
+import type { TeamStyleCardData } from "@/lib/hackathon/elemental/team-style";
 
 import { lineHelp } from "./copy-shared";
 import { MeterCard } from "./MeterCard";
-import { meterHeadline } from "./meter-model";
+import { meterHeadline, meterModel, type MeterTeam } from "./meter-model";
 import { Poster, ShareBar, usePosterShare } from "./PosterBlock";
 import { Rules } from "./Rules";
 import { SchoolPicker, type SchoolChoice } from "./SchoolPicker";
+import { StoryShare } from "./StoryShare";
 import { EditorialLink, Fine, H1, Page, PrimaryButton, schoolLabel, SkyBand, StickyBar, v } from "./ui";
 import { usePollLink } from "./usePoll";
 
 /**
- * A signed-up student's share page, on the landing's dark ground (merged
- * direction §8): the sky band with the school, then the MeterCard (devices),
- * then the poster (poster first before anything has happened), then the
- * team's line on the board. The one action, "ส่งใน LINE →", is pinned at the
- * bottom. Sharing earns looks only: team-name styles and the board (Big,
- * 2026-11-27). The view model is ShareLinkView (share-rules.ts).
+ * A signed-up student's share page, on the landing's dark ground. Sharing
+ * earns looks only (Big, 2026-11-27): the team's devices unlock its name
+ * styles (colours, fonts, effects), and a 200-view Instagram Story unlocks
+ * them all at once. Top to bottom: the sky band says what's next ("อีก 6
+ * เครื่อง ปลดล็อกฟอนต์"), the MeterCard, the poster (first, before anything has
+ * happened), the "ลงสตอรี่ IG" block, then the team's line (custom ชื่อทีม,
+ * กระดาน). Sharing in LINE groups is the pinned action. View model:
+ * ShareLinkView (share-rules.ts) and the team's style data.
  */
 
 // copy: placeholder — Angpao rewrites
@@ -43,6 +48,8 @@ const COPY = {
   rules: [
     "นับเป็นเครื่อง เปิดซ้ำจากเครื่องเดิมนับครั้งเดียว",
     `wifi เดียวกันนับได้ไม่เกิน ${PER_NETWORK_CAP} เครื่อง`,
+    "เครื่องที่เปิดลิงก์ของทุกคนในทีมรวมกัน ครบ 10 ปลดล็อกสี 25 ฟอนต์ 50 เอฟเฟกต์",
+    `สตอรี่ IG ครบ ${STORY_PROOF_MIN_VIEWS} วิว ปลดล็อกทุกแบบทันที ทีมงานสุ่มตรวจ ถ้าไม่ผ่านจะปิดคืน`,
     "นับคนจ่ายจากคนที่สแกน QR หรือกดลิงก์ของคุณ แล้วสมัครและจ่าย",
     `แชร์ได้ถึงวันปิดรับสมัคร ${formatThaiDate(ELEMENTAL.registrationClosesOn)}`,
     `ตัวเลขอัปเดตเองทุก ${SHARE.pollMs / 1000} วินาที`,
@@ -71,6 +78,10 @@ type Props = {
   /** The school typed at sign-up, to start the search with. */
   startQuery: string;
   posterVersion: string;
+  /** storyVersion() from share-poster.tsx: the 9:16 Story image's version. */
+  storyVersion: string;
+  /** The team's style data (devices toward the next style, Story unlock), when the board is up. */
+  team?: TeamStyleCardData | null;
   /** The team's line on the board (TeamLine), when the board is up. */
   teamRow?: ReactNode;
   /** "← หน้าของฉัน": the pay page. Demos pass the demo pay page in the matching state. */
@@ -78,15 +89,14 @@ type Props = {
   demo?: boolean;
 };
 
-const EMPTY_METER = { devices: 0, phase: "open" as const };
+const EMPTY_METER = { devices: 0, phase: "open" as const, storyProof: "none" as const };
 
 /** Ink on the pale sky (the lead line's links read the surface's text colour). */
 const ON_SKY = { "--el-text": EL.ink } as CSSProperties;
 
-/** Open: the action. After close: the frozen count. */
-function titleFor(link: ShareLinkView, open: boolean): string {
-  return open ? COPY.titles.start : meterHeadline(link);
-}
+/** The team as the meter needs it. */
+const meterTeam = (team?: TeamStyleCardData | null): MeterTeam | null =>
+  team ? { devices: team.devices, solo: team.solo, storyUnlocked: team.storyUnlocked } : null;
 
 function ErrorText({ children }: { children: ReactNode }) {
   return (
@@ -167,7 +177,7 @@ function PickSchool({
         ) : undefined
       }
     >
-      {!changing && <MeterCard view={EMPTY_METER} code={code} preview />}
+      {!changing && <MeterCard link={EMPTY_METER} code={code} preview />}
       <div className={changing ? "" : "mt-8"}>
         <SchoolPicker label={COPY.pickLabel} startQuery={startQuery} value={pick} onChange={setPick} />
       </div>
@@ -187,19 +197,34 @@ function PickSchool({
   );
 }
 
-function StudentLink(props: Props & { link: ShareLinkView; onChange: () => void }) {
-  const { token, link, state } = props;
+function StudentLink(props: Props & { link: ShareLinkView; onChange: () => void; onStory: (s: StoryProofStatus) => void }) {
+  const { token, link, state, team, demo } = props;
   const backHref = props.backHref ?? `/hackathon/join/${token}`;
   const open = state === "open";
   const poster = usePosterShare(link.code, "student", props.posterVersion);
   // The page's phase wins (a link loaded just before close still reads as closed).
   const view: ShareLinkView = open ? link : { ...link, phase: "after-close" };
-  const start = open && view.devices === 0 && view.paid === 0;
+  const m = meterModel(view, meterTeam(team));
+  const start = open && m.devices === 0;
+  // Open, with the team's styles in play: say what's next. Without team data: the action. After close: the frozen count.
+  const title = open && m.mode === "count" ? COPY.titles.start : meterHeadline(m);
+  const editHref = team?.editable ? (team.editHref ?? `/hackathon/join/${token}/team`) : undefined;
 
-  const card = <MeterCard view={view} code={link.code} />;
+  const card = <MeterCard link={view} team={meterTeam(team)} code={link.code} editHref={editHref} />;
   const posterBlock = open ? <Poster poster={poster} /> : null;
   // Nothing yet: the poster is the thing to do. Otherwise the numbers lead.
   const blocks = start ? [posterBlock, card] : [card, posterBlock];
+  const story = open ? (
+    <StoryShare
+      token={token}
+      code={link.code}
+      storyVersion={props.storyVersion}
+      status={view.storyProof}
+      unlockedByDevices={m.mode === "team" && m.allUnlocked && !m.byStory}
+      demo={demo}
+      onStatus={props.onStory}
+    />
+  ) : null;
 
   return (
     <Page
@@ -207,7 +232,7 @@ function StudentLink(props: Props & { link: ShareLinkView; onChange: () => void 
       back={{ href: backHref }}
       sky={
         <SkyBand
-          title={<H1>{titleFor(view, open)}</H1>}
+          title={<H1>{title}</H1>}
           lead={
             <span style={ON_SKY}>
               {schoolLabel(link.school.name, link.school.province)}
@@ -229,6 +254,7 @@ function StudentLink(props: Props & { link: ShareLinkView; onChange: () => void 
       {!open && <Fine className="mb-6">{COPY.frozenNote}</Fine>}
       <div className="space-y-10">
         {blocks.map((b, i) => (b ? <div key={i}>{b}</div> : null))}
+        {story}
         {props.teamRow && <section className="border-t pt-6" style={{ borderColor: v.rule }}>{props.teamRow}</section>}
       </div>
       <Rules rules={COPY.rules} />
@@ -275,5 +301,5 @@ export function ShareView(props: Props) {
     );
   }
 
-  return <StudentLink {...props} link={link} onChange={() => setChanging(true)} />;
+  return <StudentLink {...props} link={link} onChange={() => setChanging(true)} onStory={(storyProof) => setLink({ ...link, storyProof })} />;
 }
