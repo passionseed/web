@@ -11,17 +11,21 @@ import {
   PIXEL_PALETTE,
   QUIZ_CRESTS,
   QUIZ_SCENES,
+  SCENE_BACKDROPS,
   SCENE_COLS,
+  SCENE_FAR_COLS,
+  SCENE_FRAMES,
   SCENE_ROWS,
   fxFrame,
   fxRuns,
   iconPixels,
   pixelRuns,
   revealCells,
+  sceneFrame,
 } from "../quiz-pixels";
 
-/** The scenes' colours: neutrals, one flame accent, and toxic green for pollution. */
-const SCENE_COLOURS = "dsakflcG";
+/** The scenes' colours: neutrals, the one warm light, toxic green for pollution, and the people (skin, hair, uniform, pha sin). A frame may also clear a base pixel ("_"). */
+const SCENE_COLOURS = "dsakeflcwGuUhnb";
 /** Only the river (question 5) and the environment question (8) may show pollution. */
 const POLLUTION_SCENES = new Set([4, 7]);
 
@@ -101,22 +105,35 @@ describe("Elemental quiz pixel art", () => {
     expect(QUIZ_SCENES).toHaveLength(QUIZ_QUESTIONS.length);
   });
 
-  it.each(QUIZ_SCENES.map((scene, q) => [q + 1, scene.title, q] as const))("draws scene %i (%s) at 38x14 in the scene colours, with at most a tiny idle", (_, __, q) => {
-    const { frames } = QUIZ_SCENES[q];
-    expect(frames.length === 1 || frames.length === 2).toBe(true);
-    for (const frame of frames) {
-      expect(frame).toHaveLength(SCENE_ROWS);
-      for (const row of frame) {
+  it.each(QUIZ_SCENES.map((scene, q) => [q + 1, scene.title, q] as const))("draws scene %i (%s) at 76x28 in the scene colours, and moves it in 8 frames", (_, __, q) => {
+    const { base, frames, frameMs } = QUIZ_SCENES[q];
+    expect(Number.isInteger(frameMs) && frameMs >= 100 && frameMs <= 320).toBe(true);
+    expect(frames).toHaveLength(SCENE_FRAMES);
+    for (const [grid, allowed] of [[base, SCENE_COLOURS], ...frames.map((f) => [f, SCENE_COLOURS + "_"] as const)] as const) {
+      expect(grid).toHaveLength(SCENE_ROWS);
+      for (const row of grid) {
         expect(row).toHaveLength(SCENE_COLS);
-        for (const ch of row) if (ch !== ".") expect(SCENE_COLOURS).toContain(ch);
+        for (const ch of row) if (ch !== ".") expect(allowed).toContain(ch);
         if (!POLLUTION_SCENES.has(q)) expect(row).not.toContain("G");
       }
     }
-    if (frames.length === 2) {
-      const changed = frames[0].join("").split("").filter((ch, i) => ch !== frames[1].join("")[i]).length;
-      expect(changed).toBeGreaterThanOrEqual(1);
-      expect(changed).toBeLessThanOrEqual(6);
+    // Something moves: at least one frame paints or clears a pixel.
+    expect(frames.some((f) => f.some((row) => /[^.]/.test(row)))).toBe(true);
+  });
+
+  it.each(QUIZ_SCENES.map((scene, q) => [q + 1, scene.title, q] as const))("gives scene %i (%s) a flat backdrop and a muted far layer wide enough to drift", (_, __, q) => {
+    const { backdrop, far } = QUIZ_SCENES[q];
+    expect(Object.keys(SCENE_BACKDROPS)).toContain(backdrop);
+    expect(far).toHaveLength(SCENE_ROWS);
+    for (const row of far) {
+      expect(row).toHaveLength(SCENE_FAR_COLS);
+      for (const ch of row) if (ch !== ".") expect("dsakclhG").toContain(ch);
+      if (!POLLUTION_SCENES.has(q)) expect(row).not.toContain("G");
     }
+  });
+
+  it("draws a frame over its scene's base: dots keep, underscores clear, colours paint", () => {
+    expect(sceneFrame(["ab", "cd"], [".k", "_."])).toEqual(["ak", ".d"]);
   });
 
   it("builds every icon pixel once in the reveal, fire from its base up and air from the left", () => {

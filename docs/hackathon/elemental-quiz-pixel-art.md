@@ -68,22 +68,32 @@ it lands at once.
 
 ## Scenes
 
-Each question has a small scene above it: the situation the question puts
-you in (`QUIZ_SCENES` in `lib/hackathon/elemental/quiz-scene-art.ts`).
+Each question has a little game screen above it: the situation the question
+puts you in (`QUIZ_SCENES` in `lib/hackathon/elemental/quiz-scene-art.ts`,
+drawn by `components/hackathon/elemental/quiz/QuestionScene.tsx`).
 
-- 38x14, shown at 9 px a pixel on phones (342 x 126), 8 at 375 px wide, 7
-  under that, 12 wider up. Under 720 px tall (iPhone SE) the scene steps
-  aside so all five answers fit.
-- Neutrals (`d s a k`), one flame accent (`f l c`) for the light the eye
-  lands on, and toxic green (`G`) only for pollution, in the river and the
-  environment scenes. People are silhouettes in one shared design.
-- **Never steer.** A scene shows the situation, never an answer, and never
-  an element's symbol: the flame accent is a lamp, a screen, the sun.
-- An optional second frame is a tiny idle (1 to 6 pixels: a drip, a blink,
-  a screen flicker), 600 ms a frame for about 5 s, then the still.
+- 76x28, shown at 4 px a pixel on phones (304 x 112), 6 wider up, and 3 on
+  small or short screens (under 800 px tall) so all five answers stay in
+  view. Under 720 px tall it steps aside.
+- Three planes, back to front: a flat **backdrop** (`night`, `room`, `dawn`
+  or `smog`), a muted **far layer** (92 wide: stars, a skyline, classroom
+  windows, the far bank), then the **scene**. The far layer drifts a pixel or
+  two left and right, a whole pixel at a time, and on a computer it leans
+  away from the mouse: the parallax. The page around it is flat.
+- The scene is a still `base` plus 8 frames drawn over it in turn, looping
+  for as long as the question is up: two to four things moving (the "..."
+  typing, the lamp flickering, a blink, a fan, ripples, smog).
+- **People are game sprites**, never faceless silhouettes: chibi proportions,
+  a face, their own hairstyle, the Thai uniform (white shirt, navy shorts or
+  skirt); the auntie in a pha sin with a fan. Drawn once on a character
+  sheet, then placed. Skin `u U`, hair `h`, navy `n`, pha sin `b`.
+- **Never steer.** A scene shows the situation, never an answer, and never an
+  element's symbol: the warm light is a lamp, a screen, the sun.
+- With motion off: the still, and nothing drifts.
 
-Drawn by Gemini 4 Neon (seven), Codex (the midnight desk) and Claude (the
-phone, redrawn so the person reads) from one brief with a shared checker.
+Drawn by Codex and Gemini 4 Neon over four rounds from one brief and checker
+each; the founder's notes along the way: more pixel density, more motion,
+"the human isn't human", a flat background, parallax.
 
 ## Motion
 
@@ -144,6 +154,30 @@ Every sound is played live in the browser from a short recipe in
 | Air | A gust that hits at once (full by 70 ms) and blows itself out, with a fifth riding on it. |
 | Aether | Two triangles a hair apart climb E A E with two echoes (130 and 260 ms, no feedback, so it always ends), then the star glints as its lilac pixel appears (490 ms). |
 | Share or copy | The two-note coin, G up to C. |
+
+### Music
+
+One song per page, in `lib/hackathon/elemental/quiz-music.ts`: chill lo-fi
+chiptune loops, 8 bars each, all on the same four chords (C6/9, Am7, D7sus4,
+G6sus4) voiced only in C major pentatonic, so every answer note and element
+sound lands in tune on top.
+
+| Page | Song |
+|---|---|
+| Intro | `title`: 72 BPM, sparse bells, pad and bass, no drums. Starts on the first icon tap. |
+| Questions | `quiz`: 78 BPM. It builds as you go, like game music: pad and keys first, the bass from question 3, the drums from question 5. |
+| Result | Its element's theme. Fire: 96 BPM, straight, driving pulse arpeggios. Water: 70 BPM, dreamy sine bells, long echoes. Earth: 84 BPM, steady square keys, a woody rim. Air: 90 BPM, light high arpeggios, hats. Aether: 64 BPM, floating bells two octaves up, no drums. |
+
+- Every song's loudest moment sits about 6 dB under a pick (all seven within
+  half a dB of each other). The bass and kick are kept low: a phone speaker
+  can't play them, so the pad and keys carry it there.
+- Songs crossfade (1.5 s in, 0.6 s out). The music steps out for the reveal;
+  arriving on the result page from the quiz, its theme carries on, and a
+  friend opening a shared link hears it after their first tap on the icon.
+  Nothing starts by itself on a cold page load.
+- It stops while the tab is hidden, and the speaker toggle stops it with
+  everything else. The player keeps one bar scheduled ahead, and after a
+  stall it skips ahead instead of cramming.
 
 Each recipe takes any Web Audio context, so it can be rendered offline
 (`OfflineAudioContext`) to listen to and measure. `quiz-sfx.test.ts` checks

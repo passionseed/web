@@ -25,24 +25,49 @@
   }
 }
 
-/* A question scene's idle: two frames, 600 ms each, offset the same way. */
-.idle,
-.idleKey {
-  animation-name: idleFrame;
-  animation-timing-function: steps(1, end);
+/* A question scene (QuestionScene.tsx). Its still shows only when motion is
+   off; otherwise its 8 frames (.fx) take turns. The far layer drifts slowly
+   left and right, a whole pixel at a time, behind the scene: the parallax. */
+.still {
+  display: none;
 }
 
-.idle {
-  opacity: 0;
+.drift {
+  animation: drift 9600ms steps(1, end) infinite;
 }
 
-@keyframes idleFrame {
-  0% {
-    opacity: 1;
+@keyframes drift {
+  0%,
+  6.25% {
+    transform: none;
+  }
+  12.5%,
+  18.75% {
+    transform: translateX(-1px);
+  }
+  25%,
+  31.25% {
+    transform: translateX(-2px);
+  }
+  37.5%,
+  43.75% {
+    transform: translateX(-1px);
   }
   50%,
-  100% {
-    opacity: 0;
+  56.25% {
+    transform: none;
+  }
+  62.5%,
+  68.75% {
+    transform: translateX(1px);
+  }
+  75%,
+  81.25% {
+    transform: translateX(2px);
+  }
+  87.5%,
+  93.75% {
+    transform: translateX(1px);
   }
 }
 
@@ -277,13 +302,16 @@
 /* No motion: every still holds, nothing moves or flashes. The picked answer still lights. */
 @media (prefers-reduced-motion: reduce) {
   .fx,
-  .idle,
   .flash {
     display: none;
   }
 
+  .still {
+    display: inline;
+  }
+
   .fxKey,
-  .idleKey,
+  .drift,
   .pixelIn,
   .glowIn,
   .hitFire,

@@ -7,15 +7,16 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import styles from "@/components/hackathon/elemental/join/join.module.css";
 import { elementLabel, type ElementKey } from "@/components/hackathon/elemental/media";
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
-import { ElementIcon } from "@/components/hackathon/poster/elemental/element-icons";
 import { QUIZ_ELEMENTS, QUIZ_QUESTIONS, QUIZ_RESULTS, scoreQuiz } from "@/lib/hackathon/elemental/quiz";
+import { quizLayers } from "@/lib/hackathon/elemental/quiz-music";
 import { sfxBack, sfxBuild, sfxElement, sfxPick, sfxStart } from "@/lib/hackathon/elemental/quiz-sfx";
 
 import { hitClass, hitStyle } from "./hit";
-import { IconAssemble, IconFlash, IconFx, QuestionScene } from "./PixelArt";
+import { IconAssemble, IconFlash, IconFx } from "./PixelArt";
 import { PlayableIcon } from "./PlayableIcon";
+import { QuestionScene } from "./QuestionScene";
 import fx from "./quiz.module.css";
-import { play, stop } from "./sound";
+import { play, setMusicLayers, startMusic, stop, stopMusic } from "./sound";
 import { SoundToggle } from "./SoundToggle";
 
 import { trackElemental } from "../track";
@@ -28,13 +29,6 @@ const HOLD_MS = 800;
 
 const nameOf = (el: ElementKey) => elementLabel(QUIZ_RESULTS[el].th);
 
-/** Each question's scene at a whole number of px a pixel that fits the column: 7, 8, 9, then 12 wider up. */
-const SCENE_SIZES = [
-  { cell: 7, show: "min-[375px]:hidden" },
-  { cell: 8, show: "hidden min-[375px]:block min-[390px]:hidden" },
-  { cell: 9, show: "hidden min-[390px]:block sm:hidden" },
-  { cell: 12, show: "hidden sm:block" },
-];
 
 /**
  * The quiz itself: an intro, then one question per screen, then a short
@@ -56,20 +50,32 @@ export function ElementalQuiz({ source }: { source?: string }) {
   const pending = useRef(false);
   const pickTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const heading = useRef<HTMLHeadingElement>(null);
-  useEffect(() => () => clearTimeout(pickTimer.current), []);
+  useEffect(
+    () => () => {
+      clearTimeout(pickTimer.current);
+      // Only this page's songs: the result page may already have started its own.
+      stopMusic({ only: ["title", "quiz"] });
+    },
+    [],
+  );
 
   const index = picks.length;
   const total = QUIZ_QUESTIONS.length;
 
   // Each new question takes focus, so keyboard and screen reader users land on it, not on the page.
+  // The music builds with it: a new layer joins on the third and fifth questions.
   useEffect(() => {
-    if (started && !result) heading.current?.focus({ preventScroll: true });
+    if (!started || result) return;
+    heading.current?.focus({ preventScroll: true });
+    setMusicLayers(quizLayers(index));
   }, [started, result, index]);
 
   function start() {
     setStarted(true);
     trackElemental({ step: "quiz_start", source });
     play(sfxStart);
+    // The quiz loop plays under the questions, from this tap (which lets the browser start audio).
+    startMusic("quiz", quizLayers(0));
   }
 
   /** The answer lights and plays its question's note, then the next question comes in. */
@@ -94,8 +100,10 @@ export function ElementalQuiz({ source }: { source?: string }) {
   function back() {
     if (pending.current) return;
     setDirection("back");
-    if (picks.length === 0) setStarted(false);
-    else setPicks(picks.slice(0, -1));
+    if (picks.length === 0) {
+      setStarted(false);
+      startMusic("title");
+    } else setPicks(picks.slice(0, -1));
     play(sfxBack);
   }
 
@@ -104,13 +112,9 @@ export function ElementalQuiz({ source }: { source?: string }) {
   else if (!started) screen = <Intro onStart={start} />;
   else {
     const q = QUIZ_QUESTIONS[index];
-    // A faint icon behind each question, a different element each time. It never matches an answer.
-    const mark = QUIZ_ELEMENTS[index % QUIZ_ELEMENTS.length];
+    // A flat page: the question's scene is the only picture.
     screen = (
-      <section className="relative mx-auto flex min-h-[100dvh] max-w-xl flex-col overflow-hidden px-6 py-8">
-        <div className="pointer-events-none absolute -bottom-6 -right-12 opacity-[0.05]" aria-hidden="true">
-          <ElementIcon element={mark} size={270} color={EL.cream} />
-        </div>
+      <section className="relative mx-auto flex min-h-[100dvh] max-w-xl flex-col overflow-hidden px-6 py-6">
         <div className="relative flex items-center gap-3">
           <button type="button" onClick={back} aria-label="ย้อนกลับ" className="rounded-full p-3.5" style={{ color: EL.creamSoft }}>
             <ArrowLeft className="h-5 w-5" />
@@ -122,15 +126,11 @@ export function ElementalQuiz({ source }: { source?: string }) {
           <SoundToggle color={EL.creamSoft} />
         </div>
 
-        <div key={index} className={`${direction === "forward" ? fx.stepFromRight : fx.stepFromLeft} relative flex flex-1 flex-col justify-center py-8`}>
+        <div key={index} className={`${direction === "forward" ? fx.stepFromRight : fx.stepFromLeft} relative flex flex-1 flex-col justify-center py-4`}>
           {/* The situation, never an answer: see docs/hackathon/elemental-quiz-pixel-art.md, "Scenes". Under 720 px
               tall (iPhone SE) the answers need the room, so the scene steps aside. */}
-          <div className="mb-6 [@media(max-height:719px)]:hidden" aria-hidden="true">
-            {SCENE_SIZES.map(({ cell, show }) => (
-              <div key={cell} className={show}>
-                <QuestionScene question={index} cell={cell} />
-              </div>
-            ))}
+          <div className="mb-5 [@media(max-height:719px)]:hidden" aria-hidden="true">
+            <QuestionScene question={index} />
           </div>
           <h2
             ref={heading}
@@ -187,7 +187,7 @@ function Intro({ onStart }: { onStart: () => void }) {
           <div key={el} className={`${fx.pixelIn} flex flex-col items-center gap-6`} style={{ animationDelay: `${i * 90}ms` }}>
             {sizes.map(({ cell, show, key }) => (
               <div key={key} className={show}>
-                <PlayableIcon element={el} cell={cell} id={`intro-${key}-${el}`} label={`ฟังเสียง${nameOf(el)}`} />
+                <PlayableIcon element={el} cell={cell} id={`intro-${key}-${el}`} label={`ฟังเสียง${nameOf(el)}`} music="title" />
               </div>
             ))}
             <span className="text-xs" style={{ color: EL.creamSoft }}>
@@ -256,6 +256,8 @@ function Reveal({ element }: { element: ElementKey }) {
     const href = `/hackathon/elemental/quiz/${element}?me=1`;
     router.prefetch(href);
     const build = still ? 0 : BUILD_MS;
+    // The music steps back so the reveal has the room.
+    stopMusic();
     play(
       (o, t) => {
         if (!still) sfxBuild(o, t, element, BUILD_MS);

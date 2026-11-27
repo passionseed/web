@@ -10,6 +10,7 @@ import { PixelCrest } from "@/components/hackathon/elemental/quiz/PixelArt";
 import { PlayableIcon } from "@/components/hackathon/elemental/quiz/PlayableIcon";
 import fx from "@/components/hackathon/elemental/quiz/quiz.module.css";
 import { DaysLeft, QuizShare } from "@/components/hackathon/elemental/quiz/QuizShare";
+import { ResultMusic } from "@/components/hackathon/elemental/quiz/ResultMusic";
 import { SoundToggle } from "@/components/hackathon/elemental/quiz/SoundToggle";
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ElementIcon } from "@/components/hackathon/poster/elemental/element-icons";
@@ -61,6 +62,8 @@ export default async function QuizResultPage({ params, searchParams }: { params:
 
   return (
     <main className={`${trirong.variable} min-h-[100dvh] overflow-x-clip`} style={{ backgroundColor: p.bg, color: p.ink }}>
+      {/* The element's own theme: carries on from the quiz, or starts on a tap of the icon. */}
+      <ResultMusic element={element} />
       {/* The crest, 12 px a pixel on phones and 16 px wider up: whole pixels, never stretched. It drips in a row at a time. */}
       <div className={`mb-8 ${fx.crestIn}`}>
         <div className="sm:hidden">
@@ -83,7 +86,7 @@ export default async function QuizResultPage({ params, searchParams }: { params:
             <p className="mt-6 text-xl">{me ? "คุณคือ" : "เพื่อนคุณคือ"}</p>
           </div>
           <div className="shrink-0 pt-1">
-            <PlayableIcon element={element} cell={12} id="hero" label={`ฟังเสียง${elementLabel(r.th)}`} />
+            <PlayableIcon element={element} cell={12} id="hero" label={`ฟังเสียง${elementLabel(r.th)}`} music={element} />
           </div>
         </div>
         <h1 className="mt-2 text-balance text-7xl sm:text-8xl" style={{ fontFamily: EL_FONT.display, fontWeight: 200, lineHeight: 1.15 }}>

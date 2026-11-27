@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 
+import { ALL_LAYERS, barSeconds, musicBar, type Layer, type SongId } from "@/lib/hackathon/elemental/quiz-music";
 import { connectMaster, type SfxOut } from "@/lib/hackathon/elemental/quiz-sfx";
 
 /**
@@ -12,6 +13,11 @@ import { connectMaster, type SfxOut } from "@/lib/hackathon/elemental/quiz-sfx";
  * Sound is a garnish: nothing here may throw into the quiz. Every sound
  * plays on a channel, so muting, a new preview, or leaving the reveal can
  * cut what is already playing.
+ *
+ * The music (lib/hackathon/elemental/quiz-music.ts) is one song per page:
+ * the title theme on the intro, the quiz loop (building as you go) under the
+ * questions, each element's theme on its result page. Songs crossfade, the
+ * music steps out for the reveal, and it stops while the tab is hidden.
  */
 
 const KEY = "elemental-quiz-sound";
@@ -19,8 +25,8 @@ const listeners = new Set<() => void>();
 let on: boolean | null = null;
 let out: SfxOut | null = null;
 
-/** "ui": taps. "preview": an icon tapped to hear it (a new tap replaces the last). "reveal": the result landing. */
-export type Channel = "ui" | "preview" | "reveal";
+/** "ui": taps. "preview": an icon tapped to hear it (a new tap replaces the last). "reveal": the result landing. "music": the loop. */
+export type Channel = "ui" | "preview" | "reveal" | "music";
 const buses = new Map<Channel, GainNode>();
 /** The latest sound asked for while the browser was still starting audio: only it plays, and only if audio starts in time. */
 let waiting: symbol | null = null;
@@ -58,7 +64,11 @@ export function setSoundOn(next: boolean) {
   } catch {
     // Storage blocked: the choice lasts until the page closes.
   }
-  if (!next) for (const channel of [...buses.keys()]) stop(channel);
+  if (next && musicWanted) startMusic(musicWanted);
+  if (!next) {
+    stopMusic({ keepWanted: true });
+    for (const channel of [...buses.keys()]) stop(channel);
+  }
   listeners.forEach((l) => l());
 }
 
@@ -111,8 +121,8 @@ function bus(o: SfxOut, channel: Channel): GainNode {
   return g;
 }
 
-/** Fades out everything playing on `channel` and retires it, including notes already scheduled. */
-export function stop(channel: Channel) {
+/** Fades out everything playing on `channel` (over `fade` seconds) and retires it, including notes already scheduled. */
+export function stop(channel: Channel, fade = CUT_S) {
   const g = buses.get(channel);
   if (!g || !out) return;
   buses.delete(channel);
@@ -120,8 +130,8 @@ export function stop(channel: Channel) {
     const now = out.ctx.currentTime;
     g.gain.cancelScheduledValues(now);
     g.gain.setValueAtTime(g.gain.value, now);
-    g.gain.linearRampToValueAtTime(0, now + CUT_S);
-    setTimeout(() => g.disconnect(), 100);
+    g.gain.linearRampToValueAtTime(0, now + fade);
+    setTimeout(() => g.disconnect(), fade * 1000 + 100);
   } catch {
     // Already gone.
   }
@@ -160,4 +170,96 @@ export function play(sound: (o: SfxOut, t: number) => void, { channel = "ui", re
   } catch {
     // No audio, or it failed: the quiz carries on in silence.
   }
+}
+
+// ---------------------------------------------------------------- music
+
+const MUSIC_FADE_IN_S = 1.5;
+const MUSIC_FADE_OUT_S = 0.6;
+/** Bars are scheduled this far ahead, checked four times a second. */
+const MUSIC_LOOKAHEAD_S = 1.2;
+/** The song the page wants, playing or not (sound off, tab hidden). */
+let musicWanted: SongId | null = null;
+let musicPlaying: SongId | null = null;
+let musicLayers: readonly Layer[] = ALL_LAYERS;
+let musicTimer: ReturnType<typeof setInterval> | null = null;
+let watchingVisibility = false;
+
+/** Music stops while the tab is hidden and comes back when it returns, if it's still wanted. */
+function watchVisibility() {
+  if (watchingVisibility || typeof document === "undefined") return;
+  watchingVisibility = true;
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) stopMusic({ keepWanted: true });
+    else if (musicWanted) startMusic(musicWanted);
+  });
+}
+
+/** Which parts the music plays from the next bar on (the quiz adds them as you go). */
+export function setMusicLayers(layers: readonly Layer[]) {
+  musicLayers = layers;
+}
+
+/**
+ * Plays `song`, fading in over 1.5 s (crossfading from another song), if
+ * sound is on and the tab is showing; otherwise remembers it's wanted. Call
+ * it from a tap the first time, like `play`; from a page load, pass
+ * `ifRunning` so it only carries on audio a tap already started.
+ */
+export function startMusic(song: SongId, layers: readonly Layer[] = ALL_LAYERS, { ifRunning = false }: { ifRunning?: boolean } = {}) {
+  musicWanted = song;
+  musicLayers = layers;
+  watchVisibility();
+  try {
+    if (!soundOn() || (typeof document !== "undefined" && document.hidden)) return;
+    // Without a tap, only carry on audio that's already running (arriving from the quiz); never start it cold.
+    if (ifRunning && (!out || (out.ctx as AudioContext).state !== "running")) return;
+    if (musicPlaying === song && musicTimer) return;
+    if (musicTimer) stopMusic({ keepWanted: true });
+    const o = audio();
+    if (!o) return;
+    const ctx = o.ctx as AudioContext;
+    if (ctx.state !== "running") void ctx.resume().catch(() => {});
+    const g = bus(o, "music");
+    g.gain.setValueAtTime(0, ctx.currentTime);
+    g.gain.linearRampToValueAtTime(1, ctx.currentTime + MUSIC_FADE_IN_S);
+    musicPlaying = song;
+    const barS = barSeconds(song);
+    let bar = 0;
+    let at = ctx.currentTime + 0.3;
+    const tick = () => {
+      try {
+        const dest = buses.get("music");
+        if (!dest) return;
+        // While audio is paused, keep the next bar just ahead; after a stall, skip ahead rather than cram bars in.
+        if (ctx.state !== "running" || at < ctx.currentTime) at = ctx.currentTime + 0.3;
+        while (at < ctx.currentTime + MUSIC_LOOKAHEAD_S) {
+          musicBar({ ctx, dest }, at, bar, song, musicLayers);
+          bar++;
+          at += barS;
+        }
+      } catch {
+        // A bar failed to schedule: the next tick tries the next one.
+      }
+    };
+    tick();
+    musicTimer = setInterval(tick, 250);
+  } catch {
+    // No audio: the quiz carries on in silence.
+  }
+}
+
+/**
+ * Fades the music out over 0.6 s. `keepWanted` pauses it (tab hidden, sound
+ * off, a song change) so it can come back. `only` stops it only if one of
+ * those songs is the one wanted, so a page leaving can't stop the next
+ * page's song.
+ */
+export function stopMusic({ keepWanted = false, only }: { keepWanted?: boolean; only?: readonly SongId[] } = {}) {
+  if (only && (!musicWanted || !only.includes(musicWanted))) return;
+  if (!keepWanted) musicWanted = null;
+  if (musicTimer) clearInterval(musicTimer);
+  musicTimer = null;
+  musicPlaying = null;
+  stop("music", MUSIC_FADE_OUT_S);
 }

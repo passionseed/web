@@ -40,6 +40,12 @@ export const PIXEL_PALETTE: Readonly<Record<string, string>> = {
   v: EL.aetherViolet,
   L: EL.aetherLilac,
   k: EL.cream,
+  // People in the question scenes, drawn like game sprites: skin and its shade, hair (and eyes and shoes),
+  // the navy school uniform. The auntie's pha sin is burnt brown (b).
+  u: "#e2b08c",
+  U: "#b97f5c",
+  h: EL.oil,
+  n: "#2f3a58",
 };
 
 export const CREST_COLS = 30;
@@ -51,10 +57,24 @@ export const FX_STAGE = 15;
 export const FX_OFFSET = 3;
 export const FX_FRAMES = 8;
 
-/** A question's scene: 38x14, above the question. A second frame, if any, alternates with the still every 600 ms. */
-export const SCENE_COLS = 38;
-export const SCENE_ROWS = 14;
-export const SCENE_FRAME_MS = 600;
+/**
+ * A question's scene: a little game screen, 76x28, above the question. Back
+ * to front: a flat backdrop, a far layer (92 wide, so it can drift 8 columns
+ * either way for the parallax), then the scene itself, a still base with 8
+ * frames drawn over it in turn.
+ */
+export const SCENE_COLS = 76;
+export const SCENE_ROWS = 28;
+export const SCENE_FRAMES = 8;
+export const SCENE_FAR_COLS = 92;
+export const SCENE_FAR_PAD = 8;
+export const SCENE_BACKDROPS = { night: "#1d2231", room: "#28231f", dawn: "#3a2d28", smog: "#2b2a23" } as const;
+export type SceneBackdrop = keyof typeof SCENE_BACKDROPS;
+
+/** Frame `delta` of a scene drawn over its `base`: "." keeps the base pixel, "_" clears it, anything else paints it. */
+export function sceneFrame(base: PixelArt, delta: PixelArt): PixelArt {
+  return base.map((row, y) => Array.from(row, (b, x) => (delta[y][x] === "." ? b : delta[y][x] === "_" ? "." : delta[y][x])).join(""));
+}
 
 /** A run of same-coloured pixels on one row: [x, y, length, colour]. Drawing runs, not single cells, leaves no hairline seams. */
 export type PixelRun = readonly [x: number, y: number, length: number, color: string];

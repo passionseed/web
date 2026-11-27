@@ -43,9 +43,9 @@ export const MASTER_GAIN = 0.42;
 /** 4 ms: quick enough to sound instant, slow enough not to click. */
 const ATTACK = 0.004;
 /** What an exponential fade aims for before the voice is cut: -80 dB, inaudible. */
-const SILENT = 0.0001;
+export const SILENT = 0.0001;
 
-type Wave = "triangle" | "sine" | 0.125 | 0.25 | 0.5;
+export type Wave = "triangle" | "sine" | 0.125 | 0.25 | 0.5;
 
 const waves = new WeakMap<BaseAudioContext, Map<number, PeriodicWave>>();
 
@@ -61,7 +61,7 @@ export function pulseCoefficients(duty: number): { real: Float32Array<ArrayBuffe
   return { real, imag };
 }
 
-function oscillator(ctx: BaseAudioContext, wave: Wave): OscillatorNode {
+export function oscillator(ctx: BaseAudioContext, wave: Wave): OscillatorNode {
   const osc = ctx.createOscillator();
   if (typeof wave === "string") {
     osc.type = wave;
@@ -104,7 +104,7 @@ export function seededNoise(length: number, seed = 0x2f6b1d): Float32Array<Array
 
 const noises = new WeakMap<BaseAudioContext, AudioBuffer>();
 
-function noiseBuffer(ctx: BaseAudioContext): AudioBuffer {
+export function noiseBuffer(ctx: BaseAudioContext): AudioBuffer {
   let buf = noises.get(ctx);
   if (!buf) {
     buf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
@@ -117,7 +117,7 @@ function noiseBuffer(ctx: BaseAudioContext): AudioBuffer {
 type ArpOptions = { wave: Wave; notes: readonly number[]; step: number; peak: number; tail: number; lowpass?: number; detune?: number };
 
 /** A voice that steps through `notes`, `step` seconds each, as one held note: an 8-bit arpeggio. */
-function arp(o: SfxOut, t: number, { wave, notes, step, peak, tail, lowpass, detune = 0 }: ArpOptions, dest: AudioNode = o.dest) {
+export function arp(o: SfxOut, t: number, { wave, notes, step, peak, tail, lowpass, detune = 0 }: ArpOptions, dest: AudioNode = o.dest) {
   const { ctx } = o;
   const osc = oscillator(ctx, wave);
   osc.detune.value = detune;
@@ -135,7 +135,7 @@ function arp(o: SfxOut, t: number, { wave, notes, step, peak, tail, lowpass, det
 }
 
 /** A voice that glides from `from` to `to` Hz: only for things that really glide, a drop and the wind. */
-function chirp(o: SfxOut, t: number, wave: Wave, from: number, to: number, dur: number, peak: number, tail: number, dest: AudioNode = o.dest) {
+export function chirp(o: SfxOut, t: number, wave: Wave, from: number, to: number, dur: number, peak: number, tail: number, dest: AudioNode = o.dest) {
   const { ctx } = o;
   const osc = oscillator(ctx, wave);
   osc.frequency.setValueAtTime(from, t);
@@ -149,7 +149,7 @@ function chirp(o: SfxOut, t: number, wave: Wave, from: number, to: number, dur: 
 type HissOptions = { filter: BiquadFilterType; freq: number; q?: number; hold: number; tail: number; peak: number; offset: number };
 
 /** A burst of the seeded noise through one filter. `offset` picks which stretch of the noise, so bursts differ but never change. */
-function hiss(o: SfxOut, t: number, { filter, freq, q = 1, hold, tail, peak, offset }: HissOptions) {
+export function hiss(o: SfxOut, t: number, { filter, freq, q = 1, hold, tail, peak, offset }: HissOptions, dest: AudioNode = o.dest) {
   const { ctx } = o;
   const src = ctx.createBufferSource();
   src.buffer = noiseBuffer(ctx);
@@ -158,7 +158,7 @@ function hiss(o: SfxOut, t: number, { filter, freq, q = 1, hold, tail, peak, off
   f.frequency.value = freq;
   f.Q.value = q;
   const { g, end } = envelope(ctx, t, peak, t + hold, tail);
-  src.connect(f).connect(g).connect(o.dest);
+  src.connect(f).connect(g).connect(dest);
   src.start(t, offset);
   src.stop(end + 0.01);
 }

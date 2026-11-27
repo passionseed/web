@@ -1,4 +1,5 @@
 import { QUIZ_ELEMENTS } from "../quiz";
+import { ALL_LAYERS, MUSIC_BARS, SONGS, barSeconds, musicBar, quizLayers, type SongId } from "../quiz-music";
 import { revealCells } from "../quiz-pixels";
 import {
   ANSWER_NOTES,
@@ -196,5 +197,44 @@ describe("Elemental quiz sounds", () => {
     const { sources, t } = record((o, t0) => sfxElement(o, t0, el));
     // Each voice ends when it stops plus the longest echo behind it (aether's taps are feed-forward, so it ends).
     expect(Math.max(...sources.map((s) => s.stopAt + echoAfter(s))) - t).toBeLessThanOrEqual(0.8);
+  });
+});
+
+describe("Elemental quiz music", () => {
+  const SONG_IDS = Object.keys(SONGS) as SongId[];
+  const cases = SONG_IDS.flatMap((song) => Array.from({ length: MUSIC_BARS }, (_, bar) => [song, bar] as const));
+
+  it.each(cases)("keeps every note of %s, bar %i, in C major pentatonic", (song, bar) => {
+    const { sources } = record((o, t) => musicBar(o, t, bar, song));
+    expect(sources.length).toBeGreaterThan(0);
+    for (const s of sources) {
+      if (s.frequency.events.some((e) => e.kind === "exp")) continue; // the kick's drop is a glide, not a note
+      const notes = s.frequency.events.length ? s.frequency.events.map((e) => e.value) : [s.frequency.value];
+      for (const f of notes) if (f > 0) expect(inKey(f)).toBe(true);
+    }
+  });
+
+  it.each(cases)("schedules %s, bar %i, cleanly: nothing early, every voice faded to silence, echoes that end", (song, bar) => {
+    const { sources, gains, t } = record((o, t0) => musicBar(o, t0, bar, song));
+    for (const s of sources) expect(s.startAt).toBeGreaterThanOrEqual(t);
+    for (const g of gains.filter((g) => g.gain.events.length > 0)) expect(g.gain.events.at(-1)).toMatchObject({ kind: "set", value: 0 });
+    // A pad holds its chord for two bars, then fades: nothing outlives that plus its echoes.
+    expect(Math.max(...sources.map((s) => s.stopAt + echoAfter(s))) - t).toBeLessThanOrEqual(2 * barSeconds(song) + 1.5);
+  });
+
+  it.each(SONG_IDS)("loops %s: bar 8 is bar 0 again", (song) => {
+    const a = record((o, t) => musicBar(o, t, 0, song));
+    const b = record((o, t) => musicBar(o, t, MUSIC_BARS, song));
+    expect(b.sources.map((s) => [s.startAt, s.stopAt])).toEqual(a.sources.map((s) => [s.startAt, s.stopAt]));
+  });
+
+  it("builds the quiz loop as you go: pad and keys, then the bass, then the drums", () => {
+    expect(quizLayers(0)).toEqual(["pad", "keys"]);
+    expect(quizLayers(2)).toContain("bass");
+    expect(quizLayers(2)).not.toContain("drums");
+    expect(quizLayers(7)).toEqual(ALL_LAYERS);
+    const quiet = record((o, t) => musicBar(o, t, 0, "quiz", quizLayers(0))).sources.length;
+    const full = record((o, t) => musicBar(o, t, 0, "quiz", quizLayers(7))).sources.length;
+    expect(full).toBeGreaterThan(quiet);
   });
 });
