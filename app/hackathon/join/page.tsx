@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 import { trirong } from "@/components/hackathon/elemental/fonts";
+import { TrackLinkView } from "@/components/hackathon/elemental/TrackLinkView";
 import { JoinFlow } from "@/components/hackathon/elemental/join/JoinFlow";
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
@@ -63,6 +64,8 @@ export default async function ElementalJoinPage({ searchParams }: { searchParams
 
   return (
     <main className={`${trirong.variable} min-h-[100dvh]`} style={{ backgroundColor: EL.cream, color: EL.ink }}>
+      {/* A team invite carries the inviter's share link, so its opens count too. */}
+      <TrackLinkView source={source} />
       {open ? (
         <JoinFlow
           source={source}

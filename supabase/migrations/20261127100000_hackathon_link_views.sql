@@ -28,3 +28,8 @@ drop policy if exists "admins read hackathon link views"
 create policy "admins read hackathon link views"
   on public.hackathon_link_views for select to authenticated
   using (exists (select 1 from public.user_roles where user_id = auth.uid() and role = 'admin'));
+
+-- Free seats given for sharing are marked here, so links, seats and the team
+-- board count only sign-ups that paid real money.
+alter table public.hackathon_event_registrations
+  add column if not exists free_seat boolean not null default false;

@@ -1,4 +1,4 @@
-import { countDevices, isBotUserAgent, TRACKED_SOURCE_RE, visitHashes } from "../link-views";
+import { countDevices, DEVICE_ID_RE, isBotUserAgent, TRACKED_SOURCE_RE, visitHashes } from "../link-views";
 
 const IPHONE_LINE =
   "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Safari Line/14.19.0";
@@ -13,14 +13,19 @@ describe("link views", () => {
     expect(TRACKED_SOURCE_RE.test("t-")).toBe(false);
   });
 
-  it("gives the same device hash for the same address and browser, and never contains the address", () => {
-    const a = visitHashes("1.2.3.4", IPHONE_LINE, "k");
-    expect(a).toEqual(visitHashes("1.2.3.4", IPHONE_LINE, "k"));
+  it("hashes the browser id and the network separately, and never stores either raw", () => {
+    const id = "0123456789abcdef0123456789abcdef";
+    const a = visitHashes(id, "1.2.3.4", "k");
+    expect(a).toEqual(visitHashes(id, "1.2.3.4", "k"));
     expect(a.deviceHash).toMatch(/^[0-9a-f]{32}$/);
     expect(a.ipHash).toMatch(/^[0-9a-f]{32}$/);
-    expect(a.deviceHash).not.toEqual(visitHashes("1.2.3.5", IPHONE_LINE, "k").deviceHash);
-    expect(a.deviceHash).not.toEqual(visitHashes("1.2.3.4", IPHONE_LINE, "other-key").deviceHash);
-    expect(a.ipHash).toEqual(visitHashes("1.2.3.4", "different browser string here", "k").ipHash);
+    // Same browser on another network (airplane mode, wifi to mobile): still one device.
+    expect(visitHashes(id, "5.6.7.8", "k").deviceHash).toEqual(a.deviceHash);
+    expect(visitHashes("f".repeat(32), "1.2.3.4", "k").deviceHash).not.toEqual(a.deviceHash);
+    expect(visitHashes(id, "1.2.3.4", "other-key").deviceHash).not.toEqual(a.deviceHash);
+    expect(a.deviceHash).not.toContain("1.2.3.4");
+    expect(DEVICE_ID_RE.test(id)).toBe(true);
+    expect(DEVICE_ID_RE.test("not-an-id")).toBe(false);
   });
 
   it("caps how many devices one network adds", () => {
