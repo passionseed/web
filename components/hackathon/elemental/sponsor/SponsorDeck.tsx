@@ -8,6 +8,7 @@ import { formatThaiDate } from "@/lib/content/shift-cohort";
 import { BenefitsArt, PixelArrow, PixelIcon, type IconName } from "./DeckArt";
 import { DeckEditor } from "./DeckEditor";
 import { PrintButton } from "./PrintButton";
+import { PassionSeedWordmark } from "@/components/hackathon/PassionSeedWordmark";
 
 /**
  * Elemental Hackathon sponsor deck: one scrollable page that also prints as
@@ -360,7 +361,7 @@ export function SponsorDeck() {
               <span className="flex items-center gap-2">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/passion-seed-logo.png" alt="" width={40} height={40} />
-                <span style={{ fontFamily: EL_FONT.display, fontSize: 24 }}>PassionSeed</span>
+                <PassionSeedWordmark height={24} />
               </span>
             </div>
             <p className="m-0 mt-8 text-[15px] sm:text-[17px]" style={{ fontFamily: EL_FONT.display, color: EL.inkSoft }}>

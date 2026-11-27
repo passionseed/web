@@ -1,7 +1,7 @@
 import { formatThaiDate } from "@/lib/content/shift-cohort";
 
-/** A kind of programme slot: opening, a live workshop, building, a deadline, or Demo Day. */
-export type ElementalSlotKind = "open" | "workshop" | "build" | "due" | "demo";
+/** A kind of programme slot: opening, a live workshop, building, a deadline, judging, or Demo Day. */
+export type ElementalSlotKind = "open" | "workshop" | "build" | "due" | "judge" | "demo";
 
 /** One line of the programme. `time` is null when only the day is set. */
 export type ElementalSlot = {
@@ -10,33 +10,43 @@ export type ElementalSlot = {
   th: string;
   en: string;
   kind: ElementalSlotKind;
+  /** Last day of a slot that runs over several days. */
+  until?: string;
 };
 
 /**
- * The programme (Big, 2026-11-26; company-brain decisions/log.md, PR #134).
- * Only the times below are decided. Which of the old workshop times
- * (Sat 5 Dec 10:00 and 19:00, Sun 6 Dec 19:00) still hold is (fill in), so
- * they are not listed: add them back here once they are confirmed.
+ * The programme, as on Angpao's schedule poster (confirmed by Angpao,
+ * 2026-11-27): opening Fri 4 Dec 19:00; workshops Sat 5 Dec 10:00 and 19:00
+ * and Sun 6 Dec 19:00; building Mon 7 to Wed 9 Dec; hand-in the night of
+ * Thu 10 Dec; judges review on Fri 11 Dec; Demo Day Sat 12 Dec 13:00 to
+ * 17:00 in the CSII building at Chula, for invited projects only (optional).
+ * The workshop topics, in order interview, build, pitch, are from the
+ * 2026-11-20 schedule (company-brain decisions/log.md); the poster gives no
+ * topics. The hand-in time, 23:00, is Big's (2026-11-27); the poster says
+ * only "the night of Thu 10 Dec".
  */
 const SCHEDULE: readonly ElementalSlot[] = [
-  { date: "2026-12-04", time: "19:00", th: "เปิดงาน (ออนไลน์)", en: "Opening (online)", kind: "open" },
+  { date: "2026-12-04", time: "19:00", th: "เปิดงาน (ออนไลน์ทาง Discord)", en: "Opening (online, Discord)", kind: "open" },
   { date: "2026-12-04", time: "23:59", th: "ปิดรับสมัคร", en: "Sign-up closes", kind: "due" },
-  { date: "2026-12-05", time: null, th: "เริ่มช่วงสร้างผลงาน (ออนไลน์ทาง Discord)", en: "Build sprint starts (online, Discord)", kind: "build" },
-  { date: "2026-12-07", time: null, th: "จบช่วงสร้างผลงาน ประกาศทีมที่เข้ารอบ", en: "Sprint ends. Finalists announced", kind: "build" },
-  { date: "2026-12-08", time: null, th: "สัปดาห์ทดสอบ: หาผู้ใช้จริง เก็บหลักฐาน", en: "Test week: get real users, log evidence", kind: "build" },
-  { date: "2026-12-10", time: null, th: "วันรัฐธรรมนูญ (วันหยุด): ได้วันสร้างงานเพิ่มอีกวัน", en: "Constitution Day (holiday): extra build day", kind: "build" },
-  { date: "2026-12-10", time: "23:00", th: "ส่งผลงานรอบสุดท้าย", en: "Final hand-in", kind: "due" },
-  { date: "2026-12-12", time: null, th: "Demo Day และมอบรางวัล ที่ BAScii จุฬาฯ", en: "Demo Day and awards, onsite at BAScii, Chula", kind: "demo" },
+  { date: "2026-12-05", time: "10:00", th: "เวิร์กช็อป: สัมภาษณ์และหากลุ่มลูกค้า", en: "Workshop: interviews and finding users", kind: "workshop" },
+  { date: "2026-12-05", time: "19:00", th: "เวิร์กช็อป: สร้างผลงาน", en: "Workshop: building", kind: "workshop" },
+  { date: "2026-12-06", time: "19:00", th: "เวิร์กช็อป: การนำเสนอ", en: "Workshop: pitching", kind: "workshop" },
+  { date: "2026-12-07", until: "2026-12-09", time: null, th: "สร้างผลงาน ถึง พ. 9 ธ.ค.", en: "Build, to Wed 9 Dec", kind: "build" },
+  { date: "2026-12-10", time: "23:00", th: "ส่งผลงาน", en: "Hand-in", kind: "due" },
+  { date: "2026-12-11", time: null, th: "กรรมการตรวจผลงาน", en: "Judges review the work", kind: "judge" },
+  { date: "2026-12-12", time: "13:00", th: "Demo Day ถึง 17:00 ที่ตึก CSII จุฬาฯ (ทีมที่ได้รับเชิญ)", en: "Demo Day to 17:00, CSII building, Chula (invited teams)", kind: "demo" },
 ];
 
 /**
  * Facts the Elemental posters print. Source: passionseed/company-brain.
  * - Dates: Fri 4 to Sat 12 December 2026 (Big, 2026-11-26; company-brain
  *   decisions/log.md, PR #134). Online on Discord until Demo Day, which is
- *   onsite at BAScii, Chula, on Sat 12 Dec. BAScii is closed on Sat 5 Dec.
+ *   onsite in the CSII building at Chula (ตึก CSII จุฬาฯ) on Sat 12 Dec,
+ *   13:00 to 17:00 (Angpao's schedule poster, confirmed 2026-11-27; it
+ *   replaces "BAScii, Chula"). BAScii is closed on Sat 5 Dec.
  *   This replaces 5 to 7 December, 3 days over the long weekend (Angpao,
  *   2026-11-19), and the video hand-in on Mon 7 Dec at 23:00. CSII said OK to
- *   BAScii for 12 Dec (told by Big, 2026-11-26; Linear HAC-74). Hours: (fill in).
+ *   BAScii for 12 Dec (told by Big, 2026-11-26; Linear HAC-74).
  * - The final hand-in is Thu 10 Dec at 23:00 (Big, 2026-11-27). It replaces
  *   Fri 11 Dec at 23:59, so Constitution Day is the last build day.
  * - Sponsor logos are locked on Mon 7 Dec (Big, 2026-11-26).
@@ -106,17 +116,21 @@ export const ELEMENTAL = {
   /** Last day to sign up, Bangkok time (inclusive). */
   registrationClosesOn: "2026-12-04",
   /** Where it happens: online until Demo Day, then onsite. */
-  venueTh: "ออนไลน์ทาง Discord, Demo Day ที่ BAScii จุฬาฯ",
+  venueTh: "ออนไลน์ทาง Discord, Demo Day ที่ตึก CSII จุฬาฯ",
   /** The same, short enough for a ticket stub. */
-  venueShort: "Discord + BAScii",
+  venueShort: "Discord + CSII",
   /** The format in a poster's facts row: online, then the one onsite day. */
   formatShortTh: "ออนไลน์ + Demo Day ที่จุฬาฯ",
   /** The one onsite day. */
   demoDay: {
     date: "2026-12-12",
-    venueTh: "BAScii จุฬาฯ",
+    venueTh: "ตึก CSII จุฬาฯ",
     /** For search engines: no street address is on record, so only the city. */
-    venueEn: "BAScii, Chulalongkorn University",
+    venueEn: "CSII building, Chulalongkorn University",
+    /** Hours, who presents, and that going is optional (Angpao, 2026-11-26). */
+    time: "13:00–17:00",
+    whoTh: "เฉพาะผลงานที่ได้รับเชิญ",
+    optional: true,
     city: "Bangkok",
     country: "TH",
   },
@@ -172,7 +186,7 @@ export function thaiDateLine(): string {
   return `${s.day} ถึง ${formatThaiDate(ELEMENTAL.endDate, false)} ${e.year + 543}`;
 }
 
-/** "Demo Day 12 ธ.ค. ที่ BAScii จุฬาฯ": the one onsite day. */
+/** "Demo Day 12 ธ.ค. ที่ ตึก CSII จุฬาฯ": the one onsite day. */
 export function demoDayLine(): string {
   return `Demo Day ${formatThaiDate(ELEMENTAL.demoDay.date, false)} ที่ ${ELEMENTAL.demoDay.venueTh}`;
 }

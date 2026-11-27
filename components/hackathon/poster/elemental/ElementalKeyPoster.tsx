@@ -1,7 +1,9 @@
+import type { ReactNode } from "react";
 import { Trirong } from "next/font/google";
 import QRCode from "qrcode";
 import { EL, EL_FONT } from "./brand";
 import { ELEMENTAL, prizeTotal, thaiDayRange } from "./facts";
+import { PassionSeedWordmark } from "@/components/hackathon/PassionSeedWordmark";
 import { posterLabel, posterSource } from "@/lib/hackathon/elemental/poster-numbers";
 
 /**
@@ -277,7 +279,7 @@ function GlyphLetter({ ch, el, on }: { ch: string; el: GlyphElement; on: boolean
 }
 
 /** Pixel art from rows of characters, one cell per character. */
-function Pixels({ rows, fill, cell }: { rows: readonly string[]; fill: Record<string, string>; cell: number }) {
+export function Pixels({ rows, fill, cell }: { rows: readonly string[]; fill: Record<string, string>; cell: number }) {
   const w = rows[0].length;
   const h = rows.length;
   return (
@@ -287,14 +289,39 @@ function Pixels({ rows, fill, cell }: { rows: readonly string[]; fill: Record<st
   );
 }
 
+/**
+ * CSII, Chulalongkorn School of Integrated Innovation, the Demo Day's host, at
+ * the end of the co-brand lockup (Angpao, 2026-11-26: "add logo to the main
+ * poster"). The CSII half of the CSII | BAScii lockup they sent, in ink.
+ */
+function CsiiMark() {
+  return (
+    <>
+      <span style={{ fontFamily: EL_FONT.mono, fontSize: 20, color: EL.inkSoft }}>×</span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/hackathon/partners/csii.png" alt="CSII, Chulalongkorn School of Integrated Innovation" width={153} height={50} style={{ opacity: 0.88 }} />
+    </>
+  );
+}
+
+/** Chula's pink (an approximation), so "จุฬาฯ" stands out in the facts row (Angpao, 2026-11-26: "make จุฬา character more standout", then option B, "Demo Day @ จุฬา"). */
+export const CHULA_PINK = "#DE5C8E";
+
+/** "จุฬา" as white type on a pink tag, spelled as Angpao wrote it (no ฯ, which also keeps the facts on two lines). */
+export function Chula() {
+  return <span style={{ display: "inline-block", marginLeft: 6, padding: "0 7px", backgroundColor: CHULA_PINK, color: "#ffffff", fontWeight: 600 }}>จุฬา</span>;
+}
+
 /** The small icons in the facts row, 9x9. */
-const ICON = {
+export const ICON = {
   date: ["#.......#", "#########", "#########", "#.......#", "#.#.#.#.#", "#.......#", "#.#.#.#.#", "#.......#", "#########"],
   online: ["..#####..", ".#.....#.", "#..###..#", "..#...#..", ".#..#..#.", "...#.#...", "....#....", ".........", "....#...."],
   prize: ["#########", "#.#####.#", ".#.###.#.", "...###...", "....#....", "....#....", "..#####..", ".#######.", "........."],
   friends: [".##...##.", "####.####", ".##...##.", ".........", "###...###", "####.####", "####.####", ".........", "........."],
   workshop: ["#########", "#.......#", "#.##....#", "#....##.#", "#.###...#", "#.......#", "#########", "...#.#...", "..#...#.."],
   /** A graduation cap with its tassel: who the hackathon is for. */
+  /** A map pin: the Demo Day's place. */
+  pin: ["..#####..", ".##...##.", ".#.....#.", ".##...##.", "..#####..", "...###...", "....#....", ".........", "#########"],
   school: ["....#....", "...###...", ".#######.", "#########", ".#######.", "#..###...", "#.#...#..", "#..###...", "........."],
 } as const;
 
@@ -303,7 +330,7 @@ const ICON = {
 const HIGHLIGHT = "#ffd067";
 
 /** One fact in the bottom row: an icon and a few words, all the same size. */
-function Fact({ icon, children, color = EL.cream }: { icon: keyof typeof ICON; children: string; color?: string }) {
+export function Fact({ icon, children, color = EL.cream }: { icon: keyof typeof ICON; children: ReactNode; color?: string }) {
   return (
     <span className="flex items-center gap-[9px] whitespace-nowrap">
       <Pixels rows={ICON[icon]} fill={{ "#": color }} cell={3} />
@@ -716,8 +743,8 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
                 <span className="flex items-center gap-[10px]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/passion-seed-logo.png" alt="" width={50} height={50} />
-                  {/* The site's font for the name, Libre Franklin, in regular weight (Angpao, 2026-11-23: Libre Franklin, not bold). */}
-              <span style={{ fontFamily: "var(--font-libre-franklin), sans-serif", fontWeight: 400, fontSize: 26, letterSpacing: "-0.01em", color: EL.ink }}>PassionSeed</span>
+                  {/* The PassionSeed wordmark (Angpao, 2026-11-26; it replaces Libre Franklin type, 2026-11-23). */}
+                  <PassionSeedWordmark height={26} style={{ color: EL.ink }} />
                 </span>
               </div>
               <div className="mt-[14px]" style={{ fontFamily: EL_FONT.display, fontWeight: 500, fontSize: 30, lineHeight: "36px" }}>สแกนเพื่อสมัคร</div>
@@ -732,9 +759,10 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
             <span className="flex items-center gap-[10px]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/passion-seed-logo.png" alt="" width={50} height={50} />
-              {/* The site's font for the name, Libre Franklin, in regular weight (Angpao, 2026-11-23: Libre Franklin, not bold). */}
-              <span style={{ fontFamily: "var(--font-libre-franklin), sans-serif", fontWeight: 400, fontSize: 26, letterSpacing: "-0.01em", color: EL.ink }}>PassionSeed</span>
+              {/* The PassionSeed wordmark (Angpao, 2026-11-26; it replaces Libre Franklin type, 2026-11-23). */}
+              <PassionSeedWordmark height={26} style={{ color: EL.ink }} />
             </span>
+            <CsiiMark />
           </div>
         )}
         {/* "งานแข่ง" is gone from here (Angpao, 2026-11-23): the line at the bottom now starts with "แข่ง". */}
@@ -750,9 +778,11 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
         </h1>
         {/* The facts as a row under the title, in ink on the sky (review note, 2026-11-23: "move the info under here, as a row"). Two lines: when, where and who, then price and workshops. Who moved up beside the dates when the format got longer (4–12 Dec), so the row still fits on two lines. */}
         {facts === "top" ? (
-          <div className="flex flex-wrap items-center gap-x-[24px] gap-y-[6px]" style={{ width: 690, marginLeft: 4, marginTop: 4, fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 23, lineHeight: "32px" }}>
+          /* Two lines, not three: a third line's icon sat on the dark mountain and couldn't be read (Angpao, 2026-11-26), so the type is 21px, not 23, and the Demo Day fact names Chula only, as a pink tag. */
+          <div className="flex flex-wrap items-center gap-x-[14px] gap-y-[6px]" style={{ width: 660, marginLeft: 4, marginTop: 4, fontFamily: EL_FONT.display, fontWeight: 400, fontSize: 21, lineHeight: "30px" }}>
             <Fact icon="date" color={EL.ink}>{thaiDayRange()}</Fact>
-            <Fact icon="online" color={EL.ink}>{ELEMENTAL.formatShortTh}</Fact>
+            <Fact icon="online" color={EL.ink}>ออนไลน์</Fact>
+            <Fact icon="pin" color={EL.ink}>Demo Day @<Chula /></Fact>
             <Fact icon="school" color={EL.ink}>{who}</Fact>
             <Fact icon="friends" color={EL.ink}>{`มากับเพื่อน ฿${ELEMENTAL.groupPriceBaht} ต่อคน`}</Fact>
             <Fact icon="workshop" color={EL.ink}>{`${BEGINNER[0]} ${BEGINNER[1]}`}</Fact>
@@ -790,4 +820,9 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
       </svg>
     </div>
   );
+}
+
+/** The edition's name with its element letters, as in the key poster's title, for other posters in the series. */
+export function EditionWord({ glyphs = true }: { glyphs?: boolean }) {
+  return <>{Array.from(ELEMENTAL.edition).map((ch, i) => (TITLE_GLYPHS[i] ? <GlyphLetter key={i} ch={ch} el={TITLE_GLYPHS[i]} on={glyphs} /> : ch))}</>;
 }
