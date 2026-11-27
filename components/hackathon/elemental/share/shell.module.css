@@ -126,7 +126,103 @@
   background-size: 220px 220px;
 }
 
+/* RollingNumber: a number that changed on a poll. The old one slides up and fades, the new one comes in. */
+.roll {
+  position: relative;
+  display: inline-block;
+}
+
+.rollOut {
+  position: absolute;
+  inset: 0;
+  animation: el-roll-out 120ms var(--el-ease-snap, cubic-bezier(0.4, 0, 0.2, 1)) forwards;
+}
+
+.rollIn {
+  display: inline-block;
+  animation: el-roll-in 240ms var(--el-ease-tension, cubic-bezier(0.05, 0.7, 0.35, 0.99)) 80ms both;
+}
+
+/* "+2" in flameCore for 2.4s, just under the number. */
+.delta {
+  position: absolute;
+  top: calc(100% + 2px);
+  white-space: nowrap;
+  font-family: var(--font-bai-jamjuree), sans-serif;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 16px;
+  color: var(--el-action);
+  pointer-events: none;
+  animation: el-delta-life 2400ms linear forwards;
+}
+
+.deltaEnd {
+  right: 0;
+}
+
+.deltaStart {
+  left: 0;
+}
+
+@keyframes el-roll-out {
+  to {
+    transform: translateY(-6px);
+    opacity: 0;
+  }
+}
+
+@keyframes el-roll-in {
+  from {
+    transform: translateY(6px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes el-delta-life {
+  0% {
+    opacity: 0;
+  }
+  7% {
+    opacity: 1;
+  }
+  83% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes el-delta-gone {
+  0%,
+  99% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .rollOut {
+    display: none;
+  }
+
+  .rollIn {
+    animation: none;
+  }
+
+  /* The "+2" still says what changed, then goes, without fading. */
+  .delta {
+    animation: el-delta-gone 2400ms linear forwards;
+  }
+
   .button,
   .input {
     transition: none;

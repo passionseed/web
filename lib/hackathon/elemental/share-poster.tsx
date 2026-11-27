@@ -55,8 +55,11 @@ function qrSvg(url: string, px: number): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${px}" height="${px}" viewBox="0 0 ${n} ${n}" shape-rendering="crispEdges"><path d="${d}" fill="${EL.ink}"/></svg>`;
 }
 
-export const posterLabel = (code: string, kind: ShareKind = "student") =>
-  `${kind === "teacher" ? "ครู · " : ""}No. ${code.toUpperCase()}`;
+/** "No. 1A2B 3C4D": the code in two groups of four, as the pages print it (CodeText). */
+export const posterLabel = (code: string, kind: ShareKind = "student") => {
+  const c = code.toUpperCase();
+  return `${kind === "teacher" ? "ครู · " : ""}No. ${c.slice(0, 4)} ${c.slice(4)}`;
+};
 
 /** A JPEG of the poster with this sharer's QR code and code. */
 export async function renderSharePoster(code: string, kind: ShareKind = "student"): Promise<Buffer> {

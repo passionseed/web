@@ -10,6 +10,7 @@ import cinema from "../elemental-cinema.module.css";
 import { ElementalTopBar } from "../ElementalTopBar";
 import { trirong } from "../fonts";
 import { KEY_VISUAL_MEDIA } from "../media";
+import { Arrow } from "./Arrow";
 import shell from "./shell.module.css";
 
 /**
@@ -41,9 +42,12 @@ import shell from "./shell.module.css";
  *
  * Controls (≥52px, square corners, Bai Jamjuree 600 16/24)
  * - PrimaryButton / SecondaryButton({ href | onClick, icon, full }): one primary per screen.
- * - EditorialLink({ href | onClick, size, tone, arrow }): the landing's Trirong italic "… →" link, 44px tall.
+ * - EditorialLink({ href | onClick, size, tone, arrow }): the landing's Trirong italic link with an Arrow, 44px tall.
  * - TextInput({ id, label, hint, error, leading }): 52px field, 2px focus rule.
  * - PixelIcon({ name, size }): 9×9 pixel icons (ICON from the poster + UI_ICON), instead of lucide.
+ * - Arrow({ dir, weight }): "→"/"←" as SVG (the trimmed fonts have no arrow glyph). thin for Trirong
+ *   links, bold for buttons; buttons take arrow to add one after the label. Never type "→" or "←".
+ * - RollingNumber({ value, style, align }): a polled number that rolls when it changes (client component).
  *
  * The older exports below (btn, filled, outline, Title, Lead, TextLink …) are the cream style the
  * current screens still use; they go once every screen has moved over.
@@ -226,6 +230,8 @@ type ControlBase = {
   icon?: PixelIconName;
   /** Full width (the sticky bar). */
   full?: boolean;
+  /** A bold Arrow after the label ("ส่งใน LINE →"). */
+  arrow?: boolean;
   className?: string;
 };
 type LinkControl = ControlBase & {
@@ -240,13 +246,21 @@ type ButtonControl = ControlBase & Omit<ButtonHTMLAttributes<HTMLButtonElement>,
 export type ControlProps = LinkControl | ButtonControl;
 
 function Control(props: ControlProps & { kind: "primary" | "secondary" }) {
-  const { kind, children, icon, full, className } = props;
+  const { kind, children, icon, full, arrow, className } = props;
   const cls = `${shell.button} ${shell[kind]} inline-flex min-h-[52px] items-center justify-center gap-2.5 rounded-[2px] px-6 py-3 text-center text-base ${full ? "w-full" : ""} ${className ?? ""}`;
   const style: CSSProperties = { fontFamily: EL_FONT.body, fontWeight: 600, lineHeight: "24px" };
   const inner = (
     <>
       {icon && <PixelIcon name={icon} />}
-      <span>{children}</span>
+      <span>
+        {children}
+        {arrow && (
+          <>
+            {" "}
+            <Arrow weight="bold" />
+          </>
+        )}
+      </span>
     </>
   );
   if (props.href !== undefined) {
@@ -271,7 +285,7 @@ function Control(props: ControlProps & { kind: "primary" | "secondary" }) {
       </Link>
     );
   }
-  const { kind: _kind, children: _children, icon: _icon, full: _full, className: _className, href: _href, type = "button", ...rest } = props;
+  const { kind: _kind, children: _children, icon: _icon, full: _full, arrow: _arrow, className: _className, href: _href, type = "button", ...rest } = props;
   return (
     <button type={type} className={cls} style={style} {...rest}>
       {inner}
@@ -322,7 +336,12 @@ export function EditorialLink({
   const inner = (
     <span className={`${cinema.textLink} ${cinema.textLinkInView}`}>
       {children}
-      {arrow && " →"}
+      {arrow && (
+        <>
+          {" "}
+          <Arrow />
+        </>
+      )}
     </span>
   );
   if (href === undefined) {
@@ -412,6 +431,10 @@ export function TextInput({
 
 export { PixelEdge, PixelIcon, type PixelIconName };
 
+/** A polled number that rolls when it changes (board rows, SeatCard's live count). A client component. */
+export { RollingNumber } from "./RollingNumber";
+export { Arrow };
+
 // ---------- Shell ----------
 
 /** The "Elemental" wordmark with the poster's four corrupted letters, sized by font size. */
@@ -432,8 +455,8 @@ export function FooterWordmark({ surface }: { surface: Surface }) {
   const link = (
     <Link href="/hackathon/elemental" aria-label={`${ELEMENTAL.edition} Hackathon`} className="inline-flex min-h-11 items-baseline gap-3" style={{ color: EL.ink }}>
       <ElementalWordmark />
-      <span aria-hidden="true" className="italic" style={display(300, 28, 1)}>
-        →
+      <span aria-hidden="true" style={display(300, 28, 1)}>
+        <Arrow />
       </span>
     </Link>
   );
@@ -506,13 +529,14 @@ export function SkyBand({
   lead?: ReactNode;
   facts?: Fact[];
   image?: string;
-  /** Total height in px; default 240, or 320 with facts. */
+  /** Total height in px; default 200, or 320 with facts. */
   height?: number;
 }) {
   return (
-    <section className="relative isolate flex flex-col overflow-hidden" style={{ minHeight: height ?? (facts ? 320 : 240) }}>
+    <section className="relative isolate flex flex-col overflow-hidden" style={{ minHeight: height ?? (facts ? 320 : 200) }}>
       <Image src={image} alt="" fill priority sizes="100vw" className="-z-10 object-cover object-[50%_0%] sm:object-[50%_18%]" />
-      <div aria-hidden="true" className="absolute inset-x-0 bottom-0 -z-10 h-[58%]" style={{ background: SKY_FADE }} />
+      {/* With facts the fade carries them; without, a short fade, so no dark gap opens under the title. */}
+      <div aria-hidden="true" className={`absolute inset-x-0 bottom-0 -z-10 ${facts ? "h-[58%]" : "h-[40%]"}`} style={{ background: SKY_FADE }} />
       <div className="mx-auto w-full max-w-xl px-5 pb-6 pt-6 sm:px-8" style={{ color: EL_GROUND.skyInk }}>
         {title}
         {lead && (

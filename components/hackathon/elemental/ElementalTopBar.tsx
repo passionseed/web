@@ -6,6 +6,7 @@ import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 
 import styles from "./elemental-cinema.module.css";
+import { Arrow } from "./share/Arrow";
 
 /**
  * The Elemental top bar: The Next Decade × PassionSeed, as on the poster, and
@@ -27,7 +28,9 @@ const TONE: Record<TopBarTone, { bg: string; color: string; border: string; logo
 export function TopBarBack({ href, label = "หน้าของฉัน" }: { href: string; label?: string }) {
   return (
     <Link href={href} className="-mr-2 inline-flex min-h-11 items-center px-2 text-[15px] italic" style={{ fontFamily: EL_FONT.display, fontWeight: 300 }}>
-      <span className={styles.textLink}>← {label}</span>
+      <span className={styles.textLink}>
+        <Arrow dir="left" /> {label}
+      </span>
     </Link>
   );
 }
