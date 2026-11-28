@@ -12,9 +12,11 @@ import type { PublicRegistration } from "@/lib/supabase/hackathon-event-registra
 import { BuddyPass, IouSlip } from "./BuddyPass";
 import { ConnectDiscord } from "./ConnectDiscord";
 import { PayWithSlip } from "./PayWithSlip";
+import { RememberMyPage } from "./RememberMyPage";
 import { placeFor, ticketNumber } from "./places";
 import { TeamInvite } from "./TeamInvite";
 import { TeamJoin } from "./TeamJoin";
+import { TeamOffer, type TeamOfferTarget } from "./TeamOffer";
 import { Ticket } from "./Ticket";
 import { TrackStep } from "./TrackStep";
 
@@ -37,6 +39,8 @@ type Props = {
   shareHref?: string | null;
   /** Whether team changes are still open. Left out, it follows the clock (ELEMENTAL.teamChangeClosesAt). */
   teamChangeOpen?: boolean;
+  /** Came from a friend's team link (?join=<code>): the team it points at, shown at the top to join or move to. */
+  joinOffer?: { code: string; target: TeamOfferTarget } | null;
   demo?: boolean;
 };
 
@@ -89,11 +93,58 @@ function BuddySection({ reg }: { reg: Props["reg"] }) {
  * the exact amount, so a person who has already transferred is told to send
  * the slip before the price changes under it.
  */
-function Team({ token, reg, demo, teamChangeOpen: openProp }: Props) {
+const closedNoteFor = (until: string) => `ปิดการเปลี่ยนทีมแล้วเมื่อ ${until}`;
+const priceFollowsTeam = (reg: Props["reg"]) => reg.status === "pending" && !reg.onBuddyPass && !reg.buddyOf;
+
+/** What joining a team does to a sign-up that has none: its price, its slip, its buddy pass. */
+function joinNotes(reg: Props["reg"]): string[] {
+  const priceFollows = priceFollowsTeam(reg);
+  const notes = !priceFollows
+    ? [reg.status === "pending" ? "ค่าสมัครของหน้านี้ไม่เปลี่ยน" : "ค่าสมัครที่จ่ายแล้วไม่เปลี่ยน ไม่มีคืนเงินและไม่ต้องจ่ายเพิ่ม"]
+    : reg.memberCount === 1
+      ? [
+          `เข้าทีมแล้ว ค่าสมัครเป็น ฿${ELEMENTAL.groupPriceBaht} เท่ากับเพื่อนในทีม`,
+          `ถ้าโอน ฿${ELEMENTAL.priceBaht} ไปแล้ว ส่งสลิปก่อน แล้วค่อยเข้าทีม`,
+        ]
+      : [`ค่าสมัครยังเป็นคนละ ฿${ELEMENTAL.groupPriceBaht}`];
+  // The pass follows the ฿199 (lib/hackathon/elemental/buddy-pass.ts).
+  if (reg.buddyPass && priceFollows) {
+    notes.push(`บัตรเพื่อนมากับราคา ฿${ELEMENTAL.priceBaht} เข้าทีมก่อนจ่ายจะไม่มีบัตรเพื่อน`);
+  } else if (reg.buddyPass?.state === "locked" || reg.buddyPass?.state === "available") {
+    notes.push("บัตรเพื่อนยังใช้ได้หลังเข้าทีม เพื่อนที่ใช้บัตรจะได้เข้าทีมเดียวกัน ถ้าทีมยังมีที่ว่าง");
+  }
+  return notes;
+}
+
+/** What moving from one team to another does: in a team before and after, so the price stays. */
+function switchNotes(reg: Props["reg"]): string[] {
+  const notes = [
+    priceFollowsTeam(reg)
+      ? `ค่าสมัครยังเป็น ฿${ELEMENTAL.groupPriceBaht * reg.memberCount} เท่าเดิม`
+      : reg.status === "pending"
+        ? "ค่าสมัครของหน้านี้ไม่เปลี่ยน"
+        : "ค่าสมัครที่จ่ายแล้วไม่เปลี่ยน ไม่มีคืนเงินและไม่ต้องจ่ายเพิ่ม",
+  ];
+  if (reg.isTeamStarter) notes.push("ทีมเดิมยังอยู่ เพื่อนในทีมเดิมได้สิทธิ์เปลี่ยนชื่อทีมต่อ");
+  if (reg.buddyPass?.state === "locked" || reg.buddyPass?.state === "available") {
+    notes.push("บัตรเพื่อนยังใช้ได้ เพื่อนที่ใช้บัตรจะได้เข้าทีมใหม่นี้ ถ้ายังมีที่ว่าง");
+  }
+  return notes;
+}
+
+/** Whether ?join= points at a team this sign-up can join or move to right now, so the card at the top is the way in. */
+function offerActionable({ reg, joinOffer, teamChangeOpen: openProp }: Props): boolean {
+  const target = joinOffer?.target;
+  if (!target || !(openProp ?? teamChangeOpen())) return false;
+  return reg.team?.id !== target.id && target.spotsLeft >= reg.memberCount;
+}
+
+function Team(props: Props) {
+  const { token, reg, demo, teamChangeOpen: openProp } = props;
   const open = openProp ?? teamChangeOpen();
   const until = teamChangeDeadlineTh();
-  const closedNote = `ปิดการเปลี่ยนทีมแล้วเมื่อ ${until}`;
-  const priceFollows = reg.status === "pending" && !reg.onBuddyPass && !reg.buddyOf;
+  const closedNote = closedNoteFor(until);
+  const priceFollows = priceFollowsTeam(reg);
   const alone = reg.memberCount === 1;
   if (!reg.team) {
     if (!open) {
@@ -103,21 +154,9 @@ function Team({ token, reg, demo, teamChangeOpen: openProp }: Props) {
         </p>
       );
     }
-    const notes = !priceFollows
-      ? [reg.status === "pending" ? "ค่าสมัครของหน้านี้ไม่เปลี่ยน" : "ค่าสมัครที่จ่ายแล้วไม่เปลี่ยน ไม่มีคืนเงินและไม่ต้องจ่ายเพิ่ม"]
-      : alone
-        ? [
-            `เข้าทีมแล้ว ค่าสมัครเป็น ฿${ELEMENTAL.groupPriceBaht} เท่ากับเพื่อนในทีม`,
-            `ถ้าโอน ฿${ELEMENTAL.priceBaht} ไปแล้ว ส่งสลิปก่อน แล้วค่อยเข้าทีม`,
-          ]
-        : [`ค่าสมัครยังเป็นคนละ ฿${ELEMENTAL.groupPriceBaht}`];
-    // The pass follows the ฿199 (lib/hackathon/elemental/buddy-pass.ts).
-    if (reg.buddyPass && priceFollows) {
-      notes.push(`บัตรเพื่อนมากับราคา ฿${ELEMENTAL.priceBaht} เข้าทีมก่อนจ่ายจะไม่มีบัตรเพื่อน`);
-    } else if (reg.buddyPass?.state === "locked" || reg.buddyPass?.state === "available") {
-      notes.push("บัตรเพื่อนยังใช้ได้หลังเข้าทีม เพื่อนที่ใช้บัตรจะได้เข้าทีมเดียวกัน ถ้าทีมยังมีที่ว่าง");
-    }
-    return <TeamJoin token={token} notes={notes} until={until} demo={demo} />;
+    // The card at the top already offers the friend's team.
+    if (offerActionable(props)) return null;
+    return <TeamJoin token={token} notes={joinNotes(reg)} until={until} demo={demo} />;
   }
   const leaveNotes =
     priceFollows && alone
@@ -324,7 +363,21 @@ export function PayView(props: Props) {
         <p className="text-sm" style={{ color: EL.inkSoft }}>
           {ELEMENTAL.edition} Hackathon · {thaiDateLine()} · {ELEMENTAL.venueTh}
         </p>
+        {props.joinOffer && (
+          <TeamOffer
+            token={props.token}
+            code={props.joinOffer.code}
+            target={props.joinOffer.target}
+            current={props.reg.team ? { id: props.reg.team.id, name: props.reg.team.name } : null}
+            memberCount={props.reg.memberCount}
+            notes={props.reg.team ? switchNotes(props.reg) : joinNotes(props.reg)}
+            open={props.teamChangeOpen ?? teamChangeOpen()}
+            closedNote={closedNoteFor(teamChangeDeadlineTh())}
+            demo={props.demo}
+          />
+        )}
         <StatusSection {...props} />
+        {!props.demo && <RememberMyPage token={props.token} />}
       </div>
     </main>
   );

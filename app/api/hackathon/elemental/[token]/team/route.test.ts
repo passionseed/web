@@ -147,3 +147,43 @@ describe("who may call", () => {
     expect(setRegistrationTeam).not.toHaveBeenCalled();
   });
 });
+
+describe("switch", () => {
+  const inTeam = { ...solo, amountBaht: 149, team: { ...team, id: "team-0", name: "น้ำแข็ง" } };
+
+  it("moves a sign-up from its team to the friend's team, keeping the group price", async () => {
+    getRegistrationByToken.mockResolvedValue(inTeam);
+    const res = await post({ action: "switch", code: `https://passionseed.org/hackathon/join?team=${CODE}&src=team` });
+    expect(res).toEqual({ status: 200, json: { team: { name: "ไฟป่า", inviteCode: CODE }, amountBaht: 149 } });
+    expect(setRegistrationTeam).toHaveBeenCalledTimes(1);
+    expect(setRegistrationTeam).toHaveBeenCalledWith("reg-1", { id: "team-1", name: "ไฟป่า" }, 149);
+  });
+
+  it("keeps what a paid sign-up paid, even the solo price", async () => {
+    getRegistrationByToken.mockResolvedValue({ ...inTeam, status: "paid", amountBaht: 199 });
+    expect((await post({ action: "switch", code: CODE })).json.amountBaht).toBe(199);
+  });
+
+  it("refuses a sign-up with no team, its own team, and a full team", async () => {
+    expect(await post({ action: "switch", code: CODE })).toEqual({ status: 409, json: { error: "not_in_team" } });
+    getRegistrationByToken.mockResolvedValue({ ...inTeam, team: team });
+    expect(await post({ action: "switch", code: CODE })).toEqual({ status: 409, json: { error: "same_team" } });
+    getRegistrationByToken.mockResolvedValue(inTeam);
+    getTeamByCode.mockResolvedValue({ ...team, spotsLeft: 0 });
+    expect(await post({ action: "switch", code: CODE })).toEqual({ status: 409, json: { error: "team_full" } });
+    expect(setRegistrationTeam).not.toHaveBeenCalled();
+  });
+
+  it("goes back to the old team when someone took the last seat at the same moment", async () => {
+    getRegistrationByToken.mockResolvedValue(inTeam);
+    teamSeatsTaken.mockResolvedValue(6);
+    expect(await post({ action: "switch", code: CODE })).toEqual({ status: 409, json: { error: "team_full" } });
+    expect(setRegistrationTeam).toHaveBeenLastCalledWith("reg-1", { id: "team-0", name: "น้ำแข็ง" }, 149);
+  });
+
+  it("is closed after the team-change deadline", async () => {
+    teamChangeOpen.mockReturnValue(false);
+    getRegistrationByToken.mockResolvedValue(inTeam);
+    expect(await post({ action: "switch", code: CODE })).toEqual({ status: 410, json: { error: "closed" } });
+  });
+});

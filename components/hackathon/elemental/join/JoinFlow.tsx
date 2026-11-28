@@ -349,7 +349,7 @@ export function JoinFlow({ source, utm, team, buddyPass, notice, backHref, demo 
         {/* At least a screen tall, so on a short step the wordmark footer starts under the sticky bar, not cut by it. */}
         <div key={step} ref={body} className={`${dir === "forward" ? styles.flowIn : styles.flowBack} min-h-[calc(100dvh-15rem)]`}>
           <div ref={shaker}>
-            <View draft={draft} set={set} errors={errors} team={team} buddyPass={buddyPass} choose={choose} goTo={edit} />
+            <View draft={draft} set={set} errors={errors} team={team} buddyPass={buddyPass} choose={choose} goTo={edit} demo={demo} />
           </div>
           {/* Before and after: washed out here, in full colour on the paid seat. After the choice, so both options fit on the first screen. */}
           {step === "mode" && !invite && <RecoveringPlace restored={0.25} className="mt-10" />}

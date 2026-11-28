@@ -8,7 +8,8 @@ import { elementalCommunityLinks, elementalTeamUpUrl, needsTeammates } from "@/l
 import { parseElementalDiscordOutcome } from "@/lib/hackathon/elemental/discordLink";
 import { elementalPayQr } from "@/lib/hackathon/elemental/pay-qr";
 import { shareOpen } from "@/lib/hackathon/elemental/share";
-import { getRegistrationByToken } from "@/lib/supabase/hackathon-event-registrations";
+import { parseTeamCode } from "@/lib/hackathon/elemental/team-change";
+import { getRegistrationByToken, getTeamByCode } from "@/lib/supabase/hackathon-event-registrations";
 
 export const dynamic = "force-dynamic";
 
@@ -25,10 +26,10 @@ export default async function ElementalPayPage({
   searchParams,
 }: {
   params: Promise<{ token: string }>;
-  searchParams: Promise<{ discord?: string | string[] }>;
+  searchParams: Promise<{ discord?: string | string[]; join?: string | string[] }>;
 }) {
   const { token } = await params;
-  const { discord } = await searchParams;
+  const { discord, join } = await searchParams;
   const discordOutcome = parseElementalDiscordOutcome(Array.isArray(discord) ? discord[0] : discord);
   const reg = await getRegistrationByToken(token, ELEMENTAL.maxGroupSize);
   if (!reg) notFound();
@@ -39,10 +40,22 @@ export default async function ElementalPayPage({
   // Before paying, someone who still needs teammates gets the find-a-team OpenChat.
   const teamUpUrl = pending && needsTeammates(reg, ELEMENTAL.teamMin) ? elementalTeamUpUrl() : null;
   const shareHref = reg.status === "paid" && shareOpen() ? `/hackathon/join/${token}/share` : null;
+  // From a friend's team link ("already signed up? join this team"): ?join=<team code or invite code>.
+  const joinCode = parseTeamCode((Array.isArray(join) ? join[0] : join) ?? "");
+  const joinTeam = joinCode && reg.status !== "cancelled" ? await getTeamByCode(ELEMENTAL.slug, joinCode, ELEMENTAL.maxGroupSize) : null;
+  const joinOffer =
+    joinCode && reg.status !== "cancelled"
+      ? {
+          code: joinCode,
+          target: joinTeam
+            ? { id: joinTeam.id, name: joinTeam.name, size: joinTeam.roster.length, spotsLeft: joinTeam.spotsLeft }
+            : null,
+        }
+      : null;
 
   return (
     <div className={trirong.variable}>
-      <PayView token={token} reg={reg} qrSrc={qrSrc} links={links} teamUpUrl={teamUpUrl} discordOutcome={discordOutcome} shareHref={shareHref} />
+      <PayView token={token} reg={reg} qrSrc={qrSrc} links={links} teamUpUrl={teamUpUrl} discordOutcome={discordOutcome} shareHref={shareHref} joinOffer={joinOffer} />
     </div>
   );
 }

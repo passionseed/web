@@ -8,6 +8,7 @@ import {
   joinTeamError,
   leaveTeamError,
   parseTeamCode,
+  switchTeamError,
   teamChangeOpen,
   type TeamChangeError,
   type TeamChanger,
@@ -28,6 +29,8 @@ const body = z.discriminatedUnion("action", [
   z.object({ action: z.literal("join"), code: z.string().max(400) }),
   z.object({ action: z.literal("create"), name: z.string().trim().min(1).max(80) }),
   z.object({ action: z.literal("leave") }),
+  // Leave this team and join that one in one step (from a team's invite link).
+  z.object({ action: z.literal("switch"), code: z.string().max(400) }),
 ]);
 
 const STATUS: Record<TeamChangeError, number> = {
@@ -35,6 +38,7 @@ const STATUS: Record<TeamChangeError, number> = {
   cancelled: 403,
   in_team: 409,
   not_in_team: 409,
+  same_team: 409,
   team_not_found: 404,
   team_full: 409,
 };
@@ -88,6 +92,22 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const code = parseTeamCode(input.code);
     // A code that can't be a team code gets the same answer as one no team has.
     const team = code ? await getTeamByCode(ELEMENTAL.slug, code, ELEMENTAL.maxGroupSize) : null;
+
+    if (input.action === "switch") {
+      const error = switchTeamError(changer, team);
+      if (error || !team || !reg.team) return refuse(error ?? "team_not_found");
+      const from = { id: reg.team.id, name: reg.team.name };
+      // In a team before and after, so an unpaid sign-up keeps the group price and money sent stays as it is.
+      const amountBaht = amountAfterTeamChange(changer, true);
+      await setRegistrationTeam(reg.id, { id: team.id, name: team.name }, amountBaht);
+      // Same race as a join: if the new team is now over its size, go back to the old one.
+      if ((await teamSeatsTaken(team.id)) > ELEMENTAL.maxGroupSize) {
+        await setRegistrationTeam(reg.id, from, reg.amountBaht);
+        return refuse("team_full");
+      }
+      return NextResponse.json({ team: { name: team.name, inviteCode: team.inviteCode }, amountBaht });
+    }
+
     const error = joinTeamError(changer, team);
     if (error || !team) return refuse(error ?? "team_not_found");
     const amountBaht = amountAfterTeamChange(changer, true);
