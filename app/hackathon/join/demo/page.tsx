@@ -6,6 +6,7 @@ import { PayView } from "@/components/hackathon/elemental/PayView";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { needsTeammates } from "@/lib/hackathon/elemental/community-links";
 import { parseElementalDiscordOutcome } from "@/lib/hackathon/elemental/discordLink";
+import { isParentView } from "@/lib/hackathon/elemental/parent-share";
 import { elementalPayQr } from "@/lib/hackathon/elemental/pay-qr";
 import { elementalPriceBaht } from "@/lib/hackathon/elemental/registration";
 import type { RegistrationStatus } from "@/lib/supabase/hackathon-event-registrations";
@@ -30,6 +31,7 @@ const STATES: RegistrationStatus[] = ["pending", "review", "paid", "cancelled"];
  * person who paid the solo price and joined later). &closed=1 shows the page after team changes close.
  * &join=demo shows the card for a friend's team link at the top: "join" when mode=solo, "move" in a team.
  * &join=full, &join=missing and &join=same show it when that team is full, not found, or already theirs.
+ * &for=parent shows an unpaid page as a parent opens it from the student's link.
  */
 export default async function PayDemoPage({ searchParams }: { searchParams: SearchParams }) {
   if (process.env.NODE_ENV !== "development" && process.env.VERCEL_ENV !== "preview") notFound();
@@ -75,6 +77,7 @@ export default async function PayDemoPage({ searchParams }: { searchParams: Sear
         shareHref={state === "paid" ? "/hackathon/join/demo/share" : null}
         reg={{ status: state, teamName: team?.name ?? null, memberCount: 1, amountBaht, memberNicknames: ["มิว"], team, isTeamStarter: mode === "create", teamPosition, discordJoined: first(params.discord) === "joined", buddyPass: first(params.pass) === "1" ? (state === "paid" ? { state: "available", code: "ba9876543210" } : { state: "locked" }) : null }}
         teamChangeOpen={first(params.closed) !== "1"}
+        forParent={isParentView(params.for)}
         qrSrc={state === "pending" ? await elementalPayQr(amountBaht) : null}
         links={{ line: "https://line.me/ti/g/demo", discord: "https://discord.gg/demo" }}
         teamUpUrl={state === "pending" && needsTeammates({ memberCount: 1, team }, ELEMENTAL.teamMin) ? "https://line.me/ti/g2/demo" : null}

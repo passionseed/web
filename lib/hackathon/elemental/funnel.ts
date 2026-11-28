@@ -53,6 +53,7 @@ export type FunnelStep = (typeof FUNNEL_STEPS)[number]["key"];
  */
 /** quiz_start, quiz_done (detail: the element) and quiz_shared (detail: how): the Elemental quiz. */
 /** board_view and board_open (detail: the tile, "water" or "water:owner_id"): the problem board. */
+/** parent_shared: an unpaid page sent to a parent (detail: line, share or copy); parent_opened: a parent opened it (?for=parent). */
 export type FunnelDetailEvent =
   | "invalid"
   | "submit_failed"
@@ -63,7 +64,9 @@ export type FunnelDetailEvent =
   | "quiz_done"
   | "quiz_shared"
   | "board_view"
-  | "board_open";
+  | "board_open"
+  | "parent_shared"
+  | "parent_opened";
 
 export type FunnelEventData = {
   sid: string;
@@ -91,6 +94,8 @@ const STEP_KEYS: [string, ...string[]] = [
   "quiz_shared",
   "board_view",
   "board_open",
+  "parent_shared",
+  "parent_opened",
   ...FUNNEL_STEPS.map((s) => s.key),
 ];
 
@@ -146,6 +151,10 @@ export type FunnelSummary = {
   slipResults: { result: string; count: number }[];
   /** Team invite links sent, by detail (copy, share, line, code, paid:line …), most common first. */
   invitesShared: { how: string; count: number }[];
+  /** Unpaid pages sent to a parent, by how (line, share, copy), most common first. */
+  parentShared: { how: string; count: number }[];
+  /** People who opened a pay page in the parent's view (?for=parent). */
+  parentOpened: number;
   /** People by source (ig, line, team = a friend's invite link, ...) who opened sign-up. */
   sources: { source: string; people: number }[];
 };
@@ -175,6 +184,7 @@ export function summarizeFunnel(rows: FunnelRow[]): FunnelSummary {
   const invalid = new Map<string, Set<string>>();
   const slip = new Map<string, number>();
   const invites = new Map<string, number>();
+  const parentShares = new Map<string, number>();
   const bySource = new Map<string, Set<string>>();
 
   // When the three-screen form went live: its first event. Shares into and out of it count only
@@ -198,8 +208,8 @@ export function summarizeFunnel(rows: FunnelRow[]): FunnelSummary {
       for (const f of (e.detail ?? "").split(",").filter(Boolean)) add(invalid, f, e.sid);
       continue;
     }
-    if (e.step === "slip_result" || e.step === "invite_shared") {
-      const tally = e.step === "slip_result" ? slip : invites;
+    if (e.step === "slip_result" || e.step === "invite_shared" || e.step === "parent_shared") {
+      const tally = e.step === "slip_result" ? slip : e.step === "invite_shared" ? invites : parentShares;
       if (e.detail) tally.set(e.detail, (tally.get(e.detail) ?? 0) + 1);
       continue;
     }
@@ -235,6 +245,8 @@ export function summarizeFunnel(rows: FunnelRow[]): FunnelSummary {
     invalidFields: ranked(new Map([...invalid].map(([f, ids]) => [f, ids.size]))).map(([field, count]) => ({ field, count })),
     slipResults: ranked(slip).map(([result, count]) => ({ result, count })),
     invitesShared: ranked(invites).map(([how, count]) => ({ how, count })),
+    parentShared: ranked(parentShares).map(([how, count]) => ({ how, count })),
+    parentOpened: people.get("parent_opened")?.size ?? 0,
     sources: [...bySource.entries()]
       .map(([source, ids]) => ({ source, people: ids.size }))
       .sort((a, b) => b.people - a.people || a.source.localeCompare(b.source)),

@@ -139,6 +139,32 @@ describe("invite sharing", () => {
   });
 });
 
+describe("parent handoff", () => {
+  it("counts pages sent to a parent by how, and parents who opened one by people, apart from the steps", () => {
+    const s = summarizeFunnel([
+      row("a", "parent_shared", { detail: "line" }),
+      row("a", "parent_shared", { detail: "line" }),
+      row("b", "parent_shared", { detail: "copy" }),
+      row("p", "parent_opened"),
+      row("p", "parent_opened"),
+      row("q", "parent_opened"),
+    ]);
+    expect(s.parentShared).toEqual([
+      { how: "line", count: 2 },
+      { how: "copy", count: 1 },
+    ]);
+    expect(s.parentOpened).toBe(2);
+    expect(s.invitesShared).toEqual([]);
+    expect(s.stages.every((st) => st.people === 0)).toBe(true);
+  });
+
+  it("accepts the parent events from the browser", () => {
+    const sid = "6f1c2d3e-4b5a-4c6d-8e7f-9a0b1c2d3e4f";
+    expect(cleanFunnelEvent({ sid, step: "parent_shared", detail: "line" }, "passionseed.org")?.step).toBe("parent_shared");
+    expect(cleanFunnelEvent({ sid, step: "parent_opened" }, "passionseed.org")?.step).toBe("parent_opened");
+  });
+});
+
 describe("worstDrop", () => {
   it("finds the step that loses the most once enough people arrive", () => {
     const rows = [
