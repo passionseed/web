@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/utils/supabase/admin";
 import { INVITE_CODE_RE, type Registration } from "@/lib/hackathon/elemental/registration";
+import { TEAM_CODE_LENGTH } from "@/lib/hackathon/elemental/team-change";
 import {
   BUDDY_PASS_CODE_RE,
   buddyPassState,
@@ -41,6 +42,8 @@ export type PublicRegistration = {
   buddyPass: PublicBuddyPass | null;
   /** First name of whoever's pass this sign-up used. */
   buddyOf: { name: string; owe: BuddyOwe } | null;
+  /** Signed up on a friend's buddy pass (true even if that friend's sign-up can no longer be read). */
+  onBuddyPass: boolean;
   createdAt: string;
 };
 
@@ -60,6 +63,8 @@ export type PublicBuddyPass =
 export type BuddyPassLookup = {
   state: BuddyPassState;
   registrationId: string | null;
+  /** The team the pass's holder is in now, if any: their friend joins it while it has a seat. */
+  teamId: string | null;
   senderName: string | null;
   contactEmail: string | null;
   contactPhone: string | null;
@@ -140,7 +145,7 @@ async function loadBuddyClaim(registrationId: string) {
 
 /** Look up a pass by its code, for the sign-up form and the API route. */
 export async function getBuddyPass(eventSlug: string, code: string): Promise<BuddyPassLookup> {
-  const none: BuddyPassLookup = { state: "invalid", registrationId: null, senderName: null, contactEmail: null, contactPhone: null };
+  const none: BuddyPassLookup = { state: "invalid", registrationId: null, teamId: null, senderName: null, contactEmail: null, contactPhone: null };
   if (!BUDDY_PASS_CODE_RE.test(code)) return none;
   const { data, error } = await createAdminClient()
     .from("hackathon_event_registrations")
@@ -156,13 +161,13 @@ export async function getBuddyPass(eventSlug: string, code: string): Promise<Bud
     status: data.status as RegistrationStatus,
     memberCount: data.member_count,
     amountBaht: data.amount_baht,
-    teamId: data.team_id,
     fromRegistrationId: data.buddy_pass_from_registration_id,
   };
   const claimed = data.status === "paid" ? Boolean(await loadBuddyClaim(data.id)) : false;
   return {
     state: buddyPassState(sender, claimed),
     registrationId: data.id,
+    teamId: data.team_id,
     senderName: leadName(data.hackathon_event_registration_members) || null,
     contactEmail: data.contact_email,
     contactPhone: data.contact_phone,
@@ -173,6 +178,28 @@ export async function getBuddyPass(eventSlug: string, code: string): Promise<Bud
 export function isUniqueViolation(error: unknown): boolean {
   return (error as { code?: string } | null)?.code === "23505";
 }
+
+/**
+ * team_joined_at arrives with a migration, and production is the first
+ * database to get it. Until then Postgres (42703) or PostgREST (PGRST204)
+ * says the column is unknown, and the app reads and writes without it.
+ */
+function isMissingColumn(error: unknown): boolean {
+  const code = (error as { code?: string } | null)?.code;
+  return code === "42703" || code === "PGRST204";
+}
+
+async function withJoinedAt<R extends { error: unknown }>(run: (joinedAt: boolean) => PromiseLike<R>): Promise<R> {
+  const first = await run(true);
+  return first.error && isMissingColumn(first.error) ? run(false) : first;
+}
+
+/**
+ * When a sign-up joined its team: when it joined from its own page, or when
+ * it was made (on the team's link). Order a team by this, so the person who
+ * started it stays first when an older solo sign-up joins later.
+ */
+const joinedTeamAt = (r: { created_at: string; team_joined_at?: string | null }) => Date.parse(r.team_joined_at ?? r.created_at);
 
 /** Start a team. Returns its id and invite code. */
 export async function createTeam(eventSlug: string, name: string): Promise<{ id: string; inviteCode: string }> {
@@ -186,27 +213,46 @@ export async function createTeam(eventSlug: string, name: string): Promise<{ id:
   return { id: data.id, inviteCode: data.invite_code };
 }
 
-/** A team and its sign-ups that aren't cancelled. */
+type TeamRow = {
+  id: string;
+  name: string;
+  invite_code: string;
+  hackathon_event_registrations:
+    | {
+        status: string;
+        member_count: number;
+        created_at: string;
+        team_joined_at?: string | null;
+        hackathon_event_registration_members: MemberName[] | null;
+      }[]
+    | null;
+};
+
+/** A team and its sign-ups that aren't cancelled, in the order they joined. */
 async function loadTeam(
   filter: { inviteCode: string; eventSlug: string } | { id: string },
   maxSize: number,
 ): Promise<PublicTeam | null> {
   const db = createAdminClient();
-  let query = db
-    .from("hackathon_event_teams")
-    .select(
-      "id, name, invite_code, hackathon_event_registrations(status, member_count, created_at, hackathon_event_registration_members(position, nickname, full_name))",
-    );
-  query = "id" in filter
-    ? query.eq("id", filter.id)
-    : query.eq("invite_code", filter.inviteCode).eq("event_slug", filter.eventSlug);
-  const { data, error } = await query.maybeSingle();
+  const { data: row, error } = await withJoinedAt((joinedAt) => {
+    const query = db
+      .from("hackathon_event_teams")
+      .select(
+        `id, name, invite_code, hackathon_event_registrations(${joinedAt ? "team_joined_at, " : ""}status, member_count, created_at, hackathon_event_registration_members(position, nickname, full_name))`,
+      );
+    return (
+      "id" in filter
+        ? query.eq("id", filter.id)
+        : query.eq("invite_code", filter.inviteCode).eq("event_slug", filter.eventSlug)
+    ).maybeSingle();
+  });
   if (error) throw error;
+  const data = row as unknown as TeamRow | null;
   if (!data) return null;
 
   const regs = (data.hackathon_event_registrations ?? [])
     .filter((r) => r.status !== "cancelled")
-    .sort((a, b) => a.created_at.localeCompare(b.created_at));
+    .sort((a, b) => joinedTeamAt(a) - joinedTeamAt(b));
   const roster = regs.flatMap((r) =>
     [...(r.hackathon_event_registration_members ?? [])]
       .sort((a, b) => a.position - b.position)
@@ -229,6 +275,40 @@ export async function getTeamByInviteCode(
 ): Promise<PublicTeam | null> {
   if (!INVITE_CODE_RE.test(inviteCode)) return null;
   return loadTeam({ inviteCode, eventSlug }, maxSize);
+}
+
+export async function getTeamById(teamId: string, maxSize: number): Promise<PublicTeam | null> {
+  return loadTeam({ id: teamId }, maxSize);
+}
+
+/**
+ * A team by the code a person typed on their own page: the whole invite code,
+ * or its first TEAM_CODE_LENGTH characters (the team code). Two teams that
+ * share a team code are not told apart: neither is found, and their invite
+ * links still work.
+ */
+export async function getTeamByCode(eventSlug: string, code: string, maxSize: number): Promise<PublicTeam | null> {
+  if (INVITE_CODE_RE.test(code)) return loadTeam({ inviteCode: code, eventSlug }, maxSize);
+  if (!new RegExp(`^[0-9a-f]{${TEAM_CODE_LENGTH}}$`).test(code)) return null;
+  const { data, error } = await createAdminClient()
+    .from("hackathon_event_teams")
+    .select("id")
+    .eq("event_slug", eventSlug)
+    .like("invite_code", `${code}%`)
+    .limit(2);
+  if (error) throw error;
+  return data?.length === 1 ? loadTeam({ id: data[0].id }, maxSize) : null;
+}
+
+/** How many people are in a team now, over every sign-up that isn't cancelled. */
+export async function teamSeatsTaken(teamId: string): Promise<number> {
+  const { data, error } = await createAdminClient()
+    .from("hackathon_event_registrations")
+    .select("member_count")
+    .eq("team_id", teamId)
+    .neq("status", "cancelled");
+  if (error) throw error;
+  return (data ?? []).reduce((n, r) => n + r.member_count, 0);
 }
 
 /** Save a new sign-up and its members. Returns the pay token. */
@@ -320,6 +400,7 @@ export async function getRegistrationByToken(
     buddyOf: data.buddy_pass_from_registration_id
       ? await loadBuddySender(data.buddy_pass_from_registration_id, data.buddy_pass_owe)
       : null,
+    onBuddyPass: Boolean(data.buddy_pass_from_registration_id),
     createdAt: data.created_at,
   };
 }
@@ -329,7 +410,6 @@ async function loadOwnBuddyPass(r: {
   status: string;
   member_count: number;
   amount_baht: number;
-  team_id: string | null;
   buddy_pass_code: string | null;
   buddy_pass_from_registration_id: string | null;
 }): Promise<PublicBuddyPass | null> {
@@ -337,7 +417,6 @@ async function loadOwnBuddyPass(r: {
     status: r.status as RegistrationStatus,
     memberCount: r.member_count,
     amountBaht: r.amount_baht,
-    teamId: r.team_id,
     fromRegistrationId: r.buddy_pass_from_registration_id,
   };
   if (!r.buddy_pass_code || r.status === "cancelled" || !holdsBuddyPass(sender)) return null;
@@ -364,16 +443,52 @@ async function loadBuddySender(id: string, owe: string | null): Promise<{ name: 
   return { name: leadName(data.hackathon_event_registration_members), owe: parseBuddyOwe(owe) };
 }
 
-/** Where a sign-up falls in its team's sign-up order (0 = started the team). */
+/** Where a sign-up falls in the order its team was joined (0 = started the team, or has been in it longest). */
 async function positionInTeam(teamId: string, registrationId: string): Promise<number | null> {
-  const { data, error } = await createAdminClient()
-    .from("hackathon_event_registrations")
-    .select("id")
-    .eq("team_id", teamId)
-    .order("created_at", { ascending: true });
+  const db = createAdminClient();
+  const { data, error } = await withJoinedAt((joinedAt) =>
+    db
+      .from("hackathon_event_registrations")
+      .select(joinedAt ? "id, created_at, team_joined_at" : "id, created_at")
+      .eq("team_id", teamId),
+  );
   if (error) throw error;
-  const i = (data ?? []).findIndex((r) => r.id === registrationId);
+  const rows = ((data ?? []) as unknown as { id: string; created_at: string; team_joined_at?: string | null }[]).sort(
+    (a, b) => joinedTeamAt(a) - joinedTeamAt(b),
+  );
+  const i = rows.findIndex((r) => r.id === registrationId);
   return i === -1 ? null : i;
+}
+
+/**
+ * Put a sign-up in a team, or take it out (team: null), from its own page.
+ * The amount is saved only while the sign-up is still unpaid, so a slip that
+ * passed a moment ago keeps what it paid.
+ */
+export async function setRegistrationTeam(
+  registrationId: string,
+  team: { id: string; name: string } | null,
+  amountBaht: number,
+): Promise<void> {
+  const db = createAdminClient();
+  const { error } = await withJoinedAt((joinedAt) =>
+    db
+      .from("hackathon_event_registrations")
+      .update({
+        team_id: team?.id ?? null,
+        team_name: team?.name ?? null,
+        ...(joinedAt ? { team_joined_at: team ? new Date().toISOString() : null } : {}),
+      })
+      .eq("id", registrationId)
+      .neq("status", "cancelled"),
+  );
+  if (error) throw error;
+  const { error: amountError } = await db
+    .from("hackathon_event_registrations")
+    .update({ amount_baht: amountBaht })
+    .eq("id", registrationId)
+    .eq("status", "pending");
+  if (amountError) throw amountError;
 }
 
 /** Rename a team, and the copy of its name on each of its sign-ups. */

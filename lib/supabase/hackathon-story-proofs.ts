@@ -26,7 +26,7 @@ import { createAdminClient } from "@/utils/supabase/admin";
  * and a staff revoke deletes it. The image is never returned on a public
  * route: staff see it through a short-lived signed URL.
  *
- * Before the 20261127120000 migration is applied the table and bucket don't
+ * Before the 20261128130000 migration is applied the table and bucket don't
  * exist: the readers never throw (none / false), and an upload fails with a
  * server error the route turns into a 500.
  */

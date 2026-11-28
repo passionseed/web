@@ -1,4 +1,5 @@
 import React from "react";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 interface SlideFrameProps {
   number: number;
@@ -28,7 +29,7 @@ export function SlideFrame({ number, section, source, children, className = "" }
         <header className="flex items-center justify-between border-b border-white/10 pb-4 font-mono text-[10px] uppercase tracking-[0.2em] text-white/55 sm:text-xs">
           <div className="flex items-center gap-3">
             <span className="h-2 w-2 rounded-full bg-[#fed95c] shadow-[0_0_10px_rgba(254,217,92,0.65)]" />
-            <span className="font-bold text-white/90">PassionSeed</span>
+            <Wordmark className="text-sm text-white/90 sm:text-base" />
           </div>
           <div className="flex items-center gap-3">
             <span>{section}</span>

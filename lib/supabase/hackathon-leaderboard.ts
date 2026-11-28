@@ -21,7 +21,7 @@ import { lobbyPaidOnly, lobbyState, lobbyTeams, openingAt, type LobbyPayload } f
  * and every sign-up of the event up to sign-up close, so the result is kept
  * for MEMO_MS per server instance; the API adds a short CDN cache on top.
  *
- * Before the 20261127110000 migration is applied there are no board names,
+ * Before the 20261128120000 migration is applied there are no board names,
  * so nothing is listed; the page still works.
  */
 
@@ -143,7 +143,7 @@ async function loadViews(eventSlug: string, endsAt: string): Promise<BoardView[]
 /**
  * The live Instagram Story proofs (lib/hackathon/elemental/story-proof.ts): a
  * team with one shows its whole style. Never throws: before the
- * 20261127120000 migration (or on any error) there are none, so the board
+ * 20261128130000 migration (or on any error) there are none, so the board
  * only shows what devices unlock.
  */
 async function loadStoryProofs(eventSlug: string): Promise<{ registrationId: string; revokedAt: string | null }[]> {

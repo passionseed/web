@@ -9,6 +9,7 @@ export function PixelScene({
   height,
   elements,
   accent,
+  cell: cellSize,
   className,
 }: {
   scene: SceneName;
@@ -16,9 +17,11 @@ export function PixelScene({
   height: number;
   elements: readonly OwnerElement[];
   accent: string;
+  /** Size of one pixel in width units; set it to keep pixels the same size across frames of different widths. */
+  cell?: number;
   className?: string;
 }) {
-  const cell = width > 200 ? 6 : 4;
+  const cell = cellSize ?? (width > 200 ? 6 : 4);
   const cols = Math.round(width / cell);
   const rows = Math.round(height / cell);
   const runs = drawScene(scene, cols, rows, width / height, elements, accent);

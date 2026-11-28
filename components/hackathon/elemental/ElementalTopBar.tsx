@@ -1,5 +1,6 @@
 import type { ReactNode, Ref } from "react";
 import Image from "next/image";
+import { Wordmark } from "@/components/brand/Wordmark";
 import Link from "next/link";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
@@ -91,9 +92,7 @@ export function ElementalTopBar({
           </span>
           <Link href="/" className="flex items-center gap-1.5">
             <Image src="/passion-seed-logo-84.png" alt="" width={28} height={28} priority className="block h-6 w-6 sm:h-7 sm:w-7" />
-            <span className="text-[15px] sm:text-[17px]" style={{ fontFamily: EL_FONT.display, fontWeight: 400 }}>
-              PassionSeed
-            </span>
+            <Wordmark className="text-[15px] sm:text-[17px]" />
           </Link>
         </div>
 

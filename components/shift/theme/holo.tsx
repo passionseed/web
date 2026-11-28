@@ -10,6 +10,7 @@ import {
 
 import type { ShiftPalette } from "./tokens";
 import type { ShiftHeroProps, ShiftTheme } from "./types";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 /**
  * SHIFT[0]: the holographic pilot print. Deep purple page, the poster's
@@ -63,8 +64,7 @@ function Brand({ name }: { name: string }) {
           className="mt-1 pl-3 text-[clamp(18px,2.6vw,34px)] leading-none text-white/95"
           style={{ fontFamily: "var(--font-libre-franklin), sans-serif" }}
         >
-          by <span className="font-bold">passion</span>
-          <span className="font-normal text-white/80">seed</span>
+          by <Wordmark />
         </p>
       </div>
     </div>

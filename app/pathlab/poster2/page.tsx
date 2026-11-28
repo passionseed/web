@@ -8,6 +8,7 @@ import {
   type PriceTier,
 } from "@/lib/content/pathlab-page";
 import { SocialCardDownload } from "@/components/pathlab/SocialCardDownload";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 export const metadata: Metadata = {
   title: "Pathlab Poster v2 — Passion Seed",
@@ -138,7 +139,7 @@ export default function PathlabPosterV2Page() {
             alt="Passion Seed"
             className="pathlab-poster2__logo"
           />
-          <span className="pathlab-poster2__brand-name">Passion Seed</span>
+          <Wordmark className="pathlab-poster2__brand-name" />
         </header>
 
         {/* Single margin note: a senior's aside in the corner. One only —

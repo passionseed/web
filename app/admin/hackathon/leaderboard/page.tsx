@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: "Elemental team board" };
  * Staff view of the public team board (/hackathon/elemental/leaderboard):
  * every team with at least one device, and hidden ones, with a Hide / Show
  * button for a name that slipped past the word check. Needs the
- * 20261127110000 migration for hiding to work.
+ * 20261128120000 migration for hiding to work.
  */
 export default async function AdminLeaderboardPage() {
   await requireAdmin();

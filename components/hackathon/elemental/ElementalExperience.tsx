@@ -20,6 +20,7 @@ import { SponsorSection } from "./SponsorSection";
 import { ElementalSoundProvider, useElementalSound } from "./sound-context";
 import { TeaserScreening } from "./TeaserTheater";
 import { useSectionScroll } from "./use-section-scroll";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 function GlobalSoundControl() {
   const { soundOn, audioUnlocked, toggleSound } = useElementalSound();

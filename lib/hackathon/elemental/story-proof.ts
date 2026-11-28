@@ -15,7 +15,7 @@ import { MAX_SLIP_BYTES } from "./slip-image";
 /** Views the screenshot must show. Staff read it by eye; the server can't. */
 export const STORY_PROOF_MIN_VIEWS = 200;
 
-/** The private storage bucket (supabase/migrations/20261127120000_hackathon_story_proofs.sql). */
+/** The private storage bucket (supabase/migrations/20261128130000_hackathon_story_proofs.sql). */
 export const STORY_PROOF_BUCKET = "hackathon-story-proofs";
 
 /** Largest screenshot accepted: the same as a payment slip (under Vercel's 4.5 MB body limit). */

@@ -6,6 +6,7 @@ import {
   createRegistration,
   createTeam,
   getBuddyPass,
+  getTeamById,
   getTeamByInviteCode,
   type BuddyPassLookup,
 } from "@/lib/supabase/hackathon-event-registrations";
@@ -19,6 +20,7 @@ jest.mock("@/lib/supabase/hackathon-event-registrations", () => ({
   createRegistration: jest.fn(),
   createTeam: jest.fn(),
   getBuddyPass: jest.fn(),
+  getTeamById: jest.fn(),
   getTeamByInviteCode: jest.fn(),
   isUniqueViolation: (e: unknown) => (e as { code?: string } | null)?.code === "23505",
 }));
@@ -41,6 +43,7 @@ const friend = {
 const pass = (patch: Partial<BuddyPassLookup> = {}): BuddyPassLookup => ({
   state: "available",
   registrationId: "sender-1",
+  teamId: null,
   senderName: "Big",
   contactEmail: "big@example.com",
   contactPhone: "0812345678",
@@ -77,6 +80,19 @@ describe("buddy pass sign-up", () => {
       null,
       { fromRegistrationId: "sender-1", owe: "mala" },
     );
+  });
+
+  it("puts the friend in the team the sender has joined, while it has a seat", async () => {
+    const team = { id: "team-1", name: "ไฟป่า", inviteCode: "0123456789ab", roster: [], spotsLeft: 1 };
+    mockedPass.mockResolvedValue(pass({ teamId: "team-1" }));
+    jest.mocked(getTeamById).mockResolvedValue(team);
+    await post(body);
+    expect(getTeamById).toHaveBeenCalledWith("team-1", 5);
+    expect(mockedCreate).toHaveBeenLastCalledWith("elemental-2026", expect.anything(), 99, team, expect.anything());
+
+    jest.mocked(getTeamById).mockResolvedValue({ ...team, spotsLeft: 0 });
+    await post(body);
+    expect(mockedCreate).toHaveBeenLastCalledWith("elemental-2026", expect.anything(), 99, null, expect.anything());
   });
 
   it.each(["locked", "used", "invalid"] as const)("refuses a %s pass", async (state) => {

@@ -17,6 +17,7 @@ import {
 } from "@/components/pathlab/journey-map-utils";
 import { PosterScaler } from "@/components/plans/PosterScaler";
 import { SocialCardDownload } from "@/components/pathlab/SocialCardDownload";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 /**
  * "เรียนยังไง?" — IG Feed variant, 4:5 (1080×1350).
@@ -235,7 +236,7 @@ export function HowWeLearnPosterClient() {
             alt="Passion Seed"
             className="pathlab-how__logo"
           />
-          <span className="pathlab-how__brand-name">Passion Seed</span>
+          <Wordmark className="pathlab-how__brand-name" />
           <span className="pathlab-how__brand-path">{HERO.title}</span>
         </header>
 

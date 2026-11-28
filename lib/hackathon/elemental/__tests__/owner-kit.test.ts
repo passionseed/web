@@ -5,6 +5,7 @@ import { isValidOrg, ownerKitPath, signOwnerLink, verifyOwnerLink } from "../own
 import {
   checkOwnerUpload,
   isOwnerUploadKey,
+  OWNER_NOTE_MAX_BYTES,
   OWNER_UPLOAD_MAX_BYTES,
   ownerUploadContentType,
   ownerUploadKey,
@@ -58,6 +59,12 @@ describe("owner uploads", () => {
     expect(checkOwnerUpload({ fileName: "", fileType: "video/mp4", fileSize: 10 }).ok).toBe(false);
   });
 
+  it("accepts the owner's typed note as a small text file only", () => {
+    expect(checkOwnerUpload({ fileName: "notes.txt", fileType: "text/plain", fileSize: 200 })).toEqual({ ok: true, contentType: "text/plain", extension: "txt" });
+    expect(checkOwnerUpload({ fileName: "notes.txt", fileType: "text/plain", fileSize: OWNER_NOTE_MAX_BYTES + 1 }).ok).toBe(false);
+    expect(checkOwnerUpload({ fileName: "page.html", fileType: "text/html", fileSize: 200 }).ok).toBe(false);
+  });
+
   it("keeps uploads under the org's folder with an unguessable, ASCII-only name", () => {
     const key = ownerUploadKey("mekong-school", "คลิป เรื่อง1 river.MOV", "mov", new Date("2026-11-27T03:00:00Z"), "r4nd0m");
     expect(key).toBe(`elemental-owners/mekong-school/2026-11-27/${Date.parse("2026-11-27T03:00:00Z")}_r4nd0m_1_river.mov`);
@@ -86,6 +93,12 @@ describe("owner upload ping", () => {
     expect(msg).toContain("**panthipa** (aether) uploaded 2 files (301.0 MB)");
     expect(msg).toContain("- [clip.mov](<https://bucket.example/clip.mov>) 300.0 MB");
     expect(msg).toContain("pnpm elemental:owner-kit list panthipa");
+  });
+
+  it("flags footage with students' faces only when the owner says so", () => {
+    const files = [file("clip.mov", 1024 ** 2)];
+    expect(ownerUploadsMessage({ org: "test-org", element: null, files })).not.toContain("faces");
+    expect(ownerUploadsMessage({ org: "test-org", element: null, files, minorsWithPermission: true })).toContain("students' faces");
   });
 
   it("stays under Discord's 2000-character limit for a big batch", () => {

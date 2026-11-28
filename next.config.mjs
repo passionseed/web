@@ -34,6 +34,14 @@ const nextConfig = {
         destination: "/hackathon/elemental",
         permanent: false,
       },
+      // The CSII co-host proposal page was taken down (Big, 2026-11-27): it
+      // showed the old 5–7 December plan. The proposal now lives in a Word
+      // file. Anyone with the old link lands on the hackathon page.
+      {
+        source: "/hackathon/elemental/csii",
+        destination: "/hackathon/elemental",
+        permanent: false,
+      },
       {
         source: "/hackathon/sponsor",
         destination: "/hackathon/elemental/sponsor",

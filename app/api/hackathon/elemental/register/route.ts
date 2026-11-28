@@ -15,6 +15,7 @@ import {
   createRegistration,
   createTeam,
   getBuddyPass,
+  getTeamById,
   getTeamByInviteCode,
   isUniqueViolation,
 } from "@/lib/supabase/hackathon-event-registrations";
@@ -27,7 +28,8 @@ import {
  * - join: join a team by its invite code (group price) while it has room
  * - buddy: one friend on a paid solo sign-up's buddy pass (buddy price). The
  *   price is set here, never taken from the client, and the database lets
- *   only one sign-up that isn't cancelled hold a pass.
+ *   only one sign-up that isn't cancelled hold a pass. If the pass's holder
+ *   has joined a team since, the friend joins it too while it has a seat.
  */
 export async function POST(request: NextRequest) {
   if (!elementalRegistrationOpen()) {
@@ -56,13 +58,15 @@ export async function POST(request: NextRequest) {
       }
       const amount = ELEMENTAL.buddyPriceBaht;
       const buddyInput = { ...input, source: input.source ?? "buddy" };
+      const holderTeam = pass.teamId ? await getTeamById(pass.teamId, ELEMENTAL.maxGroupSize) : null;
+      const team = holderTeam && holderTeam.spotsLeft > 0 ? holderTeam : null;
       let payToken: string;
       try {
         ({ payToken } = await createRegistration(
           ELEMENTAL.slug,
           buddyInput,
           amount,
-          null,
+          team,
           { fromRegistrationId: pass.registrationId, owe: input.buddyOwe ?? DEFAULT_BUDDY_OWE },
         ));
       } catch (error) {
@@ -70,8 +74,13 @@ export async function POST(request: NextRequest) {
         if (isUniqueViolation(error)) return NextResponse.json({ error: "pass_used" }, { status: 409 });
         throw error;
       }
-      after(() => notifyElementalSignup(buddyInput, null, amount));
-      await sendRegistrationEmail({ to: input.contactEmail, payToken, amountBaht: amount, team: null });
+      after(() => notifyElementalSignup(buddyInput, team, amount));
+      await sendRegistrationEmail({
+        to: input.contactEmail,
+        payToken,
+        amountBaht: amount,
+        team: team ? { name: team.name, inviteCode: team.inviteCode } : null,
+      });
       return NextResponse.json({ payToken, amountBaht: amount });
     }
 

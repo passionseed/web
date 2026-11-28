@@ -37,6 +37,6 @@ export async function POST(request: NextRequest) {
     const uploadUrl = await b2.getPresignedPutUrl(key, check.contentType, 2 * 60 * 60);
     return NextResponse.json({ uploadUrl, key, contentType: check.contentType });
   } catch (error) {
-    return safeServerError("Upload is unavailable right now", error);
+    return safeServerError("ระบบอัปโหลดขัดข้อง ลองอีกครั้งในอีกสักครู่", error);
   }
 }
