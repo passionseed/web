@@ -32,7 +32,7 @@ export function RecoveringPlace({ restored, className = "" }: { restored: number
       </div>
       <figcaption className="mt-2 text-pretty" style={{ fontFamily: EL_FONT.body, fontSize: 13, lineHeight: "20px", color: "var(--el-fine)" }}>
         {RECOVERED_PLACE.nameTh} {RECOVERED_PLACE.storyTh} ·{" "}
-        <a href={RECOVERED_PLACE.creditUrl} target="_blank" rel="noopener noreferrer" className="whitespace-nowrap underline-offset-4 hover:underline">
+        <a href={RECOVERED_PLACE.creditUrl} target="_blank" rel="noopener noreferrer" className="-my-3 inline-block whitespace-nowrap py-3 underline-offset-4 hover:underline">
           {RECOVERED_PLACE.credit}
         </a>
       </figcaption>

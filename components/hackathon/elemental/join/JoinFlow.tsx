@@ -9,7 +9,7 @@ import { teamLabel } from "@/lib/hackathon/elemental/team-name";
 import type { PublicTeam } from "@/lib/supabase/hackathon-event-registrations";
 
 import { RecoveringPlace } from "../RecoveringPlace";
-import { Page, PixelIcon, PrimaryButton, SecondaryButton, StickyBar, Tag, v } from "../share/ui";
+import { Arrow, Page, PrimaryButton, SecondaryButton, StickyBar, Tag, v } from "../share/ui";
 import { trackElemental } from "../track";
 import {
   emptyDraft,
@@ -300,7 +300,7 @@ export function JoinFlow({ source, utm, team, buddyPass, notice, backHref, demo 
             <div className="flex items-stretch gap-2">
               {!isFirst && (
                 <SecondaryButton onClick={back} className="w-[52px] shrink-0 !px-0" aria-label="ย้อนกลับ">
-                  <PixelIcon name="back" />
+                  <Arrow dir="left" weight="bold" />
                 </SecondaryButton>
               )}
               {invite ? (

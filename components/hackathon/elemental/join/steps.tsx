@@ -8,6 +8,7 @@ import { HEARD_FROM, heardFromLabel } from "@/lib/hackathon/elemental/heard-from
 import { teamLabel } from "@/lib/hackathon/elemental/team-name";
 import type { PublicTeam } from "@/lib/supabase/hackathon-event-registrations";
 
+import cinema from "../elemental-cinema.module.css";
 import { Body, DarkSlab, EditorialLink, H1, PixelEdge, PixelIcon, Tag, TextInput, v, type PixelIconName } from "../share/ui";
 import { formatPhone, teamNameFor, type BuddyPassOffer, type Draft, type Errors, type Mode, type StepKey } from "./draft";
 import { CheckRow } from "./fields";
@@ -480,15 +481,15 @@ function SummaryRow({ label, value, onEdit }: { label: string; value: ReactNode;
           {value}
         </div>
       </div>
-      {/* 44px to tap, without pushing the row taller. */}
+      {/* The landing's italic editorial link (EditorialLink sm, no arrow), with an aria-label; 44px to tap without pushing the row taller. */}
       <button
         type="button"
         onClick={onEdit}
         aria-label={`แก้ ${label}`}
-        className="-my-2 -mr-2 inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center px-2 underline underline-offset-4"
-        style={{ fontFamily: EL_FONT.body, fontSize: 14, lineHeight: "22px", color: v.secondary }}
+        className="-my-2 -mr-2 inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center px-2 italic"
+        style={{ ...display(300, 15, 1.3), color: v.text }}
       >
-        แก้
+        <span className={`${cinema.textLink} ${cinema.textLinkInView}`}>แก้</span>
       </button>
     </div>
   );
