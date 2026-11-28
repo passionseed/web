@@ -51,7 +51,8 @@ export type FunnelEventData = {
   step: FunnelStep | FunnelDetailEvent;
   /** For invalid: the field keys that failed (never their values). For slip_result: the result or reason. */
   detail?: string;
-  mode?: "solo" | "create" | "join";
+  /** buddy: a friend signing up with a ฿99 buddy pass (#415). */
+  mode?: "solo" | "create" | "join" | "buddy";
   source?: string;
   /** The site it was sent to, set by the server from the request (never trusted from the browser). */
   host?: string;
@@ -82,7 +83,7 @@ const incomingEvent = z.object({
     .max(200)
     .regex(/^[a-zA-Z0-9_:,]*$/)
     .optional(),
-  mode: z.enum(["solo", "create", "join"]).optional(),
+  mode: z.enum(["solo", "create", "join", "buddy"]).optional(),
   source: z
     .string()
     .max(60)
