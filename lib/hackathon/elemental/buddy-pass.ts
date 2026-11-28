@@ -5,6 +5,10 @@ import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
  * price (฿199) gets one pass for one friend, who pays ฿99. The pair pays
  * exactly what a team of two does (199 + 99 = 2 x 149), so nobody loses.
  *
+ * The pass follows the ฿199, not the team: a person who paid ฿199 and then
+ * joined a team from their own page keeps it, and their friend joins that
+ * team while it has a seat. Two people still pay 2 x 149 between them.
+ *
  * The joke: the friend "owes" the sender a snack for the ฿50 they saved. The
  * sender picks the snack, it rides along in the link (?owe=boba), and nothing
  * checks or collects it.
@@ -44,19 +48,19 @@ export type BuddyPassSender = {
   status: "pending" | "review" | "paid" | "cancelled";
   memberCount: number;
   amountBaht: number;
-  teamId: string | null;
   /** Set when this registration itself was made with someone else's pass. */
   fromRegistrationId: string | null;
 };
 
 /**
- * Whether a registration comes with a pass at all: one person, no team, at
- * the full solo price, not made with a pass itself. Paid or not.
+ * Whether a registration comes with a pass at all: one person at the full
+ * solo price, not made with a pass itself. Paid or not, in a team or not:
+ * a sign-up made in a team costs the group price, so the only way to be in
+ * a team at the solo price is to join one after signing up alone.
  */
 export function holdsBuddyPass(s: BuddyPassSender): boolean {
   return (
     s.memberCount === 1 &&
-    s.teamId === null &&
     s.fromRegistrationId === null &&
     s.amountBaht === ELEMENTAL.priceBaht
   );

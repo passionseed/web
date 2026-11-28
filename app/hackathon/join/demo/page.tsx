@@ -18,15 +18,19 @@ const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v
 const STATES: RegistrationStatus[] = ["pending", "review", "paid", "cancelled"];
 
 /**
- * Dev only: the pay page with made-up data, so the flow can be walked and
- * screenshotted without saving a sign-up or a slip. 404 everywhere else.
+ * The pay page with made-up data, so the flow can be walked and screenshotted
+ * without saving a sign-up or a slip. Local dev and Vercel preview deployments
+ * only (so a reviewer can open it from a pull request); 404 on production.
  * /hackathon/join/demo?state=pending|review|paid|cancelled&mode=solo|create|join&n=0..4
  * (n: the place in sign-up order inside the team, so each teammate's ticket can be seen)
  * &discord=joined|not_member|taken|error shows each Discord state on the paid page.
  * &alone=1 leaves only the starter in the team, so the find-a-team OpenChat shows under it.
+ * mode=solo shows the join-a-team card (type any 8-character code); in a team, "ออกจากทีม" is at the
+ * bottom of the team card. &pass=1 adds an unused buddy pass, for the line about it (with a team: a
+ * person who paid the solo price and joined later). &closed=1 shows the page after team changes close.
  */
 export default async function PayDemoPage({ searchParams }: { searchParams: SearchParams }) {
-  if (process.env.NODE_ENV !== "development") notFound();
+  if (process.env.NODE_ENV !== "development" && process.env.VERCEL_ENV !== "preview") notFound();
   const params = await searchParams;
   const state = STATES.find((s) => s === first(params.state)) ?? "pending";
   const mode = first(params.mode) ?? "create";
@@ -52,7 +56,8 @@ export default async function PayDemoPage({ searchParams }: { searchParams: Sear
       <PayView
         token="demo"
         demo
-        reg={{ status: state, teamName: team?.name ?? null, memberCount: 1, amountBaht, memberNicknames: ["มิว"], team, isTeamStarter: mode === "create", teamPosition, discordJoined: first(params.discord) === "joined" }}
+        reg={{ status: state, teamName: team?.name ?? null, memberCount: 1, amountBaht, memberNicknames: ["มิว"], team, isTeamStarter: mode === "create", teamPosition, discordJoined: first(params.discord) === "joined", buddyPass: first(params.pass) === "1" ? (state === "paid" ? { state: "available", code: "ba9876543210" } : { state: "locked" }) : null }}
+        teamChangeOpen={first(params.closed) !== "1"}
         qrSrc={state === "pending" ? await elementalPayQr(amountBaht) : null}
         links={{ line: "https://line.me/ti/g/demo", discord: "https://discord.gg/demo" }}
         teamUpUrl={state === "pending" && needsTeammates({ memberCount: 1, team }, ELEMENTAL.teamMin) ? "https://line.me/ti/g2/demo" : null}
