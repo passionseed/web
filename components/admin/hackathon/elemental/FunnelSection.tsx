@@ -51,9 +51,16 @@ export function FunnelSection({ summary, days }: { summary: FunnelSummary | null
           <ol className="space-y-1.5">
             {summary.stages.map((s) => (
               <li key={s.key} className="grid grid-cols-[minmax(0,11rem)_1fr_3.5rem] items-center gap-3 text-sm">
-                <span className={cn("truncate", s.optional && "text-muted-foreground")} title={s.label}>
-                  {s.label}
-                  {s.optional && !s.removed && " (some)"}
+                <span className={cn("min-w-0", s.optional && "text-muted-foreground")} title={s.label}>
+                  <span className="block truncate">
+                    {s.label}
+                    {s.optional && !s.removed && " (some)"}
+                  </span>
+                  {s.browsers !== undefined && (
+                    <span className="block truncate text-xs text-muted-foreground">
+                      From sign-ups. {s.browsers} {s.browsers === 1 ? "browser" : "browsers"} opened the paid page
+                    </span>
+                  )}
                 </span>
                 <span className="relative h-5 rounded-sm bg-muted/60">
                   <span
@@ -64,7 +71,13 @@ export function FunnelSection({ summary, days }: { summary: FunnelSummary | null
                     {s.people}
                   </span>
                 </span>
-                <span className="text-right text-xs tabular-nums text-muted-foreground">{pct(s.fromPrevious)}</span>
+                <span
+                  className="text-right text-xs tabular-nums text-muted-foreground"
+                  title={s.outOfLabel && s.outOf !== null ? `${s.people} of ${s.outOf} people who signed up` : undefined}
+                >
+                  {pct(s.fromPrevious)}
+                  {s.outOfLabel && <span className="block text-[10px] leading-tight">{s.outOfLabel}</span>}
+                </span>
               </li>
             ))}
           </ol>

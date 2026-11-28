@@ -6,6 +6,24 @@ const row = (sid: string, step: string, extra: Record<string, string> = {}, at =
 });
 
 describe("summarizeFunnel", () => {
+  it("takes paid people from the sign-ups table, not from browsers", () => {
+    // One person paid, then opened the paid page again on a parent's phone: two browsers.
+    const rows = [row("a", "submitted"), row("b", "submitted"), row("a", "paid"), row("a2", "paid")];
+    const paid = summarizeFunnel(rows, { paidPeople: 1, signedUpPeople: 4 }).stages.find((s) => s.key === "paid")!;
+    expect(paid.people).toBe(1);
+    expect(paid.browsers).toBe(2);
+    expect(paid.outOf).toBe(4);
+    expect(paid.fromPrevious).toBe(0.25);
+    expect(paid.outOfLabel).toBe("of sign-ups");
+  });
+
+  it("falls back to browser counts when sign-ups did not load", () => {
+    const rows = [row("a", "paid"), row("a2", "paid")];
+    const paid = summarizeFunnel(rows, null).stages.find((s) => s.key === "paid")!;
+    expect(paid.people).toBe(2);
+    expect(paid.browsers).toBeUndefined();
+  });
+
   it("counts each person once per step and the share from the step before", () => {
     const rows = [
       row("a", "landing"),

@@ -141,6 +141,22 @@ export type FunnelStage = {
   optional: boolean;
   /** A screen that's no longer in the form: its count stays, without a share. */
   removed: boolean;
+  /**
+   * Set when `people` comes from the sign-ups table, not browser events: how
+   * many browsers sent this step. One person can pay from several browsers
+   * (a parent's phone, a refresh in another app), so events overcount.
+   */
+  browsers?: number;
+  /** What `outOf` counts when it isn't the step above (for paid: people who signed up). */
+  outOfLabel?: string;
+};
+
+/** Totals from the sign-ups table (cancelled left out), the truth for the paid step. */
+export type FunnelTruth = {
+  /** People on paid sign-ups: the same number as the Seats section. */
+  paidPeople: number;
+  /** People on every sign-up that isn't cancelled: paid, in review or unpaid. */
+  signedUpPeople: number;
 };
 
 export type FunnelSummary = {
@@ -177,7 +193,12 @@ function ranked(counts: Map<string, number>): [string, number][] {
 
 const FORM_KEYS = new Set<string>(Object.values(SIGNUP_SCREENS));
 
-export function summarizeFunnel(rows: FunnelRow[]): FunnelSummary {
+/**
+ * Count people per step. Pass `truth` (from the sign-ups table) to make the
+ * paid step show real paid people instead of browsers that opened the paid
+ * page, with its share out of everyone who signed up.
+ */
+export function summarizeFunnel(rows: FunnelRow[], truth?: FunnelTruth | null): FunnelSummary {
   const people = new Map<string, Set<string>>();
   /** The same, counting only events since the three-screen form's first one. */
   const recent = new Map<string, Set<string>>();
@@ -236,6 +257,13 @@ export function summarizeFunnel(rows: FunnelRow[]): FunnelSummary {
       optional,
       removed,
     };
+    if (s.key === "paid" && truth) {
+      stage.browsers = count;
+      stage.people = truth.paidPeople;
+      stage.outOf = truth.signedUpPeople;
+      stage.fromPrevious = truth.signedUpPeople === 0 ? 0 : truth.paidPeople / truth.signedUpPeople;
+      stage.outOfLabel = "of sign-ups";
+    }
     if (!optional) previous = s.key;
     return stage;
   });
