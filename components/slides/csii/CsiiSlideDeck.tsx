@@ -13,6 +13,7 @@ import { Slide4Milestones } from "./Slide4Milestones";
 import { Slide5NextMilestone } from "./Slide5NextMilestone";
 import { SlideThumbnailModal } from "./SlideThumbnailModal";
 import { SpeakerNotesDrawer } from "./SpeakerNotesDrawer";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 const SLIDE_COMPONENTS = [Slide1Cover, Slide2Overview, Slide3Objectives, Slide4Milestones, Slide5NextMilestone] as const;
 const EXPORT_WIDTH = 1920;
@@ -135,7 +136,7 @@ export function CsiiSlideDeck() {
     <div ref={containerRef} className="relative flex min-h-screen w-full select-none flex-col items-center justify-between overflow-x-hidden bg-[#000006] font-bai-jamjuree text-white">
       <header className="no-print z-20 flex w-full items-center justify-between border-b border-white/[0.06] bg-[#000006]/90 px-4 py-3 backdrop-blur-md sm:px-6">
         <div className="flex min-w-0 items-center gap-3">
-          <span className="flex items-center gap-2 text-sm font-bold text-white"><span className="h-2 w-2 rounded-full bg-[#fed95c] shadow-[0_0_8px_#fed95c]" />PassionSeed</span>
+          <span className="flex items-center gap-2 text-sm font-bold text-white"><span className="h-2 w-2 rounded-full bg-[#fed95c] shadow-[0_0_8px_#fed95c]" /><Wordmark className="text-base font-normal" /></span>
           <span className="hidden text-xs text-white/35 sm:inline">/</span>
           <span className="hidden truncate text-xs text-white/55 sm:inline">CSII Project Slide Deck</span>
         </div>

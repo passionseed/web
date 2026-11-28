@@ -19752,3 +19752,18 @@ a.pathlab-fields__button {
     animation: none;
   }
 }
+
+/* The PassionSeed wordmark (components/brand/Wordmark.tsx). Same font and spacing
+   whatever the surrounding text uses, so it overrides inherited case and tracking. */
+.ps-wordmark {
+  font-family: var(--font-libre-franklin), system-ui, sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  letter-spacing: -0.06em;
+  text-transform: none;
+  white-space: nowrap;
+}
+.ps-wordmark b {
+  font-weight: 700;
+  font-style: italic;
+}

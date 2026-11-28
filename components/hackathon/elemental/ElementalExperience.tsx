@@ -19,6 +19,7 @@ import { SponsorSection } from "./SponsorSection";
 import { ElementalSoundProvider, useElementalSound } from "./sound-context";
 import { TeaserScreening } from "./TeaserTheater";
 import { useSectionScroll } from "./use-section-scroll";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 function GlobalSoundControl() {
   const { soundOn, audioUnlocked, toggleSound } = useElementalSound();
@@ -243,9 +244,7 @@ function ElementalExperienceInner({
             </span>
             <Link href="/" className="flex items-center gap-1.5">
               <Image src="/passion-seed-logo-84.png" alt="" width={28} height={28} priority className="block h-6 w-6 sm:h-7 sm:w-7" />
-              <span className="text-[15px] sm:text-[17px]" style={{ fontFamily: EL_FONT.display, fontWeight: 400 }}>
-                PassionSeed
-              </span>
+              <Wordmark className="text-[15px] sm:text-[17px]" />
             </Link>
           </div>
 

@@ -7,6 +7,7 @@ import {
 } from "@/lib/content/shift-cohort";
 
 import { GLASS, HEADLINE_FILL, HoloWordmark, LightBands, SKY } from "./holo";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 /**
  * SHIFT[0] listing banner (1200x630) for the /shift gallery. Same look as the
@@ -37,8 +38,7 @@ function Brand() {
           className="mt-1 pl-3 text-[34px] leading-none text-white/95"
           style={{ fontFamily: "var(--font-libre-franklin), sans-serif" }}
         >
-          by <span className="font-bold">passion</span>
-          <span className="font-normal text-white/80">seed</span>
+          by <Wordmark />
         </p>
       </div>
     </div>

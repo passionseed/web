@@ -8,6 +8,7 @@ import {
   SITE_SOCIAL_LINKS,
   type HomeLink,
 } from "@/lib/content/home";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 function FooterLink({ link }: { link: HomeLink }) {
   const external = link.href.startsWith("http");
@@ -28,9 +29,7 @@ function FooterBrand() {
     <div className="max-w-xs">
       <Link href="/" className="flex items-center gap-2.5">
         <Image src="/passion-seed-logo.png" alt="" width={32} height={32} unoptimized />
-        <span className="font-kodchasan text-lg font-bold" style={{ color: INK.paper }}>
-          PassionSeed
-        </span>
+        <Wordmark className="text-xl" style={{ color: INK.paper }} />
       </Link>
       <p className="mt-4 text-sm leading-relaxed" style={{ color: paper("99") }}>
         พื้นที่ที่การลงมือสร้างของจริงเป็นเรื่องปกติ สำหรับน้อง ม.ปลาย ที่อยากเป็นคนเลือกทางเดินของตัวเอง

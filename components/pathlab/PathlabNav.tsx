@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 /* Order matches the page: Fields leads because it is the first question a
    visitor asks. */
@@ -27,7 +28,7 @@ export function PathlabNav() {
           priority
           className="pathlab-nav__logo"
         />
-        <span className="pathlab-nav__name">Passion Seed</span>
+        <Wordmark className="pathlab-nav__name" />
       </Link>
 
       <nav className="pathlab-nav__links" aria-label="Pathlab">

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 import { ShiftAttributedLink } from "@/components/shift/ShiftAttributedLink";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 /**
  * Floating top bar for the /shift pages: the logo goes home, the back pill
@@ -47,7 +48,7 @@ export function ShiftTopBar({
           unoptimized
           className="shrink-0"
         />
-        <span className="font-kodchasan">PassionSeed</span>
+        <Wordmark />
       </Link>
       {back && (
         <BackLink href={back.href} className={back.solid ? PILL_SOLID : PILL}>

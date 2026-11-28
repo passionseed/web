@@ -43,6 +43,8 @@ const libreFranklin = Libre_Franklin({
      back to 400 for Latin while Thai renders true 500, so a mixed heading
      reads two different weights. */
   weight: ["400", "500", "700"],
+  /* Italic is for the wordmark's bold italic "passion" (components/brand/Wordmark.tsx). */
+  style: ["normal", "italic"],
   subsets: ["latin"],
   variable: "--font-libre-franklin",
 });

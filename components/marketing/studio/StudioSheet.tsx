@@ -8,6 +8,7 @@ import type { StudioFormat, StudioTheme } from "@/lib/marketing/types";
 
 import { CosmosGround, CosmosWordmark, PageChip } from "./cosmosParts";
 import { LATIN, STUDIO_INKS, type StudioInks } from "./studioTheme";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 /**
  * One exported sheet. Night sheets reuse the SHIFT riso print (paper margin,
@@ -112,9 +113,7 @@ function Masthead({ inks, wordmark }: { inks: StudioInks; wordmark?: string }) {
     <div className="flex h-[72px] items-center justify-between">
       <span className="inline-flex items-center gap-3">
         <Image src="/passion-seed-logo.png" alt="PassionSeed" width={48} height={48} unoptimized />
-        <span className="font-kodchasan text-[24px] font-bold tracking-tight" style={{ color: inks.text }}>
-          PassionSeed
-        </span>
+        <Wordmark className="text-[26px]" style={{ color: inks.text }} />
       </span>
       {wordmark && (
         <div className="-mr-[14px]">
@@ -177,9 +176,7 @@ function CosmosSheet({
               unoptimized
               className="drop-shadow-[0_2px_10px_rgba(127,227,255,0.18)]"
             />
-            <span className="font-kodchasan text-[24px] font-bold tracking-tight" style={{ color: inks.text }}>
-              PassionSeed
-            </span>
+            <Wordmark className="text-[26px]" style={{ color: inks.text }} />
           </span>
           {wordmark && <CosmosWordmark size={58} name={wordmark} />}
         </div>

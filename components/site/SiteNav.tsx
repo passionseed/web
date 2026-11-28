@@ -12,6 +12,7 @@ import { UserNav } from "@/components/user-nav";
 import { SITE_NAV_LINKS } from "@/lib/content/home";
 import type { LeadCta } from "@/lib/content/home-lead";
 import { createClient } from "@/utils/supabase/client";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 /** Past this scroll depth the bar gets its ink backing so links stay legible. */
 const SOLID_AFTER_PX = 24;
@@ -38,13 +39,11 @@ function useScrolledPast(px: number) {
   return scrolled;
 }
 
-function Wordmark() {
+function HomeLink() {
   return (
     <Link href="/" className="flex items-center gap-2.5">
       <Image src="/passion-seed-logo.png" alt="" width={32} height={32} unoptimized />
-      <span className="font-kodchasan text-lg font-bold tracking-tight" style={{ color: INK.paper }}>
-        PassionSeed
-      </span>
+      <Wordmark className="text-xl" style={{ color: INK.paper }} />
     </Link>
   );
 }
@@ -110,7 +109,7 @@ export function SiteNav({ cta }: { cta: LeadCta }) {
       }}
     >
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-5 sm:px-8">
-        <Wordmark />
+        <HomeLink />
 
         <ul className="hidden items-center gap-7 md:flex">
           {SITE_NAV_LINKS.map((link) => (
