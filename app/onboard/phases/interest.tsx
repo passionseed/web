@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ComponentType } from "react";
+import { useEffect, useRef, useState, type ComponentType } from "react";
 import type { LucideProps } from "lucide-react";
 import {
   Atom,
@@ -161,6 +161,9 @@ const CLUSTERS: InterestCluster[] = [
   },
 ];
 
+/** How long the interest buttons stay highlighted after "Next" is tapped with nothing picked. */
+const NUDGE_MS = 1200;
+
 const LABEL_BY_ID = new Map(
   CLUSTERS.flatMap((cluster) =>
     cluster.items.map((item) => [item.id, item] as const)
@@ -170,10 +173,32 @@ const LABEL_BY_ID = new Map(
 export function InterestPhase({ data, advance, goBack }: Props) {
   const [selected, setSelected] = useState<string[]>(data.interests ?? []);
   const [customInput, setCustomInput] = useState("");
+  // The Next button stays tappable with nothing picked: a greyed-out,
+  // disabled button read as a broken page. Tapping it instead highlights the
+  // interest buttons and scrolls them into view.
+  const [nudging, setNudging] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!nudging) return;
+    const timer = window.setTimeout(() => setNudging(false), NUDGE_MS);
+    return () => window.clearTimeout(timer);
+  }, [nudging]);
 
   const isEn = (data.language ?? "th") === "en";
 
+  const next = () => {
+    if (selected.length > 0) {
+      advance("assessment", { interests: selected });
+      return;
+    }
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    listRef.current?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+    setNudging(true);
+  };
+
   const toggle = (itemId: string) => {
+    setNudging(false);
     setSelected((prev) =>
       prev.includes(itemId)
         ? prev.filter((entry) => entry !== itemId)
@@ -211,9 +236,9 @@ export function InterestPhase({ data, advance, goBack }: Props) {
       footer={
         <button
           type="button"
-          onClick={() => advance("assessment", { interests: selected })}
-          disabled={selected.length === 0}
-          className="ei-button-dawn min-h-12 w-full justify-center py-3.5 text-base font-semibold disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-0 sm:py-3 sm:text-sm"
+          onClick={next}
+          aria-disabled={selected.length === 0}
+          className="ei-button-dawn min-h-12 w-full justify-center py-3.5 text-base font-semibold aria-disabled:opacity-60 sm:min-h-0 sm:py-3 sm:text-sm"
         >
           {isEn
             ? selected.length > 0
@@ -225,7 +250,7 @@ export function InterestPhase({ data, advance, goBack }: Props) {
         </button>
       }
     >
-      <div className="flex flex-col gap-5">
+      <div ref={listRef} className="flex scroll-mt-4 flex-col gap-5">
         {CLUSTERS.map((cluster) => {
           const ClusterIcon = cluster.icon;
           return (
@@ -243,10 +268,12 @@ export function InterestPhase({ data, advance, goBack }: Props) {
                       type="button"
                       onClick={() => toggle(id)}
                       className={[
-                        "inline-flex min-h-12 items-center gap-2.5 rounded-2xl border px-3.5 py-3 text-left text-sm transition-colors active:scale-[0.99]",
+                        "inline-flex min-h-12 items-center gap-2.5 rounded-2xl border px-3.5 py-3 text-left text-sm transition-colors duration-300 active:scale-[0.99]",
                         isSelected
                           ? "border-blue-400/45 bg-blue-500/10 text-white"
-                          : "border-white/10 bg-white/[0.03] text-white/80",
+                          : nudging
+                            ? "border-blue-300/60 bg-blue-400/[0.08] text-white"
+                            : "border-white/10 bg-white/[0.03] text-white/80",
                       ].join(" ")}
                     >
                       <ItemIcon
