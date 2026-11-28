@@ -19,6 +19,8 @@ const TYPES: Record<string, string> = {
   "image/heic": "heic",
   "image/heif": "heif",
   "application/pdf": "pdf",
+  // The owner's typed note (names, titles, links), sent as notes.txt.
+  "text/plain": "txt",
 };
 
 /** Some browsers leave the type empty for .heic and .mov, so fall back to the extension. */
@@ -35,10 +37,19 @@ const BY_EXTENSION: Record<string, string> = {
   heic: "image/heic",
   heif: "image/heif",
   pdf: "application/pdf",
+  txt: "text/plain",
 };
 
-/** The `accept` attribute for the file picker. */
-export const OWNER_UPLOAD_ACCEPT = "video/*,image/*,application/pdf,.mov,.heic,.heif";
+/** A typed note is a few lines; anything bigger isn't one. */
+export const OWNER_NOTE_MAX_BYTES = 1024 * 1024;
+
+/**
+ * The `accept` attributes for the two file pickers. Media and PDF are split
+ * because mixing application/pdf in sends many Android phones to a generic
+ * Files picker instead of the gallery, where the clip is.
+ */
+export const OWNER_UPLOAD_ACCEPT_MEDIA = "video/*,image/*,.mov,.heic,.heif";
+export const OWNER_UPLOAD_ACCEPT_PDF = "application/pdf,.pdf";
 
 export function ownerUploadContentType(fileName: string, fileType: string | undefined): string | null {
   if (fileType && TYPES[fileType]) return fileType;
@@ -64,6 +75,9 @@ export function checkOwnerUpload(input: { fileName: unknown; fileType: unknown; 
   const contentType = ownerUploadContentType(fileName, typeof fileType === "string" ? fileType : undefined);
   if (!contentType) {
     return { ok: false, error: "รับเฉพาะคลิป รูป และ PDF" };
+  }
+  if (contentType === "text/plain" && fileSize > OWNER_NOTE_MAX_BYTES) {
+    return { ok: false, error: "ข้อความยาวเกินไป" };
   }
   return { ok: true, contentType, extension: TYPES[contentType] };
 }
@@ -112,8 +126,10 @@ export function ownerUploadsMessage(input: {
   org: string;
   element: string | null;
   files: { key: string; size: number; url: string }[];
+  /** The owner ticked "students' faces are in it and guardians gave written permission". */
+  minorsWithPermission?: boolean;
 }): string {
-  const { org, element, files } = input;
+  const { org, element, files, minorsWithPermission } = input;
   const total = files.reduce((sum, f) => sum + f.size, 0);
   const who = element ? `**${org}** (${element})` : `**${org}**`;
   const lines = files.slice(0, LISTED).map((f) => `- [${shortName(f.key)}](<${f.url}>) ${formatFileSize(f.size)}`);
@@ -121,6 +137,9 @@ export function ownerUploadsMessage(input: {
   return [
     `📥 ${who} uploaded ${files.length} file${files.length === 1 ? "" : "s"} (${formatFileSize(total)})`,
     ...lines,
+    ...(minorsWithPermission
+      ? ["⚠️ Owner says students' faces are in this footage and guardians gave written permission. Find the permission form before posting."]
+      : []),
     `All files: \`pnpm elemental:owner-kit list ${org}\``,
   ].join("\n");
 }

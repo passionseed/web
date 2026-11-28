@@ -9,7 +9,7 @@ const MAX_KEYS = 50;
 
 /**
  * POST /api/hackathon/elemental/owner-upload/done
- * Body: { o, el, s, keys }
+ * Body: { o, el, s, keys, minors? }
  *
  * The owner kit calls this once a batch of uploads finishes. It checks each
  * key is this org's and is really in the bucket, then pings the team's
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     const res = await fetch(webhook, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: ownerUploadsMessage({ org, element, files }), allowed_mentions: { parse: [] } }),
+      body: JSON.stringify({ content: ownerUploadsMessage({ org, element, files, minorsWithPermission: body.minors === true }), allowed_mentions: { parse: [] } }),
     });
     if (!res.ok) throw new Error(`Discord webhook returned ${res.status}`);
     return NextResponse.json({ notified: true });

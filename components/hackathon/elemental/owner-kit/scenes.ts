@@ -29,6 +29,8 @@ const C = {
   riverHi: "#7d9a94",
   body: "#1e1c1a",
   skin: "#d8bf9c",
+  skinShade: "#b89c78",
+  skinHi: "#e8d3b4",
   shirt: "#6f7d76",
   flame: EL.flame,
   sun: EL.flameCore,
@@ -83,13 +85,20 @@ export const SCENES = {
     Math.abs(v - 0.37) < 0.006 && Math.floor(u * 14) % 2 === 0
       ? c.accent
       : (person(u, v, c.a, 0.5, 0.37, 0.17) ?? land(u, v, x, y, c, { top: 0.52, gnd: 0.62, rc: 0.78 })),
+  /** The same speaker filmed from below: a big chin and neck fill the frame, nostrils up, the top of the head cut off. */
   below: (u, v, _x, _y, c) => {
-    const w = 0.12 + (v - 0.28) * 0.55;
-    if (v > 0.28 && Math.abs(u - 0.5) < w) return C.body;
-    const dx = (u - 0.5) * c.a * 1.6;
-    const dy = v - 0.22;
-    if (dx * dx + dy * dy < 0.0045) return C.body;
-    return v < 0.75 ? C.sky : C.hill;
+    const dx = (u - 0.5) * c.a;
+    if (v > 0.88 && Math.abs(dx) < 0.4 * c.a) return C.shirt;
+    if (v > 0.46 && Math.abs(dx) < 0.13) return Math.abs(dx) > 0.09 || v < 0.56 ? C.skinShade : C.skin;
+    const hx = dx / (0.36 * c.a);
+    const hy = (v - 0.2) / 0.3;
+    if (hx * hx + hy * hy < 1) {
+      if (v < 0.04) return C.body;
+      if (Math.abs(v - 0.2) < 0.016 && Math.abs(Math.abs(dx) - 0.03) < 0.014) return C.body;
+      if (v < 0.2 && Math.abs(dx) < 0.05 - (0.2 - v) * 0.2) return C.skinHi;
+      return hy > 0.45 ? C.skinShade : C.skin;
+    }
+    return v < 0.3 ? C.skyHi : C.sky;
   },
   lit: (u, v, x, y, c) => person(u, v, c.a, 0.5, 0.47, 0.17, { face: C.skin, shirt: C.shirt }) ?? land(u, v, x, y, c, { bright: true }),
   backlit: (u, v, _x, _y, c) => {
@@ -99,10 +108,12 @@ export const SCENES = {
     return person(u, v, c.a, 0.5, 0.5, 0.15) ?? (v < 0.7 ? C.skyHi : "#cfc6ad");
   },
   place: (u, v, x, y, c) => person(u, v, c.a, 0.5, 0.52, 0.15) ?? land(u, v, x, y, c, { top: 0.28, gnd: 0.44, rc: 0.56, rw: 0.06, toxic: 0.2 }),
-  wind: (u, v, x, y, c) => {
-    for (const k of [0.12, 0.24]) if (Math.abs(v - (k + 0.03 * Math.sin(u * 12))) < 0.012) return C.flame;
-    return person(u, v, c.a, 0.5, 0.56, 0.15) ?? land(u, v, x, y, c, { top: 0.45, gnd: 0.6 });
-  },
+  /** The same speaker in front of a plain wall: nothing says where the problem is. */
+  wall: (u, v, _x, _y, c) => person(u, v, c.a, 0.5, 0.52, 0.15) ?? (v > 0.9 ? "#bfb8a8" : C.wall),
+  /** Close to the phone: the speaker fills the frame, so the voice is loud and clear. */
+  close: (u, v, x, y, c) => person(u, v, c.a, 0.5, 0.44, 0.24, { face: C.skin, shirt: C.shirt }) ?? land(u, v, x, y, c, { top: 0.4, gnd: 0.55 }),
+  /** Far from the phone: a tiny speaker in the open, lost in wind and noise. */
+  far: (u, v, x, y, c) => person(u, v, c.a, 0.62, 0.6, 0.05) ?? land(u, v, x, y, c, { top: 0.3, gnd: 0.5, rc: 0.78 }),
   portrait: (u, v, _x, _y, c) => person(u, v, c.a, 0.5, 0.4, 0.2) ?? C.wall,
   land: (u, v, x, y, c) => {
     for (const [hx, w] of [[0.15, 0.05], [0.25, 0.04]] as const) {
@@ -123,12 +134,13 @@ export const SCENES = {
     }
     return v > 0.92 ? "#8f8a7c" : "#aeb6b0";
   },
+  /** Two adults at work by the river, one taking a water sample (drawn for a 9:16 frame). */
   work: (u, v, x, y, c) => {
-    if (u > 0.4 && u < 0.5 && Math.abs(v - (0.5 + (u - 0.4) * 1.6)) < 0.025) return C.body;
-    if (Math.abs(u - 0.52) < 0.025 && v > 0.6 && v < 0.74) return C.glass;
-    const p = person(u, v, c.a, 0.36, 0.3, 0.09) ?? person(u, v, c.a, 0.66, 0.34, 0.08);
-    if (p && v < 0.62) return p;
-    return land(u, v, x, y, c, { top: 0.12, gnd: 0.2, rc: 0.75, rw: 0.24, toxic: 0.14 });
+    if (u > 0.3 && u < 0.42 && Math.abs(v - (0.6 + (u - 0.3) * 1.5)) < 0.012) return C.body;
+    if (Math.abs(u - 0.45) < 0.03 && v > 0.76 && v < 0.84) return C.glass;
+    const p = person(u, v, c.a, 0.22, 0.44, 0.055) ?? person(u, v, c.a, 0.8, 0.47, 0.05);
+    if (p && v < 0.66) return p;
+    return land(u, v, x, y, c, { top: 0.18, gnd: 0.3, rc: 0.8, rw: 0.16, toxic: 0.14 });
   },
 } satisfies Record<string, Scene>;
 
