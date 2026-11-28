@@ -377,7 +377,7 @@ export function OwnerKit({
           <div className="mt-10 flex flex-col gap-2 pt-4 sm:flex-row sm:gap-6" style={{ borderTop: RULE }}>
             <span className="flex-none sm:w-[88px]"><Tag color={accentText}>คลิปสั้น</Tag></span>
             <p className="max-w-[640px] text-[18px] leading-[1.65] [text-wrap:pretty]" style={{ fontWeight: 400, color: KIT.body }}>
-              คลิปละ 5 ถึง 15 วินาที ถือมือถือนิ่ง ๆ ไม่ต้องพูดก็ได้ <span style={{ color: EL.cream, fontWeight: 600 }}>ทุกคลิปถ่ายแนวตั้ง</span> เราจะใช้ประกอบคลิปโจทย์และโพสต์
+              {keep("คลิปละ 5 ถึง 15 วินาที ถือมือถือนิ่ง ๆ ไม่ต้องพูดก็ได้")} <span style={{ color: EL.cream, fontWeight: 600 }}>ทุกคลิปถ่ายแนวตั้ง</span> เราจะใช้ประกอบคลิปโจทย์และโพสต์
             </p>
           </div>
           <p className="mt-4 max-w-[640px] pt-4 text-[18px] leading-[1.65] [text-wrap:pretty]" style={{ borderTop: RULE, fontWeight: 400, color: KIT.body }}>
@@ -396,7 +396,7 @@ export function OwnerKit({
                   style={{ fontWeight: 400, color: KIT.warn, background: KIT.panel, borderLeft: `3px solid ${EL.flame}` }}
                   role="alert"
                 >
-                  ลิงก์อัปโหลดนี้ไม่ครบ ลองเปิดจากข้อความเดิมอีกครั้ง หรือทักทีมงานเพื่อขอลิงก์ใหม่
+                  {keep("ลิงก์อัปโหลดนี้ไม่ครบ ลองเปิดจากข้อความเดิมอีกครั้ง หรือทักทีมงานเพื่อขอลิงก์ใหม่")}
                 </p>
               ) : (
                 <p className="text-[19px] leading-[1.65]" style={{ fontWeight: 400 }}>

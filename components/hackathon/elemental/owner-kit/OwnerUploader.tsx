@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { type Ref, useEffect, useRef, useState } from "react";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import type { OwnerElement } from "@/lib/hackathon/elemental/owner-link";
@@ -12,6 +12,7 @@ import {
 } from "@/lib/hackathon/elemental/owner-upload";
 
 import { keep } from "./keep";
+import { PixelTick } from "./PixelArt";
 import { KIT } from "./tokens";
 
 type Item = {
@@ -27,6 +28,43 @@ type Item = {
 type Receipt = { sent: { name: string; size: number; at: string }[]; unfinished: boolean };
 
 const RULE = "1px solid rgba(243,239,230,0.28)";
+
+/**
+ * The consent checkboxes, drawn by us: Chromium's dark native box is a grey hairline that
+ * vanishes on the plate outdoors, and LINE's iOS web view draws its own. A 26px box with a
+ * 2px cream border reads everywhere; the native input stays for semantics, keyboard and focus.
+ */
+function Box({
+  checked,
+  onChange,
+  inputRef,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  inputRef?: Ref<HTMLInputElement>;
+}) {
+  return (
+    <span className="relative mt-0.5 flex h-[26px] w-[26px] flex-none">
+      <input
+        ref={inputRef}
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="h-full w-full cursor-pointer appearance-none border-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+        style={{
+          borderColor: checked ? EL.cream : "rgba(243,239,230,0.85)",
+          background: checked ? EL.cream : KIT.panel,
+          outlineColor: EL.cream,
+        }}
+      />
+      {checked && (
+        <span className="pointer-events-none absolute inset-0 flex items-center justify-center" style={{ color: EL.char }}>
+          <PixelTick good size={16} />
+        </span>
+      )}
+    </span>
+  );
+}
 /** Abort a PUT when no bytes move for this long, so a dead 4G connection doesn't freeze the bar forever. */
 const STALL_MS = 45_000;
 
@@ -284,7 +322,7 @@ export function OwnerUploader({ org, element, signature, due }: { org: string; e
               </ul>
             </>
           )}
-          {receipt.unfinished && <p className="mt-1 text-[17px] [text-wrap:pretty]" style={{ color: KIT.warn }}>ครั้งก่อนอัปโหลดไม่เสร็จ เลือกไฟล์ที่ยังไม่ขึ้นว่าได้รับแล้วอีกครั้ง</p>}
+          {receipt.unfinished && <p className="mt-1 text-[17px] [text-wrap:pretty]" style={{ color: KIT.warn }}>{keep("ครั้งก่อนอัปโหลดไม่เสร็จ เลือกไฟล์ที่ยังไม่ขึ้นว่าได้รับแล้วอีกครั้ง")}</p>}
         </div>
       )}
 
@@ -310,9 +348,10 @@ export function OwnerUploader({ org, element, signature, due }: { org: string; e
             const numeric = it.status === "uploading" || it.status === "waiting";
             return (
               <li key={it.id} style={{ borderTop: RULE, paddingTop: 10 }}>
-                <div className="flex items-center justify-between gap-3" style={{ fontSize: 17, fontWeight: 400, lineHeight: 1.65 }}>
-                  <span className="min-w-0 truncate">{it.file.name}</span>
-                  <span className="flex flex-none items-center gap-1">
+                <div className="flex items-start justify-between gap-3" style={{ fontSize: 17, fontWeight: 400, lineHeight: 1.65 }}>
+                  {/* Two lines, broken anywhere, so a long Thai filename stays recognisable instead of cut mid-word. */}
+                  <span className="line-clamp-2 min-w-0 pt-2 [overflow-wrap:anywhere]">{it.file.name}</span>
+                  <span className="flex min-h-11 flex-none items-center gap-1">
                     <span
                       style={
                         numeric
@@ -381,7 +420,7 @@ export function OwnerUploader({ org, element, signature, due }: { org: string; e
       </label>
 
       <label className="mt-5 flex min-h-[44px] cursor-pointer items-start gap-3 py-1" style={{ fontSize: 17, fontWeight: 400, lineHeight: 1.65 }}>
-        <input type="checkbox" className="mt-1 h-6 w-6 flex-none accent-[#f3efe6]" checked={minors} onChange={(e) => setMinors(e.target.checked)} />
+        <Box checked={minors} onChange={setMinors} />
         <span className="[text-wrap:pretty]">
           {keep("มีเด็กหรือนักเรียนเห็นหน้าในคลิป และผู้ปกครองอนุญาตเป็นลายลักษณ์อักษรแล้ว")}
           <span className="mt-0.5 block text-[16px]" style={{ color: KIT.soft }}>
@@ -394,14 +433,12 @@ export function OwnerUploader({ org, element, signature, due }: { org: string; e
         className="mt-3 flex min-h-[44px] cursor-pointer items-start gap-3 p-2"
         style={{ fontSize: 17, fontWeight: 400, lineHeight: 1.65, outline: consentNudge && !consent ? `2px solid ${KIT.warn}` : "none", outlineOffset: 2, marginLeft: -8, marginRight: -8 }}
       >
-        <input
-          ref={consentRef}
-          type="checkbox"
-          className="mt-1 h-6 w-6 flex-none accent-[#f3efe6]"
+        <Box
+          inputRef={consentRef}
           checked={consent}
-          onChange={(e) => {
-            setConsent(e.target.checked);
-            if (e.target.checked) setConsentNudge(false);
+          onChange={(v) => {
+            setConsent(v);
+            if (v) setConsentNudge(false);
           }}
         />
         <span className="[text-wrap:pretty]">
@@ -426,8 +463,8 @@ export function OwnerUploader({ org, element, signature, due }: { org: string; e
         className="mt-3 min-h-[56px] w-full px-5 py-4 disabled:cursor-not-allowed"
         style={
           idle
-            ? // Nothing picked yet: an outlined, readable button instead of a 40% ghost that looks broken.
-              { background: "transparent", border: "1px dashed rgba(243,239,230,0.5)", color: KIT.soft, fontSize: 20, fontWeight: 400 }
+            ? // Nothing picked yet: a solid thin outline, readable but not a 40% ghost. Dashed lines belong only to the drop zone, so this never looks like a place to pick files.
+              { background: "transparent", border: "1px solid rgba(243,239,230,0.45)", color: KIT.soft, fontSize: 20, fontWeight: 400 }
             : { background: EL.cream, border: `1px solid ${EL.cream}`, color: EL.ink, fontSize: 20, fontWeight: 400 }
         }
       >

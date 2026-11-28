@@ -26,6 +26,15 @@ const KEEP = [
   "ทีมงาน",
   "ค้างไว้",
   "ลิงก์นี้",
+  // Safeguarding: the negation never leaves its verb, or "show the face" reads alone.
+  "ไม่เห็นหน้า",
+  "ที่นั่น",
+  "พื้นหลัง",
+  "เราขอ",
+  "ได้รับแล้ว",
+  "ข้อความเดิม",
+  "พิงกองหนังสือ",
+  "รูปและอย่างอื่น",
 ];
 
 const PATTERN = new RegExp(`(${KEEP.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`);
