@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import Image from "next/image";
 import { CheckCircle2 } from "lucide-react";
 
@@ -14,15 +15,19 @@ type Props = {
   number: string;
 };
 
-/** The cut-outs on either side of the tear line. */
-function Notch({ side }: { side: "left" | "right" }) {
-  return (
-    <span
-      aria-hidden="true"
-      className={`absolute top-1/2 h-8 w-8 -translate-y-1/2 rounded-full ${side === "left" ? "-left-4" : "-right-4"}`}
-      style={{ backgroundColor: EL.cream }}
-    />
-  );
+/** Radius of the half-circle cut out of each side at the tear line. */
+const NOTCH = 16;
+
+/**
+ * Real holes, not painted circles: each half of the ticket is masked with a
+ * half-circle at both ends of the tear line, so whatever is behind the ticket
+ * (the cream page, a dark screen, a screenshot's background) shows through.
+ */
+function cutAt(edge: "top" | "bottom"): CSSProperties {
+  const y = edge === "top" ? "0" : "100%";
+  const hole = (x: string) => `radial-gradient(circle ${NOTCH}px at ${x} ${y}, transparent ${NOTCH - 0.5}px, #000 ${NOTCH}px)`;
+  const mask = `${hole("0")} left / 51% 100% no-repeat, ${hole("100%")} right / 51% 100% no-repeat`;
+  return { WebkitMask: mask, mask };
 }
 
 function Stub({ label, children, mono }: { label: string; children: React.ReactNode; mono?: boolean }) {
@@ -43,10 +48,10 @@ function Stub({ label, children, mono }: { label: string; children: React.ReactN
  */
 export function Ticket({ who, people, place, number }: Props) {
   return (
-    <article
-      className={`${styles.ticketIn} relative max-w-md overflow-hidden rounded-[28px]`}
-      style={{ backgroundColor: EL.char, color: EL.cream, boxShadow: "0 30px 60px -30px rgba(29,33,31,0.55)" }}
-    >
+    // The shadow is a drop-shadow on the wrapper, so it follows the holes (the mask would cut a box-shadow off).
+    <div className={`${styles.ticketIn} max-w-md`} style={{ filter: "drop-shadow(0 18px 22px rgba(29,33,31,0.3))" }}>
+      <article style={{ color: EL.cream }}>
+        <div className="overflow-hidden rounded-t-[28px]" style={{ backgroundColor: EL.char, ...cutAt("bottom") }}>
       <div className="relative aspect-[4/5] overflow-hidden">
         <Image
           src={place.src}
@@ -81,12 +86,10 @@ export function Ticket({ who, people, place, number }: Props) {
       <div className="px-5 pb-4 pt-1 sm:px-6">
         <p className="text-sm" style={{ color: EL.creamSoft }}>{place.storyTh}</p>
       </div>
+        </div>
 
-      <div className="relative">
-        <Notch side="left" />
-        <Notch side="right" />
-        <div className="mx-6 border-t-2 border-dashed" style={{ borderColor: "rgba(243,239,230,0.22)" }} />
-      </div>
+        <div className="rounded-b-[28px]" style={{ backgroundColor: EL.char, ...cutAt("top") }}>
+      <div className="mx-6 border-t-2 border-dashed" style={{ borderColor: "rgba(243,239,230,0.22)" }} />
 
       <div className="grid grid-cols-3 gap-4 px-5 pb-5 pt-5 sm:px-6">
         <Stub label="วันงาน">{thaiDateShort()}</Stub>
@@ -108,6 +111,8 @@ export function Ticket({ who, people, place, number }: Props) {
           {place.credit}
         </a>
       </div>
-    </article>
+        </div>
+      </article>
+    </div>
   );
 }
