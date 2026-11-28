@@ -25,7 +25,8 @@ export type Reminder = { to: string; payToken: string; amountBaht: number };
 
 /**
  * Who gets a reminder: each address's newest pending sign-up, made more than
- * `olderThanHours` ago (and at or after `since`, when given). An address that
+ * `olderThanHours` ago (and after `since`, when given: a later run passes the
+ * first run's cutoff, so nobody gets a second email). An address that
  * also has a paid sign-up, or one whose slip is waiting for a check, is left
  * out: it already has its seat, so the pending one is a second sign-up.
  */
@@ -42,7 +43,7 @@ export function pickUnpaidReminders(
   for (const r of rows) {
     if (r.status !== "pending" || !r.contact_email?.includes("@")) continue;
     const at = Date.parse(r.created_at);
-    if (!(at <= cutoff) || (since && at < since.getTime())) continue;
+    if (!(at <= cutoff) || (since && at <= since.getTime())) continue;
     const k = key(r.contact_email);
     if (seated.has(k)) continue;
     const kept = newest.get(k);

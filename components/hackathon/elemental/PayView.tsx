@@ -435,8 +435,8 @@ function StatusSection(props: Props) {
 export function PayView(props: Props) {
   return (
     <main className="min-h-[100dvh] px-5 py-10 sm:px-8 sm:py-16" style={{ backgroundColor: EL.cream, color: EL.ink }}>
-      {/* Two columns on a wide screen: the paid page (PaidSection) and the unpaid page (UnpaidPay.tsx). Review and cancelled keep one. */}
-      <div className={`mx-auto max-w-xl ${props.reg.status === "paid" ? "lg:max-w-6xl" : props.reg.status === "pending" ? "lg:max-w-[68rem]" : ""}`}>
+      {/* Two columns on a wide screen: the paid page (PaidSection) and the unpaid page (UnpaidPay.tsx), where a friend's team card is as wide as the left column. Review and cancelled keep one. */}
+      <div className={`mx-auto max-w-xl ${props.reg.status === "paid" ? "lg:max-w-6xl" : props.reg.status === "pending" ? "lg:max-w-[68rem] lg:[&>#team-offer]:max-w-[calc(100%-38rem)]" : ""}`}>
         <p className="text-sm" style={{ color: EL.inkSoft }}>
           {ELEMENTAL.edition} Hackathon · {thaiDateLine()} · {ELEMENTAL.venueTh}
         </p>

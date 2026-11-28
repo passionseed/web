@@ -16,6 +16,7 @@
     "backfill:ig-comments": "dotenv -e .env.local -o -- tsx scripts/backfill-ig-comments.ts",
     "backfill:dm-conversations": "dotenv -e .env.local -o -- node --import tsx scripts/backfill-dm-conversations.ts",
     "elemental:owner-kit": "dotenv -e .env.production -o -- node --import tsx scripts/elemental-owner-kit.ts",
+    "elemental:unpaid-reminder": "dotenv -e .env.local -o -- tsx scripts/elemental-unpaid-reminder.ts",
     "list:dm-gap": "dotenv -e .env.local -o -- tsx scripts/list-dm-gap.ts",
     "tag:internal-lead": "dotenv -e .env.local -o -- tsx scripts/tag-internal-lead.ts",
     "verify:dm-gap": "dotenv -e .env.local -o -- tsx scripts/verify-dm-gap.ts",

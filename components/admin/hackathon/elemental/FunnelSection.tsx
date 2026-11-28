@@ -73,6 +73,11 @@ export function FunnelSection({ summary, days }: { summary: FunnelSummary | null
             <MiniList title="Slip results" rows={summary.slipResults.map((r) => [r.result, r.count])} empty="No slips yet" />
             {/* Seven ways in all: the team card's line, share, copy and code, and the paid page's paid:line, paid:share and paid:copy. */}
             <MiniList title="Team invites sent" rows={summary.invitesShared.map((r) => [r.how, r.count])} empty="No invites sent yet" limit={8} />
+            <MiniList
+              title="Sent to a parent to pay"
+              rows={[...summary.parentShared.map((r): [string, number] => [r.how, r.count]), ...(summary.parentOpened ? [["parents who opened it", summary.parentOpened] as [string, number]] : [])]}
+              empty="Not sent to a parent yet"
+            />
             <MiniList title="Opened sign-up from" rows={summary.sources.map((s) => [s.source, s.people])} empty="No sign-ups opened yet" />
           </div>
         </div>

@@ -185,7 +185,7 @@ export function PayWithSlip({ token, amountBaht, qrSrc, demo, forParent }: Props
     <div className="space-y-4">
       {/* 1. Pay */}
       {/* On a laptop (lg) the amount and the QR sit side by side, so the slip step stays in view. */}
-      <section className="rounded-3xl bg-white p-5 shadow-[0_1px_0_rgba(29,33,31,0.06)] sm:p-7 lg:grid lg:grid-cols-[minmax(0,1fr)_220px] lg:items-center lg:gap-6">
+      <section className="rounded-3xl bg-white p-5 shadow-[0_1px_0_rgba(29,33,31,0.06)] sm:p-7 lg:grid lg:grid-cols-[minmax(0,1fr)_240px] lg:items-center lg:gap-6">
         <div>
           <p className="text-sm font-medium" style={{ color: EL.flame }}>1 · โอน</p>
           <p className="mt-1 text-6xl tabular-nums" style={{ fontFamily: EL_FONT.display, fontWeight: 200, lineHeight: 1 }}>

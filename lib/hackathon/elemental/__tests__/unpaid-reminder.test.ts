@@ -37,7 +37,7 @@ describe("parent link and message", () => {
 });
 
 describe("pickUnpaidReminders", () => {
-  it("takes pending sign-ups older than the cutoff, one per address, newest first-come order", () => {
+  it("takes pending sign-ups older than the cutoff, each address's newest, oldest address first", () => {
     const rows = [
       row({ pay_token: "a".repeat(32), contact_email: "one@example.com", created_at: hoursAgo(40) }),
       row({ pay_token: "b".repeat(32), contact_email: "ONE@example.com ", created_at: hoursAgo(20) }),
@@ -63,9 +63,13 @@ describe("pickUnpaidReminders", () => {
     expect(pickUnpaidReminders(rows, { now, olderThanHours: 12 })).toEqual([]);
   });
 
-  it("leaves out sign-ups made before `since`, so a second run reaches only new ones", () => {
-    const rows = [row({ contact_email: "old@example.com", created_at: hoursAgo(60) }), row({ contact_email: "new@example.com", created_at: hoursAgo(20) })];
+  it("leaves out sign-ups made up to `since` (the first run's cutoff), so a second run reaches only new ones", () => {
     const since = new Date(now.getTime() - 24 * 3_600_000);
+    const rows = [
+      row({ contact_email: "old@example.com", created_at: hoursAgo(60) }),
+      row({ contact_email: "edge@example.com", created_at: since.toISOString() }),
+      row({ contact_email: "new@example.com", created_at: hoursAgo(20) }),
+    ];
     expect(pickUnpaidReminders(rows, { now, olderThanHours: 12, since }).map((r) => r.to)).toEqual(["new@example.com"]);
   });
 });
