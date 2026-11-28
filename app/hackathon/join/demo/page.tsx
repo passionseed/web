@@ -18,8 +18,9 @@ const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v
 const STATES: RegistrationStatus[] = ["pending", "review", "paid", "cancelled"];
 
 /**
- * Dev only: the pay page with made-up data, so the flow can be walked and
- * screenshotted without saving a sign-up or a slip. 404 everywhere else.
+ * The pay page with made-up data, so the flow can be walked and screenshotted
+ * without saving a sign-up or a slip. Local dev and Vercel preview deployments
+ * only (so a reviewer can open it from a pull request); 404 on production.
  * /hackathon/join/demo?state=pending|review|paid|cancelled&mode=solo|create|join&n=0..4
  * (n: the place in sign-up order inside the team, so each teammate's ticket can be seen)
  * &discord=joined|not_member|taken|error shows each Discord state on the paid page.
@@ -29,7 +30,7 @@ const STATES: RegistrationStatus[] = ["pending", "review", "paid", "cancelled"];
  * person who paid the solo price and joined later). &closed=1 shows the page after team changes close.
  */
 export default async function PayDemoPage({ searchParams }: { searchParams: SearchParams }) {
-  if (process.env.NODE_ENV !== "development") notFound();
+  if (process.env.NODE_ENV !== "development" && process.env.VERCEL_ENV !== "preview") notFound();
   const params = await searchParams;
   const state = STATES.find((s) => s === first(params.state)) ?? "pending";
   const mode = first(params.mode) ?? "create";
