@@ -109,7 +109,7 @@ describe("LinkUpsertBody pages", () => {
   test("validates the page against the guide and needs null for deck careers", () => {
     expect(LinkUpsertBody.safeParse({ ...link, fieldSlug: "cybersecurity", pageKey: "tonight" }).success).toBe(true);
     expect(LinkUpsertBody.safeParse({ ...link, fieldSlug: "cybersecurity", pageKey: "hook" }).success).toBe(false);
-    expect(LinkUpsertBody.safeParse({ ...link, fieldSlug: "ai-engineer", pageKey: "tonight" }).success).toBe(false);
+    expect(LinkUpsertBody.safeParse({ ...link, fieldSlug: "product-designer", pageKey: "tonight" }).success).toBe(false);
     expect(LinkUpsertBody.safeParse({ ...link, fieldSlug: null, pageKey: "tonight" }).success).toBe(false);
   });
 });

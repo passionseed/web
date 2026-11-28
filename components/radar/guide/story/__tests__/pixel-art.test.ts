@@ -1,4 +1,15 @@
-import { BADGE_GLYPHS, gridRuns, gridSize, HOST_GRID, HOST_GRIDS, HOST_PALETTE, avatarPalette } from "../pixel-art";
+import { KIND_GLYPHS } from "../kind-glyphs";
+import {
+  AVATAR_GRID,
+  AVATAR_GRIDS,
+  BADGE_GLYPHS,
+  gridRuns,
+  gridSize,
+  HOST_GRID,
+  HOST_GRIDS,
+  HOST_PALETTE,
+  avatarPalette,
+} from "../pixel-art";
 
 const BADGE_ICONS = [
   "bug",
@@ -31,17 +42,42 @@ describe("host sprite grids", () => {
   it("talk differs from idle only around the mouth", () => {
     const changed = HOST_GRIDS.idle.map((row, y) => (row === HOST_GRIDS.talk[y] ? null : y)).filter((y) => y !== null);
     expect(changed.length).toBeGreaterThan(0);
-    for (const y of changed) expect(y).toBeGreaterThanOrEqual(11);
-    for (const y of changed) expect(y).toBeLessThanOrEqual(13);
+    for (const y of changed) expect(y).toBeGreaterThanOrEqual(21);
+    for (const y of changed) expect(y).toBeLessThanOrEqual(24);
+  });
+
+  it("wink and cheer change only the face", () => {
+    for (const frame of ["wink", "cheer"] as const) {
+      const changed = HOST_GRIDS.idle.map((row, y) => (row === HOST_GRIDS[frame][y] ? null : y)).filter((y) => y !== null);
+      expect(changed.length).toBeGreaterThan(0);
+      for (const y of changed) expect(y).toBeGreaterThanOrEqual(13);
+      for (const y of changed) expect(y).toBeLessThanOrEqual(24);
+    }
+  });
+
+  it("flick sways only the flame tips and blink shuts only the eyes", () => {
+    const rows = (frame: "flick" | "blink") =>
+      HOST_GRIDS.idle.map((row, y) => (row === HOST_GRIDS[frame][y] ? null : y)).filter((y) => y !== null);
+    expect(rows("flick").length).toBeGreaterThan(0);
+    for (const y of rows("flick")) expect(y).toBeLessThanOrEqual(5);
+    expect(rows("blink").length).toBeGreaterThan(0);
+    for (const y of rows("blink")) {
+      expect(y).toBeGreaterThanOrEqual(16);
+      expect(y).toBeLessThanOrEqual(21);
+    }
+  });
+
+  it.each(Object.keys(AVATAR_GRIDS) as (keyof typeof AVATAR_GRIDS)[])("avatar %s is 24x32", (frame) => {
+    expect(gridSize(AVATAR_GRIDS[frame])).toEqual({ w: AVATAR_GRID.w, h: AVATAR_GRID.h });
   });
 
   it("the avatar drops the headset and wears the accent", () => {
     const pal = avatarPalette("#5cff5c");
     expect(pal.O).toBe("transparent");
     expect(pal.J).toBe("#5cff5c");
-    const runs = gridRuns(HOST_GRIDS.idle, pal);
+    const runs = gridRuns(AVATAR_GRIDS.idle, pal);
     expect(runs.some((r) => r.color === "#5cff5c")).toBe(true);
-    expect(runs.some((r) => r.color === HOST_PALETTE.O)).toBe(false); // no headset or mic
+    expect(runs.some((r) => r.color === "#ff8a4c")).toBe(false); // no headset or mic
   });
 });
 
@@ -49,6 +85,13 @@ describe("badge glyphs", () => {
   it.each(BADGE_ICONS)("%s is 8x8", (icon) => {
     expect(gridSize(BADGE_GLYPHS[icon])).toEqual({ w: 8, h: 8 });
     expect(BADGE_GLYPHS[icon].join("")).toMatch(/[#o]/);
+  });
+});
+
+describe("kind glyphs", () => {
+  it.each(Object.keys(KIND_GLYPHS) as (keyof typeof KIND_GLYPHS)[])("%s is 12x12 in the three tile colours", (icon) => {
+    expect(gridSize(KIND_GLYPHS[icon])).toEqual({ w: 12, h: 12 });
+    expect(KIND_GLYPHS[icon].join("")).toMatch(/^[#ow.]+$/);
   });
 });
 

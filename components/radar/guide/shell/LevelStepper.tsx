@@ -8,6 +8,7 @@
  * the student gets there. Pinned steps (safety lines) are always shown.
  */
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
+import { latestIn, scrollToMiddle } from "./follow-scroll";
 import { stepShown, type StepMeta } from "./level-steps";
 import { useGuideShell } from "./shell-context";
 
@@ -36,21 +37,24 @@ export function LevelStepper({ pageKey, steps }: LevelStepperProps) {
 
   const cur = cursor(pageKey);
   const listRef = useRef<HTMLOListElement>(null);
-  // Scroll only after a "ต่อ" press (never on arrival, never while filming).
+  // Bring the new step to the middle of the screen, only after a "ต่อ" press
+  // (never on arrival, never while filming).
   const seq = useRef(advanceSeq);
   useEffect(() => {
     if (advanceSeq === seq.current) return;
     seq.current = advanceSeq;
     if (demo) return;
     const el = listRef.current?.querySelector<HTMLElement>(`[data-step-index="${cur}"]`);
-    if (typeof el?.scrollIntoView === "function") {
-      el.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
-    }
+    if (el) scrollToMiddle(latestIn(el), reducedMotion);
   }, [advanceSeq, cur, demo, reducedMotion]);
+
+  // Room under the newest step so it can scroll up to the middle; gone once
+  // the last step is out.
+  const follow = ready && !demo && cur < steps.length - 1;
 
   return (
     <>
-      <ol ref={listRef} className="rg-steps">
+      <ol ref={listRef} className="rg-steps" data-follow={follow ? "true" : undefined}>
         {steps.map((step, i) => {
           const shown = stepShown(metas, i, cur);
           return (

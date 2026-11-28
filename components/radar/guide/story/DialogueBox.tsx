@@ -128,7 +128,7 @@ export function DialogueBox({
   return (
     <div className={`rgs-dialogue rgs-dialogue--${speaker} ${className ?? ""}`} data-testid="dialogue">
       {speaker === "host" && showNPC ? (
-        <GuideNPC mood={mood} talking={talking} reducedMotion={reducedMotion} cell={3} className="rgs-dialogue__npc" />
+        <GuideNPC mood={mood} talking={talking} reducedMotion={reducedMotion} cell={2} className="rgs-dialogue__npc" />
       ) : null}
       <button
         type="button"

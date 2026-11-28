@@ -8,7 +8,7 @@ import { CLIP, dialogue, host, item } from "./_story";
 
 export const fit: GuidePage = {
   key: "fit",
-  order: 7,
+  order: 9,
   titleTh: "ฉันเหมาะไหม เทียบกับคอม วิศวะ หมอ",
   questionTh: "ควรไปไซเบอร์ตรงๆ ไปคอมกว้างๆ ก่อน หรือใจจริงอยู่ที่หมอ",
   navLabelTh: "เหมาะไหม",

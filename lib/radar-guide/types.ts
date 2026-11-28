@@ -56,6 +56,7 @@ export type GuideCtaTarget =
   | "program"
   | "first-step"
   | "plan"
+  | "level-two"
   | `resource:${number}`;
 
 export type GuideShareTarget = "line" | "copy" | "native";

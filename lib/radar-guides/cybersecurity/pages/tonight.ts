@@ -4,6 +4,8 @@
  * the device. Required safety cutscene (founder face on screen). The fixed
  * legal line carries no section number until legal review.
  */
+import { whenChoice } from "../../_shared/choices";
+import { ROUND_ONE_FACT, roundOneTeaser } from "../../_shared/round1";
 import type { GuidePage } from "@/lib/radar-guide/guide-types";
 import { CLIP, dialogue, host, item, sys } from "./_story";
 
@@ -11,7 +13,7 @@ const ROOM_URL = "https://tryhackme.com/room/offensivesecurityintro" as const;
 
 export const tonight: GuidePage = {
   key: "tonight",
-  order: 10,
+  order: 3,
   titleTh: "คืนนี้ ห้องเดียว ได้ผลงานชิ้นแรก",
   questionTh: "คืนนี้ทำอะไรได้เลย ที่จบด้วยของจริงในพอร์ต",
   navLabelTh: "ภารกิจคืนนี้",
@@ -19,7 +21,7 @@ export const tonight: GuidePage = {
   minutes: 1,
   legacyHashes: ["start"],
   showsHacking: true,
-  factIds: ["f.thm-free", "f.thm-fakebank"],
+  factIds: ["f.thm-free", "f.thm-fakebank", ROUND_ONE_FACT],
   og: { headlineTh: "คืนนี้ลองแค่ห้องเดียว แล้วเธอจะมีผลงานไซเบอร์ชิ้นแรก" },
   blocks: [
     dialogue(
@@ -87,10 +89,13 @@ export const tonight: GuidePage = {
       host("ทีมเราคิดว่าข้อสุดท้ายมีค่าที่สุด อย่าข้ามนะ", { labels: ["teamView"] })
     ),
     dialogue(
+      "folio",
+      host("write-up ชิ้นนี้แหละ คือผลงานแรกในแฟ้มเธอ", { mood: "wink" })
+    ),
+    roundOneTeaser(),
+    whenChoice("ทำเสร็จแล้ว พรุ่งนี้ลองห้องถัดไปดู"),
+    dialogue(
       "callback",
-      host("จำประตูที่สองได้ไหม มันเปิดให้คนที่มีผลงานตรวจสอบได้", { mood: "wink" }),
-      host("write-up นี้คือบรรทัดแรกของประวัตินั้น"),
-      host("ถ้าสนุก ทำห้องถัดไปพรุ่งนี้ ถ้าไม่สนุก ก็รู้ก่อนเลือกคณะ ไม่เสียอะไร"),
       sys("เช็กกติกาของห้องก่อนโพสต์ write-up สาธารณะ")
     ),
   ],

@@ -5,14 +5,15 @@
  * who does this work.
  */
 import type { GuidePage } from "@/lib/radar-guide/guide-types";
-import { CLIP, beat, dialogue, host, item } from "./_story";
+import { careerKindsBeat } from "../../_shared/kinds";
+import { CLIP, answer, beat, choice, dialogue, host, item } from "./_story";
 
 const SIM = "sim.scam-chat" as const;
 const POLICE = "f.fake-police" as const;
 
 export const scam: GuidePage = {
   key: "scam",
-  order: 4,
+  order: 2,
   titleTh: "แชตบ้านเธอ คือสนามจริง",
   questionTh: "ภัยไซเบอร์ในไทยตอนนี้หน้าตาเป็นยังไง แล้วใครเป็นคนหยุดมัน",
   navLabelTh: "แชตบ้านเธอ",
@@ -196,11 +197,43 @@ export const scam: GuidePage = {
         { title: "เทรนด์ปีนี้", facts: ["f.de-trends"] }
       )
     ),
+    choice(
+      "family-chat",
+      host("ถ้าเจอข้อความแบบนี้ในกลุ่มแชตบ้าน เธอจะทำไง", { mood: "wink" }),
+      answer(
+        "warn",
+        "ทักเตือนในกลุ่มเลย ว่าหลอก",
+        host("ดีเลย ที่บ้านจะได้ไม่เผลอมือลั่นกดลิงก์", { mood: "wow" }),
+        host("บอกด้วยว่าถ้าไม่แน่ใจ โทรถาม 1441 ได้", { facts: ["f.aoc1441"] })
+      ),
+      answer(
+        "private",
+        "แอบทักไปบอกคนส่งเบาๆ",
+        host("ละมุนดีนะ คนส่งก็อาจโดนหลอกมาอีกทีก็ได้"),
+        host("ถ้าไม่แน่ใจ ชวนกันโทรเช็กที่ 1441", { facts: ["f.aoc1441"] })
+      ),
+      answer(
+        "ignore",
+        "ปล่อยผ่าน ไม่อยากยุ่งอะ",
+        host("เข้าใจเลยนะ แต่บางคนในกลุ่มอาจเผลอกดไปแล้วก็ได้", { mood: "serious" }),
+        host("แค่ทักสั้นๆ ว่าน่าสงสัย ก็ช่วยได้เยอะแล้วนะ")
+      )
+    ),
     dialogue(
       "bridge",
       host("ใครทำงานนี้: ทีมกันโกงของธนาคาร ค่ายมือถือ ศูนย์ AOC 1441", { facts: ["f.aoc1441"] }),
       host("บริษัทแอปเตือนเบอร์มิจฉาชีพ และตำรวจไซเบอร์ ทั้งหมดนี้คือสายไซเบอร์")
     ),
+    careerKindsBeat({
+      nameTh: "สายไซเบอร์",
+      tiles: [
+        { id: "fraud", icon: "shield", titleTh: "กันโกง", lineTh: "ดักข้อความหลอกกับบัญชีม้า แบบทีมกันโกงของธนาคาร", played: true },
+        { id: "soc", icon: "monitor", titleTh: "เฝ้าระบบ", lineTh: "เฝ้าระบบองค์กรทั้งคืน เจออะไรแปลกก็หยุดทันที" },
+        { id: "pentest", icon: "bug", titleTh: "เจาะระบบ", lineTh: "เจาะระบบที่เจ้าของอนุญาต หาช่องโหว่ให้เจอก่อนคนร้าย" },
+        { id: "forensics", icon: "magnifier", titleTh: "สืบหลักฐาน", lineTh: "แกะรอยหลังโดนโจมตี ว่าคนร้ายเข้ามาทางไหน" },
+        { id: "policy", icon: "clipboard", titleTh: "วางกติกา", lineTh: "วางกฎให้ทั้งองค์กรปลอดภัย รวมถึงบริษัทคู่ค้า" },
+      ],
+    }),
     item("help-1441", "notification", "เจอเรื่องแบบนี้ โทร 1441", { title: "สายด่วน", facts: ["f.aoc1441"] }),
   ],
   clip: {

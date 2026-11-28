@@ -7,10 +7,16 @@
  * (registry.server guideIndexFor); this index leaves them unset.
  */
 import type { GuideIndexEntry, GuideIndexPage } from "@/lib/radar-guide/guide-types";
+import { AI_ENGINEER_META } from "./ai-engineer/meta";
 import { CYBERSECURITY_META } from "./cybersecurity/meta";
+import { DATA_SCIENTIST_META } from "./data-scientist/meta";
+import { SOFTWARE_ENGINEER_META } from "./software-engineer/meta";
 
 export const GUIDE_INDEX: Readonly<Record<string, GuideIndexEntry>> = {
   cybersecurity: CYBERSECURITY_META,
+  "ai-engineer": AI_ENGINEER_META,
+  "data-scientist": DATA_SCIENTIST_META,
+  "software-engineer": SOFTWARE_ENGINEER_META,
 };
 
 /** Every slug with a code guide, any status. */

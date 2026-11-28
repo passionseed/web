@@ -6,10 +6,11 @@
  */
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LevelMap, guideArtSrc } from "@/components/radar/guide/story";
+import { guideArtSrc } from "@/components/radar/guide/story";
 import { GuideSheet } from "../GuideSheet";
 import { coverHref, deckHref, levelHref } from "./guide-routes";
 import { useGuideShell } from "./shell-context";
+import { TieredLevelMap } from "./TieredLevelMap";
 
 export interface PageMapSheetProps {
   open: boolean;
@@ -29,7 +30,8 @@ export function PageMapSheet({ open, onOpenChange }: PageMapSheetProps) {
       accent={index.accent}
       className="rg-sheet"
     >
-      <LevelMap
+      <TieredLevelMap
+        slug={slug}
         pages={index.pages}
         progress={progress}
         currentKey={pageKey}
@@ -40,6 +42,7 @@ export function PageMapSheet({ open, onOpenChange }: PageMapSheetProps) {
           // No event: interactive_tap counts game players in the funnel.
           if (key !== pageKey) router.push(levelHref(slug, key));
         }}
+        onDeckDoor={() => onOpenChange(false)}
       />
       <div className="rg-sheet__links">
         <Link href={coverHref(slug)} className="rg-link" onClick={() => onOpenChange(false)}>

@@ -57,7 +57,7 @@ describe.each(SLUGS)("art for %s", (slug) => {
       expect(ids.has(page.key)).toBe(true);
       expect(SCENES[page.key]).toBeDefined();
     }
-    for (const id of ["map", "frame", "host-idle", "host-talk", "host-cheer"]) expect(ids.has(id)).toBe(true);
+    for (const id of ["map", "frame", "host-idle", "host-talk", "host-wink", "host-cheer", "host-flick", "host-blink"]) expect(ids.has(id)).toBe(true);
   });
 
   it("keeps people, text and logos out of scene prompts", () => {

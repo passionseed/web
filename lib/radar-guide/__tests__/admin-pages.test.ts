@@ -6,7 +6,7 @@ test("lists a code guide's pages in level order, and none for a deck career", ()
   expect(pages.map((p) => p.key)).toEqual(
     [...GUIDE_INDEX.cybersecurity.pages].sort((a, b) => a.order - b.order).map((p) => p.key)
   );
-  expect(adminGuidePages("data-scientist")).toBeNull();
+  expect(adminGuidePages("product-designer")).toBeNull();
   expect(adminGuidePages(null)).toBeNull();
   expect(adminGuidePages("toString")).toBeNull();
 });

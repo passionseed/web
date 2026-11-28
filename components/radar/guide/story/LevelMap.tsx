@@ -28,6 +28,13 @@ export interface LevelMapProps {
   backgroundSrc?: string | null;
   reducedMotion?: boolean;
   className?: string;
+  /**
+   * The player is somewhere else (another Level of the run): no level on this
+   * map is "current" and the host doesn't stand on it.
+   */
+  idle?: boolean;
+  /** Accessible name of the map. Default "แผนที่ด่าน". */
+  labelTh?: string;
 }
 
 const STATUS_TH: Record<LevelNode["status"], string> = {
@@ -36,14 +43,28 @@ const STATUS_TH: Record<LevelNode["status"], string> = {
   ahead: "ยังไม่ได้เล่น แตะเพื่อไปได้เลย",
 };
 
-export function LevelMap({ pages, progress, currentKey, onJump, hrefFor, backgroundSrc, reducedMotion = false, className }: LevelMapProps) {
+export function LevelMap({
+  pages,
+  progress,
+  currentKey,
+  onJump,
+  hrefFor,
+  backgroundSrc,
+  reducedMotion = false,
+  className,
+  idle = false,
+  labelTh = "แผนที่ด่าน",
+}: LevelMapProps) {
   const [bgFailed, setBgFailed] = useState(false);
-  const nodes = levelMap(progress, pages, currentKey ?? undefined);
+  const cleared = new Set(progress.cleared ?? []);
+  const nodes = levelMap(progress, pages, currentKey ?? undefined).map((node) =>
+    idle && node.status === "current" ? { ...node, status: cleared.has(node.key) ? ("cleared" as const) : ("ahead" as const) } : node
+  );
   const points = levelMapPoints(nodes.length);
   const height = Math.max(240, nodes.length * 76 + 32);
 
   return (
-    <nav className={`rgs-map ${className ?? ""}`} aria-label="แผนที่ด่าน" data-testid="level-map">
+    <nav className={`rgs-map ${className ?? ""}`} aria-label={labelTh} data-testid="level-map">
       <div className="rgs-map__board" style={{ height }}>
         <div className="rgs-map__bg" aria-hidden="true">
           {backgroundSrc && !bgFailed ? (

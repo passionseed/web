@@ -1,4 +1,5 @@
 import { GUIDE_HOST } from "@/lib/radar-guide/story";
+import { HOST_GRIDS } from "../pixel-art";
 import {
   cutsceneStart,
   cutsceneStep,
@@ -6,6 +7,8 @@ import {
   dialogueTap,
   graphemes,
   HOST_CHEER_SRC,
+  HOST_FRAME_NAMES,
+  HOST_IDLE_LOOP,
   hostFrame,
   hostSpriteSrc,
   levelMapPoints,
@@ -90,17 +93,30 @@ describe("toBoxes", () => {
 });
 
 describe("host sprite", () => {
-  it("flaps between idle and talk, cheers on wow", () => {
+  it("flaps between idle and talk, cheers on wow, winks on wink", () => {
     expect(hostFrame("idle", false)).toBe("idle");
     expect(hostFrame("talk", true)).toBe("talk");
     expect(hostFrame("serious", true)).toBe("talk");
     expect(hostFrame("wow", false)).toBe("cheer");
+    expect(hostFrame("wink", true)).toBe("wink");
   });
 
   it("maps frames to GUIDE_HOST sprites with fallbacks", () => {
     expect(hostSpriteSrc("idle")).toBe(GUIDE_HOST.sprites.idle);
     expect(hostSpriteSrc("talk")).toBe(GUIDE_HOST.sprites.talk ?? GUIDE_HOST.sprites.idle);
     expect(hostSpriteSrc("cheer")).toBe(GUIDE_HOST.sprites.wow ?? HOST_CHEER_SRC);
+    expect(hostSpriteSrc("wink")).toBe("/radar/guides/host/host-wink.webp");
+    expect(hostSpriteSrc("flick")).toBe("/radar/guides/host/host-flick.webp");
+    expect(hostSpriteSrc("blink")).toBe("/radar/guides/host/host-blink.webp");
+  });
+
+  it("idles with a flickering flame and one quick blink, every frame drawn", () => {
+    const frames = HOST_IDLE_LOOP.map((s) => s.frame);
+    expect(new Set(frames)).toEqual(new Set(["idle", "flick", "blink"]));
+    expect(frames.filter((f) => f === "blink")).toHaveLength(1);
+    expect(HOST_IDLE_LOOP.find((s) => s.frame === "blink")!.ms).toBeLessThanOrEqual(160);
+    for (const f of HOST_FRAME_NAMES) expect(Object.keys(HOST_GRIDS)).toContain(f);
+    expect(Object.keys(HOST_GRIDS).sort()).toEqual([...HOST_FRAME_NAMES].sort());
   });
 
   it("names the speakers", () => {

@@ -1,11 +1,12 @@
 "use client";
 
 /**
- * Sticky game header: level-map button, "LV 3/11" with the minutes left, and
+ * Sticky game header: level-map button, "LV 3/5" with the minutes left, and
  * the XP bar (with a short "+50 XP" pop when XP is gained).
  */
 import { XpBar } from "@/components/radar/guide/story";
 import { minutesLeft } from "@/lib/radar-guide/story";
+import { positionInTier } from "@/lib/radar-guide/tiers";
 import { levelLabel, minutesLeftLabel } from "./guide-format";
 import { MapGlyph } from "./glyphs";
 import { useGuideShell } from "./shell-context";
@@ -18,7 +19,8 @@ export interface GuideTopRailProps {
 
 export function GuideTopRail({ xpPop, xpPopId }: GuideTopRailProps) {
   const { index, page, xp, openMap } = useGuideShell();
-  const total = index.pages.length;
+  // "LV 3/5" counts within the page's own Level (Level 1 is a run of its own).
+  const position = page ? positionInTier(index.pages, page.key) : null;
   return (
     <header className="rg-rail" data-testid="guide-top-rail">
       <div className="rg-rail__inner">
@@ -28,7 +30,8 @@ export function GuideTopRail({ xpPop, xpPopId }: GuideTopRailProps) {
         <div className="rg-rail__lv">
           {page ? (
             <>
-              <span className="rg-rail__lvnum">{levelLabel(page.order, total)}</span>
+              <span className="rg-rail__lvnum">{position?.tier === 2 ? "L2 · " : ""}
+                {levelLabel(position?.index ?? page.order, position?.total ?? index.pages.length)}</span>
               <span className="rg-rail__left" data-testid="guide-minutes-left">
                 {minutesLeftLabel(minutesLeft(index.pages, page.key))}
               </span>

@@ -133,7 +133,7 @@ export default function SortGame(props: EngineProps<"SortGame">) {
     <EngineFrame
       engine="SortGame"
       blockId={blockId}
-      tagTh={TAG_TH[data.layout]}
+      tagTh={data.tagTh ?? TAG_TH[data.layout]}
       status={done ? (solvedView ? "solved" : "clear") : "play"}
       reducedMotion={reducedMotion}
       simulated={Boolean(data.simulated)}

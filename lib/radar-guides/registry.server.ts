@@ -20,12 +20,18 @@ import type {
 } from "@/lib/radar-guide/guide-types";
 import { trackableGames } from "@/lib/radar-guide/story";
 import { parseVtt, type VttCue } from "@/lib/radar-guide/vtt";
+import { aiEngineerGuide } from "./ai-engineer/guide";
 import { cybersecurityGuide } from "./cybersecurity/guide";
+import { dataScientistGuide } from "./data-scientist/guide";
+import { softwareEngineerGuide } from "./software-engineer/guide";
 import { mergeFacts, pickFacts } from "./facts";
 import { guideVisible } from "./index";
 
 const GUIDES = {
   cybersecurity: cybersecurityGuide,
+  "ai-engineer": aiEngineerGuide,
+  "data-scientist": dataScientistGuide,
+  "software-engineer": softwareEngineerGuide,
 } satisfies Record<string, CareerGuide>;
 
 const GUIDES_DIR = path.join(process.cwd(), "lib", "radar-guides");
