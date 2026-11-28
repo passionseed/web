@@ -8,6 +8,7 @@ const FIELD_LABELS: Record<string, string> = {
   mode: "Alone or with friends",
   teamName: "Team name",
   fullName: "Full name",
+  grade: "Grade",
   age: "Age",
   school: "School",
   parentName: "Parent name",
@@ -50,9 +51,9 @@ export function FunnelSection({ summary, days }: { summary: FunnelSummary | null
           <ol className="space-y-1.5">
             {summary.stages.map((s) => (
               <li key={s.key} className="grid grid-cols-[minmax(0,11rem)_1fr_3.5rem] items-center gap-3 text-sm">
-                <span className={cn("truncate", s.optional && "text-muted-foreground")}>
+                <span className={cn("truncate", s.optional && "text-muted-foreground")} title={s.label}>
                   {s.label}
-                  {s.optional && " (some)"}
+                  {s.optional && !s.removed && " (some)"}
                 </span>
                 <span className="relative h-5 rounded-sm bg-muted/60">
                   <span
