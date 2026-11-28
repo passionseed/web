@@ -83,6 +83,15 @@ describe("buildSignupPayload", () => {
     expect(fields["แบบ"]).toBe("เดี่ยว");
     expect(fields["มาจาก"]).toBe("direct");
   });
+
+  it("names a buddy-pass sign-up instead of calling it solo", () => {
+    const buddy = buildSignupPayload(
+      { signupNumber: 2, members: [{ name: "A", school: "B" }], teamMode: "buddy", teamName: null, amountBaht: 99, source: null, paidSeats: 0 },
+      NOW,
+    );
+    const fields = Object.fromEntries(buddy.embeds[0].fields.map((f) => [f.name, f.value]));
+    expect(fields["แบบ"]).toBe("บัตรเพื่อน");
+  });
 });
 
 describe("buildPaidPayload", () => {

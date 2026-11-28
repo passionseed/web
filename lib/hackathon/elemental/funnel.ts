@@ -16,7 +16,7 @@ export const FUNNEL_STEPS = [
   { key: "join", label: "Opened sign-up" },
   { key: "step:mode", label: "Saw the first question (alone or with friends)" },
   { key: "step:name", label: "Name" },
-  { key: "step:team", label: "Named a team", optional: true },
+  { key: "step:team", label: "Named a team (screen removed 26 Nov)", optional: true },
   { key: "step:school", label: "Age and school" },
   { key: "step:parent", label: "Parent consent", optional: true },
   { key: "step:contact", label: "Contact" },
@@ -33,6 +33,7 @@ export type FunnelStep = (typeof FUNNEL_STEPS)[number]["key"];
 /** Things that happen inside a step: a field that failed, a slip result. Not stages. */
 /** invite_shared: someone sent their team link (detail: copy, share or line). */
 /** quiz_start, quiz_done (detail: the element) and quiz_shared (detail: how): the Elemental quiz. */
+/** board_view and board_open (detail: the tile, "water" or "water:owner_id"): the problem board. */
 export type FunnelDetailEvent =
   | "invalid"
   | "submit_failed"
@@ -41,14 +42,17 @@ export type FunnelDetailEvent =
   | "invite_shared"
   | "quiz_start"
   | "quiz_done"
-  | "quiz_shared";
+  | "quiz_shared"
+  | "board_view"
+  | "board_open";
 
 export type FunnelEventData = {
   sid: string;
   step: FunnelStep | FunnelDetailEvent;
   /** For invalid: the field keys that failed (never their values). For slip_result: the result or reason. */
   detail?: string;
-  mode?: "solo" | "create" | "join";
+  /** buddy: a friend signing up with a ฿99 buddy pass (#415). */
+  mode?: "solo" | "create" | "join" | "buddy";
   source?: string;
   /** The site it was sent to, set by the server from the request (never trusted from the browser). */
   host?: string;
@@ -66,6 +70,8 @@ const STEP_KEYS: [string, ...string[]] = [
   "quiz_start",
   "quiz_done",
   "quiz_shared",
+  "board_view",
+  "board_open",
   ...FUNNEL_STEPS.map((s) => s.key),
 ];
 
@@ -77,7 +83,7 @@ const incomingEvent = z.object({
     .max(200)
     .regex(/^[a-zA-Z0-9_:,]*$/)
     .optional(),
-  mode: z.enum(["solo", "create", "join"]).optional(),
+  mode: z.enum(["solo", "create", "join", "buddy"]).optional(),
   source: z
     .string()
     .max(60)

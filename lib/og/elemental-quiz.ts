@@ -3,8 +3,8 @@ import { createCanvas, GlobalFonts, type SKRSContext2D } from "@napi-rs/canvas";
 
 import type { ElementKey } from "@/components/hackathon/elemental/media";
 import { EL } from "@/components/hackathon/poster/elemental/brand";
-import { ELEMENT_ICON_COLOR, iconCells } from "@/components/hackathon/poster/elemental/element-icons";
-import { QUIZ_PALETTE, QUIZ_RESULTS, pixelBandCells } from "@/lib/hackathon/elemental/quiz";
+import { QUIZ_PALETTE, QUIZ_RESULTS } from "@/lib/hackathon/elemental/quiz";
+import { CREST_COLS, FX_OFFSET, ICON_SIZE, QUIZ_CRESTS, fxFrame, fxRuns, iconPixels, pixelRuns } from "@/lib/hackathon/elemental/quiz-pixels";
 import { wrapText } from "@/lib/shift-round/certificate/render";
 
 /**
@@ -41,33 +41,67 @@ function ensureFonts(): void {
 
 type Ctx = SKRSContext2D;
 
-function drawPixels(ctx: Ctx, key: ElementKey, width: number, rows: number, cell: number) {
-  for (const [c, r, color] of pixelBandCells(key, Math.ceil(width / cell), rows)) {
-    ctx.fillStyle = color;
-    ctx.fillRect(c * cell, r * cell, cell, cell);
+/** The crest tiled across the top edge, `cell` px per art pixel, drawn as runs so no seams show between pixels. */
+function drawCrest(ctx: Ctx, key: ElementKey, width: number, cell: number) {
+  const runs = pixelRuns(QUIZ_CRESTS[key]);
+  for (let x = 0; x < width; x += CREST_COLS * cell) {
+    for (const [rx, ry, length, color] of runs) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x + rx * cell, ry * cell, length * cell, cell);
+    }
   }
 }
 
 /**
- * One element's 9x9 icon from slide 2 at (x, y), `cell` px per pixel. Aether
- * gets its glow: a violet blur behind lilac and violet cells at uneven strengths.
+ * One element's 9x9 icon from slide 2 with its box at (x, y), `cell` px per
+ * pixel, and with `fx` the still of its effect round it. Aether glows: a
+ * violet blur behind lilac and violet cells at uneven strengths. Returns the
+ * edges of everything drawn, effect included.
  */
-function drawIcon(ctx: Ctx, key: ElementKey, x: number, y: number, cell: number) {
-  const cells = iconCells(key);
+function drawIcon(ctx: Ctx, key: ElementKey, x: number, y: number, cell: number, fx: boolean) {
+  const pixels = fx ? fxFrame(key, 0) : iconPixels(key);
+  const ox = x - FX_OFFSET * cell;
+  const oy = y - FX_OFFSET * cell;
   ctx.save();
   if (key === "aether") {
     ctx.shadowColor = EL.aetherViolet;
     ctx.shadowBlur = cell * 2.5;
-    cells.forEach(([cx, cy], i) => {
-      ctx.globalAlpha = [1, 0.55, 0.8, 0.4][i % 4];
-      ctx.fillStyle = i % 3 === 0 ? EL.aetherLilac : EL.aetherViolet;
-      ctx.fillRect(x + cx * cell, y + cy * cell, cell, cell);
-    });
-  } else {
-    ctx.fillStyle = ELEMENT_ICON_COLOR[key];
-    for (const [cx, cy] of cells) ctx.fillRect(x + cx * cell, y + cy * cell, cell, cell);
+  }
+  for (const [px, py, length, color, alpha] of fxRuns(pixels)) {
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = color;
+    ctx.fillRect(ox + px * cell, oy + py * cell, length * cell, cell);
   }
   ctx.restore();
+  const xs = pixels.map(([px]) => px);
+  const ys = pixels.map(([, py]) => py);
+  return { left: ox + Math.min(...xs) * cell, bottom: oy + (Math.max(...ys) + 1) * cell };
+}
+
+/** A box with its corners notched one pixel step in, like a pixel window: the space for an IG mention sticker. */
+function pixelBox(ctx: Ctx, x: number, y: number, w: number, h: number, step: number, color: string) {
+  ctx.fillStyle = color;
+  ctx.fillRect(x + step, y, w - step * 2, step);
+  ctx.fillRect(x + step, y + h - step, w - step * 2, step);
+  ctx.fillRect(x, y + step, step, h - step * 2);
+  ctx.fillRect(x + w - step, y + step, step, h - step * 2);
+}
+
+/** A dashed pixel outline: the empty slot where a Story sticker goes. */
+function dashedBox(ctx: Ctx, x: number, y: number, w: number, h: number, step: number, color: string) {
+  const dash = step * 4;
+  const gap = step * 3;
+  ctx.fillStyle = color;
+  for (let i = x + step; i < x + w - step; i += dash + gap) {
+    const len = Math.min(dash, x + w - step - i);
+    ctx.fillRect(i, y, len, step);
+    ctx.fillRect(i, y + h - step, len, step);
+  }
+  for (let j = y + step; j < y + h - step; j += dash + gap) {
+    const len = Math.min(dash, y + h - step - j);
+    ctx.fillRect(x, j, step, len);
+    ctx.fillRect(x + w - step, j, step, len);
+  }
 }
 
 /** Draws text lines with the first baseline at `y`; returns the last baseline. */
@@ -75,11 +109,13 @@ function lines(ctx: Ctx, text: string, font: string, color: string, x: number, y
   ctx.font = font;
   ctx.fillStyle = color;
   const out = wrapText(ctx, text, maxWidth, maxLines);
+  // A closing quote never sits alone on a line: it hangs off the end of the line before.
+  while (out.length > 1 && /^[”"’.,!?]+$/.test(out[out.length - 1])) out[out.length - 2] += out.pop();
   out.forEach((l, i) => ctx.fillText(l, x, y + i * lineHeight));
   return y + (out.length - 1) * lineHeight;
 }
 
-/** The one-syllable names go huge; "ธาตุที่มองไม่เห็น" has to fit one line. */
+/** The short names go huge; a long one shrinks to fit one line. */
 function nameFont(ctx: Ctx, th: string, max: number, maxWidth: number): number {
   let size = max;
   ctx.font = `${size}px "${LIGHT}"`;
@@ -97,6 +133,7 @@ function drawName(ctx: Ctx, th: string, x: number, top: number, size: number): n
   return baseline;
 }
 
+
 export function renderQuizStory(key: ElementKey): Buffer {
   ensureFonts();
   const { width: W, height: H } = STORY_SIZE;
@@ -108,55 +145,67 @@ export function renderQuizStory(key: ElementKey): Buffer {
   ctx.textBaseline = "alphabetic";
   ctx.fillStyle = p.bg;
   ctx.fillRect(0, 0, W, H);
-  drawPixels(ctx, key, W, 9, 40);
 
-  // IG covers about the top 250 px and the bottom 340 px with its own buttons.
+  // IG covers about the top 250 px and the bottom 380 px with its own buttons:
+  // the crest can sit under them; everything to read or tap sits between y=270 and y=1540.
+  drawCrest(ctx, key, W, 36);
   const x = 80;
-  const maxW = W - x * 2;
-  let y = 440;
+  const right = W - x;
+  const maxW = right - x;
+  // The icon, 26 px a pixel, on the right margin with its effect caught mid-air:
+  // the first thing a friend sees.
+  const cell = 26;
+  const icon = drawIcon(ctx, key, right - ICON_SIZE * cell, 360, cell, true);
+
   ctx.font = `30px "${MONO}"`;
   ctx.fillStyle = p.soft;
-  ctx.fillText(`[ELEMENTAL QUIZ] / ${r.en.toUpperCase()}`, x, y);
-
-  y += 100;
+  ctx.fillText(`[ELEMENTAL QUIZ] / ${r.en.toUpperCase()}`, x, 420);
   ctx.font = `60px "${REGULAR}"`;
   ctx.fillStyle = p.ink;
-  ctx.fillText("ฉันคือ", x, y);
-  // The element's icon, big, top right: the first thing a friend sees in the Story.
-  drawIcon(ctx, key, W - x - 9 * 26, 330, 26);
+  ctx.fillText("ฉันคือ", x, 520);
 
-  const size = nameFont(ctx, r.th, 340, maxW);
+  // The name sits beside the icon, as big as fits there (340 px for the one-syllable names). Only
+  // a name that would have to shrink below 240 px to fit drops under the icon and its effect instead.
+  const beside = nameFont(ctx, r.th, 340, icon.left - 48 - x);
+  const fitsBeside = beside >= 240;
+  const size = fitsBeside ? beside : nameFont(ctx, r.th, 340, maxW);
+  ctx.font = `${size}px "${LIGHT}"`;
+  const top = fitsBeside ? 570 : Math.max(570, icon.bottom + 40);
   ctx.fillStyle = p.ink;
-  y = drawName(ctx, r.th, x, y + 50, size);
+  let y = drawName(ctx, r.th, x, top, size);
+  y = Math.max(y, icon.bottom);
 
-  y += 130;
+  y += 120;
   // Long roasts drop a size so they wrap into two even lines, not one word on its own.
   const roastSize = [...r.roastTh].length > 24 ? 54 : 64;
   y = lines(ctx, `“${r.roastTh}”`, `${roastSize}px "${REGULAR}"`, p.ink, x, y, maxW, roastSize * 1.45);
   y += 74;
   y = lines(ctx, r.roleTh, `40px "${REGULAR}"`, p.soft, x, y, maxW, 58, 2);
 
-  // The tag box: an empty space to drop an IG mention sticker into.
-  const boxTop = Math.max(y + 80, 1180);
-  const boxH = 300;
-  ctx.strokeStyle = p.accent;
-  ctx.lineWidth = 3;
-  ctx.strokeRect(x, boxTop, maxW, boxH);
-  ctx.font = `56px "${REGULAR}"`;
-  ctx.fillStyle = p.ink;
-  ctx.fillText(`${r.th}ต้องการ${need.th}`, x + 44, boxTop + 96);
-  ctx.font = `40px "${REGULAR}"`;
-  ctx.fillStyle = p.soft;
-  ctx.fillText(`แท็ก${need.th}ของเธอตรงนี้`, x + 44, boxTop + 170);
-  drawIcon(ctx, r.needs, x + maxW - 44 - 9 * 12, boxTop + 40, 12);
-
-  const footY = boxTop + boxH + 70;
+  // Two slots for the two stickers a Story needs, both above IG's bottom buttons (y=1540) and at
+  // the same height on all five cards. The link slot: a Story can't carry a link by itself, so it
+  // marks where the link sticker goes, and prints the quiz and its address underneath as the
+  // fallback. Above it, the tag box: the friend this element needs, with room for their mention.
+  const linkTop = 1428;
+  const linkH = 112;
+  dashedBox(ctx, x, linkTop, maxW, linkH, 4, p.soft);
   ctx.font = `34px "${REGULAR}"`;
   ctx.fillStyle = p.ink;
-  ctx.fillText("เธอคือธาตุอะไร?", x, footY);
-  ctx.font = `28px "${MONO}"`;
+  ctx.fillText("คุณคือธาตุอะไร? ทำควิซ 8 ข้อ", x + 40, linkTop + 50);
+  ctx.font = `26px "${MONO}"`;
   ctx.fillStyle = p.soft;
-  ctx.fillText(QUIZ_SHORT_URL, x, footY + 48);
+  ctx.fillText(QUIZ_SHORT_URL, x + 40, linkTop + 88);
+
+  const boxBottom = linkTop - 24;
+  const boxTop = Math.min(Math.max(y + 50, boxBottom - 260), boxBottom - 200);
+  pixelBox(ctx, x, boxTop, maxW, boxBottom - boxTop, 6, p.accent);
+  ctx.font = `52px "${REGULAR}"`;
+  ctx.fillStyle = p.ink;
+  ctx.fillText(`${r.th}ต้องการ${need.th}`, x + 44, boxTop + 78);
+  ctx.font = `34px "${REGULAR}"`;
+  ctx.fillStyle = p.soft;
+  ctx.fillText(`แท็ก${need.th}ของคุณตรงนี้`, x + 44, boxTop + 128);
+  drawIcon(ctx, r.needs, right - 44 - ICON_SIZE * 12, boxTop + 34, 12, false);
 
   return canvas.toBuffer("image/png");
 }
@@ -171,27 +220,33 @@ export function renderQuizOg(key: ElementKey): Buffer {
   ctx.textBaseline = "alphabetic";
   ctx.fillStyle = p.bg;
   ctx.fillRect(0, 0, W, H);
-  drawPixels(ctx, key, W, 4, 30);
+  drawCrest(ctx, key, W, 16);
 
   const x = 64;
+  const right = W - x;
+  const cell = 26;
+  const iconX = right - ICON_SIZE * cell;
+  drawIcon(ctx, key, iconX, 210, cell, true);
+  // The text column ends a fixed gap before the icon itself; the effect may drift into that gap.
+  const textW = iconX - 56 - x;
+
   ctx.font = `24px "${MONO}"`;
   ctx.fillStyle = p.soft;
-  ctx.fillText("[ELEMENTAL QUIZ]", x, 186);
+  ctx.fillText("[ELEMENTAL QUIZ]", x, 212);
   ctx.font = `26px "${REGULAR}"`;
-  ctx.fillText("เธอคือธาตุอะไร?", x + 270, 186);
+  ctx.fillText("คุณคือธาตุอะไร?", x + 270, 212);
 
-  drawIcon(ctx, key, W - x - 9 * 30, 190, 30);
-  const size = nameFont(ctx, r.th, 200, W - x * 2 - 9 * 30 - 40);
+  const size = nameFont(ctx, r.th, 200, textW);
   ctx.fillStyle = p.ink;
-  const baseline = drawName(ctx, r.th, x, 216, size);
-  lines(ctx, `“${r.roastTh}”`, `40px "${REGULAR}"`, p.ink, x, baseline + 80, W - x * 2 - 9 * 30 - 40, 54, 2);
+  const baseline = drawName(ctx, r.th, x, 244, size);
+  lines(ctx, `“${r.roastTh}”`, `40px "${REGULAR}"`, p.ink, x, baseline + 80, textW, 54, 2);
 
   ctx.font = `24px "${REGULAR}"`;
   ctx.fillStyle = p.soft;
   ctx.fillText("8 ข้อ 1 นาที", x, H - 44);
   ctx.font = `22px "${MONO}"`;
   ctx.textAlign = "right";
-  ctx.fillText(QUIZ_SHORT_URL, W - x, H - 44);
+  ctx.fillText(QUIZ_SHORT_URL, right, H - 44);
 
   return canvas.toBuffer("image/png");
 }

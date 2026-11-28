@@ -37,7 +37,26 @@ function discordNote(d: AdminRegistration["discord"]): string {
   return `Discord: ${who}, not in the server`;
 }
 
-function RegistrationCard({ r }: { r: AdminRegistration }) {
+/**
+ * Buddy pass pairs: the friend's card names who sent the pass, and the
+ * sender's card names who used it, so the two land on one team.
+ */
+type BuddyLinks = { from: Map<string, string>; usedBy: Map<string, string> };
+
+function buddyLinks(rows: AdminRegistration[]): BuddyLinks {
+  const name = (r?: AdminRegistration) => r?.members[0]?.nickname || r?.members[0]?.fullName || "?";
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  const from = new Map<string, string>();
+  const usedBy = new Map<string, string>();
+  for (const r of rows) {
+    if (!r.buddyPassFromId) continue;
+    from.set(r.id, name(byId.get(r.buddyPassFromId)));
+    if (r.status !== "cancelled") usedBy.set(r.buddyPassFromId, name(r));
+  }
+  return { from, usedBy };
+}
+
+function RegistrationCard({ r, buddy }: { r: AdminRegistration; buddy: BuddyLinks }) {
   return (
     <li className="space-y-3 rounded-lg border bg-muted/30 p-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -53,6 +72,13 @@ function RegistrationCard({ r }: { r: AdminRegistration }) {
         </span>
         {r.wantsTeamMatching && <Badge variant="outline">match with a team</Badge>}
         {r.source && <Badge variant="outline">src: {r.source}</Badge>}
+        {buddy.from.has(r.id) && (
+          <Badge variant="outline">
+            buddy pass ฿{ELEMENTAL.buddyPriceBaht} from {buddy.from.get(r.id)}
+            {r.buddyPassOwe && ` · owes ${r.buddyPassOwe}`}
+          </Badge>
+        )}
+        {buddy.usedBy.has(r.id) && <Badge variant="outline">pass used by {buddy.usedBy.get(r.id)}</Badge>}
       </div>
 
       <ol className="space-y-1 text-sm">
@@ -110,6 +136,7 @@ export default async function AdminHackathonRegistrationsPage() {
     );
   }
 
+  const buddy = buddyLinks(rows);
   const order = { review: 0, pending: 1, paid: 2, cancelled: 3 } as const;
   const sorted = [...rows].sort((a, b) => order[a.status] - order[b.status]);
   const paid = rows.filter((r) => r.status === "paid");
@@ -145,7 +172,7 @@ export default async function AdminHackathonRegistrationsPage() {
       ) : (
         <ul className="space-y-3">
           {sorted.map((r) => (
-            <RegistrationCard key={r.id} r={r} />
+            <RegistrationCard key={r.id} r={r} buddy={buddy} />
           ))}
         </ul>
       )}

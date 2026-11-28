@@ -3,7 +3,7 @@
 import Script from "next/script";
 import { useEffect, useState } from "react";
 
-import { INK } from "@/components/shift/poster/riso";
+import banner from "@/components/shift/cookieBanner.module.css";
 
 export const META_PIXEL_ID =
   process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "1435021828557401";
@@ -62,34 +62,62 @@ function saveConsent(value: AdsConsent) {
   }
 }
 
-/** Asks once. Declining changes nothing about using the page or applying. */
+/** How long the banner takes to leave after a choice (matches dock-out in the CSS). */
+const LEAVE_MS = 420;
+/** Let the page land first: the banner appears this long after the page loads. */
+const SHOW_DELAY_MS = 4000;
+
+/**
+ * Asks once. Declining changes nothing about using the page or applying.
+ * Space look from /shift on every SHIFT page; both answers look and leave the same way.
+ */
 function CookieBanner({ onChoose }: { onChoose: (value: AdsConsent) => void }) {
+  const [shown, setShown] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setShown(true), SHOW_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  function choose(value: AdsConsent) {
+    if (leaving) return;
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion) {
+      onChoose(value);
+      return;
+    }
+    setLeaving(true);
+    window.setTimeout(() => onChoose(value), LEAVE_MS);
+  }
+
+  if (!shown) return null;
+
   return (
     <div
       role="dialog"
       aria-label="คุกกี้"
-      className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-md rounded-xl px-5 py-4 font-bai-jamjuree text-sm leading-relaxed shadow-lg"
-      style={{ backgroundColor: INK.paper, color: INK.black }}
+      className={`${banner.dock} font-bai-jamjuree`}
+      data-leaving={leaving || undefined}
       lang="th"
     >
-      <p>
-        เว็บนี้ใช้คุกกี้ของ Meta เพื่อวัดผลโฆษณา ไม่ยอมรับก็ใช้เว็บและสมัครได้ตามปกติ
-      </p>
-      <div className="mt-3 flex gap-2">
-        <button
-          type="button"
-          onClick={() => onChoose("granted")}
-          className="min-h-12 flex-1 rounded-full px-4 font-semibold"
-          style={{ backgroundColor: INK.black, color: INK.paper }}
-        >
+      <div className={banner.row}>
+        <div className={banner.system} aria-hidden="true">
+          <div className={banner.planet} />
+          <svg className={banner.orbit} viewBox="0 0 56 56">
+            <ellipse cx="28" cy="28" rx="26" ry="10" transform="rotate(-18 28 28)" />
+          </svg>
+          <span className={banner.satellite} />
+        </div>
+        <p className={banner.copy}>
+          เว็บนี้ใช้คุกกี้ของ Meta เพื่อวัดผลโฆษณา ไม่ยอมรับก็ใช้เว็บและสมัครได้ตามปกติ
+        </p>
+      </div>
+      <div className={banner.choices}>
+        <button type="button" className={banner.choice} onClick={() => choose("granted")}>
           ยอมรับ
         </button>
-        <button
-          type="button"
-          onClick={() => onChoose("denied")}
-          className="min-h-12 flex-1 rounded-full px-4 font-semibold"
-          style={{ boxShadow: `inset 0 0 0 1.5px ${INK.black}` }}
-        >
+        <button type="button" className={banner.choice} onClick={() => choose("denied")}>
           ไม่ยอมรับ
         </button>
       </div>

@@ -2,8 +2,11 @@
  * Every target and date the Elemental progress page measures against.
  *
  * Source: passionseed/company-brain (numbers.md and the hackathon canvas),
- * as of 2026-11-21. Change a target here and nowhere else.
+ * as of 2026-11-21. Change a target here and nowhere else. The event dates
+ * come from the posters' facts (components/hackathon/poster/elemental/facts.ts).
  */
+
+import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 
 export type SeatCheckpoint = {
   /** Bangkok calendar date, inclusive: the count should be reached by the end of this day. */
@@ -16,7 +19,8 @@ export const OWNERS = ["Big", "Angpao", "Kirt"] as const;
 export type Owner = (typeof OWNERS)[number];
 
 export const ELEMENTAL_TARGETS = {
-  event: { start: "2026-12-05", end: "2026-12-07" },
+  /** Opening night to Demo Day, from the posters' facts so the two never disagree. */
+  event: { start: ELEMENTAL.startDate, end: ELEMENTAL.endDate },
   /** Last day to sign up, Bangkok time (inclusive). */
   registrationClosesOn: "2026-12-04",
 

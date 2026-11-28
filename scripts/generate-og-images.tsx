@@ -28,9 +28,9 @@ async function main() {
     }
     // Dynamic image handlers retain live public titles (rounds, tips, products).
     const entries = await readdir(dir);
-    // A hand-made poster (for example /hackathon's Elemental key art) wins.
+    // A hand-made poster wins.
     if (entries.includes("opengraph-image.jpg")) continue;
-    if (entries.includes("opengraph-image.tsx")) {
+    if (entries.includes("opengraph-image.tsx") || entries.includes("opengraph-image.ts")) {
       if (entries.includes("opengraph-image.png")) throw new Error(`Conflicting image handlers in ${dir}: remove the generated PNG and alt text.`);
       continue;
     }

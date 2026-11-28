@@ -10,6 +10,7 @@ import type { OwnerElement } from "@/lib/hackathon/elemental/owner-link";
 import { ElementMark, PixelScene, VideoOverlay } from "./PixelArt";
 import { OwnerUploader } from "./OwnerUploader";
 import { ALL_ELEMENTS, ELEMENT_MARKS, type SceneName } from "./scenes";
+import { PassionSeedWordmark } from "@/components/hackathon/PassionSeedWordmark";
 
 /**
  * The Elemental problem-owner kit: what we ask an organisation for (a short
@@ -22,7 +23,7 @@ import { ALL_ELEMENTS, ELEMENT_MARKS, type SceneName } from "./scenes";
 /** Owners send everything by Sunday 29 November (the problem-owner emails Big sent on 2026-11-25; company-brain private/hackathon-ops/voices-and-speakers.md). */
 const DUE = "2026-11-29";
 /** The interview workshop owners may join for 20 minutes. */
-const WORKSHOP = ELEMENTAL.schedule.find((s) => s.kind === "workshop" && s.time.startsWith("10:00"));
+const WORKSHOP = ELEMENTAL.schedule.find((s) => s.kind === "workshop" && s.time?.startsWith("10:00"));
 
 const PLATE = "/hackathon/poster/elemental/plate-key-blue.png";
 const RULE = "1px solid rgba(243,239,230,0.28)";
@@ -106,7 +107,7 @@ export function OwnerKit({ element, upload }: { element: OwnerElement | null; up
             <span className="flex items-center gap-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/passion-seed-logo.png" alt="" width={34} height={34} />
-              <span style={{ fontFamily: "var(--font-libre-franklin), sans-serif", fontSize: 19, letterSpacing: "-0.01em" }}>PassionSeed</span>
+              <PassionSeedWordmark height={19} />
             </span>
           </span>
           <span className="whitespace-nowrap">

@@ -33,7 +33,7 @@ function element(key: Key) {
   return e;
 }
 
-/** "5–8.12.2026". */
+/** "4–12.12.2026". */
 function shortDates(): string {
   const [, , d1] = ELEMENTAL.startDate.split("-").map(Number);
   const [y, m, d2] = ELEMENTAL.endDate.split("-").map(Number);

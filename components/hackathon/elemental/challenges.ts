@@ -61,6 +61,16 @@ export interface ElementDetail {
   stretchTh: string;
   cases: readonly ElementCase[];
   cover?: CaseImage;
+  /** The organisation that owns this element's problem (เจ้าของโจทย์), once one has agreed. */
+  owner?: ProblemOwner;
+}
+
+/** A problem owner: an outside organisation that brings the real problem to the teams. */
+export interface ProblemOwner {
+  name: string;
+  /** Thai name and place, shown after the name. */
+  detailTh: string;
+  url: string;
 }
 
 /** Under each challenge: the cases are examples, not the only problems (Angpao, 2026-11-20). */
@@ -68,6 +78,12 @@ export const ANY_PROBLEM_NOTE = "ทีมเลือกปัญหาใด�
 
 export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
   water: {
+    // Big, 2026-11-26, after Angpao's call with them the same day.
+    owner: {
+      name: "The Mekong School",
+      detailTh: "โรงเรียนแม่น้ำโขง เชียงของ",
+      url: "https://mekongschool.org/",
+    },
     ctaTh: "ทำไมน้ำประปาแม่สายต้องหยุดจ่าย",
     problemTh:
       "แม่น้ำทางภาคเหนือมีสารหนูจากเหมืองต้นน้ำ ครอบครัวที่ดื่ม ทำนา และหาปลาจากแม่น้ำมักรู้ตัวช้า และตัวเลขผลตรวจในข่าวก็อ่านยาก",
@@ -156,11 +172,11 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
         placeTh: "จากตาก ไปสมุทรสาครและชลบุรี",
         yearTh: "2567",
         whatHappenedTh:
-          "กากที่มีแคดเมียมถูกขนออกจากที่เก็บในจังหวัดตาก ไปไว้ในโกดังและโรงงานหลายจังหวัด ตำรวจตามเจอเพิ่มเรื่อยๆ สุดท้ายต้องขนกลับไปที่ตากทีละขบวน",
+          "กากที่มีแคดเมียมถูกขนออกจากที่เก็บในจังหวัดตาก ไปไว้ในโกดังและโรงงานหลายจังหวัด กระทรวงอุตสาหกรรมกับตำรวจช่วยกันตามเจอเพิ่มเรื่อยๆ สุดท้ายต้องขนกลับไปเก็บที่โกดังในจังหวัดตากทีละขบวน",
         impact: [
-          { value: "10,000+ ตัน", labelTh: "กากแคดเมียมที่ตำรวจตามพบ" },
-          { value: "17 จาก 34 คน", labelTh: "ชาวบ้านรอบโรงงานโลหะ ที่ต้องเข้าโรงพยาบาล" },
-          { value: "258 ตัน", labelTh: "ที่รถ 10 คันขบวนแรก ขนกลับไปตาก" },
+          { value: "10,000+ ตัน", labelTh: "กากแคดเมียมที่เจ้าหน้าที่ตามพบ" },
+          { value: "17 จาก 34 คน", labelTh: "ชาวบ้านรอบโรงงานโลหะ ที่ต้องเข้าโรงพยาบาลเพื่อรักษา (5 คนในนั้นตรวจพบแคดเมียมในปัสสาวะเกินค่า)" },
+          { value: "258 ตัน", labelTh: "ที่รถ 10 คันขบวนแรก ขนกลับไปเก็บที่โกดังในจังหวัดตาก" },
         ],
         whoIsHurtTh: "คนงานในโรงงาน คนที่อยู่รอบโกดัง และดินกับแม่น้ำตลอดทางที่ขนผ่าน",
         sources: [
@@ -170,7 +186,7 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
             url: "https://www.nationthailand.com/thailand/general/40037329",
             dateTh: "18 เม.ย. 2567",
           },
-          { name: "Thai PBS", url: "https://www.thaipbs.or.th/news/content/339530", dateTh: "30 เม.ย. 2567" },
+          { name: "Thai PBS", url: "https://www.thaipbs.or.th/news/content/339518", dateTh: "30 เม.ย. 2567" },
         ],
         image: {
           src: "/hackathon/elemental/cases/earth-1.webp",
@@ -211,15 +227,15 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
         },
       },
       {
-        titleTh: "ขยะที่ถูกฝังในไร่ แล้วน้ำท่วมพาออกมา",
+        titleTh: "กากเถื่อนฝังในไร่ และน้ำท่วมที่เปิดโปงบ่อขยะ",
         placeTh: "ฉะเชิงเทรา และปราจีนบุรี",
         yearTh: "2568 ถึง 2569",
         whatHappenedTh:
-          "กากอุตสาหกรรมถูกลักลอบฝังในที่ดินเกษตร พอน้ำท่วมปี 2569 มลพิษจากบ่อขยะก็ไหลเข้าหมู่บ้าน คนที่เคยจับปลากินเองไม่กล้ากินอีก",
+          "ที่แปลงยาว ฉะเชิงเทรา กากอุตสาหกรรมถูกลักลอบฝังในที่ดินเกษตร และเจอกากอันตรายในโกดังที่บุกค้นเมื่อ พ.ย. 2569 ส่วนที่ปราจีนบุรี (คนละที่กัน) น้ำท่วมปี 2569 ทำให้เห็นมลพิษจากบ่อขยะ น้ำใกล้บ่อฝังกลบแห่งหนึ่งมีสารปิโตรเลียมสูงผิดปกติ และชาวบ้านคนหนึ่งที่เคยจับปลากินเองบอกว่าไม่กล้ากินอีก",
         impact: [
           { value: "~50,000 ตัน", labelTh: "กากอุตสาหกรรมที่ถูกฝังผิดกฎหมายในอำเภอแปลงยาว" },
-          { value: "6,000+ ตัน", labelTh: "กากในโกดังที่บุกค้น ตรวจเบื้องต้นเจอสารหนู แคดเมียม ตะกั่ว และปรอท" },
-          { value: "60+ จุด", labelTh: "ที่นักวิจัยสงสัยว่าเป็นที่ทิ้งขยะเถื่อน ในปราจีนบุรีจังหวัดเดียว" },
+          { value: "6,000+ ตัน", labelTh: "กากในโกดังที่บุกค้น ตรวจเบื้องต้นด้วยเครื่องพกพา (ไม่ใช่ผลแล็บ) เจอสารหนู แคดเมียม ตะกั่ว และปรอท" },
+          { value: "60+ จุด", labelTh: "ที่นักวิจัยคนหนึ่งสงสัยว่าเป็นที่ทิ้งขยะเถื่อน ในปราจีนบุรีจังหวัดเดียว" },
         ],
         whoIsHurtTh: "เกษตรกรและชาวบ้านที่ใช้น้ำและกินปลาจากในพื้นที่",
         sources: [
@@ -261,9 +277,9 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
         whatHappenedTh:
           "ฝุ่น PM2.5 สูงเกินค่าปลอดภัยติดกันหลายวัน จนกรุงเทพฯ ต้องสั่งปิดโรงเรียนหลายร้อยแห่ง",
         impact: [
-          { value: "250+ โรงเรียน", labelTh: "ในกรุงเทพฯ ที่ต้องปิดเพราะฝุ่น ณ วันที่ 24 ม.ค." },
+          { value: "250+ โรงเรียน", labelTh: "ในกรุงเทพฯ ที่ต้องปิดเพราะฝุ่น ณ วันที่ 23 ม.ค." },
           { value: "108", labelTh: "ไมโครกรัม/ลบ.ม. ค่า PM2.5 เช้าวันที่ 24 ม.ค." },
-          { value: "21.6 เท่า", labelTh: "ของค่าแนะนำรายปีขององค์การอนามัยโลก" },
+          { value: "7.2 เท่า", labelTh: "ของค่าแนะนำรายวัน (24 ชั่วโมง) ขององค์การอนามัยโลก คือ 15 ไมโครกรัม/ลบ.ม." },
         ],
         whoIsHurtTh: "นักเรียนที่เสียวันเรียน เด็กเล็ก และผู้สูงอายุที่มีโรคปอด",
         sources: [
@@ -271,6 +287,16 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
             name: "Al Jazeera",
             url: "https://www.aljazeera.com/news/2025/1/24/more-than-250-schools-close-in-bangkok-as-air-pollution-soars",
             dateTh: "24 ม.ค. 2568",
+          },
+          {
+            name: "Pattaya Mail",
+            url: "https://www.pattayamail.com/thailandnews/global-attention-air-pollution-in-bangkok-hits-dangerous-levels-un-says-school-closures-are-not-the-solution-488324",
+            dateTh: "25 ม.ค. 2568",
+          },
+          {
+            name: "Chiang Mai Breath Council",
+            url: "https://www.cmbreathcouncil.org/about-5",
+            dateTh: "ค่าแนะนำรายวันของ WHO",
           },
         ],
         image: {
@@ -287,9 +313,9 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
         whatHappenedTh:
           "ทุกปีช่วงกุมภาพันธ์ถึงเมษายน มีการเผาไร่และป่า อากาศทั้งภาคเหนือกลายเป็นอันตราย ป่าจำนวนมากถูกถางเพื่อปลูกข้าวโพด แล้วถูกเผาซ้ำทุกปี",
         impact: [
-          { value: "409", labelTh: "ไมโครกรัม/ลบ.ม. ค่า PM2.5 ที่วัดได้ในอำเภอแม่ริม 4 เม.ย. 2569" },
-          { value: "1.5 เท่า", labelTh: "ผู้ป่วยที่โรงพยาบาลมหาราชนครเชียงใหม่ เทียบกับปกติ" },
-          { value: "51%", labelTh: "ของฝุ่น PM2.5 ในเชียงใหม่ช่วงมีนาคมถึงเมษายน มาจากการเผาในภาคเกษตร" },
+          { value: "409", labelTh: "ไมโครกรัม/ลบ.ม. ค่า PM2.5 ที่เครื่องวัดของโรงพยาบาลแห่งหนึ่งในอำเภอแม่ริม 9 โมงเช้า 4 เม.ย. 2569" },
+          { value: "11,023 จุด", labelTh: "จุดความร้อนในเชียงใหม่ 1 ม.ค. ถึง 31 พ.ค. 2569 เทียบกับ 6,314 จุดในช่วงเดียวกันของปี 2568" },
+          { value: "ราวครึ่ง", labelTh: "ของฝุ่น PM2.5 ช่วงหมอกควัน (มี.ค. ถึง เม.ย.) ในตัวเมืองเชียงใหม่ มาจากการเผาชีวมวล (51%) จากงานวิจัยของ มช. ที่เก็บตัวอย่างปี 2562 ที่จุดเดียว" },
         ],
         whoIsHurtTh: "คนทั้งภาคเหนือ โดยเฉพาะเด็ก ผู้สูงอายุ และครอบครัวเกษตรกร",
         sources: [
@@ -299,9 +325,14 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
             dateTh: "4 เม.ย. 2569",
           },
           {
-            name: "Chiang Mai CityLife",
-            url: "https://www.chiangmaicitylife.com/citynews/general/maharaj-hospital-says-patient-number-have-surged-1-5-times/",
-            dateTh: "3 เม.ย. 2569",
+            name: "MGR Online",
+            url: "https://mgronline.com/local/detail/9690000052520",
+            dateTh: "3 มิ.ย. 2569",
+          },
+          {
+            name: "Chiang Mai Breath Council",
+            url: "https://www.cmbreathcouncil.org/about-5",
+            dateTh: "ตัวอย่างปี 2562",
           },
           {
             name: "Mongabay",
@@ -318,13 +349,13 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
       },
       {
         titleTh: "กลิ่นจากโรงงานข้างบ้าน",
-        placeTh: "ชลบุรี และภาคตะวันออก",
+        placeTh: "ชลบุรี และทั่วประเทศ",
         yearTh: "2568 ถึง 2569",
         whatHappenedTh:
-          "ชาวบ้านที่อยู่ติดโรงงานหลอมหรือแยกขยะ บ่นเรื่องควัน เวียนหัว และนอนไม่หลับ พอเจ้าหน้าที่ออกตรวจทั่วประเทศ ก็เจอโรงงานทำผิดกฎหมายเกือบครึ่ง",
+          "ชาวบ้านที่อยู่ติดโรงงานหลอมหรือแยกขยะ บ่นเรื่องควัน เวียนหัว และนอนไม่หลับ ส่วนต้นเดือน พ.ย. 2569 เจ้าหน้าที่ออกตรวจโรงงานกำจัดและรีไซเคิลกากของเสียทั่วประเทศ (ไม่ได้ตรวจเรื่องกลิ่นโดยเฉพาะ) ก็เจอโรงงานทำผิดกฎหมายราวครึ่งหนึ่งของที่ตรวจ",
         impact: [
-          { value: "375 จาก 752", labelTh: "สถานประกอบการที่เจ้าหน้าที่ตรวจ แล้วพบว่าทำผิด พ.ร.บ.โรงงาน" },
-          { value: "~200 คน", labelTh: "ชาวบ้านในชลบุรีที่ออกมาประท้วงเรื่องกลิ่นจากโรงงานรีไซเคิลพลาสติก" },
+          { value: "375 จาก 752", labelTh: "โรงงานกำจัดและรีไซเคิลกากของเสียทั่วประเทศที่ตรวจ 2 ถึง 9 พ.ย. 2569 แล้วพบว่าทำผิด พ.ร.บ.โรงงาน" },
+          { value: "เกือบ 200 คน", labelTh: "ชาวบ้านในอำเภอพนัสนิคม ชลบุรี ที่ออกมาประท้วงเรื่องกลิ่นจากโรงงานรีไซเคิลพลาสติก 7 ธ.ค. 2568" },
         ],
         whoIsHurtTh: "ครอบครัวที่อยู่ห่างโรงงานไม่กี่กิโลเมตร รวมถึงเด็กๆ",
         sources: [
@@ -332,6 +363,11 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
             name: "Nation Thailand",
             url: "https://www.nationthailand.com/news/general/40073408",
             dateTh: "12 พ.ย. 2569",
+          },
+          {
+            name: "แนวหน้า",
+            url: "https://www.naewna.com/n/?p=158486",
+            dateTh: "11 พ.ย. 2569",
           },
           {
             name: "The Pattaya News",
@@ -352,7 +388,7 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
   fire: {
     ctaTh: "ทำไม 1,992 คนต้องอพยพ",
     problemTh:
-      "ที่เก็บกากเคมีที่ถูกสั่งปิดไปแล้ว แต่กากยังกองอยู่ เกิดไฟไหม้ติดต่อกันหลายวัน คนรอบๆ ต้องหนีออกจากบ้าน โดยไม่รู้ว่ากำลังสูดอะไรเข้าไป",
+      "ที่เก็บกากเคมีที่เลิกกิจการไปแล้ว แต่กากยังกองอยู่ เกิดไฟไหม้ติดต่อกันหลายวัน คนรอบๆ ต้องหนีออกจากบ้าน โดยไม่รู้ว่ากำลังสูดอะไรเข้าไป",
     howMightWeTh:
       "เราจะเตือนและปกป้องคนที่อยู่ใกล้แหล่งสารเคมีได้อย่างไร ทั้งก่อนและระหว่างไฟไหม้ หรือทำให้แน่ใจว่ากากที่ถูกสั่งให้ขนออก ถูกขนออกไปจริง",
     starterTh:
@@ -365,7 +401,7 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
         placeTh: "บ้านค่าย ระยอง",
         yearTh: "เม.ย. 2567",
         whatHappenedTh:
-          "ที่เก็บกากเคมีแห่งนี้หยุดดำเนินการไปตั้งแต่ไฟไหม้ครั้งก่อนในปี 2565 แต่กากยังอยู่ที่เดิม พอไฟลุกอีกครั้ง เมทานอล น้ำมันเตา และกากตะกอนน้ำมัน ในโกดัง 5 หลังที่มีถังนับหมื่นใบ ก็ไหม้ต่อเนื่องหลายวัน",
+          "ที่เก็บกากเคมีแห่งนี้เลิกกิจการและล้มละลายไปแล้ว แต่กากยังอยู่ที่เดิม พอไฟลุกขึ้นมา ของเสียในโกดัง 5 หลัง ทั้งน้ำเสีย สารเคมี ตะกอนปนเปื้อน น้ำมันเก่า และยางรถยนต์ ก็ไหม้ต่อเนื่องหลายวัน",
         impact: [
           { value: "67 คน", labelTh: "ชาวบ้านที่ต้องเข้ารักษาเพราะสูดควัน" },
           { value: "2 ตำบล", labelTh: "ที่ชาวบ้านต้องอพยพออกจากบ้าน" },
@@ -379,7 +415,11 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
             dateTh: "23 เม.ย. 2567",
           },
           { name: "Sanook", url: "https://www.sanook.com/news/9340702/", dateTh: "24 เม.ย. 2567" },
-          { name: "Thai PBS", url: "https://www.thaipbs.or.th/news/content/339694", dateTh: "5 พ.ค. 2567" },
+          {
+            name: "Bangkok Post",
+            url: "https://www.bangkokpost.com/thailand/general/2780694/burning-waste-warehouses-raise-pollution-fears",
+            dateTh: "23 เม.ย. 2567",
+          },
         ],
       },
       {
@@ -393,7 +433,7 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
           { value: "5 กม.", labelTh: "รัศมีที่ให้คนออกห่าง" },
           { value: "700 ล้านบาท", labelTh: "ความเสียหายเบื้องต้น" },
         ],
-        whoIsHurtTh: "อาสากู้ภัยอายุ 18 ปีที่เสียชีวิตระหว่างหนีไฟ ชาวบ้านรอบโรงงาน และนักดับเพลิง",
+        whoIsHurtTh: "อาสากู้ภัย 1 คนที่เสียชีวิตระหว่างปฏิบัติหน้าที่ ชาวบ้านรอบโรงงาน และนักดับเพลิง",
         sources: [
           {
             name: "Nation Thailand",
@@ -414,9 +454,9 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
         whatHappenedTh:
           "ทุกหน้าแล้ง ไฟไหม้ป่าทางภาคเหนือแล้วกลายเป็นควันที่ทุกคนต้องหายใจ แค่ช่วงต้นปี 2567 เชียงใหม่จังหวัดเดียวก็เสียป่าไปหลายหมื่นไร่",
         impact: [
-          { value: "66,685 ไร่", labelTh: "ป่าในเชียงใหม่ที่ถูกไฟไหม้ ถึง 13 มี.ค. 2567" },
+          { value: "66,685 ไร่", labelTh: "ป่าในเชียงใหม่ที่ถูกไฟไหม้ ตั้งแต่ 1 ม.ค. ถึงราว 11 มี.ค. 2567" },
           { value: "81.6 ถึง 122", labelTh: "ค่า PM2.5 ใน 14 อำเภอของเชียงใหม่ ขณะที่ค่าปลอดภัยคือ 37.5" },
-          { value: "1,008,946 ไร่", labelTh: "พื้นที่ที่ถูกไฟไหม้ทั่วประเทศ ปี 2557 ถึง 2566" },
+          { value: "1,008,946 ไร่", labelTh: "พื้นที่ไฟป่าที่หน่วยดับไฟของกรมอุทยานฯ เข้าไปดับ ปี 2557 ถึง 2566 (นับเฉพาะไฟที่เจ้าหน้าที่ไปถึง ไม่ใช่พื้นที่เผาไหม้ทั้งประเทศ)" },
         ],
         whoIsHurtTh: "คนภาคเหนือที่ต้องหายใจเอาควันเข้าไป สัตว์ป่า และอาสาดับไฟ",
         sources: [
@@ -425,7 +465,12 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
             url: "https://www.nationthailand.com/thailand/general/40036340",
             dateTh: "13 มี.ค. 2567",
           },
-          { name: "Thai PBS", url: "https://www.thaipbs.or.th/news/content/337401", dateTh: "24 ก.พ. 2567" },
+          {
+            name: "The Star (ข่าวเดียวกับ Nation)",
+            url: "https://www.thestar.com.my/aseanplus/aseanplus-news/2024/03/13/officials-wage-no-win-battle-against-chiang-mais-raging-fires",
+            dateTh: "13 มี.ค. 2567",
+          },
+          { name: "Thai PBS", url: "https://www.thaipbs.or.th/now/content/845", dateTh: "23 ก.พ. 2567" },
         ],
         image: {
           src: "/hackathon/elemental/cases/fire-3.webp",
@@ -450,14 +495,14 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
     cases: [
       {
         titleTh: "ผู้ประกาศข่าวที่ไม่เคยพูดประโยคนั้น",
-        placeTh: "โฆษณาบน Facebook ในไทย",
+        placeTh: "คลิปและโฆษณาบน Facebook ในไทย",
         yearTh: "2568",
         whatHappenedTh:
-          "โฆษณาใช้ AI ปลอมคลิปผู้ประกาศข่าวตัวจริง ให้ดูเหมือนแนะนำการลงทุน ภาพบางส่วนตัดมาจากข่าวจริงเมื่อหลายปีก่อน ทีมตรวจสอบข่าวเจอแบบนี้แล้วอย่างน้อย 3 ถึง 4 ครั้ง",
+          "ปี 2568 มีคลิปบน Facebook ที่ใช้ AI ปลอมผู้ประกาศข่าวตัวจริง ให้ดูเหมือนแนะนำการลงทุน (ก.ค.) และโฆษณาลงทุนอีกชิ้น (ส.ค.) ที่ใช้ภาพตัดมาจากข่าวน้ำท่วมเมื่อหลายปีก่อน ทีม Thai PBS Verify เจอการปลอมผู้ประกาศข่าวแบบนี้หลายครั้ง",
         impact: [
-          { value: "8,000 บาท", labelTh: "ที่ชวนให้ลงก่อน โดยสัญญาว่าจะได้คืนถึง 800,000 บาท" },
-          { value: "12,000 ครั้ง", labelTh: "ยอดดูของคลิปปลอมคลิปเดียว" },
-          { value: "72.3%", labelTh: "โอกาสที่คลิปหนึ่งในชุดนี้ถูกสร้างด้วย AI ตามเครื่องมือตรวจ" },
+          { value: "8,000 บาท", labelTh: "ที่ชวนให้ลงก่อน โดยสัญญาว่าจะได้คืนถึง 800,000 บาท (คลิป ก.ค. 2568)" },
+          { value: "12,000 ครั้ง", labelTh: "ยอดดูของคลิปปลอมคลิปเดียวกันนั้น" },
+          { value: "72.3%", labelTh: "โอกาสที่คลิปอีกชิ้น (ส.ค. 2568) ถูกสร้างด้วย AI ตามเครื่องมือตรวจ ซึ่งเป็นความน่าจะเป็น ไม่ใช่คำตัดสิน" },
         ],
         whoIsHurtTh: "ทุกคนที่เชื่อใจหน้าผู้ประกาศข่าวที่คุ้นเคย โดยเฉพาะพ่อแม่และผู้สูงอายุ",
         sources: [
@@ -476,7 +521,7 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
         placeTh: "ทั่วประเทศไทย",
         yearTh: "2567 ถึง 2569",
         whatHappenedTh:
-          "มิจฉาชีพเข้าถึงคนไทยผ่านโทรศัพท์ SMS และโฆษณาออนไลน์ หลายชิ้นเป็นของปลอมหรือทำด้วย AI แค่สัปดาห์เดียว ความเสียหายก็เกินร้อยล้านบาท",
+          "คนไทยแจ้งความคดีหลอกลวงออนไลน์กว่า 5,000 คดีในสัปดาห์เดียว ความเสียหายรวมเกินร้อยล้านบาท และส่วนใหญ่เป็นการหลอกขายของและบริการออนไลน์",
         impact: [
           { value: "5,092 คดี", labelTh: "ที่แจ้งผ่านเว็บตำรวจออนไลน์ ในสัปดาห์เดียว (21 ถึง 27 มิ.ย. 2569)" },
           { value: "160 ล้านบาท", labelTh: "ความเสียหายในสัปดาห์เดียวกัน" },
@@ -494,10 +539,10 @@ export const ELEMENT_DETAILS: Record<ElementKey, ElementDetail> = {
           "แชตบอตและเครื่องมือสร้างภาพด้วย AI ทำงานอยู่ในดาต้าเซ็นเตอร์ขนาดยักษ์ที่กินไฟมหาศาล และความต้องการไฟของมันกำลังจะเพิ่มเป็นเท่าตัว",
         impact: [
           { value: "415 TWh", labelTh: "ไฟที่ดาต้าเซ็นเตอร์ทั่วโลกใช้ในปี 2567" },
-          { value: "945 TWh", labelTh: "ที่คาดว่าจะใช้ในปี 2573 มากกว่าไฟที่ญี่ปุ่นทั้งประเทศใช้อยู่ตอนนี้" },
+          { value: "945 TWh", labelTh: "ที่คาดว่าจะใช้ในปี 2573 มากกว่าไฟที่ญี่ปุ่นทั้งประเทศใช้ในปี 2568" },
           { value: "4 เท่า+", labelTh: "ดาต้าเซ็นเตอร์สำหรับ AI โดยเฉพาะ คาดว่าจะใช้ไฟเพิ่มขึ้นภายในปี 2573" },
         ],
-        whoIsHurtTh: "ทุกคนที่จ่ายค่าไฟและหายใจเอามลพิษจากโรงไฟฟ้า แต่มองไม่เห็น เพราะมันซ่อนอยู่หลังช่องแชต",
+        whoIsHurtTh: "ทุกคนที่ใช้ AI ทุกวัน โดยไม่เห็นว่าหลังช่องแชตมีไฟฟ้ามหาศาลถูกใช้ไป",
         sources: [
           {
             name: "IEA",
