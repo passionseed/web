@@ -7,6 +7,7 @@ import { Check, Copy, Loader2, Share2 } from "lucide-react";
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { formatTeamCode } from "@/lib/hackathon/elemental/team-change";
+import { lineShareUrl, teamInviteMessage, teamInviteUrl } from "@/lib/hackathon/elemental/team-invite";
 import { isRudeTeamName, teamLabel } from "@/lib/hackathon/elemental/team-name";
 import type { PublicTeam } from "@/lib/supabase/hackathon-event-registrations";
 
@@ -25,6 +26,7 @@ export function TeamInvite({
   renameToken,
   leave,
   closedNote,
+  linkAbove = false,
   demo,
 }: {
   team: PublicTeam;
@@ -36,6 +38,8 @@ export function TeamInvite({
   leave?: { token: string; notes: string[]; until: string };
   /** Shown in place of the way out once team changes have closed. */
   closedNote?: string;
+  /** The paid page's invite (PaidInvite) already has the link buttons, so the card keeps only the team code. */
+  linkAbove?: boolean;
   demo?: boolean;
 }) {
   const [name, setName] = useState(team.name);
@@ -49,9 +53,8 @@ export function TeamInvite({
     setCanShare(typeof navigator.share === "function");
   }, []);
 
-  // src=team marks friends who arrive from an invite link in the funnel's sources.
-  const url = `${origin}/hackathon/join?team=${team.inviteCode}&src=team`;
-  const message = `มาเข้า${teamLabel(name)} ลง ${ELEMENTAL.edition} Hackathon ด้วยกัน สมัครที่ลิงก์นี้: ${url}`;
+  const url = teamInviteUrl(origin, team.inviteCode);
+  const message = teamInviteMessage(name, url);
   const full = team.spotsLeft === 0;
   // After team changes close the team code no longer lets anyone in, so it isn't shown.
   const codeWorks = Boolean(leave) || !closedNote;
@@ -85,45 +88,49 @@ export function TeamInvite({
 
       {full ? (
         <p className="text-sm" style={{ color: EL.inkSoft }}>ทีมครบแล้ว</p>
-      ) : (
+      ) : linkAbove && !codeWorks ? null : (
         <div className="space-y-3 border-t pt-4" style={{ borderColor: "rgba(29,33,31,0.12)" }}>
-          <p className="text-sm">
-            ส่งลิงก์ให้เพื่อนอีก {team.spotsLeft} คน แต่ละคนสมัครและจ่ายเอง คนละ ฿{ELEMENTAL.groupPriceBaht}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={copy}
-              className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold"
-              style={outline}
-            >
-              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} {copied ? "คัดลอกแล้ว" : "คัดลอกลิงก์"}
-            </button>
-            {canShare ? (
-              <button
-                type="button"
-                onClick={() => {
-                  trackElemental({ step: "invite_shared", detail: "share" }, { once: false });
-                  navigator.share({ text: message }).catch(() => undefined);
-                }}
-                className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold"
-                style={outline}
-              >
-                <Share2 className="h-4 w-4" /> แชร์
-              </button>
-            ) : (
-              <a
-                href={`https://line.me/R/share?text=${encodeURIComponent(message)}`}
-                onClick={() => trackElemental({ step: "invite_shared", detail: "line" }, { once: false })}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold"
-                style={outline}
-              >
-                <Share2 className="h-4 w-4" /> ส่งใน LINE
-              </a>
-            )}
-          </div>
+          {!linkAbove && (
+            <>
+              <p className="text-sm">
+                ส่งลิงก์ให้เพื่อนอีก {team.spotsLeft} คน แต่ละคนสมัครและจ่ายเอง คนละ ฿{ELEMENTAL.groupPriceBaht}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={copy}
+                  className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold"
+                  style={outline}
+                >
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} {copied ? "คัดลอกแล้ว" : "คัดลอกลิงก์"}
+                </button>
+                {canShare ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      trackElemental({ step: "invite_shared", detail: "share" }, { once: false });
+                      navigator.share({ text: message }).catch(() => undefined);
+                    }}
+                    className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold"
+                    style={outline}
+                  >
+                    <Share2 className="h-4 w-4" /> แชร์
+                  </button>
+                ) : (
+                  <a
+                    href={lineShareUrl(message)}
+                    onClick={() => trackElemental({ step: "invite_shared", detail: "line" }, { once: false })}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold"
+                    style={outline}
+                  >
+                    <Share2 className="h-4 w-4" /> ส่งใน LINE
+                  </a>
+                )}
+              </div>
+            </>
+          )}
           {/* A friend who has already signed up (alone, say) types this on their own page instead of signing up again. */}
           {codeWorks && (
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-xl px-4 py-3" style={{ backgroundColor: "rgba(29,33,31,0.05)" }}>

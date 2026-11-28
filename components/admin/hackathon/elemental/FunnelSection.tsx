@@ -71,7 +71,8 @@ export function FunnelSection({ summary, days }: { summary: FunnelSummary | null
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <MiniList title="Got stuck on" rows={summary.invalidFields.map((f) => [FIELD_LABELS[f.field] ?? f.field, f.count])} empty="No field errors yet" />
             <MiniList title="Slip results" rows={summary.slipResults.map((r) => [r.result, r.count])} empty="No slips yet" />
-            <MiniList title="Team invites sent" rows={summary.invitesShared.map((r) => [r.how, r.count])} empty="No invites sent yet" />
+            {/* Seven ways in all: the team card's line, share, copy and code, and the paid page's paid:line, paid:share and paid:copy. */}
+            <MiniList title="Team invites sent" rows={summary.invitesShared.map((r) => [r.how, r.count])} empty="No invites sent yet" limit={8} />
             <MiniList title="Opened sign-up from" rows={summary.sources.map((s) => [s.source, s.people])} empty="No sign-ups opened yet" />
           </div>
         </div>
@@ -80,13 +81,13 @@ export function FunnelSection({ summary, days }: { summary: FunnelSummary | null
   );
 }
 
-function MiniList({ title, rows, empty }: { title: string; rows: [string, number][]; empty: string }) {
+function MiniList({ title, rows, empty, limit = 6 }: { title: string; rows: [string, number][]; empty: string; limit?: number }) {
   return (
     <div className="min-w-0 rounded-md border bg-background/40 px-3 py-2.5">
       <h3 className="mb-1.5 text-xs text-muted-foreground">{title}</h3>
       {rows.length ? (
         <ul className="space-y-1 text-sm">
-          {rows.slice(0, 6).map(([label, n]) => (
+          {rows.slice(0, limit).map(([label, n]) => (
             <li key={label} className="flex justify-between gap-3">
               <span className="truncate">{label}</span>
               <span className="tabular-nums">{n}</span>

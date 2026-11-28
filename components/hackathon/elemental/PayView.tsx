@@ -5,12 +5,15 @@ import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL, teamChangeDeadlineTh, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
 import { SHIFT_PAYMENT } from "@/lib/content/shift-cohort";
 import type { ElementalDiscordOutcome } from "@/lib/hackathon/elemental/discordLink";
+import { elementalRegistrationOpen } from "@/lib/hackathon/elemental/registration";
 import { teamChangeOpen } from "@/lib/hackathon/elemental/team-change";
+import { paidInviteState } from "@/lib/hackathon/elemental/team-invite";
 import { teamLabel } from "@/lib/hackathon/elemental/team-name";
 import type { PublicRegistration } from "@/lib/supabase/hackathon-event-registrations";
 
 import { BuddyPass, IouSlip } from "./BuddyPass";
 import { ConnectDiscord } from "./ConnectDiscord";
+import { PaidInvite } from "./PaidInvite";
 import { PayWithSlip } from "./PayWithSlip";
 import { RememberMyPage } from "./RememberMyPage";
 import { placeFor, ticketNumber } from "./places";
@@ -139,7 +142,8 @@ function offerActionable({ reg, joinOffer, teamChangeOpen: openProp }: Props): b
   return reg.team?.id !== target.id && target.spotsLeft >= reg.memberCount;
 }
 
-function Team(props: Props) {
+/** linkAbove: the paid page's invite already has the link buttons, so the team card leaves them out. */
+function Team(props: Props & { linkAbove?: boolean }) {
   const { token, reg, demo, teamChangeOpen: openProp } = props;
   const open = openProp ?? teamChangeOpen();
   const until = teamChangeDeadlineTh();
@@ -171,6 +175,7 @@ function Team(props: Props) {
       renameToken={reg.isTeamStarter ? token : undefined}
       leave={open ? { token, notes: leaveNotes, until } : undefined}
       closedNote={closedNote}
+      linkAbove={props.linkAbove}
       demo={demo}
     />
   );
@@ -265,44 +270,72 @@ function ShareCard({ shareHref }: { shareHref: string }) {
   );
 }
 
+/**
+ * The seat, and the ask to bring two friends right under the title (the
+ * sign-up push, Big 2026-11-28). On a phone: title, invite, ticket, the rest.
+ * On a wide screen the ticket holds the left column and everything else reads
+ * down the right, so the page isn't a phone column in an empty screen.
+ */
 function PaidSection(props: Props) {
   const { reg, links, demo } = props;
   const { who, people } = whoAndPeople(reg);
+  // A friend's team link at the top is the offer; the invite would point the other way.
+  const invite = offerActionable(props)
+    ? null
+    : paidInviteState({ team: reg.team, teamChangeOpen: props.teamChangeOpen ?? teamChangeOpen(), signUpOpen: elementalRegistrationOpen() });
   return (
-    <section className="mt-6 space-y-6">
+    <section className="mt-6 grid gap-6 lg:mt-8 lg:grid-cols-[minmax(0,28rem)_minmax(0,1fr)] lg:grid-rows-[auto_auto_1fr] lg:gap-x-16 lg:gap-y-8">
       {!demo && <TrackStep step="paid" />}
-      <Title>ได้ที่นั่งแล้ว</Title>
-      <Ticket
-        who={who}
-        people={people}
-        place={placeFor(props.token, reg.teamPosition)}
-        number={ticketNumber(props.token)}
-      />
-      <div className="space-y-3">
-        <p className="text-lg">ขั้นต่อไป เข้ากลุ่มของงาน ประกาศ ทีม และงานทั้งหมดอยู่ที่นี่</p>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {links.line && (
-            <a href={links.line} target="_blank" rel="noopener noreferrer" className={primary} style={filled}>
-              เข้ากลุ่ม LINE
-            </a>
-          )}
-          <DiscordStep {...props} />
-        </div>
-        {!reg.discordJoined && (
-          <p className="text-sm" style={{ color: EL.inkSoft }}>
-            กดเข้า Discord แล้วระบบพาเข้ากลุ่มของงานให้เลย และได้บัญชี PassionSeed ไปด้วย ไม่ต้องสมัครแยก
-          </p>
-        )}
+      <div className="lg:col-span-2">
+        <Title>ได้ที่นั่งแล้ว</Title>
       </div>
-      {props.shareHref && <ShareCard shareHref={props.shareHref} />}
-      <Team {...props} />
-      <BuddySection reg={reg} />
-      <p className="text-sm" style={{ color: EL.inkSoft }}>
-        มีคำถามทักไลน์ {SHIFT_PAYMENT.lineId} ·{" "}
-        <Link href="/hackathon/elemental" className="underline underline-offset-4">
-          กลับหน้า {ELEMENTAL.edition} Hackathon
-        </Link>
-      </p>
+      {invite && (
+        <div className="lg:col-start-2 lg:row-start-2">
+          <PaidInvite
+            token={props.token}
+            team={reg.team}
+            startNotes={joinNotes(reg)}
+            until={teamChangeDeadlineTh()}
+            buddyPassAvailable={reg.buddyPass?.state === "available"}
+            demo={demo}
+          />
+        </div>
+      )}
+      <div className="lg:sticky lg:top-8 lg:col-start-1 lg:row-span-2 lg:row-start-2 lg:self-start">
+        <Ticket
+          who={who}
+          people={people}
+          place={placeFor(props.token, reg.teamPosition)}
+          number={ticketNumber(props.token)}
+        />
+      </div>
+      <div className={`space-y-6 lg:col-start-2 ${invite ? "lg:row-start-3" : "lg:row-span-2 lg:row-start-2"}`}>
+        <div className="space-y-3">
+          <p className="text-lg">ขั้นต่อไป เข้ากลุ่มของงาน ประกาศ ทีม และงานทั้งหมดอยู่ที่นี่</p>
+          <div className="grid items-start gap-2 sm:grid-cols-2">
+            {links.line && (
+              <a href={links.line} target="_blank" rel="noopener noreferrer" className={primary} style={filled}>
+                เข้ากลุ่ม LINE
+              </a>
+            )}
+            <DiscordStep {...props} />
+          </div>
+          {!reg.discordJoined && (
+            <p className="text-sm" style={{ color: EL.inkSoft }}>
+              กดเข้า Discord แล้วระบบพาเข้ากลุ่มของงานให้เลย และได้บัญชี PassionSeed ไปด้วย ไม่ต้องสมัครแยก
+            </p>
+          )}
+        </div>
+        {props.shareHref && <ShareCard shareHref={props.shareHref} />}
+        <Team {...props} linkAbove={invite === "invite"} />
+        <BuddySection reg={reg} />
+        <p className="text-sm" style={{ color: EL.inkSoft }}>
+          มีคำถามทักไลน์ {SHIFT_PAYMENT.lineId} ·{" "}
+          <Link href="/hackathon/elemental" className="underline underline-offset-4">
+            กลับหน้า {ELEMENTAL.edition} Hackathon
+          </Link>
+        </p>
+      </div>
     </section>
   );
 }
@@ -382,7 +415,8 @@ function StatusSection(props: Props) {
 export function PayView(props: Props) {
   return (
     <main className="min-h-[100dvh] px-5 py-10 sm:px-8 sm:py-16" style={{ backgroundColor: EL.cream, color: EL.ink }}>
-      <div className="mx-auto max-w-xl">
+      {/* The paid page spreads over two columns on a wide screen (PaidSection). */}
+      <div className={`mx-auto max-w-xl ${props.reg.status === "paid" ? "lg:max-w-6xl" : ""}`}>
         <p className="text-sm" style={{ color: EL.inkSoft }}>
           {ELEMENTAL.edition} Hackathon · {thaiDateLine()} · {ELEMENTAL.venueTh}
         </p>

@@ -46,7 +46,11 @@ export const SIGNUP_SCREENS = {
 export type FunnelStep = (typeof FUNNEL_STEPS)[number]["key"];
 
 /** Things that happen inside a step: a field that failed, a slip result. Not stages. */
-/** invite_shared: someone sent their team link (detail: copy, share or line). */
+/**
+ * invite_shared: someone sent their team link. From the team card the detail
+ * is how (copy, share, line, or code for the team code); from the invite at
+ * the top of a paid page it is "paid:" and how (paid:line, paid:share, paid:copy).
+ */
 /** quiz_start, quiz_done (detail: the element) and quiz_shared (detail: how): the Elemental quiz. */
 /** board_view and board_open (detail: the tile, "water" or "water:owner_id"): the problem board. */
 export type FunnelDetailEvent =
@@ -140,7 +144,7 @@ export type FunnelSummary = {
   invalidFields: { field: string; count: number }[];
   /** Slip results (paid, review, retry, rejected:amount, ...), most common first. */
   slipResults: { result: string; count: number }[];
-  /** Team invite links sent, by how (copy, share, line), most common first. */
+  /** Team invite links sent, by detail (copy, share, line, code, paid:line …), most common first. */
   invitesShared: { how: string; count: number }[];
   /** People by source (ig, line, team = a friend's invite link, ...) who opened sign-up. */
   sources: { source: string; people: number }[];
