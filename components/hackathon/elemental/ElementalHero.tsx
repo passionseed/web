@@ -133,7 +133,7 @@ export function ElementalHero({ joinHref, open }: { joinHref: string; open: bool
                   className="mt-0.5 text-xs text-[#e0dad0]"
                   style={{ fontFamily: "var(--font-bai-jamjuree), sans-serif" }}
                 >
-                  ออนไลน์ · Demo Day {formatThaiDate(ELEMENTAL.demoDay.date, false)} ที่ BAScii
+                  ออนไลน์ · Demo Day {formatThaiDate(ELEMENTAL.demoDay.date, false)} ที่{ELEMENTAL.demoDay.venueTh}
                 </p>
               </div>
 

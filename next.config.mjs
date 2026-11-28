@@ -34,6 +34,11 @@ const nextConfig = {
         destination: "/hackathon/elemental",
         permanent: false,
       },
+      {
+        source: "/hackathon/sponsor",
+        destination: "/hackathon/elemental/sponsor",
+        permanent: false,
+      },
       // The 1st edition's admin tools moved to the archive; old bookmarks follow.
       {
         source:

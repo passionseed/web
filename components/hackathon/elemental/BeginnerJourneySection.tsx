@@ -13,6 +13,7 @@ const SCHEDULE_TIME_COLOR: Record<ElementalSlotKind, string> = {
   workshop: EL.toxicCyan,
   build: EL.toxicCyan,
   due: EL.flame,
+  judge: EL.creamSoft,
   demo: EL.flameCore,
 };
 

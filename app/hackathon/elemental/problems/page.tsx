@@ -18,8 +18,9 @@ export const metadata: Metadata = {
     locale: "th_TH",
     title: TITLE,
     description: DESCRIPTION,
+    // The image is ./opengraph-image.ts (the key art with today's dates); the
+    // key-visual.webp poster still prints the old ones.
     url: "/hackathon/elemental/problems",
-    images: ["/hackathon/elemental/media/key-visual.webp"],
   },
   twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };

@@ -42,10 +42,10 @@ const startTime = (time: string) => time.split("–")[0];
 type Slot = (typeof ELEMENTAL.schedule)[number];
 
 /**
- * The slots the steps need. The workshops are optional: their times are
- * (fill in) since the 12 Dec extension, so facts.ts lists none for now. Once
- * they are added back there, in the order interview, build, pitch, their
- * times show up in the help lines on their own.
+ * The slots the steps need. The workshops are optional, in the order
+ * interview, build, pitch; their times show up in the help lines when
+ * facts.ts has them. Teams build from the first workshop or build day,
+ * whichever comes first (Sat 5 Dec), to the hand-in.
  */
 function slots() {
   const of = (kind: Slot["kind"]) => ELEMENTAL.schedule.filter((s) => s.kind === kind);
@@ -59,7 +59,7 @@ function slots() {
   }
   return {
     opening: { date: opening.date, time: opening.time },
-    buildFrom: builds[0].date,
+    buildFrom: [...of("workshop"), ...builds].map((s) => s.date).sort()[0],
     buildTo: handIn.date,
     handIn: { date: handIn.date, time: handIn.time },
     interview,

@@ -9,7 +9,7 @@ import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
  */
 export const metadata: Metadata = {
   title: `${ELEMENTAL.edition} Hackathon: sponsorship`,
-  description: `Sponsor the ${ELEMENTAL.edition} Hackathon by ${ELEMENTAL.series} and PassionSeed, 4 to 12 December 2026, with Demo Day at BAScii, Chula`,
+  description: `Sponsor the ${ELEMENTAL.edition} Hackathon by ${ELEMENTAL.series} and PassionSeed, 4 to 12 December 2026, with Demo Day in the CSII building, Chula`,
   robots: { index: false, follow: false },
 };
 

@@ -6,6 +6,7 @@ import { ELEMENTAL, prizeTotal } from "@/components/hackathon/poster/elemental/f
 import { PixelArrow, PixelIcon, type IconName } from "../sponsor/DeckArt";
 import { PrintButton } from "../sponsor/PrintButton";
 import { Body, DARK, H2, LINE_DARK, LINE_LIGHT, PRINT_CSS, Row, Section, SKY, Stat, Tag, trirong } from "../sponsor/SponsorDeck";
+import { PassionSeedWordmark } from "@/components/hackathon/PassionSeedWordmark";
 
 /**
  * Elemental Hackathon × CSII: the co-host proposal for CSII (Chulalongkorn
@@ -151,7 +152,7 @@ export function CsiiDeck() {
               <span className="flex items-center gap-2">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/passion-seed-logo.png" alt="" width={40} height={40} />
-                <span style={{ fontFamily: EL_FONT.display, fontSize: 24 }}>PassionSeed</span>
+                <PassionSeedWordmark height={24} />
               </span>
               <span style={{ fontFamily: EL_FONT.mono, fontSize: 18, color: EL.inkSoft }}>×</span>
               <span style={{ fontFamily: EL_FONT.display, fontSize: 24 }}>CSII</span>
