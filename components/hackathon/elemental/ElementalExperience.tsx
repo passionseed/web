@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, useReducedMotion, useTransform } from "framer-motion";
 
-import { BACKGROUND, EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
+import { BACKGROUND, EL, EL_FONT, EL_GROUND } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL, prizeTotal } from "@/components/hackathon/poster/elemental/facts";
 
 import { BeginnerJourneySection } from "./BeginnerJourneySection";
@@ -270,7 +270,7 @@ function ElementalExperienceInner({
       <ElementalPlacesShowcase joinHref={joinHref} open={open} />
 
       {/* After the five places: every problem, and each problem owner's, on one board. */}
-      <section className="flex justify-center bg-[#0c0d0c] px-5 py-16 sm:py-20">
+      <section className="flex flex-col items-center gap-5 bg-[#0c0d0c] px-5 py-16 sm:py-20">
         <Link
           href={boardHref}
           className={`${styles.textLink} text-[1.6rem] italic text-[#faf8f4] sm:text-[2rem]`}
@@ -278,6 +278,13 @@ function ElementalExperienceInner({
         >
           ดูบอร์ดโจทย์ →
         </Link>
+        {/* The element quiz, quietly: nothing linked to it since it went live (24 Nov). src=landing counts its plays from here. */}
+        <div style={{ color: EL_GROUND.secondary }}>
+          <EditorialLink href="/hackathon/elemental/quiz?src=landing" size="sm">
+            {/* PLACEHOLDER copy (Angpao) */}
+            คุณคือธาตุอะไร ลองทำ quiz 1 นาที
+          </EditorialLink>
+        </div>
       </section>
 
       {/* ACT 5: BEGINNER PITCH, WORKSHOPS, MENTOR SUPPORT & 3-DAY SCHEDULE */}

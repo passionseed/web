@@ -72,6 +72,23 @@ describe("invite sharing", () => {
     ]);
     expect(s.stages.every((st) => st.people === 0)).toBe(true);
   });
+
+  it("counts the paid page's invites (paid:line, paid:share, paid:copy) apart from the team card's", () => {
+    const s = summarizeFunnel([
+      row("a", "invite_shared", { detail: "paid:line" }),
+      row("a", "invite_shared", { detail: "paid:line" }),
+      row("b", "invite_shared", { detail: "paid:copy" }),
+      row("c", "invite_shared", { detail: "paid:share" }),
+      row("c", "invite_shared", { detail: "line" }),
+    ]);
+    expect(s.invitesShared).toEqual([
+      { how: "paid:line", count: 2 },
+      { how: "line", count: 1 },
+      { how: "paid:copy", count: 1 },
+      { how: "paid:share", count: 1 },
+    ]);
+    expect(s.stages.every((st) => st.people === 0)).toBe(true);
+  });
 });
 
 describe("worstDrop", () => {
