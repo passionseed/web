@@ -214,6 +214,13 @@ function ModeStep({ draft, team, buddyPass, choose, demo }: StepProps) {
         ))}
       </div>
       {team && <AltChoice onClick={() => choose("join")}>กลับไปเข้า{teamLabel(team.name)}</AltChoice>}
+      {!team && !buddyPass && (
+        <div className="mt-6">
+          <EditorialLink href={demo ? "/hackathon/join/find?demo=1" : "/hackathon/join/find"} size="sm">
+            สมัครไว้แล้ว? หาหน้าของฉัน
+          </EditorialLink>
+        </div>
+      )}
       {buddyPass && (
         <AltChoice onClick={() => choose("buddy")}>
           กลับไปใช้บัตรเพื่อนจาก {buddyPass.senderName} ({baht(ELEMENTAL.buddyPriceBaht)})
