@@ -2,6 +2,7 @@ import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 
 import type { BoardEntry } from "./team-style-board";
 import type { TeamNameStyle } from "./team-style";
+import { elementalCountingEndsAt } from "./link-views-shared";
 import { boardPhase, demoDayEndsAt } from "./team-style-phase";
 
 /**
@@ -17,6 +18,23 @@ import { boardPhase, demoDayEndsAt } from "./team-style-phase";
 
 /** How often an open lobby asks for new names. */
 export const LOBBY_POLL_MS = 12_000;
+
+/**
+ * From sign-up close, show only teams with at least one paid member, and count
+ * paid people only. Big decides (2026-11-28); off until then.
+ */
+export const LOBBY_PAID_ONLY_AFTER_CLOSE = false;
+
+/** Whether the paid-only rule applies at this moment. */
+export function lobbyPaidOnly(now: Date = new Date(), setting: boolean = LOBBY_PAID_ONLY_AFTER_CLOSE): boolean {
+  return setting && now.getTime() > elementalCountingEndsAt().getTime();
+}
+
+/** The projector's ?delay=<minutes>: a whole number from 0 to 120; anything else is 0. */
+export function parseDelayMinutes(raw: unknown): number {
+  const n = typeof raw === "string" && /^\d{1,3}$/.test(raw) ? Number(raw) : 0;
+  return Math.min(120, n);
+}
 
 /** The opening slot from the programme (facts.ts): Fri 4 Dec 19:00, Bangkok. */
 export function openingAt(): Date {
@@ -59,16 +77,27 @@ export type LobbyPayload = {
 
 /**
  * The room: every team with a board name that staff haven't hidden, whatever
- * its devices, newest arrival first (by when the name was set; teams without a
- * time go last, in key order, so the order never shuffles between polls).
+ * its devices, newest arrival first (by when the name was FIRST set, so a
+ * rename never bumps a team to the top; teams without a time go last, in key
+ * order, so the order never shuffles between polls).
+ * - paidOnly (lobbyPaidOnly): only teams with a paid member, and paid people only;
+ * - delayMinutes (the projector's ?delay=): only names set at least that long
+ *   before now, so staff can screen them during the opening. Names without a
+ *   time are old ones and stay.
  */
-export function lobbyTeams(entries: readonly BoardEntry[]): { teams: LobbyTeam[]; people: number } {
-  const shown = entries.filter((e): e is BoardEntry & { name: string } => Boolean(e.name) && !e.hidden);
+export function lobbyTeams(
+  entries: readonly BoardEntry[],
+  opts: { paidOnly?: boolean; delayMinutes?: number; now?: Date } = {},
+): { teams: LobbyTeam[]; people: number } {
   const at = (e: BoardEntry) => (e.nameSetAt ? new Date(e.nameSetAt).getTime() : Number.NEGATIVE_INFINITY);
+  const cutoff = opts.delayMinutes ? (opts.now ?? new Date()).getTime() - opts.delayMinutes * 60_000 : Number.POSITIVE_INFINITY;
+  const shown = entries.filter(
+    (e): e is BoardEntry & { name: string } => Boolean(e.name) && !e.hidden && (!opts.paidOnly || (e.paidPeople ?? 0) > 0) && at(e) <= cutoff,
+  );
   shown.sort((a, b) => at(b) - at(a) || a.key.localeCompare(b.key));
   return {
     teams: shown.map((e) => ({ key: e.key, name: e.name, style: e.style, solo: e.solo })),
-    people: shown.reduce((n, e) => n + (e.people ?? 1), 0),
+    people: shown.reduce((n, e) => n + (opts.paidOnly ? (e.paidPeople ?? 0) : (e.people ?? 1)), 0),
   };
 }
 

@@ -46,6 +46,8 @@ export type BoardYou = {
   payHref: string | null;
   /** Their team editor (/hackathon/join/<token>/team), where the board name and style are set. */
   editHref?: string | null;
+  /** They haven't paid yet: the lobby offers "จ่ายแล้วยืนยันที่นั่ง →" back to payHref. */
+  payPending?: boolean;
   devices: number;
   named: boolean;
 };

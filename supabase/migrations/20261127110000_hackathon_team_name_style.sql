@@ -62,7 +62,7 @@ comment on column public.hackathon_event_teams.name_style is
 comment on column public.hackathon_event_teams.board_name is
   'The name a member typed for the public board (rude-word checked). The team is not listed until it is set.';
 comment on column public.hackathon_event_teams.board_name_set_at is
-  'When a member last set or confirmed board_name.';
+  'When a member first set board_name (renames keep it): the waiting room lists teams in the order they arrived.';
 comment on column public.hackathon_event_teams.leaderboard_hidden is
   'Staff took this team off the public board.';
 comment on column public.hackathon_event_registrations.name_style is
@@ -70,6 +70,6 @@ comment on column public.hackathon_event_registrations.name_style is
 comment on column public.hackathon_event_registrations.board_name is
   'For a sign-up without a team: the name it typed for the public board (rude-word checked).';
 comment on column public.hackathon_event_registrations.board_name_set_at is
-  'For a sign-up without a team: when it last set board_name.';
+  'For a sign-up without a team: when it first set board_name (renames keep it).';
 comment on column public.hackathon_event_registrations.leaderboard_hidden is
   'For a sign-up without a team: staff took it off the public board.';

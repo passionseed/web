@@ -142,13 +142,13 @@ export function TeamLine({
 
   // Lets the board (same tab) mark "your team" and link back, without the pay token ever going in a URL.
   useEffect(() => {
-    const you: BoardYou = { key: data.key, shareHref: data.shareHref, payHref, editHref, devices: data.devices, named };
+    const you: BoardYou = { key: data.key, shareHref: data.shareHref, payHref, editHref, devices: data.devices, named, payPending: Boolean(data.payPending) };
     try {
       sessionStorage.setItem(BOARD_YOU_KEY, JSON.stringify(you));
     } catch {
       // Private mode or storage off: the board just won't mark the row.
     }
-  }, [data.key, data.shareHref, data.devices, payHref, editHref, named]);
+  }, [data.key, data.shareHref, data.devices, payHref, editHref, named, data.payPending]);
 
   return (
     <div ref={ref} data-team-line="" role="group" aria-label={data.solo ? COPY.labelSolo : COPY.label}>

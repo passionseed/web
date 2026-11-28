@@ -87,6 +87,12 @@ describe("building the team board", () => {
   const byKey = new Map(board.map((e) => [e.key, e]));
   const t1 = byKey.get(boardKey({ teamId: T1, registrationId: id(1) }))!;
 
+  it("counts a team's own people, and the paid ones (not the friends its links brought)", () => {
+    // T1: members 1 (pending) and 2 (paid); member 5 is cancelled.
+    expect(t1.people).toBe(2);
+    expect(t1.paidPeople).toBe(1);
+  });
+
   it("sums every member's link into the team", () => {
     expect(t1.devices).toBe(14);
     expect(t1.schools).toEqual(["สตรีวิทยา"]);

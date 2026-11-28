@@ -44,8 +44,9 @@ const COPY = {
   you: "คุณ",
   youNoName: "ทีมคุณยังไม่มีชื่อในห้อง",
   youNoNameLead: "custom ชื่อทีมให้เท่ ทุกคนในห้องจะเห็นชื่อนี้",
-  setName: "ตั้งชื่อทีมก่อนเข้าห้อง →",
-  signUp: "สมัคร →",
+  setName: "ตั้งชื่อทีมก่อนเข้าห้อง",
+  signUp: "สมัคร",
+  pay: "จ่ายแล้วยืนยันที่นั่ง",
   emptyTitle: "ยังไม่มีใครในห้อง",
   empty: "ทีมแรกที่ตั้งชื่อ ขึ้นที่นี่ทันที",
   soonTitle: "ห้องรอเปิดเร็วๆ นี้",
@@ -73,7 +74,15 @@ function readYou(): BoardYou | null {
     if (!raw) return null;
     const v = JSON.parse(raw) as Partial<BoardYou>;
     return typeof v.key === "string"
-      ? { key: v.key, shareHref: v.shareHref ?? null, payHref: v.payHref ?? null, editHref: v.editHref ?? null, devices: Number(v.devices) || 0, named: Boolean(v.named) }
+      ? {
+          key: v.key,
+          shareHref: v.shareHref ?? null,
+          payHref: v.payHref ?? null,
+          editHref: v.editHref ?? null,
+          devices: Number(v.devices) || 0,
+          named: Boolean(v.named),
+          payPending: Boolean(v.payPending),
+        }
       : null;
   } catch {
     return null;
@@ -121,8 +130,11 @@ function openingLine(): string {
 function SkyTitle({ data, tv }: { data: LobbyPayload; tv: boolean }) {
   const titleSize = tv ? "min(9vw, 132px)" : "clamp(40px, 12.5vw, 72px)";
   const title = (text: string) => <h1 style={{ fontFamily: EL_FONT.display, fontWeight: 200, fontSize: titleSize, lineHeight: 1.1 }}>{text}</h1>;
+  // After the countdown or title, never above it (no eyebrow labels).
   const stamp = (
-    <span style={{ fontFamily: EL_FONT.mono, fontSize: tv ? 20 : 13, lineHeight: tv ? "30px" : "20px", color: "rgba(29,33,31,0.8)" }}>[{openingLine()}]</span>
+    <p className="mt-2" style={{ fontFamily: EL_FONT.mono, fontSize: tv ? 20 : 13, lineHeight: tv ? "30px" : "20px", color: "rgba(29,33,31,0.8)" }}>
+      [{openingLine()}]
+    </p>
   );
   const lead = (text: string) => (
     <p className="mt-2" style={{ fontFamily: EL_FONT.body, fontSize: tv ? 28 : 16, lineHeight: tv ? "40px" : "26px", color: "rgba(29,33,31,0.8)" }}>
@@ -140,18 +152,16 @@ function SkyTitle({ data, tv }: { data: LobbyPayload; tv: boolean }) {
   if (data.state === "started") {
     return (
       <div>
-        {stamp}
         {title(COPY.started)}
         {lead(COPY.startedLead)}
+        {stamp}
       </div>
     );
   }
   return (
     <div>
+      <Countdown target={data.openingAt} serverNow={data.now} size={titleSize} />
       {stamp}
-      <div className="mt-2">
-        <Countdown target={data.openingAt} serverNow={data.now} size={titleSize} />
-      </div>
     </div>
   );
 }
@@ -217,23 +227,43 @@ function Tiles({ teams, fresh, tv }: { teams: LobbyTeam[]; fresh: Map<string, nu
   );
 }
 
-/** Your team, pinned above the room. */
-function YouTile({ team }: { team: LobbyTeam }) {
+/** Not paid yet (no slip): back to the pay page from the pinned card. */
+function PayLink({ you }: { you: BoardYou }) {
+  if (!you.payPending || !you.payHref) return null;
+  return (
+    <EditorialLink href={you.payHref} size="sm" tone="action" className="mt-2">
+      {COPY.pay}
+    </EditorialLink>
+  );
+}
+
+/** Your team, pinned above the room: the name first, [คุณ] beside it. */
+function YouTile({ team, you }: { team: LobbyTeam; you: BoardYou }) {
   return (
     <div className={`${styles.you} px-4 py-3`}>
-      <Tag tone="action">{COPY.you}</Tag>
-      <StyledTeamName name={team.name} style={team.style} className="mt-1 block" sizeStyle={{ fontSize: 30, lineHeight: 1.3 }} />
+      <div className="flex items-start justify-between gap-3">
+        <StyledTeamName name={team.name} style={team.style} className="block min-w-0" sizeStyle={{ fontSize: 30, lineHeight: 1.3 }} />
+        <Tag tone="action" className="shrink-0 pt-2">
+          {COPY.you}
+        </Tag>
+      </div>
+      <PayLink you={you} />
     </div>
   );
 }
 
 /** Signed up, but no board name yet: nothing to show in the room. */
-function YouNoName() {
+function YouNoName({ you }: { you: BoardYou }) {
   return (
     <div className={`${styles.you} px-4 py-3`}>
-      <Tag tone="action">{COPY.you}</Tag>
-      <Body className="mt-1">{COPY.youNoName}</Body>
+      <div className="flex items-baseline justify-between gap-3">
+        <Body>{COPY.youNoName}</Body>
+        <Tag tone="action" className="shrink-0">
+          {COPY.you}
+        </Tag>
+      </div>
       <Body secondary>{COPY.youNoNameLead}</Body>
+      <PayLink you={you} />
     </div>
   );
 }
@@ -255,7 +285,7 @@ function EmptyRoom() {
 }
 
 /** Keeps the room in step: polling (or the demo's arrivals), the keys already seen, and which tiles pop. */
-function useRoom(initial: LobbyPayload, poll: boolean, simulate: boolean) {
+function useRoom(initial: LobbyPayload, poll: boolean, simulate: boolean, delayMinutes: number) {
   const [data, setData] = useState(initial);
   const [fresh, setFresh] = useState<Map<string, number>>(new Map());
   const [announce, setAnnounce] = useState("");
@@ -285,7 +315,7 @@ function useRoom(initial: LobbyPayload, poll: boolean, simulate: boolean) {
     const load = async () => {
       if (document.hidden) return;
       try {
-        const res = await fetch("/api/hackathon/elemental/lobby", { cache: "no-store" });
+        const res = await fetch(`/api/hackathon/elemental/lobby${delayMinutes ? `?delay=${delayMinutes}` : ""}`, { cache: "no-store" });
         if (!res.ok) return;
         const next = (await res.json()) as LobbyPayload;
         if (!stopped) take.current(next);
@@ -303,7 +333,7 @@ function useRoom(initial: LobbyPayload, poll: boolean, simulate: boolean) {
       clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [poll]);
+  }, [poll, delayMinutes]);
 
   useEffect(() => {
     if (!simulate) return;
@@ -329,6 +359,7 @@ export function LobbyView({
   simulate = false,
   signUpOpen = false,
   boardHref = "/hackathon/elemental/leaderboard",
+  delayMinutes = 0,
 }: {
   initial: LobbyPayload;
   poll: boolean;
@@ -339,9 +370,11 @@ export function LobbyView({
   simulate?: boolean;
   /** Sign-up is still open: visitors get "สมัคร →". */
   signUpOpen?: boolean;
+  /** The projector's ?delay=: only names set at least this many minutes ago (the server filters; polling keeps it). */
+  delayMinutes?: number;
   boardHref?: string;
 }) {
-  const { data, fresh, announce } = useRoom(initial, poll, simulate);
+  const { data, fresh, announce } = useRoom(initial, poll, simulate, delayMinutes);
   const [you, setYou] = useState<BoardYou | null>(youProp ?? null);
   useEffect(() => {
     if (youProp === undefined) setYou(readYou());
@@ -377,7 +410,7 @@ export function LobbyView({
     room = (
       <>
         <Counts teams={data.teams.length} people={data.people} over={over} tv={tv} />
-        {!tv && you && (youTeam || !you.named) && <div className="mt-8">{youTeam ? <YouTile team={youTeam} /> : <YouNoName />}</div>}
+        {!tv && you && (youTeam || !you.named) && <div className="mt-8">{youTeam ? <YouTile team={youTeam} you={you} /> : <YouNoName you={you} />}</div>}
         <div className={tv ? "mt-10" : "mt-8"}>{data.teams.length === 0 ? <EmptyRoom /> : <Tiles teams={others} fresh={fresh} tv={tv} />}</div>
       </>
     );
@@ -406,13 +439,13 @@ export function LobbyView({
   const bar =
     over || data.state === "unavailable" ? null : you && !you.named && editHref ? (
       <StickyBar>
-        <PrimaryButton href={editHref} full>
+        <PrimaryButton href={editHref} full arrow>
           {COPY.setName}
         </PrimaryButton>
       </StickyBar>
     ) : !you && signUpOpen ? (
       <StickyBar>
-        <PrimaryButton href="/hackathon/join" full>
+        <PrimaryButton href="/hackathon/join" full arrow>
           {COPY.signUp}
         </PrimaryButton>
       </StickyBar>

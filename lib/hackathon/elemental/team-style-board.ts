@@ -26,7 +26,7 @@ export type BoardTeamRow = {
   boardName: string | null;
   style: unknown;
   hidden: boolean;
-  /** When the board name was last set (the lobby lists teams in the order they arrived). */
+  /** When the board name was first set (renames keep it): the lobby lists teams in the order they arrived. */
   nameSetAt?: string | null;
 };
 
@@ -45,7 +45,7 @@ export type BoardRegistrationRow = {
   style: unknown;
   hidden: boolean;
   schools: string[];
-  /** Without a team: when its board name was last set. */
+  /** Without a team: when its board name was first set. */
   nameSetAt?: string | null;
 };
 
@@ -68,7 +68,9 @@ export type BoardEntry = {
   hidden: boolean;
   /** People signed up in the team (a group sign-up counts each member). The lobby's head count. */
   people?: number;
-  /** When the board name was last set, or null. */
+  /** Of those, the ones whose own sign-up is paid (not the friends their links brought in). */
+  paidPeople?: number;
+  /** When the board name was first set, or null. */
   nameSetAt?: string | null;
 };
 
@@ -167,6 +169,7 @@ export function buildBoard(input: {
       paid,
       hidden: r.hidden,
       people: Math.max(1, r.memberCount),
+      paidPeople: r.status === "paid" ? Math.max(1, r.memberCount) : 0,
       nameSetAt: r.nameSetAt ?? null,
     });
   }
@@ -190,6 +193,7 @@ export function buildBoard(input: {
       paid,
       hidden: team.hidden,
       people: regs.reduce((n, r) => n + Math.max(1, r.memberCount), 0),
+      paidPeople: regs.reduce((n, r) => n + (r.status === "paid" ? Math.max(1, r.memberCount) : 0), 0),
       nameSetAt: team.nameSetAt ?? null,
     });
   }

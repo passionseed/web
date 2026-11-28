@@ -334,6 +334,8 @@ export type TeamStyleCardData = {
   devices: number;
   /** A member has a live Instagram Story proof: every style is open, whatever the devices. */
   storyUnlocked?: boolean;
+  /** This person hasn't paid yet (no slip): the lobby links them back to the pay page. */
+  payPending?: boolean;
   paid: number;
   /** Null when the team isn't on the board (no board name, no devices, or hidden). */
   rank: number | null;

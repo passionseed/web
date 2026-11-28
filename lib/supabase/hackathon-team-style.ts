@@ -43,6 +43,13 @@ export async function teamLinkNumbers(eventSlug: string, registrationIds: string
 
 type Owner = { id: string; teamId: string | null };
 
+/** Whether this sign-up still has to pay (no slip yet). The lobby links an unpaid viewer back to the pay page. */
+async function payPending(registrationId: string): Promise<boolean> {
+  const { data, error } = await createAdminClient().from("hackathon_event_registrations").select("status").eq("id", registrationId).maybeSingle();
+  if (error) throw error;
+  return data?.status === "pending";
+}
+
 /** The saved style and board name, read fresh. Throws if the columns don't exist yet. */
 async function readOwn(owner: Owner): Promise<{ style: unknown; boardName: string | null }> {
   const db = createAdminClient();
@@ -61,16 +68,18 @@ export async function saveNameStyle(
 ): Promise<void> {
   const update: Record<string, unknown> = {};
   if (change.style) update.name_style = change.style;
-  if (change.boardName !== undefined) {
-    update.board_name = change.boardName;
-    update.board_name_set_at = new Date().toISOString();
-  }
+  if (change.boardName !== undefined) update.board_name = change.boardName;
   if (Object.keys(update).length === 0) return;
   const db = createAdminClient();
-  const { error } = owner.teamId
-    ? await db.from("hackathon_event_teams").update(update).eq("id", owner.teamId)
-    : await db.from("hackathon_event_registrations").update(update).eq("id", owner.id);
+  const table = owner.teamId ? "hackathon_event_teams" : "hackathon_event_registrations";
+  const id = owner.teamId ?? owner.id;
+  const { error } = await db.from(table).update(update).eq("id", id);
   if (error) throw error;
+  // When the name was FIRST set: the lobby's arrival order, so a rename never bumps a team to the top.
+  if (change.boardName !== undefined) {
+    const { error: firstError } = await db.from(table).update({ board_name_set_at: new Date().toISOString() }).eq("id", id).is("board_name_set_at", null);
+    if (firstError) throw firstError;
+  }
   forgetBoard(eventSlug);
 }
 
@@ -103,11 +112,12 @@ export async function loadTeamStyleCard(
     const owner = { id: reg.id, teamId: reg.team?.id ?? null };
     const ids = owner.teamId ? await teamMemberIds(owner.teamId) : [reg.id];
     // teamHasStoryProof never throws (false without the table), so the row still loads.
-    const [own, numbers, board, storyUnlocked] = await Promise.all([
+    const [own, numbers, board, storyUnlocked, pending] = await Promise.all([
       readOwn(owner),
       teamLinkNumbers(eventSlug, ids),
       loadLeaderboard(eventSlug),
       teamHasStoryProof(eventSlug, ids),
+      payPending(reg.id),
     ]);
     const key = boardKey({ teamId: owner.teamId, registrationId: reg.id });
     const row = board.find((e) => e.key === key);
@@ -118,6 +128,7 @@ export async function loadTeamStyleCard(
       style: clampStyle(readStyle(own.style), numbers.devices, storyUnlocked),
       devices: numbers.devices,
       storyUnlocked,
+      payPending: pending,
       paid: numbers.paid,
       rank: row?.rank ?? null,
       teamsOnBoard: board.length,

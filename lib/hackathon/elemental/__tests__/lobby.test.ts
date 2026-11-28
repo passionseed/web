@@ -1,14 +1,14 @@
 import { DEFAULT_STYLE } from "../team-style";
 import type { BoardEntry } from "../team-style-board";
-import { arrivals, countdownParts, lobbyState, lobbyTeams, openingAt } from "../lobby";
+import { arrivals, countdownParts, lobbyPaidOnly, lobbyState, lobbyTeams, openingAt, parseDelayMinutes } from "../lobby";
 
 function entry(over: Partial<BoardEntry>): BoardEntry {
-  return { key: "x", id: "x", solo: false, name: "x", style: DEFAULT_STYLE, schools: ["สตรีวิทยา"], devices: 0, paid: 0, hidden: false, people: 2, nameSetAt: null, ...over };
+  return { key: "x", id: "x", solo: false, name: "x", style: DEFAULT_STYLE, schools: ["สตรีวิทยา"], devices: 0, paid: 0, hidden: false, people: 2, paidPeople: 0, nameSetAt: null, ...over };
 }
 
 describe("the waiting room's teams", () => {
   const room = lobbyTeams([
-    entry({ key: "tA", name: "ไฟป่า", nameSetAt: "2026-11-30T10:00:00+07:00", people: 3 }),
+    entry({ key: "tA", name: "ไฟป่า", nameSetAt: "2026-11-30T10:00:00+07:00", people: 3, paidPeople: 2 }),
     entry({ key: "tB", name: "Deep Blue", nameSetAt: "2026-12-01T09:00:00+07:00", devices: 40, paid: 5 }),
     // Never set a board name (signed up as "ทีม<nickname>"): never in the room.
     entry({ key: "tC", name: null, people: 4 }),
@@ -54,5 +54,37 @@ describe("the countdown and the room's states", () => {
     // After sign-up close it stays up, whatever the flag says.
     expect(lobbyState(env(), new Date("2026-12-08T12:00:00+07:00"))).toBe("started");
     expect(lobbyState(env({ ELEMENTAL_SHARE_OPEN: "1" }), new Date("2026-12-13T10:00:00+07:00"))).toBe("over");
+  });
+});
+
+describe("the room's two settings", () => {
+  const entries = [
+    entry({ key: "tA", name: "ไฟป่า", nameSetAt: "2026-12-04T18:00:00+07:00", people: 3, paidPeople: 2 }),
+    entry({ key: "tB", name: "Deep Blue", nameSetAt: "2026-12-04T19:20:00+07:00", people: 2, paidPeople: 0 }),
+    entry({ key: "sE", name: "หมาป่าเดียวดาย", solo: true, people: 1, paidPeople: 1 }),
+  ];
+
+  it("paid only: teams with a paid member, and paid people only", () => {
+    const room = lobbyTeams(entries, { paidOnly: true });
+    expect(room.teams.map((t) => t.key)).toEqual(["tA", "sE"]);
+    expect(room.people).toBe(3);
+  });
+
+  it("is off by default, and only ever applies after sign-up close", () => {
+    expect(lobbyPaidOnly(new Date("2026-12-06T10:00:00+07:00"))).toBe(false);
+    expect(lobbyPaidOnly(new Date("2026-12-04T20:00:00+07:00"), true)).toBe(false);
+    expect(lobbyPaidOnly(new Date("2026-12-05T00:00:01+07:00"), true)).toBe(true);
+  });
+
+  it("the projector's delay holds back names set in the last N minutes (old names without a time stay)", () => {
+    const now = new Date("2026-12-04T19:25:00+07:00");
+    expect(lobbyTeams(entries, { delayMinutes: 10, now }).teams.map((t) => t.key)).toEqual(["tA", "sE"]);
+    expect(lobbyTeams(entries, { delayMinutes: 0, now }).teams.map((t) => t.key)).toEqual(["tB", "tA", "sE"]);
+  });
+
+  it("reads ?delay= as whole minutes from 0 to 120, anything else as 0", () => {
+    expect(parseDelayMinutes("5")).toBe(5);
+    expect(parseDelayMinutes("999")).toBe(120);
+    for (const bad of [null, undefined, "", "-3", "2.5", "five", "1e3"]) expect(parseDelayMinutes(bad)).toBe(0);
   });
 });

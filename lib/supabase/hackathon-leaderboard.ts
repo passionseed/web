@@ -13,7 +13,7 @@ import {
   type PublicBoardEntry,
 } from "@/lib/hackathon/elemental/team-style-board";
 import type { BoardPhase } from "@/lib/hackathon/elemental/team-style-phase";
-import { lobbyState, lobbyTeams, openingAt, type LobbyPayload } from "@/lib/hackathon/elemental/lobby";
+import { lobbyPaidOnly, lobbyState, lobbyTeams, openingAt, type LobbyPayload } from "@/lib/hackathon/elemental/lobby";
 
 /**
  * The Elemental team board's numbers (service role; rules in
@@ -209,12 +209,12 @@ export async function leaderboardPayload(eventSlug: string, phase: BoardPhase): 
  * with a board name that isn't hidden, newest first, and the head count.
  * Never throws: a failed load is "unavailable". Uses the same kept numbers as the board.
  */
-export async function lobbyPayload(eventSlug: string, now: Date = new Date()): Promise<LobbyPayload> {
+export async function lobbyPayload(eventSlug: string, now: Date = new Date(), opts: { delayMinutes?: number } = {}): Promise<LobbyPayload> {
   const state = lobbyState(process.env, now);
   const base = { openingAt: openingAt().toISOString(), now: now.toISOString() };
   if (state === "soon") return { state, teams: [], people: 0, ...base };
   try {
-    const { teams, people } = lobbyTeams(await loadBoardEntries(eventSlug));
+    const { teams, people } = lobbyTeams(await loadBoardEntries(eventSlug), { paidOnly: lobbyPaidOnly(now), delayMinutes: opts.delayMinutes, now });
     return { state, teams, people, ...base };
   } catch (error) {
     console.error("[elemental lobby] failed to load", error);

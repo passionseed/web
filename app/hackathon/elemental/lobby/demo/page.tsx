@@ -23,8 +23,9 @@ const pay = "/hackathon/join/demo?state=paid&share=1&style=fonts";
  * Development and PR previews only: the waiting room with made-up teams.
  * 404 in production.
  * /hackathon/elemental/lobby/demo?state=waiting|empty|started|over|soon|unavailable
- * &you=1 (your tile pinned: ไฟป่า) | unnamed (no board name yet: the way to set one)
+ * &you=1 (your tile pinned: ไฟป่า) | unpaid (pinned, not paid yet: a link back to pay) | unnamed (no board name yet: the way to set one)
  * &sim=1 (teams walk in every 3 s) &tv=1 (the projector view) &n=<teams in the room>
+ * (The projector's &delay= filters by when names were set; the made-up teams have no times, so it changes nothing here.)
  */
 export default async function LobbyDemoPage({ searchParams }: { searchParams: SearchParams }) {
   if (!demoPagesOn()) notFound();
@@ -37,7 +38,15 @@ export default async function LobbyDemoPage({ searchParams }: { searchParams: Se
     youParam === "unnamed"
       ? { key: "tdemo0none", shareHref: null, payHref: pay, editHref: "/hackathon/join/demo/team?style=unnamed", devices: 6, named: false }
       : youParam
-        ? { key: youParam === "1" ? DEMO_TEAM_KEY : youParam, shareHref: null, payHref: pay, editHref: "/hackathon/join/demo/team?style=all", devices: 142, named: true }
+        ? {
+            key: youParam === "1" || youParam === "unpaid" ? DEMO_TEAM_KEY : youParam,
+            shareHref: null,
+            payHref: youParam === "unpaid" ? "/hackathon/join/demo?state=pending&share=1&style=fonts" : pay,
+            editHref: "/hackathon/join/demo/team?style=all",
+            devices: 142,
+            named: true,
+            payPending: youParam === "unpaid",
+          }
         : undefined;
   // A fixed clock for the countdown before the opening, so screenshots match: 6 days 4 h 12 min 33 s to go.
   const opening = openingAt();
