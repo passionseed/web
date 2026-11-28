@@ -170,6 +170,12 @@ try {
     }
   });
 
+  // CSII hasn't approved its logo on the share posters yet (Big, 2026-11-28): drop the "× CSII" end of the lockup, here only.
+  // The public poster keeps it. Remove this line once CSII says yes.
+  await page.evaluate((id) => {
+    for (const el of document.querySelectorAll(`#${id} [data-poster-partner="csii"]`)) el.style.display = "none";
+  }, ID);
+
   // The plain QR code sits in a cream block; measure it, then hide the code and keep the block.
   const box = await page.evaluate((id) => {
     const poster = document.getElementById(id);
