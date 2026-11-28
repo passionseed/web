@@ -336,3 +336,26 @@
     transition: none;
   }
 }
+
+/* A school in the list under the school box (SchoolField): the row tints under the finger or the arrow keys. */
+.schoolOption {
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 160ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.schoolOption[aria-selected="true"],
+.schoolOption:active {
+  background-color: var(--el-rule-soft);
+}
+
+@media (hover: hover) {
+  .schoolOption:hover {
+    background-color: var(--el-rule-soft);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .schoolOption {
+    transition: none;
+  }
+}

@@ -63,6 +63,9 @@ const thaiPhone = z
   .transform((v) => v.replace(/[\s-]/g, ""))
   .pipe(z.string().regex(/^(\+66|0)\d{8,9}$/, "phone"));
 
+/** The contact email, as the API checks it. The form checks the same schema before sending. */
+export const contactEmailSchema = z.string().trim().toLowerCase().email().max(200);
+
 export const memberSchema = z
   .object({
     fullName: trimmed(120),
@@ -99,7 +102,7 @@ export const registrationSchema = z.object({
   passCode: z.string().regex(BUDDY_PASS_CODE_RE).optional(),
   buddyOwe: z.enum(BUDDY_OWE_KEYS).catch(DEFAULT_BUDDY_OWE).optional(),
   members: z.array(memberSchema).min(1).max(ELEMENTAL.maxGroupSize),
-  contactEmail: z.string().trim().toLowerCase().email().max(200),
+  contactEmail: contactEmailSchema,
   contactPhone: thaiPhone,
   contactLineId: optionalTrimmed(60),
   wantsTeamMatching: z.boolean().default(false),

@@ -1,22 +1,27 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
+import { SIGNUP_SCREENS } from "@/lib/hackathon/elemental/funnel";
 import { teamLabel } from "@/lib/hackathon/elemental/team-name";
 import type { PublicTeam } from "@/lib/supabase/hackathon-event-registrations";
 
-import { RecoveringPlace } from "../RecoveringPlace";
-import { Arrow, Page, PrimaryButton, SecondaryButton, StickyBar, Tag, v } from "../share/ui";
+import { Arrow, Page, PrimaryButton, SecondaryButton, Tag, v } from "../share/ui";
+import shell from "../share/shell.module.css";
 import { trackElemental } from "../track";
 import {
+  STEPS,
+  blurError,
+  defaultMode,
   emptyDraft,
   firstInvalidStep,
+  modeOf,
   registrationBody,
+  restoredStep,
   stepForServerPath,
-  stepsFor,
   validateStep,
   type BuddyPassOffer,
   type Draft,
@@ -24,18 +29,23 @@ import {
   type Mode,
   type StepKey,
 } from "./draft";
+import { EventSummary } from "./EventSummary";
 import { LegalLine, STEP_VIEWS } from "./steps";
 import styles from "./join.module.css";
 
 /**
- * Elemental sign-up, one question per screen. Answers stay in this tab
- * (sessionStorage) until they're sent, so a refresh or a detour to LINE
- * loses nothing. The phone's back button steps back. Each step sends one
- * funnel event (track.ts), so the admin page shows where people stop.
+ * Elemental sign-up in three screens (28 Nov 2026): about you, contact (with
+ * the parent for under-20s), review and agree. It starts on a team at the
+ * group price; alone is one small link. Answers stay in this tab
+ * (sessionStorage) until they're sent, so a refresh or a detour to LINE loses
+ * nothing. The phone's back button steps back. Each screen sends one funnel
+ * event (SIGNUP_SCREENS), so the admin page shows where people stop.
  *
  * Looks like the rest of Elemental: the cream "paper" page (share/ui.tsx Page) that the pay
- * page continues, the ink top bar with "← Elemental", a hairline progress meter with [2/6],
- * and each step's one primary action in a sticky bar at the bottom, with "back" beside it.
+ * page continues, the ink top bar with "← Elemental", a hairline progress meter with [1/3],
+ * and each screen's one primary action in a bar pinned to the bottom of a phone, with "back"
+ * beside it. From 1024px the form sits beside a summary of the event (EventSummary) and the
+ * bar sits under the form.
  */
 
 type Props = {
@@ -43,14 +53,15 @@ type Props = {
   utm?: Record<string, string>;
   team?: PublicTeam;
   buddyPass?: BuddyPassOffer;
-  /** Shown above the first step, e.g. "this team is full". */
+  /** Shown above the first screen, e.g. "this team is full". */
   notice?: string;
   backHref: string;
   /** Development and PR previews only: fake the submit, send no funnel events, and open the demo pay page instead. */
   demo?: boolean;
 };
 
-type Saved = { draft: Draft; step: StepKey };
+/** step is a string: drafts saved by the one-question-a-screen form hold its old screen names. */
+type Saved = { draft: Draft; step: string };
 
 const storageKey = (team?: PublicTeam, buddyPass?: BuddyPassOffer) =>
   `elemental-join:${team?.inviteCode ?? (buddyPass ? `pass:${buddyPass.code}` : "new")}`;
@@ -86,11 +97,12 @@ export function JoinFlow({ source, utm, team, buddyPass, notice, backHref, demo 
   const router = useRouter();
   // The demo runs on PR previews too: keep its clicks out of the funnel.
   const track: typeof trackElemental = demo ? () => {} : trackElemental;
-  const initialMode: Mode | null = team ? "join" : buddyPass ? "buddy" : null;
+  const initialMode = defaultMode({ team: Boolean(team), buddyPass: Boolean(buddyPass) });
   const [draft, setDraft] = useState<Draft>(() => emptyDraft(initialMode));
-  const [step, setStep] = useState<StepKey>("mode");
+  const [step, setStep] = useState<StepKey>("about");
   const [dir, setDir] = useState<"forward" | "back">("forward");
   const [errors, setErrors] = useState<Errors>({});
+  const [touched, setTouched] = useState<Partial<Record<keyof Draft, boolean>>>({});
   /** Set while fixing one answer from the review: "save" goes straight back there. */
   const [editing, setEditing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -98,29 +110,25 @@ export function JoinFlow({ source, utm, team, buddyPass, notice, backHref, demo 
   const [restored, setRestored] = useState(false);
   const body = useRef<HTMLDivElement>(null);
   const shaker = useRef<HTMLDivElement>(null);
-  /** Steps this tab pushed onto history; when 0 (e.g. after a refresh), "back" steps back in place. */
+  /** Screens this tab pushed onto history; when 0 (e.g. after a refresh), "back" steps back in place. */
   const pushed = useRef(0);
 
-  const steps = useMemo(() => stepsFor(draft), [draft]);
-  const index = Math.max(0, steps.indexOf(step));
+  const index = STEPS.indexOf(step);
+  const mode = modeOf(draft);
 
   // Restore this tab's answers once, after hydration.
   useEffect(() => {
     const saved = load(team, buddyPass);
-    // A step saved before it was removed from the flow (e.g. "team") restarts at the first gap.
-    const restoredDraft = saved ? { ...emptyDraft(initialMode), ...saved.draft } : null;
-    const restoredStep = saved && restoredDraft && stepsFor(restoredDraft).includes(saved.step)
-      ? saved.step
-      : restoredDraft
-        ? (firstInvalidStep(restoredDraft) ?? "review")
-        : "mode";
+    // A draft from the old form may have no mode (it was picked on its first screen): start on the default.
+    const restoredDraft = saved ? { ...emptyDraft(initialMode), ...saved.draft, mode: saved.draft.mode ?? initialMode } : null;
+    const first = restoredDraft ? restoredStep(saved?.step, restoredDraft) : "about";
     if (restoredDraft) {
       setDraft(restoredDraft);
-      setStep(restoredStep);
+      setStep(first);
     }
-    window.history.replaceState({ ...window.history.state, elStep: restoredStep }, "");
+    window.history.replaceState({ ...window.history.state, elStep: first }, "");
     setRestored(true);
-    track({ step: "join", source, mode: initialMode ?? undefined });
+    track({ step: "join", source, mode: restoredDraft?.mode ?? initialMode });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -133,21 +141,25 @@ export function JoinFlow({ source, utm, team, buddyPass, notice, backHref, demo 
     }
   }, [draft, step, restored, team, buddyPass]);
 
-  // Count each step once, and put the cursor in its first box.
+  // Count each screen once, and put the cursor in its first box.
   useEffect(() => {
     if (!restored) return;
-    track({ step: `step:${step}`, mode: draft.mode ?? undefined, source });
+    track({ step: SIGNUP_SCREENS[step], mode, source });
     if (step === "review") setEditing(false);
     const el = body.current?.querySelector<HTMLElement>("[data-autofocus]");
-    if (el && window.matchMedia("(hover: hover)").matches) el.focus({ preventScroll: true });
+    // On a phone the keyboard would cover the screen, so only a friend's link (its first box is the
+    // first thing to do) focuses there; with a mouse every screen does.
+    const invited = step === "about" && (mode === "join" || mode === "buddy");
+    if (el && (invited || window.matchMedia("(hover: hover)").matches)) el.focus({ preventScroll: true });
     window.scrollTo({ top: 0 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, restored]);
 
-  // The phone's back button walks back through the steps.
+  // The phone's back button walks back through the screens.
   useEffect(() => {
     const onPop = (e: PopStateEvent) => {
-      const target = (e.state?.elStep as StepKey | undefined) ?? "mode";
+      const saved = e.state?.elStep as string | undefined;
+      const target = saved && (STEPS as readonly string[]).includes(saved) ? (saved as StepKey) : "about";
       pushed.current = Math.max(0, pushed.current - 1);
       setDir("back");
       setErrors({});
@@ -167,16 +179,31 @@ export function JoinFlow({ source, utm, team, buddyPass, notice, backHref, demo 
     setServerError(null);
   }, []);
 
-  const goTo = useCallback(
-    (target: StepKey, direction: "forward" | "back" = "forward") => {
-      setDir(direction);
-      setErrors({});
-      setStep(target);
-      window.history.pushState({ ...window.history.state, elStep: target }, "");
-      pushed.current += 1;
+  /** A box lost focus: check what was typed in it now, not only at "next". */
+  const blur = useCallback(
+    (field: keyof Draft) => {
+      setTouched((t) => (t[field] ? t : { ...t, [field]: true }));
+      const error = blurError(field, draft);
+      setErrors((e) => {
+        if (error === e[field]) return e;
+        const next = { ...e };
+        if (error) next[field] = error;
+        else delete next[field];
+        return next;
+      });
     },
-    [],
+    [draft],
   );
+
+  const setMode = useCallback((m: Mode) => set({ mode: m }), [set]);
+
+  const goTo = useCallback((target: StepKey, direction: "forward" | "back" = "forward") => {
+    setDir(direction);
+    setErrors({});
+    setStep(target);
+    window.history.pushState({ ...window.history.state, elStep: target }, "");
+    pushed.current += 1;
+  }, []);
 
   const fail = (found: Errors) => {
     setErrors(found);
@@ -194,7 +221,8 @@ export function JoinFlow({ source, utm, team, buddyPass, notice, backHref, demo 
       bad.scrollIntoView({ block: "center", behavior: "smooth" });
       if (bad instanceof HTMLInputElement) bad.focus({ preventScroll: true });
     });
-    track({ step: "invalid", detail: Object.keys(found).join(","), mode: draft.mode ?? undefined }, { once: false });
+    // Sent on "next" only (not on a box losing focus), so "got stuck on" counts what it always counted.
+    track({ step: "invalid", detail: Object.keys(found).join(","), mode }, { once: false });
   };
 
   const submit = async () => {
@@ -210,7 +238,7 @@ export function JoinFlow({ source, utm, team, buddyPass, notice, backHref, demo 
       if (demo) {
         await new Promise((r) => setTimeout(r, 700));
         sessionStorage.removeItem(storageKey(team, buddyPass));
-        router.push(`/hackathon/join/demo?state=pending&mode=${draft.mode ?? "solo"}`);
+        router.push(`/hackathon/join/demo?state=pending&mode=${mode}`);
         return;
       }
       const res = await fetch("/api/hackathon/elemental/register", {
@@ -224,7 +252,7 @@ export function JoinFlow({ source, utm, team, buddyPass, notice, backHref, demo 
         issues?: { path: (string | number)[] }[];
       };
       if (res.ok && data.payToken) {
-        track({ step: "submitted", mode: draft.mode ?? undefined, source });
+        track({ step: "submitted", mode, source });
         sessionStorage.removeItem(storageKey(team, buddyPass));
         router.push(`/hackathon/join/${data.payToken}`);
         return; // keep the spinner until the pay page opens
@@ -249,15 +277,7 @@ export function JoinFlow({ source, utm, team, buddyPass, notice, backHref, demo 
     if (Object.keys(found).length) return fail(found);
     if (step === "review") return void submit();
     if (editing) return goTo(firstInvalidStep(draft) ?? "review");
-    goTo(steps[index + 1]);
-  };
-
-  const choose = (mode: Mode) => {
-    set({ mode });
-    const after = { ...draft, mode };
-    const target: StepKey = editing ? (firstInvalidStep(after) ?? "review") : "name";
-    // Let the tap register visually, then move on.
-    window.setTimeout(() => goTo(target), 160);
+    goTo(STEPS[index + 1]);
   };
 
   const edit = (target: StepKey) => {
@@ -267,7 +287,7 @@ export function JoinFlow({ source, utm, team, buddyPass, notice, backHref, demo 
 
   const back = () => {
     if (pushed.current > 0) return window.history.back();
-    const previous = steps[index - 1];
+    const previous = STEPS[index - 1];
     if (!previous) return;
     setDir("back");
     setErrors({});
@@ -281,33 +301,55 @@ export function JoinFlow({ source, utm, team, buddyPass, notice, backHref, demo 
   };
 
   // While fixing an answer from the review, the button says "save" only if it goes straight back there.
-  const detour = editing && steps.slice(index + 1).some((s) => s !== "review" && Object.keys(validateStep(s, draft)).length > 0);
+  const detour = editing && STEPS.slice(index + 1).some((s) => s !== "review" && Object.keys(validateStep(s, draft)).length > 0);
   const View = STEP_VIEWS[step];
-  const isFirst = index === 0;
-  // An invite (team link or buddy pass) opens on one offer; taking it is the step's primary action.
-  const invite: Mode | null =
-    step === "mode" && team && draft.mode === "join" ? "join" : step === "mode" && buddyPass && draft.mode === "buddy" ? "buddy" : null;
-  const showContinue = step !== "mode" || (draft.mode !== null && invite === null);
-  const cta = buttonLabel(step, draft.mode ?? "solo", editing && !detour, team?.name);
+  const cta = buttonLabel(step, mode, editing && !detour, team?.name);
 
-  // Solid cream here: the 96% bar let the big footer wordmark show through behind the buttons.
-  const bar =
-    invite || showContinue ? (
-      <div style={{ "--el-bar": EL.cream } as CSSProperties}>
-        <StickyBar>
-          <div className="min-w-0 flex-1">
-            {step === "review" && <LegalLine />}
-            <div className="flex items-stretch gap-2">
-              {!isFirst && (
-                <SecondaryButton onClick={back} className="w-[52px] shrink-0 !px-0" aria-label="ย้อนกลับ">
-                  <Arrow dir="left" weight="bold" />
-                </SecondaryButton>
-              )}
-              {invite ? (
-                <PrimaryButton full arrow onClick={() => choose(invite)}>
-                  {invite === "join" ? `เข้า${teamLabel(team?.name ?? "")}` : `ใช้บัตรเพื่อน ฿${ELEMENTAL.buddyPriceBaht}`}
-                </PrimaryButton>
-              ) : (
+  return (
+    <form onSubmit={onSubmit} noValidate>
+      <Page surface="paper" back={{ href: backHref, label: ELEMENTAL.edition }} wide="split" mobileBar>
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-12 xl:grid-cols-[minmax(0,36rem)_24rem] xl:justify-between">
+          <div className="min-w-0">
+            <ProgressMeter index={index} total={STEPS.length} />
+            {notice && step === "about" && (
+              <p className="mb-8 border-l-2 py-1 pl-4 text-pretty" style={{ borderColor: EL.flame, fontFamily: EL_FONT.body, fontSize: 16, lineHeight: "26px" }}>
+                {notice}
+              </p>
+            )}
+            {/* At least a screen tall on a phone, so the wordmark footer starts under the pinned bar, not cut by it. */}
+            <div key={step} ref={body} className={`${dir === "forward" ? styles.flowIn : styles.flowBack} min-h-[calc(100dvh-15rem)] lg:min-h-0`}>
+              <div ref={shaker}>
+                <View
+                  draft={draft}
+                  set={set}
+                  blur={blur}
+                  errors={errors}
+                  touched={touched}
+                  team={team}
+                  buddyPass={buddyPass}
+                  setMode={setMode}
+                  goTo={edit}
+                  demo={demo}
+                />
+              </div>
+            </div>
+            {serverError && (
+              <p
+                role="alert"
+                className="mt-8 border-l-2 py-1 pl-4 text-pretty"
+                style={{ borderColor: v.error, color: v.error, fontFamily: EL_FONT.body, fontSize: 16, lineHeight: "26px" }}
+              >
+                {serverError}
+              </p>
+            )}
+            <ActionBar>
+              {step === "review" && <LegalLine />}
+              <div className="flex items-stretch gap-2">
+                {index > 0 && (
+                  <SecondaryButton onClick={back} className="w-[52px] shrink-0 !px-0" aria-label="ย้อนกลับ">
+                    <Arrow dir="left" weight="bold" />
+                  </SecondaryButton>
+                )}
                 <PrimaryButton
                   type="submit"
                   full
@@ -329,46 +371,33 @@ export function JoinFlow({ source, utm, team, buddyPass, notice, backHref, demo 
                     cta
                   )}
                 </PrimaryButton>
-              )}
-            </div>
+              </div>
+            </ActionBar>
           </div>
-        </StickyBar>
-      </div>
-    ) : undefined;
-
-  return (
-    <form onSubmit={onSubmit} noValidate>
-      <Page surface="paper" back={{ href: backHref, label: ELEMENTAL.edition }} bar={bar}>
-        {/* The total depends on the first answer, so the meter shows from step 2 on. */}
-        {!isFirst && <ProgressMeter index={index} total={steps.length} />}
-        {notice && step === "mode" && (
-          <p className="mb-8 border-l-2 py-1 pl-4 text-pretty" style={{ borderColor: EL.flame, fontFamily: EL_FONT.body, fontSize: 16, lineHeight: "26px" }}>
-            {notice}
-          </p>
-        )}
-        {/* At least a screen tall, so on a short step the wordmark footer starts under the sticky bar, not cut by it. */}
-        <div key={step} ref={body} className={`${dir === "forward" ? styles.flowIn : styles.flowBack} min-h-[calc(100dvh-15rem)]`}>
-          <div ref={shaker}>
-            <View draft={draft} set={set} errors={errors} team={team} buddyPass={buddyPass} choose={choose} goTo={edit} demo={demo} />
-          </div>
-          {/* Before and after: washed out here, in full colour on the paid seat. After the choice, so both options fit on the first screen. */}
-          {step === "mode" && !invite && <RecoveringPlace restored={0.25} className="mt-10" />}
+          {/* Stays in view while the form scrolls, when the screen is tall enough to show all of it. */}
+          <EventSummary mode={mode} className="hidden lg:block [@media(min-height:820px)]:sticky [@media(min-height:820px)]:top-24" />
         </div>
-        {serverError && (
-          <p
-            role="alert"
-            className="mt-8 border-l-2 py-1 pl-4 text-pretty"
-            style={{ borderColor: v.error, color: v.error, fontFamily: EL_FONT.body, fontSize: 16, lineHeight: "26px" }}
-          >
-            {serverError}
-          </p>
-        )}
       </Page>
     </form>
   );
 }
 
-/** Where you are: a hairline that fills in flame, and the count as a Space Mono [2/6]. */
+/**
+ * The screen's one primary action: pinned to the bottom of a phone (clear of the home bar,
+ * solid cream so the footer wordmark doesn't show through), and under the form from lg.
+ */
+function ActionBar({ children }: { children: ReactNode }) {
+  return (
+    <div
+      className={`${shell.stickyBar} fixed inset-x-0 bottom-0 z-40 border-t px-5 pt-3 sm:px-8 lg:static lg:z-auto lg:mt-10 lg:border-t-0 lg:!p-0`}
+      style={{ backgroundColor: EL.cream, borderColor: v.rule }}
+    >
+      <div className="mx-auto max-w-xl lg:mx-0 lg:max-w-none">{children}</div>
+    </div>
+  );
+}
+
+/** Where you are: a hairline that fills in flame, and the count as a Space Mono [1/3]. */
 function ProgressMeter({ index, total }: { index: number; total: number }) {
   return (
     <div className="-mt-4 mb-8 flex items-center gap-3">

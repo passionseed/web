@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useState } from "react";
 
 import { EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 
 import { Body, EditorialLink, Fine, PixelIcon, SecondaryButton, TextInput, v } from "./ui";
+import { useSchoolSearch } from "./useSchoolSearch";
 
 /**
  * Search the 11,246-school open-data list, or type the name when the school
@@ -16,8 +17,6 @@ import { Body, EditorialLink, Fine, PixelIcon, SecondaryButton, TextInput, v } f
 export type SchoolChoice =
   | { key: string; name: string; province: string }
   | { custom: true; name: string; province: string };
-
-type Found = { key: string; name: string; province: string };
 
 // copy: placeholder — Angpao rewrites
 const COPY = {
@@ -48,32 +47,10 @@ export function SchoolPicker({
 }) {
   const id = useId();
   const [query, setQuery] = useState(startQuery);
-  const [schools, setSchools] = useState<Found[] | null>(null);
   const [custom, setCustom] = useState(false);
   const [customName, setCustomName] = useState("");
   const [customProvince, setCustomProvince] = useState("");
-  const seq = useRef(0);
-
-  useEffect(() => {
-    if (custom || value) return;
-    const q = query.trim();
-    const n = ++seq.current;
-    if (q.length < 2) {
-      const clear = setTimeout(() => n === seq.current && setSchools(null), 0);
-      return () => clearTimeout(clear);
-    }
-    const t = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/hackathon/elemental/share/schools?q=${encodeURIComponent(q)}`, { cache: "no-store" });
-        if (!res.ok) throw new Error();
-        const data = (await res.json()) as { schools: Found[] };
-        if (n === seq.current) setSchools(data.schools);
-      } catch {
-        if (n === seq.current) setSchools([]);
-      }
-    }, 250);
-    return () => clearTimeout(t);
-  }, [query, custom, value]);
+  const schools = useSchoolSearch(query, !custom && !value);
 
   if (value) {
     return (

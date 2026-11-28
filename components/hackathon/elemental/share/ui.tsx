@@ -22,7 +22,7 @@ import shell from "./shell.module.css";
  * Use them inside <Page surface> or <DarkSlab>; outside both they have no colours.
  *
  * Shell
- * - Page({ surface, back, topBarRight, sky, bar, footer, wordmark, wide }): the page root. ground =
+ * - Page({ surface, back, topBarRight, sky, bar, mobileBar, footer, wordmark, wide }): the page root. ground =
  *   cinemaRoot + film grain + dark ElementalTopBar; paper = cream + ink top bar. Without surface it
  *   is the old cream page (until each screen moves over).
  * - SkyBand({ title, lead, facts, image, height }): the photo of the calm sky with the ink title, fading
@@ -451,7 +451,7 @@ export function ElementalWordmark({ size = 48 }: { size?: number }) {
  * the ground it sits on a strip of the sky, so the page opens and closes on
  * the key visual (and the glyphs keep the colours they have on the poster).
  */
-export function FooterWordmark({ surface }: { surface: Surface }) {
+export function FooterWordmark({ surface, column = "max-w-xl" }: { surface: Surface; column?: string }) {
   const link = (
     <Link href="/hackathon/elemental" aria-label={`${ELEMENTAL.edition} Hackathon`} className="inline-flex min-h-11 items-baseline gap-3" style={{ color: EL.ink }}>
       <ElementalWordmark />
@@ -462,7 +462,7 @@ export function FooterWordmark({ surface }: { surface: Surface }) {
   );
   if (surface === "paper") {
     return (
-      <footer className="mx-auto max-w-xl px-5 pb-10 pt-8 sm:px-8">
+      <footer className={`mx-auto ${column} px-5 pb-10 pt-8 sm:px-8`}>
         <div className="border-t pt-6" style={{ borderColor: v.ruleSoft }}>
           {link}
         </div>
@@ -473,7 +473,7 @@ export function FooterWordmark({ surface }: { surface: Surface }) {
     <footer className="relative isolate mt-16 h-[168px] overflow-hidden">
       <Image src={KEY_VISUAL_MEDIA.scenePoster} alt="" fill sizes="100vw" className="-z-10 object-cover object-[50%_0%]" />
       <div aria-hidden="true" className="absolute inset-x-0 top-0 -z-10 h-[70%]" style={{ background: "linear-gradient(to bottom, #0c0d0c 0%, rgba(12,13,12,0.6) 45%, rgba(12,13,12,0) 100%)" }} />
-      <div className="mx-auto flex h-full max-w-xl items-end px-5 pb-6 sm:px-8">{link}</div>
+      <div className={`mx-auto flex h-full ${column} items-end px-5 pb-6 sm:px-8`}>{link}</div>
     </footer>
   );
 }
@@ -577,16 +577,24 @@ type PageProps = {
   bar?: ReactNode;
   /** The wordmark sign-off at the bottom (default on). */
   wordmark?: boolean;
-  /** A wider column (the board on a big screen). */
-  wide?: boolean;
+  /** A wider column (the board on a big screen). "split": one column on a phone, room for a form and a side panel from lg. */
+  wide?: boolean | "split";
+  /**
+   * The page's own bar is pinned to the bottom only below lg (the sign-up form's sits under the
+   * form from lg): leave room for it below lg. Not needed with `bar`.
+   */
+  mobileBar?: boolean;
 };
 
-export function Page({ children, surface, top, back, topBarRight, sky, footer, bar, wordmark = true, wide = false }: PageProps) {
+const COLUMN = { narrow: "max-w-xl", wide: "max-w-3xl", split: "max-w-xl lg:max-w-6xl lg:px-10" } as const;
+
+export function Page({ children, surface, top, back, topBarRight, sky, footer, bar, wordmark = true, wide = false, mobileBar = false }: PageProps) {
   if (!surface) return <LegacyPage top={top ?? ""} footer={footer} bar={bar}>{children}</LegacyPage>;
 
   const ground = surface === "ground";
   // A sky band without facts ends on its own fade, so the content can start closer to it.
   const skyHasFacts = isValidElement<{ facts?: unknown }>(sky) && Boolean(sky.props.facts);
+  const column = COLUMN[wide === "split" ? "split" : wide ? "wide" : "narrow"];
   return (
     <main
       className={`${trirong.variable} ${shell.surface} ${ground ? cinema.cinemaRoot : "overflow-x-clip"} min-h-[100dvh]`}
@@ -595,11 +603,12 @@ export function Page({ children, surface, top, back, topBarRight, sky, footer, b
       {ground && <div className={cinema.filmGrain} aria-hidden="true" />}
       <ElementalTopBar tone={surface} back={back} right={topBarRight} />
       {ground && sky}
-      <div className={`mx-auto ${wide ? "max-w-3xl" : "max-w-xl"} px-5 pb-12 sm:px-8 ${ground && sky ? (skyHasFacts ? "pt-8" : "pt-6") : "pt-10"}`}>
+      <div className={`mx-auto ${column} px-5 pb-12 sm:px-8 ${ground && sky ? (skyHasFacts ? "pt-8" : "pt-6") : "pt-10"}`}>
         {children}
         {footer}
       </div>
-      {wordmark && <FooterWordmark surface={surface} />}
+      {wordmark && <FooterWordmark surface={surface} column={wide === "split" ? COLUMN.split : undefined} />}
+      {mobileBar && !bar && <div aria-hidden="true" className="h-28 lg:hidden" />}
       {bar && (
         <>
           <div aria-hidden="true" className="h-28" />

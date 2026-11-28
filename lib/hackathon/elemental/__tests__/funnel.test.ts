@@ -1,8 +1,8 @@
 import { cleanFunnelEvent, summarizeFunnel, worstDrop, type FunnelRow } from "../funnel";
 
-const row = (sid: string, step: string, extra: Record<string, string> = {}): FunnelRow => ({
+const row = (sid: string, step: string, extra: Record<string, string> = {}, at = "2026-11-23T00:00:00Z"): FunnelRow => ({
   event_data: { sid, step, ...extra },
-  created_at: "2026-11-23T00:00:00Z",
+  created_at: at,
 });
 
 describe("summarizeFunnel", () => {
@@ -15,7 +15,7 @@ describe("summarizeFunnel", () => {
       row("d", "landing"),
       row("a", "join", { source: "ig" }),
       row("b", "join"),
-      row("a", "step:mode"),
+      row("a", "screen:about"),
     ];
     const { stages, sources } = summarizeFunnel(rows);
     const by = Object.fromEntries(stages.map((s) => [s.key, s]));
@@ -23,18 +23,66 @@ describe("summarizeFunnel", () => {
     expect(by.landing.fromPrevious).toBeNull();
     expect(by.join.people).toBe(2);
     expect(by.join.fromPrevious).toBe(0.5);
-    expect(by["step:mode"].fromPrevious).toBe(0.5);
+    expect(by["screen:about"].fromPrevious).toBe(0.5);
     expect(sources).toEqual([
       { source: "direct", people: 1 },
       { source: "ig", people: 1 },
     ]);
   });
 
-  it("skips optional steps when working out the share", () => {
-    const rows = [row("a", "step:mode"), row("b", "step:mode"), row("a", "step:team"), row("a", "step:name"), row("b", "step:name")];
+  it("follows the three sign-up screens in order", () => {
+    const rows = [
+      ...["a", "b", "c", "d"].map((sid) => row(sid, "screen:about")),
+      ...["a", "b"].map((sid) => row(sid, "screen:contact")),
+      ...["a"].map((sid) => row(sid, "screen:review")),
+      row("a", "submitted"),
+    ];
     const by = Object.fromEntries(summarizeFunnel(rows).stages.map((s) => [s.key, s]));
-    expect(by["step:team"].optional).toBe(true);
-    expect(by["step:name"].fromPrevious).toBe(1);
+    expect(by["screen:contact"].fromPrevious).toBe(0.5);
+    expect(by["screen:review"].fromPrevious).toBe(0.5);
+    expect(by.submitted.fromPrevious).toBe(1);
+  });
+
+  it("keeps the old form's screens listed with their counts, labelled removed, without a share", () => {
+    const rows = [row("a", "join"), row("b", "join"), row("a", "step:mode"), row("a", "step:team"), row("a", "screen:about"), row("b", "screen:about")];
+    const by = Object.fromEntries(summarizeFunnel(rows).stages.map((s) => [s.key, s]));
+    for (const key of ["step:mode", "step:name", "step:team", "step:school", "step:parent", "step:contact", "step:heard", "step:review"]) {
+      expect(by[key].removed).toBe(true);
+      expect(by[key].optional).toBe(true);
+      expect(by[key].fromPrevious).toBeNull();
+      expect(by[key].label).toMatch(/screen removed/);
+    }
+    expect(by["step:mode"].people).toBe(1);
+    // The removed screens don't sit in the chain: the next screen counts from "opened sign-up".
+    expect(by["screen:about"].fromPrevious).toBe(1);
+  });
+
+  it("counts shares into and out of the new form only from its first event, so the old form's sign-ups don't skew them", () => {
+    const before = "2026-11-25T00:00:00Z";
+    const after = "2026-11-29T00:00:00Z";
+    const rows = [
+      // The old form: 10 opened sign-up, 6 signed up.
+      ...Array.from({ length: 10 }, (_, i) => row(`old${i}`, "join", {}, before)),
+      ...Array.from({ length: 6 }, (_, i) => row(`old${i}`, "step:mode", {}, before)),
+      ...Array.from({ length: 6 }, (_, i) => row(`old${i}`, "submitted", {}, before)),
+      // The new form: 5 opened it, all saw screen 1, 4 reached contact, 4 the review, 2 signed up.
+      ...Array.from({ length: 5 }, (_, i) => row(`new${i}`, "join", {}, after)),
+      ...Array.from({ length: 5 }, (_, i) => row(`new${i}`, "screen:about", {}, after)),
+      ...Array.from({ length: 4 }, (_, i) => row(`new${i}`, "screen:contact", {}, after)),
+      ...Array.from({ length: 4 }, (_, i) => row(`new${i}`, "screen:review", {}, after)),
+      ...Array.from({ length: 2 }, (_, i) => row(`new${i}`, "submitted", {}, after)),
+      ...Array.from({ length: 2 }, (_, i) => row(`new${i}`, "pay", {}, after)),
+    ];
+    const { stages } = summarizeFunnel(rows);
+    const by = Object.fromEntries(stages.map((s) => [s.key, s]));
+    expect(by.join.people).toBe(15);
+    expect(by["screen:about"].fromPrevious).toBe(1);
+    expect(by["screen:about"].outOf).toBe(5);
+    expect(by.submitted.people).toBe(8);
+    expect(by.submitted.fromPrevious).toBe(0.5);
+    // After the form, both forms count again: 2 of the 8 who signed up opened the pay page.
+    expect(by.pay.fromPrevious).toBe(0.25);
+    expect(worstDrop(stages)?.key).not.toBe("screen:about");
   });
 
   it("tallies failed fields by people, and slip results, without counting them as steps", () => {
@@ -79,14 +127,31 @@ describe("worstDrop", () => {
     const rows = [
       ...["a", "b", "c", "d", "e", "f"].map((sid) => row(sid, "landing")),
       ...["a", "b", "c", "d", "e"].map((sid) => row(sid, "join")),
-      ...["a"].map((sid) => row(sid, "step:mode")),
+      ...["a", "b", "c", "d", "e"].map((sid) => row(sid, "screen:about")),
+      ...["a"].map((sid) => row(sid, "screen:contact")),
     ];
-    expect(worstDrop(summarizeFunnel(rows).stages)?.key).toBe("step:mode");
+    expect(worstDrop(summarizeFunnel(rows).stages)?.key).toBe("screen:contact");
+  });
+
+  it("never picks a removed screen", () => {
+    const rows = [...["a", "b", "c", "d", "e", "f"].map((sid) => row(sid, "join")), row("a", "step:mode")];
+    expect(worstDrop(summarizeFunnel(rows).stages)?.key).not.toBe("step:mode");
+  });
+
+  it("waits until enough people reached the step before", () => {
+    const rows = [...["a", "b", "c"].map((sid) => row(sid, "screen:about")), row("a", "screen:contact")];
+    expect(worstDrop(summarizeFunnel(rows).stages)).toBeNull();
   });
 });
 
 describe("cleanFunnelEvent", () => {
   const sid = "6f1c7c1e-1d2b-4c3a-9f00-0a1b2c3d4e5f";
+
+  it("accepts the three sign-up screens", () => {
+    for (const step of ["screen:about", "screen:contact", "screen:review"]) {
+      expect(cleanFunnelEvent({ sid, step }, "passionseed.org")?.step).toBe(step);
+    }
+  });
 
   it("keeps a known step and takes the host from the request", () => {
     expect(cleanFunnelEvent({ sid, step: "step:name", host: "evil.example" }, "passionseed.org")).toEqual({
