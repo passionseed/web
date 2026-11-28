@@ -102,9 +102,11 @@ type Props = {
   qrSrc: string | null;
   /** Dev only: pretend the slip passed. */
   demo?: boolean;
+  /** A parent paying from the student's link: the line about the student's email is left out. */
+  forParent?: boolean;
 };
 
-export function PayWithSlip({ token, amountBaht, qrSrc, demo }: Props) {
+export function PayWithSlip({ token, amountBaht, qrSrc, demo, forParent }: Props) {
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -182,27 +184,32 @@ export function PayWithSlip({ token, amountBaht, qrSrc, demo }: Props) {
   return (
     <div className="space-y-4">
       {/* 1. Pay */}
-      <section className="rounded-3xl bg-white p-5 shadow-[0_1px_0_rgba(29,33,31,0.06)] sm:p-7">
-        <p className="text-sm font-medium" style={{ color: EL.flame }}>1 · โอน</p>
-        <p className="mt-1 text-6xl tabular-nums" style={{ fontFamily: EL_FONT.display, fontWeight: 200, lineHeight: 1 }}>
-          {amount}
-        </p>
-        <p className="mt-2 text-sm" style={{ color: EL.inkSoft }}>
-          {filled ? "สแกนแล้วยอดขึ้นเอง" : "สแกนแล้วใส่ยอดนี้ให้ตรงทุกบาท"}
-        </p>
-        {/* On a phone the QR is on the same screen as the bank app, so saving it comes first. */}
-        <div className="mt-5 sm:hidden">
-          <SaveQrButton src={qrSrc ?? SHIFT_PAYMENT.qrSrc} />
+      {/* On a laptop (lg) the amount and the QR sit side by side, so the slip step stays in view. */}
+      <section className="rounded-3xl bg-white p-5 shadow-[0_1px_0_rgba(29,33,31,0.06)] sm:p-7 lg:grid lg:grid-cols-[minmax(0,1fr)_220px] lg:items-center lg:gap-6">
+        <div>
+          <p className="text-sm font-medium" style={{ color: EL.flame }}>1 · โอน</p>
+          <p className="mt-1 text-6xl tabular-nums" style={{ fontFamily: EL_FONT.display, fontWeight: 200, lineHeight: 1 }}>
+            {amount}
+          </p>
+          <p className="mt-2 text-sm" style={{ color: EL.inkSoft }}>
+            {filled ? "สแกนแล้วยอดขึ้นเอง" : "สแกนแล้วใส่ยอดนี้ให้ตรงทุกบาท"}
+          </p>
+          {/* On a phone the QR is on the same screen as the bank app, so saving it comes first. */}
+          <div className="mt-5 sm:hidden">
+            <SaveQrButton src={qrSrc ?? SHIFT_PAYMENT.qrSrc} />
+          </div>
         </div>
-        <div className="mx-auto mt-5 w-full max-w-[180px] sm:max-w-[260px]">
-          {filled ? (
-            // eslint-disable-next-line @next/next/no-img-element -- a generated data URL, nothing to optimise
-            <img src={qrSrc} alt={`QR พร้อมเพย์ PassionSeed ยอด ${amount}`} width={720} height={720} className="h-auto w-full" />
-          ) : (
-            <Image src={SHIFT_PAYMENT.qrCardSrc} alt="QR พร้อมเพย์ PassionSeed สำหรับโอนค่าสมัคร" width={800} height={760} className="h-auto w-full" />
-          )}
+        <div>
+          <div className="mx-auto mt-5 w-full max-w-[180px] sm:max-w-[260px] lg:mt-0">
+            {filled ? (
+              // eslint-disable-next-line @next/next/no-img-element -- a generated data URL, nothing to optimise
+              <img src={qrSrc} alt={`QR พร้อมเพย์ PassionSeed ยอด ${amount}`} width={720} height={720} className="h-auto w-full" />
+            ) : (
+              <Image src={SHIFT_PAYMENT.qrCardSrc} alt="QR พร้อมเพย์ PassionSeed สำหรับโอนค่าสมัคร" width={800} height={760} className="h-auto w-full" />
+            )}
+          </div>
+          <p className="mt-2 text-center text-xs" style={{ color: EL.inkSoft }}>บริษัท แพชชั่นซี้ด · พร้อมเพย์</p>
         </div>
-        <p className="mt-2 text-center text-xs" style={{ color: EL.inkSoft }}>บริษัท แพชชั่นซี้ด · พร้อมเพย์</p>
       </section>
 
       {/* 2. Slip */}
@@ -261,7 +268,7 @@ export function PayWithSlip({ token, amountBaht, qrSrc, demo }: Props) {
       </section>
 
       <p className="px-1 text-xs leading-relaxed" style={{ color: EL.inkSoft }}>
-        เก็บลิงก์หน้านี้ไว้ กลับมาอัปโหลดสลิปทีหลังได้ เราส่งลิงก์ไปที่อีเมลแล้ว · ชำระแล้วไม่มีการคืนเงิน · มีปัญหาทักไลน์{" "}
+        {!forParent && "เก็บลิงก์หน้านี้ไว้ กลับมาอัปโหลดสลิปทีหลังได้ เราส่งลิงก์ไปที่อีเมลแล้ว · "}ชำระแล้วไม่มีการคืนเงิน · มีปัญหาทักไลน์{" "}
         <a href={SHIFT_PAYMENT.lineUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
           {SHIFT_PAYMENT.lineId}
         </a>

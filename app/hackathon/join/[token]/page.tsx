@@ -6,6 +6,7 @@ import { PayView } from "@/components/hackathon/elemental/PayView";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { elementalCommunityLinks, elementalTeamUpUrl, needsTeammates } from "@/lib/hackathon/elemental/community-links";
 import { parseElementalDiscordOutcome } from "@/lib/hackathon/elemental/discordLink";
+import { isParentView } from "@/lib/hackathon/elemental/parent-share";
 import { elementalPayQr } from "@/lib/hackathon/elemental/pay-qr";
 import { shareOpen } from "@/lib/hackathon/elemental/share";
 import { parseTeamCode } from "@/lib/hackathon/elemental/team-change";
@@ -26,10 +27,10 @@ export default async function ElementalPayPage({
   searchParams,
 }: {
   params: Promise<{ token: string }>;
-  searchParams: Promise<{ discord?: string | string[]; join?: string | string[] }>;
+  searchParams: Promise<{ discord?: string | string[]; join?: string | string[]; for?: string | string[] }>;
 }) {
   const { token } = await params;
-  const { discord, join } = await searchParams;
+  const { discord, join, for: forWhom } = await searchParams;
   const discordOutcome = parseElementalDiscordOutcome(Array.isArray(discord) ? discord[0] : discord);
   const reg = await getRegistrationByToken(token, ELEMENTAL.maxGroupSize);
   if (!reg) notFound();
@@ -55,7 +56,7 @@ export default async function ElementalPayPage({
 
   return (
     <div className={trirong.variable}>
-      <PayView token={token} reg={reg} qrSrc={qrSrc} links={links} teamUpUrl={teamUpUrl} discordOutcome={discordOutcome} shareHref={shareHref} joinOffer={joinOffer} />
+      <PayView token={token} reg={reg} qrSrc={qrSrc} links={links} teamUpUrl={teamUpUrl} discordOutcome={discordOutcome} shareHref={shareHref} joinOffer={joinOffer} forParent={isParentView(forWhom)} />
     </div>
   );
 }

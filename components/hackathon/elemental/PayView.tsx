@@ -14,6 +14,7 @@ import type { PublicRegistration } from "@/lib/supabase/hackathon-event-registra
 import { BuddyPass, IouSlip } from "./BuddyPass";
 import { ConnectDiscord } from "./ConnectDiscord";
 import { PaidInvite } from "./PaidInvite";
+import { ParentHandoff, TrackParentOpened } from "./ParentHandoff";
 import { PayWithSlip } from "./PayWithSlip";
 import { RememberMyPage } from "./RememberMyPage";
 import { placeFor, ticketNumber } from "./places";
@@ -22,6 +23,7 @@ import { TeamJoin } from "./TeamJoin";
 import { TeamOffer, type TeamOfferTarget } from "./TeamOffer";
 import { Ticket } from "./Ticket";
 import { TrackStep } from "./TrackStep";
+import { ParentIntro, UnpaidLayout } from "./UnpaidPay";
 
 /**
  * One person's own page after signing up: pay, wait for a check, or the
@@ -44,6 +46,8 @@ type Props = {
   teamChangeOpen?: boolean;
   /** Came from a friend's team link (?join=<code>): the team it points at, shown at the top to join or move to. */
   joinOffer?: { code: string; target: TeamOfferTarget } | null;
+  /** Opened from the link a student sends a parent (?for=parent): an unpaid page shows only whose it is and the payment. */
+  forParent?: boolean;
   demo?: boolean;
 };
 
@@ -365,37 +369,53 @@ function CancelledSection() {
   );
 }
 
+/** Unpaid: the payment, a way to hand it to a parent, and the team. Laid out by UnpaidLayout (UnpaidPay.tsx). */
 function PendingSection(props: Props) {
-  const { token, reg, qrSrc, demo, teamUpUrl } = props;
+  const { token, reg, qrSrc, demo, teamUpUrl, forParent } = props;
+  const pay = <PayWithSlip token={token} amountBaht={reg.amountBaht} qrSrc={qrSrc} demo={demo} forParent={forParent} />;
+  if (forParent) {
+    return (
+      <>
+        {!demo && <TrackStep step="pay" />}
+        {!demo && <TrackParentOpened />}
+        <UnpaidLayout intro={<ParentIntro who={reg.memberNicknames.join(", ")} />} pay={pay} />
+      </>
+    );
+  }
   return (
-    <section className="mt-6">
+    <>
       {!demo && <TrackStep step="pay" />}
-      <Title>อีกขั้นเดียว</Title>
-      <p className="mt-3 text-pretty text-lg" style={{ color: EL.inkSoft }}>
-        โอนแล้วส่งสลิป ที่นั่งยืนยันทันทีที่สลิปผ่าน
-      </p>
-      {reg.buddyOf && (
-        <div className="mt-8">
-          <IouSlip debt={`คุณติด ${reg.buddyOf.name}`} owe={reg.buddyOf.owe} />
-        </div>
-      )}
-      <div className="mt-8">
-        <PayWithSlip token={token} amountBaht={reg.amountBaht} qrSrc={qrSrc} demo={demo} />
-      </div>
-      {reg.buddyPass && (
-        <div className="mt-10">
-          <BuddyPass pass={reg.buddyPass} />
-        </div>
-      )}
-      <div className="mt-10">
-        <Team {...props} />
-      </div>
-      {teamUpUrl && (
-        <div className="mt-4">
-          <TeamUp url={teamUpUrl} />
-        </div>
-      )}
-    </section>
+      <UnpaidLayout
+        intro={
+          <>
+            <Title>อีกขั้นเดียว</Title>
+            <p className="mt-3 text-pretty text-lg" style={{ color: EL.inkSoft }}>
+              โอนแล้วส่งสลิป ที่นั่งยืนยันทันทีที่สลิปผ่าน
+            </p>
+          </>
+        }
+        handoff={<ParentHandoff token={token} amountBaht={reg.amountBaht} demo={demo} />}
+        pay={
+          <>
+            {reg.buddyOf && (
+              <div className="mb-4">
+                <IouSlip debt={`คุณติด ${reg.buddyOf.name}`} owe={reg.buddyOf.owe} />
+              </div>
+            )}
+            {pay}
+          </>
+        }
+        rest={
+          <div className="space-y-10">
+            {reg.buddyPass && <BuddyPass pass={reg.buddyPass} />}
+            <div className="space-y-4">
+              <Team {...props} />
+              {teamUpUrl && <TeamUp url={teamUpUrl} />}
+            </div>
+          </div>
+        }
+      />
+    </>
   );
 }
 
@@ -415,8 +435,8 @@ function StatusSection(props: Props) {
 export function PayView(props: Props) {
   return (
     <main className="min-h-[100dvh] px-5 py-10 sm:px-8 sm:py-16" style={{ backgroundColor: EL.cream, color: EL.ink }}>
-      {/* The paid page spreads over two columns on a wide screen (PaidSection). */}
-      <div className={`mx-auto max-w-xl ${props.reg.status === "paid" ? "lg:max-w-6xl" : ""}`}>
+      {/* Two columns on a wide screen: the paid page (PaidSection) and the unpaid page (UnpaidPay.tsx). Review and cancelled keep one. */}
+      <div className={`mx-auto max-w-xl ${props.reg.status === "paid" ? "lg:max-w-6xl" : props.reg.status === "pending" ? "lg:max-w-[68rem]" : ""}`}>
         <p className="text-sm" style={{ color: EL.inkSoft }}>
           {ELEMENTAL.edition} Hackathon · {thaiDateLine()} · {ELEMENTAL.venueTh}
         </p>
