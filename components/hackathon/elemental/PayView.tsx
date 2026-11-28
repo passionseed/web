@@ -236,6 +236,35 @@ function DiscordStep({ token, reg, links, discordOutcome, demo }: Props) {
   );
 }
 
+/**
+ * While sharing is open, the way from the seat to the share page and the
+ * waiting room: a dark card like the ticket, not a text line at the bottom,
+ * because the point is that paid students find it (Big, 2026-11-28: "need
+ * more engagement"). Copy is a placeholder until Angpao rewrites it.
+ */
+function ShareCard({ shareHref }: { shareHref: string }) {
+  return (
+    <section className="space-y-4 rounded-2xl p-5 sm:p-6" style={{ backgroundColor: EL.char, color: EL.cream }}>
+      <div className="space-y-1">
+        <p className="text-2xl" style={{ fontFamily: EL_FONT.display, fontWeight: 300, lineHeight: 1.25 }}>
+          custom ชื่อทีม ให้ขึ้นห้องรอ
+        </p>
+        <p className="text-sm" style={{ color: EL.creamSoft }}>
+          แชร์โปสเตอร์ของคุณ ทุกเครื่องที่เปิดลิงก์ช่วยปลดล็อกสี ฟอนต์ และเอฟเฟกต์ให้ชื่อทีม แล้วชื่อทีมไปโชว์ในห้องรอก่อนเปิดงาน
+        </p>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <Link href={shareHref} className={primary} style={filled}>
+          แชร์โปสเตอร์ · custom ชื่อทีม
+        </Link>
+        <Link href="/hackathon/elemental/lobby" className={primary} style={{ boxShadow: `inset 0 0 0 1px ${EL.cream}` }}>
+          ดูห้องรอ
+        </Link>
+      </div>
+    </section>
+  );
+}
+
 function PaidSection(props: Props) {
   const { reg, links, demo } = props;
   const { who, people } = whoAndPeople(reg);
@@ -265,15 +294,9 @@ function PaidSection(props: Props) {
           </p>
         )}
       </div>
+      {props.shareHref && <ShareCard shareHref={props.shareHref} />}
       <Team {...props} />
       <BuddySection reg={reg} />
-      {props.shareHref && (
-        <p className="text-sm" style={{ color: EL.inkSoft }}>
-          <Link href={props.shareHref} className="underline underline-offset-4">
-            แชร์โปสเตอร์ · custom ชื่อทีม →
-          </Link>
-        </p>
-      )}
       <p className="text-sm" style={{ color: EL.inkSoft }}>
         มีคำถามทักไลน์ {SHIFT_PAYMENT.lineId} ·{" "}
         <Link href="/hackathon/elemental" className="underline underline-offset-4">

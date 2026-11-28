@@ -466,6 +466,11 @@ export function LobbyView({
           <EditorialLink href={boardHref} size="sm" className="mt-2">
             {COPY.board}
           </EditorialLink>
+          {!you && !tv && (
+            <EditorialLink href="/hackathon/join/find" size="sm" className="mt-2">
+              สมัครแล้ว? หาหน้าของฉัน
+            </EditorialLink>
+          )}
         </div>
       )}
     </Page>

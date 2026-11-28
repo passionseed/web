@@ -11,15 +11,25 @@ import { EditorialLink, PrimaryButton, SecondaryButton, TextInput, v } from "../
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
- * On a friend's team link, for someone who has already signed up (alone at
- * ฿199, or in another team at ฿149): go to their own page with this team
- * ready to join or move to, instead of signing up and paying again (Big,
- * 2026-11-28). On the phone that opened their page before, one button; on
- * any other device, their page link by email, which only ever goes to the
- * address the sign-up was made with.
+ * Back to your own page, for someone who has already signed up. On the phone
+ * that opened their page before, one button; on any other device, their page
+ * link by email, which only ever goes to the address the sign-up was made with.
+ * - On a friend's team link (team): the page opens with that team ready to
+ *   join or move to, instead of signing up and paying again (Big, 2026-11-28).
+ * - Without a team: "หาหน้าของฉัน" (/hackathon/join/find), for a new phone
+ *   (Big, 2026-11-28: "log back in in a diff device? email? all works?").
  */
-export function AlreadySignedUp({ team, demo }: { team: { name: string; inviteCode: string }; demo?: boolean }) {
-  const [open, setOpen] = useState(false);
+export function AlreadySignedUp({
+  team,
+  startOpen = false,
+  demo,
+}: {
+  team?: { name: string; inviteCode: string };
+  /** Shown open, on the find-my-page screen. */
+  startOpen?: boolean;
+  demo?: boolean;
+}) {
+  const [open, setOpen] = useState(startOpen);
   const [token, setToken] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
@@ -27,7 +37,8 @@ export function AlreadySignedUp({ team, demo }: { team: { name: string; inviteCo
 
   useEffect(() => setToken(rememberedPageToken()), []);
 
-  const label = teamLabel(team.name);
+  const label = team ? teamLabel(team.name) : "";
+  const pageHref = token ? `/hackathon/join/${token}${team ? `?join=${team.inviteCode}` : ""}` : null;
   // Not a <form>: this sits inside the sign-up form, and a nested form would submit (and reload) the outer one.
   const send = async () => {
     if (!EMAIL_RE.test(email.trim())) return setError("ใส่อีเมลที่ใช้สมัคร");
@@ -38,7 +49,7 @@ export function AlreadySignedUp({ team, demo }: { team: { name: string; inviteCo
       const res = await fetch("/api/hackathon/elemental/my-page", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), team: team.inviteCode }),
+        body: JSON.stringify({ email: email.trim(), ...(team ? { team: team.inviteCode } : {}) }),
       });
       if (res.status === 429) {
         setState("error");
@@ -61,17 +72,19 @@ export function AlreadySignedUp({ team, demo }: { team: { name: string; inviteCo
   }
 
   return (
-    <section className="mt-6 space-y-5">
-      <div className="space-y-1">
-        <p style={{ fontSize: 18, lineHeight: "28px" }}>สมัครไว้แล้ว ไม่ต้องสมัครใหม่</p>
-        <p style={{ color: v.secondary, fontSize: 15, lineHeight: "24px" }}>
-          เข้า{label}จากหน้าของคุณเอง ค่าสมัครที่จ่ายแล้วไม่เปลี่ยน ถ้าอยู่ทีมอื่นอยู่ กดย้ายได้เลย
-        </p>
-      </div>
+    <section className={startOpen ? "space-y-5" : "mt-6 space-y-5"}>
+      {team && (
+        <div className="space-y-1">
+          <p style={{ fontSize: 18, lineHeight: "28px" }}>สมัครไว้แล้ว ไม่ต้องสมัครใหม่</p>
+          <p style={{ color: v.secondary, fontSize: 15, lineHeight: "24px" }}>
+            เข้า{label}จากหน้าของคุณเอง ค่าสมัครที่จ่ายแล้วไม่เปลี่ยน ถ้าอยู่ทีมอื่นอยู่ กดย้ายได้เลย
+          </p>
+        </div>
+      )}
 
-      {token && (
-        <PrimaryButton href={`/hackathon/join/${token}?join=${team.inviteCode}`} full arrow>
-          ไปหน้าของฉัน แล้วเข้า{label}
+      {pageHref && (
+        <PrimaryButton href={pageHref} full arrow>
+          {team ? `ไปหน้าของฉัน แล้วเข้า${label}` : "ไปหน้าของฉัน"}
         </PrimaryButton>
       )}
 
@@ -102,17 +115,25 @@ export function AlreadySignedUp({ team, demo }: { team: { name: string; inviteCo
         </SecondaryButton>
         {state === "sent" && (
           <p role="status" style={{ fontSize: 15, lineHeight: "24px" }}>
-            ถ้าอีเมลนี้สมัครไว้ เราส่งลิงก์ไปแล้ว เปิดลิงก์ในอีเมล แล้วกดเข้า{label}ได้เลย (ดูในโฟลเดอร์สแปมด้วย)
+            {team
+              ? `ถ้าอีเมลนี้สมัครไว้ เราส่งลิงก์ไปแล้ว เปิดลิงก์ในอีเมล แล้วกดเข้า${label}ได้เลย (ดูในโฟลเดอร์สแปมด้วย)`
+              : "ถ้าอีเมลนี้สมัครไว้ เราส่งลิงก์หน้าของคุณไปแล้ว (ดูในโฟลเดอร์สแปมด้วย)"}
           </p>
         )}
       </div>
 
-      <p style={{ color: v.secondary, fontSize: 15, lineHeight: "24px" }}>
-        หรือเปิดหน้าของคุณจากอีเมลตอนสมัคร แล้วใส่รหัสทีม{" "}
-        <span className="whitespace-nowrap tabular-nums" style={{ color: v.text, letterSpacing: "0.06em" }}>
-          {formatTeamCode(team.inviteCode)}
-        </span>
-      </p>
+      {team ? (
+        <p style={{ color: v.secondary, fontSize: 15, lineHeight: "24px" }}>
+          หรือเปิดหน้าของคุณจากอีเมลตอนสมัคร แล้วใส่รหัสทีม{" "}
+          <span className="whitespace-nowrap tabular-nums" style={{ color: v.text, letterSpacing: "0.06em" }}>
+            {formatTeamCode(team.inviteCode)}
+          </span>
+        </p>
+      ) : (
+        <p style={{ color: v.secondary, fontSize: 15, lineHeight: "24px" }}>
+          ลิงก์หน้าของคุณอยู่ในอีเมลที่ได้ตอนสมัครด้วย หาไม่เจอ ทักไลน์ทีมงานได้
+        </p>
+      )}
     </section>
   );
 }

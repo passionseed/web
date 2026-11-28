@@ -72,6 +72,7 @@ export default async function PayDemoPage({ searchParams }: { searchParams: Sear
         token="demo"
         demo
         joinOffer={joinOffer}
+        shareHref={state === "paid" ? "/hackathon/join/demo/share" : null}
         reg={{ status: state, teamName: team?.name ?? null, memberCount: 1, amountBaht, memberNicknames: ["มิว"], team, isTeamStarter: mode === "create", teamPosition, discordJoined: first(params.discord) === "joined", buddyPass: first(params.pass) === "1" ? (state === "paid" ? { state: "available", code: "ba9876543210" } : { state: "locked" }) : null }}
         teamChangeOpen={first(params.closed) !== "1"}
         qrSrc={state === "pending" ? await elementalPayQr(amountBaht) : null}
