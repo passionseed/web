@@ -11,6 +11,9 @@ import {
   OWNER_UPLOAD_ACCEPT_PDF,
 } from "@/lib/hackathon/elemental/owner-upload";
 
+import { keep } from "./keep";
+import { KIT } from "./tokens";
+
 type Item = {
   id: number;
   file: File;
@@ -117,8 +120,8 @@ function ShareLink() {
   };
   return (
     <div className="flex flex-col gap-3 pb-6 sm:flex-row sm:items-center sm:justify-between" style={{ borderBottom: RULE }}>
-      <p className="text-[17px] leading-[1.55]" style={{ fontWeight: 300 }}>
-        ส่งต่อลิงก์นี้ให้คนที่ถ่ายได้เลย ไฟล์จะถึงทีมงานโดยตรง
+      <p className="text-[17px] leading-[1.65] [text-wrap:pretty]" style={{ fontWeight: 400 }}>
+        {keep("ส่งต่อลิงก์นี้ให้คนที่ถ่ายได้เลย ไฟล์จะถึงทีมงานโดยตรง")}
       </p>
       <button
         type="button"
@@ -268,10 +271,10 @@ export function OwnerUploader({ org, element, signature, due }: { org: string; e
       <ShareLink />
 
       {(receipt.sent.length > 0 || receipt.unfinished) && done === 0 && !busy && (
-        <div className="mt-6 text-[16px] leading-[1.55]" style={{ fontWeight: 300, color: EL.creamSoft }}>
+        <div className="mt-6 text-[16px] leading-[1.65]" style={{ fontWeight: 400, color: KIT.soft }}>
           {receipt.sent.length > 0 && (
             <>
-              <p style={{ color: EL.toxicCyan }}>ส่งจากเครื่องนี้แล้ว {receipt.sent.length} ไฟล์ ส่งเพิ่มได้</p>
+              <p className="text-[17px]" style={{ color: KIT.ok }}>ส่งจากเครื่องนี้แล้ว {receipt.sent.length} ไฟล์ ส่งเพิ่มได้</p>
               <ul className="mt-1">
                 {receipt.sent.slice(-5).map((f) => (
                   <li key={`${f.name}-${f.at}`} className="truncate">
@@ -281,19 +284,19 @@ export function OwnerUploader({ org, element, signature, due }: { org: string; e
               </ul>
             </>
           )}
-          {receipt.unfinished && <p className="mt-1" style={{ color: EL.flame }}>ครั้งก่อนอัปโหลดไม่เสร็จ เลือกไฟล์ที่ยังไม่ขึ้นว่าได้รับแล้วอีกครั้ง</p>}
+          {receipt.unfinished && <p className="mt-1 text-[17px] [text-wrap:pretty]" style={{ color: KIT.warn }}>ครั้งก่อนอัปโหลดไม่เสร็จ เลือกไฟล์ที่ยังไม่ขึ้นว่าได้รับแล้วอีกครั้ง</p>}
         </div>
       )}
 
       <label
         className="mt-6 flex cursor-pointer flex-col items-center justify-center gap-2 border-2 border-dashed px-4 py-8 text-center focus-within:outline focus-within:outline-2 focus-within:outline-offset-4"
-        style={{ borderColor: "rgba(243,239,230,0.45)", outlineColor: EL.cream }}
+        style={{ borderColor: KIT.edge, outlineColor: EL.cream }}
       >
         <span style={{ fontSize: 22, fontWeight: 400 }}>เลือกคลิปหรือรูปจากคลังภาพ</span>
-        <span style={{ fontSize: 16, fontWeight: 300, color: EL.creamSoft }}>เลือกได้ทีละหลายไฟล์ ไฟล์ละไม่เกิน 2 GB</span>
+        <span style={{ fontSize: 17, fontWeight: 400, color: KIT.body, lineHeight: 1.65 }}>เลือกได้ทีละหลายไฟล์ ไฟล์ละไม่เกิน 2 GB</span>
         <input type="file" multiple accept={OWNER_UPLOAD_ACCEPT_MEDIA} className="sr-only" disabled={busy} onChange={(e) => { add(e.target.files); e.target.value = ""; }} />
       </label>
-      <label className="mt-2 inline-flex min-h-[44px] cursor-pointer items-center text-[16px] focus-within:outline focus-within:outline-2" style={{ fontWeight: 300, color: EL.creamSoft, outlineColor: EL.cream }}>
+      <label className="mt-2 inline-flex min-h-[44px] cursor-pointer items-center text-[17px] focus-within:outline focus-within:outline-2" style={{ fontWeight: 400, color: KIT.body, outlineColor: EL.cream }}>
         <span style={{ textDecoration: "underline", textUnderlineOffset: 4 }}>หรือเลือกไฟล์ PDF</span>
         <input type="file" multiple accept={OWNER_UPLOAD_ACCEPT_PDF} className="sr-only" disabled={busy} onChange={(e) => { add(e.target.files); e.target.value = ""; }} />
       </label>
@@ -302,13 +305,21 @@ export function OwnerUploader({ org, element, signature, due }: { org: string; e
         <ul className="mt-3 space-y-3" aria-live="polite">
           {items.map((it) => {
             const removable = !busy && (it.status === "waiting" || it.status === "error" || it.status === "rejected");
-            const color = it.status === "error" || it.status === "rejected" ? EL.flame : it.status === "done" ? EL.toxicCyan : EL.creamSoft;
+            const color = it.status === "error" || it.status === "rejected" ? KIT.warn : it.status === "done" ? KIT.ok : KIT.soft;
+            // Numbers (size, progress) stay in Space Mono; Thai states get Trirong at a readable size.
+            const numeric = it.status === "uploading" || it.status === "waiting";
             return (
               <li key={it.id} style={{ borderTop: RULE, paddingTop: 10 }}>
-                <div className="flex items-center justify-between gap-3" style={{ fontSize: 17, fontWeight: 300 }}>
+                <div className="flex items-center justify-between gap-3" style={{ fontSize: 17, fontWeight: 400, lineHeight: 1.65 }}>
                   <span className="min-w-0 truncate">{it.file.name}</span>
                   <span className="flex flex-none items-center gap-1">
-                    <span style={{ fontFamily: EL_FONT.mono, fontSize: 13, color }}>
+                    <span
+                      style={
+                        numeric
+                          ? { fontFamily: EL_FONT.mono, fontSize: 15, color, fontVariantNumeric: "tabular-nums" }
+                          : { fontFamily: EL_FONT.display, fontSize: 17, fontWeight: it.status === "done" ? 600 : 400, color }
+                      }
+                    >
                       {it.status === "done"
                         ? "ได้รับแล้ว"
                         : it.status === "uploading"
@@ -324,7 +335,7 @@ export function OwnerUploader({ org, element, signature, due }: { org: string; e
                         type="button"
                         onClick={() => remove(it.id)}
                         aria-label={`ลบ ${it.file.name}`}
-                        className="flex h-11 min-w-[44px] items-center justify-center px-2 text-[15px]"
+                        className="flex h-11 min-w-[44px] items-center justify-center px-2 text-[16px]"
                         style={{ color: EL.cream, textDecoration: "underline", textUnderlineOffset: 3 }}
                       >
                         ลบ
@@ -341,9 +352,9 @@ export function OwnerUploader({ org, element, signature, due }: { org: string; e
                   aria-valuemax={100}
                   aria-valuenow={Math.round(it.progress * 100)}
                 >
-                  <div className="h-full transition-[width]" style={{ width: `${it.progress * 100}%`, background: it.status === "error" ? EL.flame : EL.cream }} />
+                  <div className="h-full transition-[width]" style={{ width: `${it.progress * 100}%`, background: it.status === "error" ? KIT.warn : EL.cream }} />
                 </div>
-                {it.error && <p className="mt-1" style={{ fontSize: 15, color: EL.flame }}>{it.error}</p>}
+                {it.error && <p className="mt-1 [text-wrap:pretty]" style={{ fontSize: 16, lineHeight: 1.65, fontWeight: 400, color: KIT.warn }}>{it.error}</p>}
               </li>
             );
           })}
@@ -352,24 +363,28 @@ export function OwnerUploader({ org, element, signature, due }: { org: string; e
 
       <label className="mt-7 block">
         <span className="text-[18px]" style={{ fontWeight: 400 }}>ข้อความถึงทีมงาน</span>{" "}
-        <span className="text-[15px]" style={{ fontWeight: 300, color: EL.creamSoft }}>ถ้ามี</span>
+        <span className="text-[16px]" style={{ fontWeight: 400, color: KIT.soft }}>ถ้ามี</span>
+        {/* The hint is visible helper text, not a placeholder, so it stays readable after typing starts. */}
+        <span id="owner-note-hint" className="mt-1 block text-[16px] leading-[1.65] [text-wrap:pretty]" style={{ fontWeight: 400, color: KIT.soft }}>
+          {keep("ชื่อและตำแหน่งคนเล่า ลิงก์เพจ หรือเรื่องที่อยากบอก")}
+        </span>
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
           disabled={busy}
           rows={3}
           maxLength={4000}
-          placeholder="ชื่อและตำแหน่งคนเล่า ลิงก์เพจ หรือเรื่องที่อยากบอก"
-          className="mt-2 block w-full px-3 py-2.5 text-[17px] leading-[1.5] placeholder:text-[rgba(243,239,230,0.45)] focus:outline focus:outline-2"
-          style={{ background: "rgba(30,28,26,0.6)", border: "1px solid rgba(243,239,230,0.45)", color: EL.cream, fontWeight: 300, outlineColor: EL.cream }}
+          aria-describedby="owner-note-hint"
+          className="mt-2 block w-full px-3 py-2.5 text-[17px] leading-[1.65] focus:outline focus:outline-2"
+          style={{ background: KIT.panel, border: `1px solid ${KIT.edge}`, color: EL.cream, fontWeight: 400, outlineColor: EL.cream }}
         />
       </label>
 
-      <label className="mt-5 flex min-h-[44px] cursor-pointer items-start gap-3 py-1" style={{ fontSize: 17, fontWeight: 300, lineHeight: 1.5 }}>
-        <input type="checkbox" className="mt-0.5 h-6 w-6 flex-none accent-[#f3efe6]" checked={minors} onChange={(e) => setMinors(e.target.checked)} />
-        <span>
-          มีเด็กหรือนักเรียนเห็นหน้าในคลิป และผู้ปกครองอนุญาตเป็นลายลักษณ์อักษรแล้ว
-          <span className="mt-0.5 block text-[15px]" style={{ color: EL.creamSoft }}>
+      <label className="mt-5 flex min-h-[44px] cursor-pointer items-start gap-3 py-1" style={{ fontSize: 17, fontWeight: 400, lineHeight: 1.65 }}>
+        <input type="checkbox" className="mt-1 h-6 w-6 flex-none accent-[#f3efe6]" checked={minors} onChange={(e) => setMinors(e.target.checked)} />
+        <span className="[text-wrap:pretty]">
+          {keep("มีเด็กหรือนักเรียนเห็นหน้าในคลิป และผู้ปกครองอนุญาตเป็นลายลักษณ์อักษรแล้ว")}
+          <span className="mt-0.5 block text-[16px]" style={{ color: KIT.soft }}>
             ถ่ายรูปใบอนุญาตแล้วอัปโหลดมาพร้อมคลิปได้
           </span>
         </span>
@@ -377,30 +392,30 @@ export function OwnerUploader({ org, element, signature, due }: { org: string; e
 
       <label
         className="mt-3 flex min-h-[44px] cursor-pointer items-start gap-3 p-2"
-        style={{ fontSize: 17, fontWeight: 300, lineHeight: 1.5, outline: consentNudge && !consent ? `2px solid ${EL.flame}` : "none", outlineOffset: 2, marginLeft: -8, marginRight: -8 }}
+        style={{ fontSize: 17, fontWeight: 400, lineHeight: 1.65, outline: consentNudge && !consent ? `2px solid ${KIT.warn}` : "none", outlineOffset: 2, marginLeft: -8, marginRight: -8 }}
       >
         <input
           ref={consentRef}
           type="checkbox"
-          className="mt-0.5 h-6 w-6 flex-none accent-[#f3efe6]"
+          className="mt-1 h-6 w-6 flex-none accent-[#f3efe6]"
           checked={consent}
           onChange={(e) => {
             setConsent(e.target.checked);
             if (e.target.checked) setConsentNudge(false);
           }}
         />
-        <span>
+        <span className="[text-wrap:pretty]">
           อนุญาตให้ PassionSeed ใช้คลิปและรูปเหล่านี้บนเว็บและโซเชียลของ Elemental Hackathon และในห้องเรียนของงาน
           {consentNudge && !consent && (
-            <span className="mt-1 block text-[16px]" style={{ color: EL.flame, fontWeight: 400 }} role="alert">
+            <span className="mt-2 block w-fit px-3 py-1.5 text-[17px]" style={{ color: KIT.warn, background: KIT.panel, fontWeight: 600 }} role="alert">
               ติ๊กอนุญาตก่อนอัปโหลด
             </span>
           )}
         </span>
       </label>
 
-      <p className="mt-5 text-[16px] leading-[1.55]" style={{ fontWeight: 300, color: EL.creamSoft }}>
-        ส่งภายใน {due} ระหว่างอัปโหลด เปิดหน้านี้ค้างไว้ อย่าล็อกจอหรือสลับแอปจนขึ้นว่าได้รับแล้ว ถ้ามี Wi-Fi ใช้ Wi-Fi
+      <p className="mt-5 text-[17px] leading-[1.65] [text-wrap:pretty]" style={{ fontWeight: 400, color: KIT.body }}>
+        ส่งภายใน {due} {keep("ระหว่างอัปโหลด เปิดหน้านี้ค้างไว้ อย่าล็อกจอหรือสลับแอปจนขึ้นว่าได้รับแล้ว ถ้ามี Wi-Fi ใช้ Wi-Fi")}
       </p>
 
       <button
@@ -408,19 +423,24 @@ export function OwnerUploader({ org, element, signature, due }: { org: string; e
         onClick={start}
         disabled={idle || busy}
         aria-busy={busy}
-        className={`mt-3 min-h-[56px] w-full px-5 py-4 ${idle ? "opacity-40" : ""}`}
-        style={{ background: EL.cream, color: EL.ink, fontSize: 20, fontWeight: 400 }}
+        className="mt-3 min-h-[56px] w-full px-5 py-4 disabled:cursor-not-allowed"
+        style={
+          idle
+            ? // Nothing picked yet: an outlined, readable button instead of a 40% ghost that looks broken.
+              { background: "transparent", border: "1px dashed rgba(243,239,230,0.5)", color: KIT.soft, fontSize: 20, fontWeight: 400 }
+            : { background: EL.cream, border: `1px solid ${EL.cream}`, color: EL.ink, fontSize: 20, fontWeight: 400 }
+        }
       >
         {label}
       </button>
 
       {ranOnce && !busy && failed > 0 && (
-        <p className="mt-3 text-[17px]" style={{ fontWeight: 300, color: EL.flame }}>
+        <p className="mt-3 text-[17px] leading-[1.65]" style={{ fontWeight: 600, color: KIT.warn }}>
           ส่งแล้ว {done} ไฟล์ ไม่สำเร็จ {failed} ไฟล์
         </p>
       )}
       {done > 0 && !busy && toSend === 0 && (
-        <p className="mt-4 text-[18px] leading-[1.55]" style={{ fontWeight: 300, color: EL.toxicCyan }}>
+        <p className="mt-4 text-[18px] leading-[1.65] [text-wrap:pretty]" style={{ fontWeight: 400, color: KIT.ok }}>
           ได้รับครบ {done} ไฟล์แล้ว ขอบคุณมาก มีรูปหรือคลิปเพิ่มส่งที่เดิมได้ทุกเมื่อ
         </p>
       )}

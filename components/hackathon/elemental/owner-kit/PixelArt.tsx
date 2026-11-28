@@ -79,3 +79,25 @@ export function VideoOverlay({ time }: { time: string }) {
     </>
   );
 }
+
+const TICK = [".........", "........#", ".......##", "......##.", "#....##..", "##..##...", ".####....", "..##.....", "........."];
+const CROSS = ["#.......#", "##.....##", ".##...##.", "..##.##..", "...###...", "..##.##..", ".##...##.", "##.....##", "#.......#"];
+
+/** ✓ and ✗ drawn as 9x9 pixels in the text colour, so they look the same on every phone (no font has to supply them). */
+export function PixelTick({ good, size = "0.8em" }: { good: boolean; size?: string | number }) {
+  const rows = good ? TICK : CROSS;
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 9 9"
+      shapeRendering="crispEdges"
+      aria-hidden="true"
+      style={{ display: "inline-block", flex: "none", verticalAlign: "-0.05em" }}
+    >
+      {rows.flatMap((row, y) =>
+        Array.from(row).map((c, x) => (c === "#" ? <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill="currentColor" /> : null))
+      )}
+    </svg>
+  );
+}
