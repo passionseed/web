@@ -374,7 +374,8 @@ export function JoinFlow({ source, utm, team, buddyPass, notice, backHref, demo 
               </div>
             </ActionBar>
           </div>
-          <EventSummary mode={mode} className="sticky top-24 hidden lg:block" />
+          {/* Stays in view while the form scrolls, when the screen is tall enough to show all of it. */}
+          <EventSummary mode={mode} className="hidden lg:block [@media(min-height:820px)]:sticky [@media(min-height:820px)]:top-24" />
         </div>
       </Page>
     </form>

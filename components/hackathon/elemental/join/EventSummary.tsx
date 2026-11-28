@@ -30,7 +30,7 @@ const PRICE: Record<Mode, { amount: number; unit: string; note: string }> = {
 
 function Row({ icon, tag, children }: { icon: PixelIconName; tag: string; children: ReactNode }) {
   return (
-    <div className="grid grid-cols-[1.25rem_minmax(0,1fr)] gap-x-3 py-3">
+    <div className="grid grid-cols-[1.25rem_minmax(0,1fr)] gap-x-3 py-2.5">
       <span className="mt-0.5" style={{ color: v.secondary }} aria-hidden="true">
         <PixelIcon name={icon} />
       </span>

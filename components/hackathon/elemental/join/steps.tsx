@@ -618,16 +618,14 @@ function ReviewStep({ draft, set, errors, team, buddyPass, goTo }: StepProps) {
         <SummaryRow
           label="สมัครแบบไหน"
           value={
-            mode === "create" ? (
-              <>
-                {how}
+            <>
+              {how} · <span className="tabular-nums">{baht(total)}</span>
+              {mode === "create" && (
                 <span className="block" style={secondary}>
                   เปลี่ยนชื่อทีมได้หลังสมัคร
                 </span>
-              </>
-            ) : (
-              how
-            )
+              )}
+            </>
           }
           onEdit={() => goTo("about")}
         />
