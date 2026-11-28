@@ -1,18 +1,22 @@
 import Image from "next/image";
 
-import { EL } from "@/components/hackathon/poster/elemental/brand";
+import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 
 import { PLACES } from "./places";
 
 /** Maya Bay, washed out on the first sign-up step; each paid ticket shows a recovered place in full colour. */
 const RECOVERED_PLACE = PLACES[0];
 
-/** `restored` runs from 0 (grey) to 1 (full colour). */
+/**
+ * `restored` runs from 0 (grey) to 1 (full colour). Square, with the caption
+ * under the photo rather than on it (the brand keeps labels off the image).
+ * Colours come from the page's surface (share/ui.tsx), so use it inside <Page>.
+ */
 export function RecoveringPlace({ restored, className = "" }: { restored: number; className?: string }) {
   const r = Math.min(1, Math.max(0, restored));
   return (
     <figure className={className}>
-      <div className="relative h-20 overflow-hidden rounded-2xl sm:h-36" style={{ backgroundColor: EL.char }}>
+      <div className="relative h-24 overflow-hidden rounded-[2px] sm:h-36" style={{ backgroundColor: EL.char }}>
         <Image
           src={RECOVERED_PLACE.src}
           alt={RECOVERED_PLACE.altTh}
@@ -25,22 +29,13 @@ export function RecoveringPlace({ restored, className = "" }: { restored: number
           }}
           priority
         />
-        <figcaption
-          className="absolute bottom-2.5 left-3.5 right-3.5 text-xs sm:text-sm"
-          style={{ color: EL.cream, textShadow: "0 1px 6px rgba(0,0,0,0.55)" }}
-        >
-          {RECOVERED_PLACE.nameTh} {RECOVERED_PLACE.storyTh}
-        </figcaption>
       </div>
-      <a
-        href={RECOVERED_PLACE.creditUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-1 block text-right text-[10px]"
-        style={{ color: EL.inkSoft }}
-      >
-        {RECOVERED_PLACE.credit}
-      </a>
+      <figcaption className="mt-2 text-pretty" style={{ fontFamily: EL_FONT.body, fontSize: 13, lineHeight: "20px", color: "var(--el-fine)" }}>
+        {RECOVERED_PLACE.nameTh} {RECOVERED_PLACE.storyTh} ·{" "}
+        <a href={RECOVERED_PLACE.creditUrl} target="_blank" rel="noopener noreferrer" className="-my-3 inline-block whitespace-nowrap py-3 underline-offset-4 hover:underline">
+          {RECOVERED_PLACE.credit}
+        </a>
+      </figcaption>
     </figure>
   );
 }

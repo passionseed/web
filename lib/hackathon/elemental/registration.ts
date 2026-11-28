@@ -24,6 +24,21 @@ export function elementalPriceBaht(memberCount: number, inTeam = false): number 
   return memberCount === 1 && !inTeam ? ELEMENTAL.priceBaht : ELEMENTAL.groupPriceBaht * memberCount;
 }
 
+/**
+ * School year, picked on the sign-up form (Big, 2026-11-28: "let them put
+ * their ม 3/4/5/6"). The event is for M.3 to M.6; "other" is for anyone else
+ * (vocational, gap year), so nobody is stopped at the form.
+ */
+export const GRADE_VALUES = ["m3", "m4", "m5", "m6", "other"] as const;
+export type Grade = (typeof GRADE_VALUES)[number];
+export const GRADE_LABEL_TH: Record<Grade, string> = {
+  m3: "ม.3",
+  m4: "ม.4",
+  m5: "ม.5",
+  m6: "ม.6",
+  other: "อื่น",
+};
+
 /** Team invite codes: 12 hex characters, made by the database. */
 export const INVITE_CODE_RE = /^[0-9a-f]{12}$/;
 
@@ -53,6 +68,8 @@ export const memberSchema = z
     fullName: trimmed(120),
     nickname: optionalTrimmed(60),
     age: z.coerce.number().int().min(10).max(99),
+    /** Optional so forms already open in a tab before the field existed still submit. */
+    grade: z.enum(GRADE_VALUES).optional(),
     school: trimmed(160),
     parentName: optionalTrimmed(120),
     parentPhone: z

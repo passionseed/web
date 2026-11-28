@@ -1,5 +1,5 @@
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
-import type { Registration } from "@/lib/hackathon/elemental/registration";
+import { GRADE_LABEL_TH, type Registration } from "@/lib/hackathon/elemental/registration";
 import {
   getRegistrationForNotice,
   listRegistrationTotals,
@@ -30,6 +30,7 @@ export async function notifyElementalSignup(
         signupNumber: t.signups,
         members: input.members.map((m) => ({
           name: m.nickname || m.fullName.split(" ")[0],
+          grade: m.grade ? GRADE_LABEL_TH[m.grade] : null,
           school: m.school,
         })),
         teamMode: input.teamMode,

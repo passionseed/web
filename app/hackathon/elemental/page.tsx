@@ -1,16 +1,26 @@
 import type { Metadata } from "next";
 
 import { ElementalLanding } from "@/components/hackathon/elemental/ElementalLanding";
+import { TrackLinkView } from "@/components/hackathon/elemental/TrackLinkView";
 import { TrackStep } from "@/components/hackathon/elemental/TrackStep";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { elementalRegistrationOpen, normalizeSource } from "@/lib/hackathon/elemental/registration";
-import { elementalShareDescription } from "@/lib/hackathon/elemental/share";
+import posterBase from "@/lib/hackathon/elemental/share/poster-base.json";
+import {
+  demoPagesOn,
+  elementalShareDescription,
+  SHARE_DEMO_CODE,
+  shareOpen,
+  TEACHER_DEMO_CODE,
+  type ShareKind,
+} from "@/lib/hackathon/elemental/share";
 import { CANONICAL_ORIGIN } from "@/lib/seo/canonical-origin";
+import { findLinkKind } from "@/lib/supabase/hackathon-share-links";
 
 const TITLE = `${ELEMENTAL.edition} Hackathon | ${ELEMENTAL.series}`;
 const DESCRIPTION = elementalShareDescription();
 
-export const metadata: Metadata = {
+const BASE_METADATA: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   // Tracked links (?src=ig) are the same page.
@@ -19,6 +29,48 @@ export const metadata: Metadata = {
   openGraph: { type: "website", siteName: "PassionSeed", locale: "th_TH", title: TITLE, description: DESCRIPTION, url: "/hackathon/elemental" },
   twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };
+
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
+
+/** A share link's tag: ?src=share-<code> (a student) or ?src=t-<code> (a teacher). */
+const SHARE_SOURCE_RE = /^(share|t)-([0-9a-f]{8})$/;
+
+/** Whether this code has a share link (the demo codes count where demo pages are on). */
+async function linkKind(code: string): Promise<ShareKind | null> {
+  if (demoPagesOn() && code === SHARE_DEMO_CODE) return "student";
+  if (demoPagesOn() && code === TEACHER_DEMO_CODE) return "teacher";
+  return findLinkKind(ELEMENTAL.slug, code);
+}
+
+/**
+ * A share link pasted in LINE previews as the sharer's own poster: for
+ * ?src=share-<code> or ?src=t-<code> whose code has a link, og:image is that
+ * poster's 1200×630 crop (the poster route's ?format=og). Anything else, or
+ * any error, keeps the page's own card.
+ */
+export async function generateMetadata({ searchParams }: { searchParams: SearchParams }): Promise<Metadata> {
+  const match = first((await searchParams).src)?.match(SHARE_SOURCE_RE);
+  if (!match) return BASE_METADATA;
+  const code = match[2];
+  try {
+    if (!(await linkKind(code))) return BASE_METADATA;
+  } catch {
+    return BASE_METADATA;
+  }
+  const image = {
+    url: `/api/hackathon/elemental/share/poster/${code}?v=${posterBase.version}&format=og`,
+    width: 1200,
+    height: 630,
+    alt: `โปสเตอร์ ${ELEMENTAL.edition} Hackathon No. ${code.toUpperCase()}`,
+  };
+  return {
+    ...BASE_METADATA,
+    openGraph: { ...BASE_METADATA.openGraph, images: [image] },
+    twitter: { ...BASE_METADATA.twitter, images: [image.url] },
+  };
+}
 
 /**
  * Event data for Google (schema.org Event), all from facts.ts. Mixed: online
@@ -63,10 +115,6 @@ function eventSchema(open: boolean) {
   };
 }
 
-type SearchParams = Promise<Record<string, string | string[] | undefined>>;
-
-const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
-
 /** ELEMENTAL's permanent home. /hackathon redirects here while it is the current hackathon (next.config.mjs). */
 export default async function ElementalPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
@@ -78,7 +126,8 @@ export default async function ElementalPage({ searchParams }: { searchParams: Se
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(eventSchema(open)) }} />
       <TrackStep step="landing" source={src} />
-      <ElementalLanding joinHref={joinHref} open={open} />
+      <TrackLinkView source={src} />
+      <ElementalLanding joinHref={joinHref} open={open} shareLive={shareOpen()} />
     </>
   );
 }

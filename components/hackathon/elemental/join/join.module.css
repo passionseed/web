@@ -129,6 +129,196 @@
   }
 }
 
+/* ---------- The sign-up form on the cream "paper" surface (2026-11-28) ----------
+   Colours come from the surface's CSS variables (share/ui.tsx surfaceVars), so the
+   same classes work on the cream page and inside the dark slab. Easings are the
+   landing's: snap for small state changes, tension for things arriving. */
+
+.flowIn {
+  animation: el-flow-in 340ms cubic-bezier(0.05, 0.7, 0.35, 0.99) both;
+}
+
+.flowBack {
+  animation: el-flow-back 340ms cubic-bezier(0.05, 0.7, 0.35, 0.99) both;
+}
+
+@keyframes el-flow-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+
+@keyframes el-flow-back {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+}
+
+/* The hairline progress meter: the fill grows with transform, so nothing reflows. */
+.meterFill {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  transition: transform 420ms cubic-bezier(0.05, 0.7, 0.35, 0.99);
+}
+
+/* A wrong answer: one small nudge sideways. */
+.nudge {
+  animation: el-nudge 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes el-nudge {
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+/* Choices (cards, age tiles, list rows, check rows): square, a 1px rule, 2px ink when picked.
+   Inset shadows, so a picked one doesn't shift. */
+.pick {
+  -webkit-tap-highlight-color: transparent;
+  background-color: transparent;
+  box-shadow: inset 0 0 0 1px var(--el-input-border);
+  color: var(--el-text);
+  transition:
+    box-shadow 160ms cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 160ms cubic-bezier(0.4, 0, 0.2, 1),
+    transform 160ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pick:active {
+  transform: translateY(1px);
+  background-color: var(--el-rule-soft);
+}
+
+@media (hover: hover) {
+  .pick:hover {
+    background-color: var(--el-rule-soft);
+  }
+}
+
+.pick[aria-checked="true"] {
+  box-shadow: inset 0 0 0 2px var(--el-text);
+}
+
+.pick[data-error="true"] {
+  box-shadow: inset 0 0 0 1px var(--el-error);
+}
+
+/* The "other age" box among the tiles. */
+.tileInput {
+  background-color: var(--el-input);
+  box-shadow: inset 0 0 0 1px var(--el-input-border);
+  color: var(--el-text);
+  caret-color: var(--el-focus);
+  transition: box-shadow 160ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* The number typed is Trirong like the tiles; the "อื่น" hint is body text. */
+.tileInput::placeholder {
+  color: var(--el-fine);
+  opacity: 1;
+  font-family: var(--font-bai-jamjuree), sans-serif;
+  font-size: 16px;
+}
+
+.tileInput[data-on="true"] {
+  box-shadow: inset 0 0 0 2px var(--el-text);
+}
+
+.tileInput[data-error="true"] {
+  box-shadow: inset 0 0 0 1px var(--el-error);
+}
+
+.tileInput:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--el-focus);
+}
+
+/* The square tick box and the square radio mark. */
+.box {
+  box-shadow: inset 0 0 0 1px var(--el-outline);
+  transition: background-color 120ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.box[data-on="true"] {
+  background-color: var(--el-action);
+  box-shadow: none;
+  color: var(--el-action-ink);
+}
+
+.radioDot {
+  transform: scale(0);
+  transition: transform 160ms cubic-bezier(0.05, 0.7, 0.35, 0.99);
+}
+
+[aria-checked="true"] > * > .radioDot,
+[aria-checked="true"] .radioDot {
+  transform: scale(1);
+}
+
+/* While sending: the button keeps its colour (not the switched-off look) and three pixels step. */
+.busy.busy:disabled {
+  background-color: var(--el-action);
+  color: var(--el-action-ink);
+  cursor: progress;
+}
+
+.dots {
+  display: inline-flex;
+  gap: 3px;
+  vertical-align: middle;
+}
+
+.dots > span {
+  width: 4px;
+  height: 4px;
+  background-color: currentColor;
+  animation: el-dot 900ms steps(1, end) infinite;
+}
+
+.dots > span:nth-child(2) {
+  animation-delay: 150ms;
+}
+
+.dots > span:nth-child(3) {
+  animation-delay: 300ms;
+}
+
+@keyframes el-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flowIn,
+  .flowBack,
+  .nudge,
+  .dots > span {
+    animation: none;
+  }
+  .meterFill,
+  .pick,
+  .tileInput,
+  .box,
+  .radioDot {
+    transition: none;
+  }
+  .pick:active {
+    transform: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .stepForward,
   .stepBack,

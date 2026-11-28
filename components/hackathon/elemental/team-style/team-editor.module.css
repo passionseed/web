@@ -1,0 +1,71 @@
+/*
+ * The team editor's swatches and tiles (TeamEditor.tsx). Square corners, a
+ * 1px rule around each tile, and the selection as a 2px flameCore rule: under
+ * a swatch, inside a tile. Keyboard focus is the shell's 2px outline outside,
+ * so the two never look the same. Easings come from the share shell.
+ */
+
+.tile {
+  position: relative;
+  border-radius: 2px;
+  background-color: transparent;
+  box-shadow: inset 0 0 0 1px var(--el-rule);
+  color: var(--el-text);
+  -webkit-tap-highlight-color: transparent;
+  transition: box-shadow 160ms var(--el-ease-snap);
+}
+
+.tile[aria-checked="true"] {
+  box-shadow: inset 0 0 0 2px var(--el-action);
+}
+
+@media (hover: hover) {
+  .tile:hover:not([aria-checked="true"]):not(:disabled) {
+    box-shadow: inset 0 0 0 1px var(--el-outline);
+  }
+}
+
+.swatch {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.swatchRule {
+  display: block;
+  height: 2px;
+  width: 44px;
+  background-color: transparent;
+  transition: background-color 160ms var(--el-ease-snap);
+}
+
+.swatch[aria-checked="true"] .swatchRule {
+  background-color: var(--el-action);
+}
+
+/* A part the team hasn't unlocked: still tappable to try in the preview, but quieter. */
+.locked {
+  opacity: 0.55;
+}
+
+/* After Demo Day the options stay visible but read as switched off. */
+.readonly {
+  opacity: 0.5;
+}
+
+.readonly button {
+  cursor: default;
+}
+
+/* The pinned preview under the sticky top bar (77px with "← หน้าของฉัน", whose tap area is 44px), tucked 1px under its rule. */
+.preview {
+  position: sticky;
+  top: 76px;
+  z-index: 20;
+  background-color: #0c0d0c;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile,
+  .swatchRule {
+    transition: none;
+  }
+}

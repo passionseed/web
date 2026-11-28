@@ -1,29 +1,14 @@
 import { forwardRef, type InputHTMLAttributes, type ReactNode } from "react";
-import { Check as CheckIcon } from "lucide-react";
 
-import { EL } from "@/components/hackathon/poster/elemental/brand";
+import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
+import { PixelIcon } from "@/components/hackathon/poster/elemental/pixel-art";
 
 import styles from "./join.module.css";
 
-/** Inputs for the sign-up steps: big, calm, with the error right under the field. */
-
-export function Field({ label, hint, error, children }: { label: string; hint?: string; error?: string; children: ReactNode }) {
-  return (
-    <label className="block">
-      {label && <span className="text-sm font-medium">{label}</span>}
-      {children}
-      {error ? (
-        <span role="alert" className="mt-1.5 block text-sm" style={{ color: EL.ember }}>
-          {error}
-        </span>
-      ) : hint ? (
-        <span className="mt-1.5 block text-sm" style={{ color: EL.inkSoft }}>
-          {hint}
-        </span>
-      ) : null}
-    </label>
-  );
-}
+/**
+ * TextInput: the older cream input, still used by TeamInvite on the pay page. The sign-up steps use
+ * share/ui.tsx's TextInput (the paper look) and CheckRow below.
+ */
 
 export const TextInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean }>(
   function TextInput({ invalid, className, style, ...props }, ref) {
@@ -39,21 +24,22 @@ export const TextInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLIn
   },
 );
 
-/** A checkbox that's a whole tappable row, not a tiny box. */
+/**
+ * A checkbox that's a whole tappable row, not a tiny box: square, a 1px rule, and a square tick
+ * box that fills with the action colour. Colours come from the surface (share/ui.tsx), so the same
+ * row works on the cream page and inside the dark slab. Use it inside <Page surface> or <DarkSlab>.
+ */
 export function CheckRow({
   checked,
   onChange,
   children,
   error,
-  dark,
 }: {
   checked: boolean;
   onChange: (v: boolean) => void;
   children: ReactNode;
   error?: string;
-  dark?: boolean;
 }) {
-  const line = dark ? "rgba(243,239,230,0.28)" : "rgba(29,33,31,0.2)";
   return (
     <div>
       <button
@@ -62,22 +48,19 @@ export function CheckRow({
         aria-checked={checked}
         aria-invalid={error ? true : undefined}
         onClick={() => onChange(!checked)}
-        className={`${styles.choice} flex w-full items-start gap-3 rounded-xl border px-4 py-3.5 text-left text-base leading-relaxed`}
-        style={{ borderColor: error ? EL.ember : checked ? EL.flame : line }}
+        data-error={error ? true : undefined}
+        className={`${styles.pick} flex min-h-[52px] w-full items-start gap-3 rounded-[2px] px-4 py-3.5 text-left`}
+        style={{ fontFamily: EL_FONT.body, fontSize: 16, lineHeight: "26px" }}
       >
-        <span
-          aria-hidden="true"
-          className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border"
-          style={{ backgroundColor: checked ? EL.flame : "transparent", borderColor: checked ? EL.flame : line }}
-        >
-          {checked && <CheckIcon className="h-4 w-4" style={{ color: EL.flameWhite }} strokeWidth={3} />}
+        <span aria-hidden="true" data-on={checked} className={`${styles.box} mt-[3px] flex h-5 w-5 shrink-0 items-center justify-center`}>
+          {checked && <PixelIcon name="check" size={18} />}
         </span>
         <span>{children}</span>
       </button>
       {error && (
-        <span role="alert" className="mt-1.5 block text-sm" style={{ color: dark ? EL.flameLight : EL.ember }}>
+        <p role="alert" className="mt-1.5" style={{ fontFamily: EL_FONT.body, fontSize: 14, lineHeight: "22px", color: "var(--el-error)" }}>
           {error}
-        </span>
+        </p>
       )}
     </div>
   );

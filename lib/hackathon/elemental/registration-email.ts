@@ -67,21 +67,60 @@ export function registrationEmailContent({ payToken, amountBaht, team }: Omit<Re
 }
 
 export async function sendRegistrationEmail(email: RegistrationEmail): Promise<void> {
+  await sendLimited(email.to, () => registrationEmailContent(email));
+}
+
+/**
+ * "Send me my page link", asked from a friend's team link by someone who
+ * already signed up on another device. It goes only to an address a sign-up
+ * was made with, and carries the person's own page links (one per sign-up on
+ * that address, newest first), each opening with the friend's team ready to
+ * join (?join=<code>). Nothing typed by anyone is in it.
+ */
+export function myPageEmailContent({ payTokens, joinCode }: { payTokens: string[]; joinCode: string | null }) {
+  const base = linkBase();
+  const urls = payTokens.map((t) => `${base}/hackathon/join/${t}${joinCode ? `?join=${joinCode}` : ""}`);
+  const subject = `ลิงก์หน้าของคุณ ${ELEMENTAL.edition} Hackathon`;
+  const lead = joinCode
+    ? "มีคนขอลิงก์หน้าการสมัครของอีเมลนี้ จากลิงก์ทีมที่เพื่อนส่งมา เปิดลิงก์แล้วกดเข้าทีมได้เลย ไม่ต้องสมัครใหม่"
+    : "มีคนขอลิงก์หน้าการสมัครของอีเมลนี้";
+  const many = urls.length > 1 ? `อีเมลนี้สมัครไว้ ${urls.length} ครั้ง ลิงก์ละหนึ่งการสมัคร ใหม่สุดอยู่บน` : null;
+  const outro = `ถ้าไม่ได้ขอ ไม่ต้องทำอะไร มีคำถามทักไลน์ ${SHIFT_PAYMENT.lineId}`;
+  const link = (url: string) => `<a href="${escape(url)}">${escape(url)}</a>`;
+  return {
+    subject,
+    text: [lead, ...(many ? [many] : []), ...urls, outro].join("\n\n"),
+    html: [
+      `<p>${lead}</p>`,
+      many ? `<p>${many}</p>` : "",
+      `<p>${urls.map(link).join("<br>")}</p>`,
+      `<p>${outro}</p>`,
+    ].join(""),
+  };
+}
+
+export async function sendMyPageEmail(email: { to: string; payTokens: string[]; joinCode: string | null }): Promise<void> {
+  if (!email.payTokens.length) return;
+  await sendLimited(email.to, () => myPageEmailContent(email));
+}
+
+/** Send one email, sharing the per-address hourly limit with the sign-up email. */
+async function sendLimited(to: string, content: () => { subject: string; html: string; text: string }): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return;
   const from = process.env.RESEND_FROM_EMAIL || "hi@noreply.passionseed.org";
   try {
-    const address = email.to.trim().toLowerCase();
+    const address = to.trim().toLowerCase();
     const key = createHash("sha256").update(`hackathon-register-email:${address}`).digest("hex");
     const { allowed } = await checkRateLimit(key, EMAILS_PER_HOUR);
     if (!allowed) {
       console.warn("[hackathon register] email skipped: hourly limit for this address");
       return;
     }
-    const { subject, html, text } = registrationEmailContent(email);
+    const { subject, html, text } = content();
     const { error } = await new Resend(apiKey).emails.send({
       from: `PassionSeed <${from}>`,
-      to: [email.to],
+      to: [to],
       subject,
       html,
       text,

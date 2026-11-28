@@ -1,0 +1,234 @@
+/*
+ * The Elemental page shell and controls (ui.tsx). Colours come from the
+ * surface's CSS variables (surfaceVars in ui.tsx: --el-text, --el-action …),
+ * so one class works on the dark ground, on cream paper and inside a dark
+ * slab on the cream page. Easings are the landing's (elemental-cinema.module.css).
+ */
+
+.surface {
+  --el-ease-snap: cubic-bezier(0.4, 0, 0.2, 1);
+  --el-ease-tension: cubic-bezier(0.05, 0.7, 0.35, 0.99);
+  font-family: var(--font-bai-jamjuree), sans-serif;
+  color: var(--el-text);
+}
+
+/* globals.css sets every heading to Libre Franklin / Krub, bold. Here they take the page's font. */
+.surface :is(h1, h2, h3, h4, h5, h6) {
+  font-family: inherit;
+}
+
+/* …and the page's weight, unless the heading sets its own with a font- class. */
+.surface :is(h1, h2, h3, h4, h5, h6):not([class*="font-"]) {
+  font-weight: inherit;
+}
+
+.surface :is(a, button, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--el-focus);
+  outline-offset: 3px;
+}
+
+/* Buttons */
+.button {
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 160ms var(--el-ease-snap),
+    transform 160ms var(--el-ease-snap);
+}
+
+.button:active:not(:disabled):not([aria-disabled="true"]) {
+  transform: translateY(1px);
+}
+
+.button:disabled,
+.button[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+/* Disabled reads as switched off, not as a faded colour. */
+.primary:disabled,
+.primary[aria-disabled="true"] {
+  background-color: var(--el-rule-soft);
+  color: var(--el-fine);
+}
+
+.secondary:disabled,
+.secondary[aria-disabled="true"] {
+  box-shadow: inset 0 0 0 1px var(--el-rule);
+  color: var(--el-fine);
+}
+
+.primary {
+  background-color: var(--el-action);
+  color: var(--el-action-ink);
+}
+
+.primary:active:not(:disabled) {
+  background-color: var(--el-action-pressed);
+}
+
+.secondary {
+  background-color: transparent;
+  box-shadow: inset 0 0 0 1px var(--el-outline);
+  color: var(--el-text);
+}
+
+.secondary:active:not(:disabled) {
+  background-color: var(--el-rule-soft);
+}
+
+@media (hover: hover) {
+  .primary:hover:not(:disabled) {
+    background-color: var(--el-action-pressed);
+  }
+
+  .secondary:hover:not(:disabled) {
+    background-color: var(--el-rule-soft);
+  }
+}
+
+/* Inputs: a 1px border, 2px in the focus colour while typing. Inset shadows, so nothing shifts. */
+.input {
+  background-color: var(--el-input);
+  box-shadow: inset 0 0 0 1px var(--el-input-border);
+  color: var(--el-text);
+  caret-color: var(--el-focus);
+  transition: box-shadow 160ms var(--el-ease-snap);
+}
+
+.input::placeholder {
+  color: var(--el-fine);
+  opacity: 1;
+}
+
+.input:focus,
+.input:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--el-focus);
+}
+
+.input[aria-invalid="true"] {
+  box-shadow: inset 0 0 0 2px var(--el-error);
+}
+
+/* The one primary action, pinned to the bottom, clear of the iPhone home bar. */
+.stickyBar {
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+/* Film grain inside a dark slab (the page-wide one is fixed; this one stays in the slab). */
+.slabGrain {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0.055;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 240 240' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 220px 220px;
+}
+
+/* RollingNumber: a number that changed on a poll. The old one slides up and fades, the new one comes in. */
+.roll {
+  position: relative;
+  display: inline-block;
+}
+
+.rollOut {
+  position: absolute;
+  inset: 0;
+  animation: el-roll-out 120ms var(--el-ease-snap, cubic-bezier(0.4, 0, 0.2, 1)) forwards;
+}
+
+.rollIn {
+  display: inline-block;
+  animation: el-roll-in 240ms var(--el-ease-tension, cubic-bezier(0.05, 0.7, 0.35, 0.99)) 80ms both;
+}
+
+/* "+2" in flameCore for 2.4s, just under the number. */
+.delta {
+  position: absolute;
+  top: calc(100% + 2px);
+  white-space: nowrap;
+  font-family: var(--font-bai-jamjuree), sans-serif;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 16px;
+  color: var(--el-action);
+  pointer-events: none;
+  animation: el-delta-life 2400ms linear forwards;
+}
+
+.deltaEnd {
+  right: 0;
+}
+
+.deltaStart {
+  left: 0;
+}
+
+@keyframes el-roll-out {
+  to {
+    transform: translateY(-6px);
+    opacity: 0;
+  }
+}
+
+@keyframes el-roll-in {
+  from {
+    transform: translateY(6px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes el-delta-life {
+  0% {
+    opacity: 0;
+  }
+  7% {
+    opacity: 1;
+  }
+  83% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes el-delta-gone {
+  0%,
+  99% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rollOut {
+    display: none;
+  }
+
+  .rollIn {
+    animation: none;
+  }
+
+  /* The "+2" still says what changed, then goes, without fading. */
+  .delta {
+    animation: el-delta-gone 2400ms linear forwards;
+  }
+
+  .button,
+  .input {
+    transition: none;
+  }
+
+  .button:active:not(:disabled) {
+    transform: none;
+  }
+}

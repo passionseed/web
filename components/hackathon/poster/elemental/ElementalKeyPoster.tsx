@@ -296,11 +296,14 @@ export function Pixels({ rows, fill, cell }: { rows: readonly string[]; fill: Re
  */
 function CsiiMark() {
   return (
-    <>
+    // display: contents, so the × and the logo stay items of the lockup's row (nothing moves). The
+    // data attribute lets the share posters' export leave CSII out until CSII approves
+    // (scripts/render-share-poster-base.mjs; Big, 2026-11-28).
+    <span data-poster-partner="csii" className="contents">
       <span style={{ fontFamily: EL_FONT.mono, fontSize: 20, color: EL.inkSoft }}>×</span>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/hackathon/partners/csii.png" alt="CSII, Chulalongkorn School of Integrated Innovation" width={153} height={50} style={{ opacity: 0.88 }} />
-    </>
+    </span>
   );
 }
 

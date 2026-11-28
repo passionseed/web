@@ -53,7 +53,7 @@ export function formatTeamCode(inviteCode: string): string {
   return inviteCode.slice(0, TEAM_CODE_LENGTH).replace(/(.{4})(?=.)/g, "$1 ");
 }
 
-export type TeamChangeError = "closed" | "cancelled" | "in_team" | "not_in_team" | "team_not_found" | "team_full";
+export type TeamChangeError = "closed" | "cancelled" | "in_team" | "not_in_team" | "same_team" | "team_not_found" | "team_full";
 
 /** Why this sign-up can't join that team, or null when it can. */
 export function joinTeamError(
@@ -64,6 +64,24 @@ export function joinTeamError(
   // One team at a time: leave the old one first, so nobody changes teams by accident.
   if (reg.teamId) return "in_team";
   if (!team) return "team_not_found";
+  if (team.spotsLeft < reg.memberCount) return "team_full";
+  return null;
+}
+
+/**
+ * Why this sign-up can't move from its team to that one, or null when it can.
+ * A move is a leave and a join in one step, asked for from a team's invite
+ * link by someone already in another team (Big, 2026-11-28: joining a team
+ * "when u alr reg as 199 alone or 149" didn't work).
+ */
+export function switchTeamError(
+  reg: TeamChanger,
+  team: { id: string; spotsLeft: number } | null,
+): TeamChangeError | null {
+  if (reg.status === "cancelled") return "cancelled";
+  if (!reg.teamId) return "not_in_team";
+  if (!team) return "team_not_found";
+  if (team.id === reg.teamId) return "same_team";
   if (team.spotsLeft < reg.memberCount) return "team_full";
   return null;
 }

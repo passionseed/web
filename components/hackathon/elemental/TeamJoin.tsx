@@ -18,12 +18,17 @@ export const TEAM_CHANGE_ERRORS: Record<string, string> = {
   team_full: "ทีมนี้ครบแล้ว",
   in_team: "หน้านี้อยู่ในทีมแล้ว ลองรีเฟรชหน้า",
   not_in_team: "หน้านี้ไม่ได้อยู่ในทีมแล้ว ลองรีเฟรชหน้า",
+  same_team: "อยู่ทีมนี้อยู่แล้ว",
   closed: "ปิดการเปลี่ยนทีมแล้ว",
   rude: TEAM_NAME_RUDE,
 };
 export const TEAM_CHANGE_FAILED = "ทำรายการไม่สำเร็จ ลองอีกครั้ง";
 
-type TeamAction = { action: "join"; code: string } | { action: "create"; name: string } | { action: "leave" };
+type TeamAction =
+  | { action: "join"; code: string }
+  | { action: "create"; name: string }
+  | { action: "leave" }
+  | { action: "switch"; code: string };
 
 /** Send one team change. Returns null when it worked, or the line to show. */
 export async function changeTeam(token: string, body: TeamAction, demo?: boolean): Promise<string | null> {

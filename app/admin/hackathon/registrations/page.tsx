@@ -1,13 +1,19 @@
 import { Badge } from "@/components/ui/badge";
 import { RegistrationActions } from "@/components/admin/hackathon/RegistrationActions";
+import { ShareLinksPanel, shareSummary } from "@/components/admin/hackathon/ShareLinksPanel";
+import { StoryProofsPanel } from "@/components/admin/hackathon/StoryProofsPanel";
 import { AdminEmptyState, AdminErrorState } from "@/components/admin/shared/AdminStates";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { formatBangkokDateTime } from "@/lib/admin/queue-tools/format";
 import { requireAdmin } from "@/lib/admin/requireAdmin";
+import { GRADE_LABEL_TH, type Grade } from "@/lib/hackathon/elemental/registration";
+import { linkSource } from "@/lib/hackathon/elemental/share";
 import {
   listRegistrations,
   type AdminRegistration,
 } from "@/lib/supabase/hackathon-event-registrations";
+import { listShareLinksForAdmin, type AdminShareLink } from "@/lib/supabase/hackathon-share-links";
+import { listStoryProofsForAdmin, type AdminStoryProof } from "@/lib/supabase/hackathon-story-proofs";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -56,7 +62,16 @@ function buddyLinks(rows: AdminRegistration[]): BuddyLinks {
   return { from, usedBy };
 }
 
-function RegistrationCard({ r, buddy }: { r: AdminRegistration; buddy: BuddyLinks }) {
+/** This sign-up's share link, in one line: the full row is in the Share links list above. */
+function ShareLinkLine({ l }: { l: AdminShareLink }) {
+  return (
+    <p className="text-xs text-muted-foreground">
+      Share link {linkSource(l.kind, l.code)} · {l.schoolName} · {l.devices} devices · {l.paid} paid
+    </p>
+  );
+}
+
+function RegistrationCard({ r, buddy, link }: { r: AdminRegistration; buddy: BuddyLinks; link?: AdminShareLink }) {
   return (
     <li className="space-y-3 rounded-lg border bg-muted/30 p-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -85,7 +100,7 @@ function RegistrationCard({ r, buddy }: { r: AdminRegistration; buddy: BuddyLink
         {r.members.map((m) => (
           <li key={m.position}>
             {m.fullName}
-            {m.nickname && ` (${m.nickname})`} · {m.age} · {m.school}
+            {m.nickname && ` (${m.nickname})`} · {m.grade && `${GRADE_LABEL_TH[m.grade as Grade] ?? m.grade} · `}{m.age} · {m.school}
             {m.age < 20 && (
               <span className="text-muted-foreground">
                 {" "}· parent {m.parentName} {m.parentPhone} {m.parentConsent ? "consented" : "NO CONSENT"}
@@ -104,6 +119,7 @@ function RegistrationCard({ r, buddy }: { r: AdminRegistration; buddy: BuddyLink
       </p>
       {slipNote(r.slipCheck) && <p className="text-xs text-muted-foreground">{slipNote(r.slipCheck)}</p>}
       {r.status === "paid" && <p className="text-xs text-muted-foreground">{discordNote(r.discord)}</p>}
+      {link && <ShareLinkLine l={link} />}
 
       <div className="flex flex-wrap items-start gap-4">
         {r.slipUrl && (
@@ -127,6 +143,22 @@ export default async function AdminHackathonRegistrationsPage() {
     console.error("[admin/hackathon/registrations] failed to load", error);
   }
 
+  // Share links and story proofs load on their own, so a missing table (migration not applied) can't break this page.
+  let links: AdminShareLink[] = [];
+  try {
+    links = await listShareLinksForAdmin(ELEMENTAL.slug);
+  } catch (error) {
+    console.error("[admin/hackathon/registrations] share links did not load", error);
+  }
+  let proofs: AdminStoryProof[] = [];
+  try {
+    proofs = await listStoryProofsForAdmin(ELEMENTAL.slug);
+  } catch (error) {
+    console.error("[admin/hackathon/registrations] story proofs did not load", error);
+  }
+  const linkFor = new Map<string, AdminShareLink>();
+  for (const l of links) if (l.registrationId) linkFor.set(l.registrationId, l);
+
   if (rows === null) {
     return (
       <AdminErrorState
@@ -139,6 +171,9 @@ export default async function AdminHackathonRegistrationsPage() {
   const buddy = buddyLinks(rows);
   const order = { review: 0, pending: 1, paid: 2, cancelled: 3 } as const;
   const sorted = [...rows].sort((a, b) => order[a.status] - order[b.status]);
+  const share = shareSummary(links);
+  // Who uploaded each proof, from the sign-ups above (the newest 500); older ones show by code only.
+  const proofNames = new Map(rows.map((r) => [r.id, r.teamName || r.members[0]?.fullName || "Unnamed"]));
   const paid = rows.filter((r) => r.status === "paid");
   const seats = paid.reduce((n, r) => n + r.memberCount, 0);
   const baht = paid.reduce((n, r) => n + r.amountBaht, 0);
@@ -161,18 +196,26 @@ export default async function AdminHackathonRegistrationsPage() {
           Discord: {paid.filter((r) => r.discord?.joinedAt).length} of {paid.length} paid sign-ups are in the server
           through their sign-up page.
         </p>
+        {links.length > 0 && (
+          <p className="mt-1 text-muted-foreground">
+            Share links: {share.links} ({share.students} students, {share.teachers} teachers) · {share.devices} devices · {share.paid} paid
+            through links · story proofs: {proofs.filter((p) => !p.revokedAt).length} live.
+          </p>
+        )}
         {sources.length > 0 && (
           <p className="mt-1 text-muted-foreground">
             Paid seats by link: {sources.map(([k, n]) => `${k} ${n}`).join(" · ")}
           </p>
         )}
       </div>
+      <StoryProofsPanel proofs={proofs} names={proofNames} />
+      <ShareLinksPanel links={links} />
       {sorted.length === 0 ? (
         <AdminEmptyState title="No sign-ups yet" description="Sign-ups from /hackathon appear here." />
       ) : (
         <ul className="space-y-3">
           {sorted.map((r) => (
-            <RegistrationCard key={r.id} r={r} buddy={buddy} />
+            <RegistrationCard key={r.id} r={r} buddy={buddy} link={linkFor.get(r.id)} />
           ))}
         </ul>
       )}

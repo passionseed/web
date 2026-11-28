@@ -10,6 +10,7 @@ export type HackathonNavItem = { href: string; label: string };
 export const HACKATHON_ITEMS: readonly HackathonNavItem[] = [
   { href: "/admin/hackathon/elemental", label: "Progress" },
   { href: "/admin/hackathon/registrations", label: "Sign-ups and slips" },
+  { href: "/admin/hackathon/leaderboard", label: "Team board" },
 ];
 
 /** The 1st edition (the health hackathon, Feb to Jun 2026), kept in the admin archive. */

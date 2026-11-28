@@ -1,0 +1,56 @@
+/*
+ * MeterCard motion (merged direction §7); the count rolls in the shared
+ * RollingNumber (shell.module.css). Easings are the landing's:
+ * snap cubic-bezier(0.4,0,0.2,1), tension cubic-bezier(0.05,0.7,0.35,0.99).
+ * Everything here is off under prefers-reduced-motion.
+ */
+
+/* A new device: a hot pixel that cools to clear, 420ms tension (delays set inline, 50ms apart). */
+.clearing {
+  animation: clear 420ms cubic-bezier(0.05, 0.7, 0.35, 0.99) both;
+}
+
+@keyframes clear {
+  from {
+    background-color: #fff4dc;
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  60% {
+    background-color: #ffd57a;
+    opacity: 0.7;
+  }
+  to {
+    background-color: #ffd57a;
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+/* The grid just came clean: one wave of light across the photo, column by column. */
+.wave {
+  animation: wave 520ms cubic-bezier(0.05, 0.7, 0.35, 0.99) both;
+}
+
+@keyframes wave {
+  from {
+    background-color: rgba(255, 244, 220, 0);
+  }
+  35% {
+    background-color: rgba(255, 244, 220, 0.55);
+  }
+  to {
+    background-color: rgba(255, 244, 220, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .clearing,
+  .wave {
+    animation: none;
+  }
+
+  .clearing {
+    opacity: 0;
+  }
+}

@@ -1,16 +1,14 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 
-import { trirong } from "@/components/hackathon/elemental/fonts";
+import { TrackLinkView } from "@/components/hackathon/elemental/TrackLinkView";
 import { JoinFlow } from "@/components/hackathon/elemental/join/JoinFlow";
-import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
+import { Body, H1, Page, v } from "@/components/hackathon/elemental/share/ui";
 import { ELEMENTAL, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
 import { parseBuddyOwe } from "@/lib/hackathon/elemental/buddy-pass";
 import { elementalRegistrationOpen, normalizeSource } from "@/lib/hackathon/elemental/registration";
-import { elementalShareDescription } from "@/lib/hackathon/elemental/share";
+import { demoPagesOn, elementalShareDescription } from "@/lib/hackathon/elemental/share";
 import { teamLabel } from "@/lib/hackathon/elemental/team-name";
-import { getBuddyPass, getTeamByInviteCode } from "@/lib/supabase/hackathon-event-registrations";
+import { getBuddyPass, getTeamByInviteCode, type PublicTeam } from "@/lib/supabase/hackathon-event-registrations";
 
 const TITLE = `สมัคร ${ELEMENTAL.edition} Hackathon`;
 const DESCRIPTION = elementalShareDescription();
@@ -32,6 +30,19 @@ export const dynamic = "force-dynamic";
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
+/** Demo only (?demo=1&team=demo): a made-up team, so the invite screen shows without reading the database. */
+const DEMO_TEAM: PublicTeam = {
+  id: "demo",
+  name: "ทีมมิว",
+  inviteCode: "demo",
+  roster: [
+    { name: "มิว", paid: true },
+    { name: "ต้น", paid: false },
+  ],
+  spotsLeft: ELEMENTAL.maxGroupSize - 2,
+};
+const DEMO_PASS_SENDER = "มิว";
+
 export default async function ElementalJoinPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
   const source = normalizeSource(first(params.src) ?? first(params.utm_source));
@@ -40,13 +51,26 @@ export default async function ElementalJoinPage({ searchParams }: { searchParams
     const v = first(params[key]);
     if (v) utm[key] = v.slice(0, 120);
   }
+  // Development and PR previews only: ?demo=1 walks the flow without saving anything (see /hackathon/join/demo).
+  // &team=demo and &pass=demo show the invite and buddy-pass screens with made-up data.
+  const demo = demoPagesOn() && first(params.demo) === "1";
   const open = elementalRegistrationOpen();
   const inviteCode = first(params.team);
-  const team = inviteCode ? await getTeamByInviteCode(ELEMENTAL.slug, inviteCode, ELEMENTAL.maxGroupSize) : null;
+  const team =
+    demo && inviteCode === "demo"
+      ? DEMO_TEAM
+      : inviteCode
+        ? await getTeamByInviteCode(ELEMENTAL.slug, inviteCode, ELEMENTAL.maxGroupSize)
+        : null;
   const teamFull = team !== null && team.spotsLeft === 0;
   // A team link wins over a pass link: the two prices never mix.
   const passCode = inviteCode ? undefined : first(params.pass);
-  const pass = passCode ? await getBuddyPass(ELEMENTAL.slug, passCode) : null;
+  const pass =
+    demo && passCode === "demo"
+      ? ({ state: "available", senderName: DEMO_PASS_SENDER } as const)
+      : passCode
+        ? await getBuddyPass(ELEMENTAL.slug, passCode)
+        : null;
   const buddyPass =
     pass?.state === "available" && passCode
       ? { code: passCode, senderName: pass.senderName || "เพื่อน", owe: parseBuddyOwe(first(params.owe)) }
@@ -67,11 +91,11 @@ export default async function ElementalJoinPage({ searchParams }: { searchParams
       : teamFull
         ? `${teamLabel(team.name)} ครบ ${ELEMENTAL.maxGroupSize} คนแล้ว สร้างทีมใหม่หรือมาคนเดียวได้`
         : passNotice;
-  // Dev only: ?demo=1 walks the flow without saving anything (see /hackathon/join/demo).
-  const demo = process.env.NODE_ENV === "development" && first(params.demo) === "1";
 
   return (
-    <main className={`${trirong.variable} min-h-[100dvh]`} style={{ backgroundColor: EL.cream, color: EL.ink }}>
+    <>
+      {/* A share link (?src=share-<code> or t-<code>) kept from the landing, or opened here directly, counts this device once for that link. Not in the demo. */}
+      {!demo && <TrackLinkView source={source} />}
       {open ? (
         <JoinFlow
           source={source}
@@ -83,16 +107,13 @@ export default async function ElementalJoinPage({ searchParams }: { searchParams
           demo={demo}
         />
       ) : (
-        <div className="mx-auto max-w-xl px-5 py-16">
-          <Link href={backHref} className="inline-flex items-center gap-2 text-sm" style={{ fontFamily: EL_FONT.mono, color: EL.inkSoft }}>
-            <ArrowLeft className="h-4 w-4" /> {ELEMENTAL.edition} Hackathon
-          </Link>
-          <h1 className="mt-6 text-5xl" style={{ fontFamily: EL_FONT.display, fontWeight: 200, lineHeight: 1.1 }}>
-            ปิดรับสมัครแล้ว
-          </h1>
-          <p className="mt-3 text-lg" style={{ color: EL.inkSoft }}>ขอบคุณที่สนใจ {thaiDateLine()}</p>
-        </div>
+        <Page surface="paper" back={{ href: backHref, label: ELEMENTAL.edition }}>
+          <H1>ปิดรับสมัครแล้ว</H1>
+          <div className="mt-3" style={{ color: v.secondary }}>
+            <Body>ขอบคุณที่สนใจ {thaiDateLine()}</Body>
+          </div>
+        </Page>
       )}
-    </main>
+    </>
   );
 }

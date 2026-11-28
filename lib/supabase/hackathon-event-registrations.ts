@@ -108,6 +108,8 @@ export type AdminRegistration = {
     fullName: string;
     nickname: string | null;
     age: number;
+    /** GRADE_VALUES, or null for sign-ups made before the question existed. */
+    grade: string | null;
     school: string;
     parentName: string | null;
     parentPhone: string | null;
@@ -180,8 +182,8 @@ export function isUniqueViolation(error: unknown): boolean {
 }
 
 /**
- * team_joined_at arrives with a migration, and production is the first
- * database to get it. Until then Postgres (42703) or PostgREST (PGRST204)
+ * team_joined_at (and a member's grade) arrive with migrations, and production is the first
+ * database to get them. Until then Postgres (42703) or PostgREST (PGRST204)
  * says the column is unknown, and the app reads and writes without it.
  */
 function isMissingColumn(error: unknown): boolean {
@@ -345,24 +347,48 @@ export async function createRegistration(
     .single();
   if (error || !data) throw error ?? new Error("insert failed");
 
-  const { error: memberError } = await db.from("hackathon_event_registration_members").insert(
+  const memberRows = (withGrade: boolean) =>
     input.members.map((m, i) => ({
       registration_id: data.id,
       position: i + 1,
       full_name: m.fullName,
       nickname: m.nickname ?? null,
       age: m.age,
+      ...(withGrade ? { grade: m.grade ?? null } : {}),
       school: m.school,
       parent_name: m.parentName ?? null,
       parent_phone: m.parentPhone ?? null,
       parent_consent: m.parentConsent,
-    })),
-  );
+    }));
+  // grade arrives with a migration (20261128140000); until it's applied the
+  // sign-up is saved without it rather than failing.
+  let { error: memberError } = await db.from("hackathon_event_registration_members").insert(memberRows(true));
+  if (memberError && isMissingColumn(memberError)) {
+    ({ error: memberError } = await db.from("hackathon_event_registration_members").insert(memberRows(false)));
+  }
   if (memberError) {
     await db.from("hackathon_event_registrations").delete().eq("id", data.id);
     throw memberError;
   }
   return { id: data.id, payToken: data.pay_token };
+}
+
+/**
+ * The page tokens of the sign-ups made with this email that aren't
+ * cancelled, newest first, for "send me my page link". Server only: the
+ * tokens go into an email to that address, never back to the browser.
+ */
+export async function payTokensForEmail(eventSlug: string, email: string, limit = 3): Promise<string[]> {
+  const { data, error } = await createAdminClient()
+    .from("hackathon_event_registrations")
+    .select("pay_token")
+    .eq("event_slug", eventSlug)
+    .eq("contact_email", email.trim().toLowerCase())
+    .neq("status", "cancelled")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []).map((r) => r.pay_token as string).filter(isPayToken);
 }
 
 export async function getRegistrationByToken(
@@ -630,6 +656,7 @@ export async function listRegistrations(eventSlug: string): Promise<AdminRegistr
         fullName: m.full_name as string,
         nickname: (m.nickname as string | null) ?? null,
         age: m.age as number,
+        grade: (m.grade as string | null | undefined) ?? null,
         school: m.school as string,
         parentName: (m.parent_name as string | null) ?? null,
         parentPhone: (m.parent_phone as string | null) ?? null,

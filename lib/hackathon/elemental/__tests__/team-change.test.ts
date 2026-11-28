@@ -5,6 +5,7 @@ import {
   joinTeamError,
   leaveTeamError,
   parseTeamCode,
+  switchTeamError,
   teamChangeOpen,
   type TeamChanger,
 } from "../team-change";
@@ -72,6 +73,23 @@ describe("joinTeamError", () => {
   it("needs a seat for every person on the sign-up", () => {
     expect(joinTeamError({ ...solo, memberCount: 3 }, { id: "t1", spotsLeft: 2 })).toBe("team_full");
     expect(joinTeamError({ ...solo, memberCount: 3 }, { id: "t1", spotsLeft: 3 })).toBeNull();
+  });
+});
+
+describe("switchTeamError", () => {
+  const inTeam: TeamChanger = { ...solo, amountBaht: 149, teamId: "t0" };
+
+  it("moves a sign-up from its team to another team with room", () => {
+    expect(switchTeamError(inTeam, room)).toBeNull();
+    expect(switchTeamError({ ...inTeam, status: "paid" }, room)).toBeNull();
+  });
+
+  it("refuses a cancelled sign-up, one with no team, an unknown code, its own team and a full team", () => {
+    expect(switchTeamError({ ...inTeam, status: "cancelled" }, room)).toBe("cancelled");
+    expect(switchTeamError(solo, room)).toBe("not_in_team");
+    expect(switchTeamError(inTeam, null)).toBe("team_not_found");
+    expect(switchTeamError(inTeam, { id: "t0", spotsLeft: 3 })).toBe("same_team");
+    expect(switchTeamError(inTeam, { id: "t1", spotsLeft: 0 })).toBe("team_full");
   });
 });
 

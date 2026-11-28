@@ -1,0 +1,18 @@
+/*
+ * The team board's rows (LeaderboardView, BoardRow). The numbers' roll and
+ * "+2" are the shared RollingNumber's (share/RollingNumber.tsx, styles in
+ * share/shell.module.css).
+ */
+
+/* Your team's row: a 2px flameCore rule on the left, and pinned to the bottom (above the sticky bar) while it's further down the list. */
+.you {
+  position: relative;
+  background-color: #121311;
+  box-shadow: inset 2px 0 0 var(--el-action);
+}
+
+.pinned {
+  position: sticky;
+  z-index: 10;
+  bottom: calc(65px + max(12px, env(safe-area-inset-bottom)));
+}

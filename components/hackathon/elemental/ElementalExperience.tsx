@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { motion, useReducedMotion, useTransform } from "framer-motion";
 
@@ -11,6 +10,8 @@ import { ELEMENTAL, prizeTotal } from "@/components/hackathon/poster/elemental/f
 import { BeginnerJourneySection } from "./BeginnerJourneySection";
 import styles from "./elemental-cinema.module.css";
 import { ElementalHero } from "./ElementalHero";
+import { EditorialLink } from "./share/ui";
+import { ElementalTopBar } from "./ElementalTopBar";
 import { ElementalPlacesShowcase } from "./ElementalPlacesShowcase";
 import { JourneySteps } from "./JourneySteps";
 import { ELEMENT_CHAPTERS, KEY_VISUAL_MEDIA } from "./media";
@@ -171,10 +172,13 @@ function ElementalExperienceInner({
   joinHref,
   open,
   fontClassName,
+  shareLive = false,
 }: {
   joinHref: string;
   open: boolean;
   fontClassName: string;
+  /** Sharing and the team board are live (shareOpen()): link the board and the teacher page. */
+  shareLive?: boolean;
 }) {
   const [pastHero, setPastHero] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
@@ -212,42 +216,13 @@ function ElementalExperienceInner({
       <div className={styles.filmGrain} aria-hidden="true" />
 
       {/* Minimal Header: ink on sky over hero, solid black + cream once past */}
-      <header
+      <ElementalTopBar
         ref={headerRef}
-        className="fixed inset-x-0 top-0 z-40 transition-colors duration-200"
-        style={{
-          backgroundColor: pastHero ? "#0c0d0c" : "transparent",
-          color: pastHero ? EL.cream : EL.ink,
-          borderBottom: pastHero ? "1px solid rgba(243,239,230,0.12)" : "1px solid transparent",
-        }}
-      >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-10">
-          {/* Who runs it: The Next Decade × PassionSeed, as on the poster */}
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            <a href="#top" aria-label={`${ELEMENTAL.series}: กลับขึ้นด้านบน`}>
-              <Image
-                src="/hackathon/HackLogo-header.png"
-                alt={ELEMENTAL.series}
-                width={70}
-                height={28}
-                priority
-                className="block h-6 w-auto sm:h-7"
-                style={{
-                  filter: pastHero ? "brightness(0) invert(1)" : "brightness(0)",
-                  opacity: 0.85,
-                  transition: "filter 200ms ease",
-                }}
-              />
-            </a>
-            <span className="text-[11px] opacity-60" style={{ fontFamily: EL_FONT.mono }} aria-hidden="true">
-              ×
-            </span>
-            <Link href="/" className="flex items-center gap-1.5">
-              <Image src="/passion-seed-logo-84.png" alt="" width={28} height={28} priority className="block h-6 w-6 sm:h-7 sm:w-7" />
-              <Wordmark className="text-[15px] sm:text-[17px]" />
-            </Link>
-          </div>
-
+        tone={pastHero ? "ground" : "sky"}
+        position="fixed"
+        homeHref="#top"
+        homeLabel={`${ELEMENTAL.series}: กลับขึ้นด้านบน`}
+        right={
           <div className="flex items-center gap-6">
             <Link
               href={boardHref}
@@ -273,8 +248,8 @@ function ElementalExperienceInner({
               </span>
             )}
           </div>
-        </div>
-      </header>
+        }
+      />
 
       {/* Single subtle sound control (default ON) */}
       <GlobalSoundControl />
@@ -443,6 +418,13 @@ function ElementalExperienceInner({
             ))}
           </ol>
 
+          {/* While sharing runs: the team board, as proof other students are in. */}
+          {shareLive && (
+            <div className="mt-10">
+              <EditorialLink href="/hackathon/elemental/leaderboard">กระดานทีม</EditorialLink>
+            </div>
+          )}
+
           {/* Policy: three plain lines, no box, no icon */}
           <div
             className="mt-12 space-y-2 border-t border-[#1d211f]/15 pt-8 text-sm leading-relaxed"
@@ -482,6 +464,11 @@ function ElementalExperienceInner({
               <Link href="/hackathon/elemental/sponsor" className="underline underline-offset-4 hover:text-[#faf8f4]">
                 ข้อมูลสำหรับผู้สนับสนุน
               </Link>
+              {shareLive && (
+                <Link href="/hackathon/elemental/teacher" className="underline underline-offset-4 hover:text-[#faf8f4]">
+                  คุณครู: สร้างลิงก์แชร์
+                </Link>
+              )}
             </div>
             <span className="text-xs text-[#cfc9bd]" style={{ fontFamily: EL_FONT.mono }}>
               {ELEMENTAL.series} × PassionSeed · {ELEMENTAL.url}
@@ -504,14 +491,16 @@ export function ElementalExperience({
   joinHref,
   open,
   fontClassName,
+  shareLive = false,
 }: {
   joinHref: string;
   open: boolean;
   fontClassName: string;
+  shareLive?: boolean;
 }) {
   return (
     <ElementalSoundProvider>
-      <ElementalExperienceInner joinHref={joinHref} open={open} fontClassName={fontClassName} />
+      <ElementalExperienceInner joinHref={joinHref} open={open} fontClassName={fontClassName} shareLive={shareLive} />
     </ElementalSoundProvider>
   );
 }
