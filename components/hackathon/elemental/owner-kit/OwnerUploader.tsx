@@ -197,7 +197,7 @@ export function OwnerUploader({ org, element, signature, due }: { org: string; e
     const queue = [...pendingFiles];
     if (hasNote) {
       // A BOM so a browser opens the Thai text as UTF-8.
-      const file = new File(["﻿" + note.trim() + "\n"], "notes.txt", { type: "text/plain" });
+      const file = new File(["\uFEFF" + note.trim() + "\n"], "notes.txt", { type: "text/plain" });
       const noteItem: Item = { id: nextId.current++, file, status: "waiting", progress: 0 };
       queue.unshift(noteItem);
       setItems((list) => [noteItem, ...list]);
