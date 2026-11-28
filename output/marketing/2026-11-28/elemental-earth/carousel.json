@@ -1,0 +1,41 @@
+{
+  "element": {
+    "th": "ดิน",
+    "en": "Earth",
+    "color": "#b98a4a",
+    "plate": "sources/plate-earth.jpg"
+  },
+  "slides": [
+    {
+      "file": "sources/lead-gums-1883.jpg",
+      "position": "50% 50%",
+      "shadeBottom": 700,
+      "variant": "question",
+      "place": "ภาพวาดทางการแพทย์ · พ.ศ. 2426",
+      "h1": "เส้นสีน้ำเงินที่เหงือก<br><b>คือพิษตะกั่ว</b>",
+      "lines": [
+        "ภาพเหงือกของคนงานโรงงานตะกั่ว วาดเมื่อ 143 ปีก่อน",
+        "ตะกั่วสะสมในร่างกาย จนเห็นเป็นเส้นที่ขอบเหงือก",
+        "<b>พ.ย. 2569 ยังพบตะกั่วในกากอุตสาหกรรมที่ฉะเชิงเทรา</b>"
+      ],
+      "credit": "ที่มา: กรุงเทพธุรกิจ (19 พ.ย. 2569) · ภาพ: Thomas Godart, Wellcome Collection, CC BY 4.0",
+      "checked": "Photo: 'Mouth and gums of a lead-mill worker', watercolour by Thomas Godart, 1883, Wellcome Collection L0062322 (Commons, CC BY 4.0). Its caption: a woman who worked in a lead mill, with a well-marked Burtonian line (the blue line lead leaves on the gums). 2026 - 1883 = 143 years. Lead in Thailand now: Bangkok Biz News, 19 Nov 2569: a raid on a warehouse in Plaeng Yao, Chachoengsao found more than 6,000 tonnes of industrial waste and e-waste; tests found arsenic, cadmium, lead, mercury, nickel and antimony. The website's Earth case says the test was a first screening with a portable device, not a lab result."
+    },
+    {
+      "file": "sources/sodom-gomorrah-fresco.jpg",
+      "position": "50% 50%",
+      "shadeBottom": 820,
+      "variant": "question",
+      "place": "จิตรกรรมฝาผนัง โซดอมและโกโมราห์ · ศตวรรษที่ 14",
+      "h1": "ทำไมไทยยังเจอกากพิษ<br><b>6,000 ตันในโกดังเดียว</b>",
+      "lines": [
+        "ภาพเมืองโซดอมและโกโมราห์ จากศตวรรษที่ 14",
+        "ชื่อเดียวกับที่คนกานาใช้เรียกแหล่งขยะอิเล็กทรอนิกส์ของตน",
+        "ที่ไทย พ.ย. 2569 เจอกากอุตสาหกรรมและขยะอิเล็กทรอนิกส์",
+        "<b>กว่า 6,000 ตัน ตรวจเบื้องต้นพบตะกั่ว ปรอท แคดเมียม</b>"
+      ],
+      "credit": "ที่มา: กรุงเทพธุรกิจ (19 พ.ย. 2569) · ภาพ: Giusto de' Menabuoi, หอศีลจุ่มเมืองปาดัว อิตาลี, สาธารณสมบัติ",
+      "checked": "Angpao, 2026-11-28: 'use city of sodom as pic 2 instead'. Photo: 'Sodom and Gomorrah by Giusto de Menabuoi (Padua baptistery)', fresco, 1376 to 1378 (Commons, public domain), 731x754, enlarged about 1.8 times. The link to the topic: people in Accra call the Agbogbloshie area, an e-waste site, 'Sodom and Gomorrah' (Wikipedia; Environment and Society Portal; SSIR). Thai fact: Bangkok Biz News, 19 Nov 2569, as on slide 1."
+    }
+  ]
+}

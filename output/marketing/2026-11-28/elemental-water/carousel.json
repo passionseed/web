@@ -1,0 +1,39 @@
+{
+  "element": {
+    "th": "น้ำ",
+    "en": "Water",
+    "color": "#3fb8a9",
+    "plate": "sources/plate-water.jpg"
+  },
+  "slides": [
+    {
+      "file": "sources/flood-2011-aster.jpg",
+      "position": "50% 46%",
+      "shadeBottom": 760,
+      "variant": "title",
+      "place": "ภาพถ่ายดาวเทียม ASTER · 1 พ.ย. 2554",
+      "h1": "น้ำท่วมใหญ่ 2554 <em>มองจากอวกาศ</em>",
+      "lines": [
+        "แถบสีดำในภาพคือสนามบินดอนเมือง ที่จมอยู่ใต้น้ำ"
+      ],
+      "hit": "ท่วมกว่า 60 จังหวัด เสียหายกว่า 1.4 ล้านล้านบาท",
+      "credit": "สีแดงคือต้นไม้ สีเข้มคือน้ำ · ที่มา: ธนาคารโลก · ภาพ: NASA/METI/AIST/Japan Space Systems, U.S./Japan ASTER Science Team",
+      "checked": "Photo: 'Flooding in Bangkok, Thailand (ASTER)', NASA/METI/AIST/Japan Space Systems and the U.S./Japan ASTER Science Team (Wikimedia Commons, public domain; NASA JPL photo ID bangkokflood2). Only NASA's top image is used, 1 Nov 2011, which its caption says shows Don Mueang airport under water. It is turned 90 degrees clockwise, so north points right. False colour: plants are red, water is dark. Flood: 65 provinces were declared disaster areas and the World Bank's assessment counts 66, so the slide says 'more than 60'. The World Bank put damage and losses at 1.43 trillion baht (other reports say 1.36 to 1.44), so the slide says 'more than 1.4 trillion'. Death counts differ (680+ in the first assessment, 815 later), so none is printed."
+    },
+    {
+      "file": "sources/sai-river-2013.jpg",
+      "position": "50% 50%",
+      "shadeBottom": 820,
+      "variant": "question",
+      "place": "แม่น้ำสาย แม่สาย · ถ่ายเมื่อ 1 ต.ค. 2556",
+      "h1": "ทำไมน้ำประปาแม่สาย<br><b>ต้องหยุดจ่าย</b>",
+      "lines": [
+        "พ.ย. 2569 สารหนูในแม่น้ำสาย",
+        "เกินมาตรฐาน 25 เท่า กระทบ 14 หมู่บ้าน",
+        "<b>สารหนูไหลมาจากเหมืองต้นน้ำ</b>"
+      ],
+      "credit": "ที่มา: กรมควบคุมมลพิษ และ กปภ. ตามข่าว 5–11 พ.ย. 2569 · ภาพ: Slleong, CC0",
+      "checked": "Photo: 'Sai River 1.jpg', Slleong (Wikimedia Commons, CC0), 1 Oct 2013: the Sai River at Mae Sai, Thailand on the left and Myanmar on the right. A stand-in: no free photo of the November 2569 event was found, and news photos of it are copyrighted, so the slide dates the photo. Arsenic: on 5 Nov 2569 the river turned very muddy; a first test on 6 Nov found arsenic about 25 times the surface-water standard (AFP later wrote 'nearly 30 times'); the Mae Sai waterworks cut and paused supply, which hit 14 villages; supply was back on 7 Nov with arsenic still above the standard. Reports: PPTV, The Standard, Post Today, Lanner (5 to 11 Nov 2569), France 24 / AFP (27 Nov 2569). No country is named for the mines."
+    }
+  ]
+}
