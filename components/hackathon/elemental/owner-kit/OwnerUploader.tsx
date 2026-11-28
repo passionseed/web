@@ -4,141 +4,424 @@ import { useEffect, useRef, useState } from "react";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import type { OwnerElement } from "@/lib/hackathon/elemental/owner-link";
-import { formatFileSize, OWNER_UPLOAD_ACCEPT } from "@/lib/hackathon/elemental/owner-upload";
+import {
+  checkOwnerUpload,
+  formatFileSize,
+  OWNER_UPLOAD_ACCEPT_MEDIA,
+  OWNER_UPLOAD_ACCEPT_PDF,
+} from "@/lib/hackathon/elemental/owner-upload";
 
 type Item = {
   id: number;
   file: File;
-  status: "waiting" | "uploading" | "done" | "error";
+  /** "rejected" failed the size or type check on pick and is never sent. */
+  status: "waiting" | "uploading" | "done" | "error" | "rejected";
   progress: number;
   error?: string;
 };
 
-function put(url: string, file: File, contentType: string, onProgress: (p: number) => void): Promise<void> {
+/** What this device has already sent on this link, kept in localStorage so a reopened link shows it. */
+type Receipt = { sent: { name: string; size: number; at: string }[]; unfinished: boolean };
+
+const RULE = "1px solid rgba(243,239,230,0.28)";
+/** Abort a PUT when no bytes move for this long, so a dead 4G connection doesn't freeze the bar forever. */
+const STALL_MS = 45_000;
+
+const receiptKey = (signature: string) => `elemental-owner-kit:${signature}`;
+
+function readReceipt(signature: string): Receipt {
+  try {
+    const raw = window.localStorage.getItem(receiptKey(signature));
+    const parsed = raw ? (JSON.parse(raw) as Partial<Receipt>) : null;
+    return { sent: Array.isArray(parsed?.sent) ? parsed.sent : [], unfinished: parsed?.unfinished === true };
+  } catch {
+    return { sent: [], unfinished: false };
+  }
+}
+
+function writeReceipt(signature: string, receipt: Receipt) {
+  try {
+    window.localStorage.setItem(receiptKey(signature), JSON.stringify(receipt));
+  } catch {
+    // Private mode or storage blocked: the receipt is a convenience only.
+  }
+}
+
+/** A short Thai date ("28 พ.ย.") for a receipt line. */
+function shortDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString("th-TH", { day: "numeric", month: "short", timeZone: "Asia/Bangkok" });
+  } catch {
+    return "";
+  }
+}
+
+function put(url: string, file: File, contentType: string, onProgress: (loaded: number) => void): Promise<void> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
+    let last = Date.now();
+    const stall = window.setInterval(() => {
+      if (Date.now() - last > STALL_MS) {
+        window.clearInterval(stall);
+        xhr.abort();
+        reject(new Error("เน็ตค้าง ไฟล์ไม่ขยับ ลองอีกครั้ง ถ้ามี Wi-Fi ใช้ Wi-Fi"));
+      }
+    }, 5_000);
+    const finish = (fn: () => void) => {
+      window.clearInterval(stall);
+      fn();
+    };
     xhr.open("PUT", url);
     xhr.setRequestHeader("Content-Type", contentType);
     xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) onProgress(e.loaded / e.total);
+      last = Date.now();
+      onProgress(e.loaded);
     };
-    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`อัปโหลดไม่สำเร็จ (${xhr.status})`)));
-    xhr.onerror = () => reject(new Error("เน็ตหลุดระหว่างอัปโหลด ลองอีกครั้ง"));
+    xhr.onload = () =>
+      finish(() => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`อัปโหลดไม่สำเร็จ (${xhr.status}) ลองอีกครั้ง`))));
+    xhr.onerror = () => finish(() => reject(new Error("เน็ตหลุดระหว่างอัปโหลด ลองอีกครั้ง")));
     xhr.send(file);
   });
+}
+
+/** Keep the screen on while uploading, where the browser allows it. */
+async function holdScreen(): Promise<{ release: () => Promise<void> } | null> {
+  try {
+    if ("wakeLock" in navigator) return await navigator.wakeLock.request("screen");
+  } catch {
+    // Not allowed here (in-app browsers, low battery): the copy already asks to keep the screen on.
+  }
+  return null;
+}
+
+/** Share the link with whoever films, or copy it. */
+function ShareLink() {
+  const [copied, setCopied] = useState(false);
+  const share = async () => {
+    const url = window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({ url });
+        return;
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2500);
+    } catch {
+      window.prompt("คัดลอกลิงก์นี้", url);
+    }
+  };
+  return (
+    <div className="flex flex-col gap-3 pb-6 sm:flex-row sm:items-center sm:justify-between" style={{ borderBottom: RULE }}>
+      <p className="text-[17px] leading-[1.55]" style={{ fontWeight: 300 }}>
+        ส่งต่อลิงก์นี้ให้คนที่ถ่ายได้เลย ไฟล์จะถึงทีมงานโดยตรง
+      </p>
+      <button
+        type="button"
+        onClick={share}
+        className="min-h-[44px] flex-none px-4 py-2 text-[17px]"
+        style={{ border: `1px solid ${EL.cream}`, color: EL.cream, fontWeight: 400 }}
+      >
+        {copied ? "คัดลอกแล้ว" : "ส่งต่อลิงก์"}
+      </button>
+    </div>
+  );
 }
 
 /**
  * The owner kit's upload form. Each file goes straight from the phone to B2
  * on a presigned PUT from /api/hackathon/elemental/owner-upload, one at a
- * time, with a progress bar.
+ * time, with a progress bar. A typed note goes up first as notes.txt through
+ * the same flow, so the team's Discord ping lists it.
  */
-export function OwnerUploader({ org, element, signature }: { org: string; element: OwnerElement | null; signature: string }) {
+export function OwnerUploader({ org, element, signature, due }: { org: string; element: OwnerElement | null; signature: string; due: string }) {
   const [items, setItems] = useState<Item[]>([]);
+  const [note, setNote] = useState("");
+  const [minors, setMinors] = useState(false);
   const [consent, setConsent] = useState(false);
+  const [consentNudge, setConsentNudge] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [ranOnce, setRanOnce] = useState(false);
+  const [receipt, setReceipt] = useState<Receipt>({ sent: [], unfinished: false });
   const nextId = useRef(1);
+  const consentRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // Read after mount: localStorage isn't there during server render.
+    setReceipt(readReceipt(signature));
+  }, [signature]);
 
   useEffect(() => {
     if (!busy) return;
-    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [busy]);
 
   const update = (id: number, patch: Partial<Item>) => setItems((list) => list.map((it) => (it.id === id ? { ...it, ...patch } : it)));
+  const remove = (id: number) => setItems((list) => list.filter((it) => it.id !== id));
 
   const add = (files: FileList | null) => {
     if (!files) return;
-    const added = Array.from(files).map((file) => ({ id: nextId.current++, file, status: "waiting" as const, progress: 0 }));
+    const added: Item[] = Array.from(files).map((file) => {
+      const check = checkOwnerUpload({ fileName: file.name, fileType: file.type, fileSize: file.size });
+      return check.ok
+        ? { id: nextId.current++, file, status: "waiting", progress: 0 }
+        : { id: nextId.current++, file, status: "rejected", progress: 0, error: check.error };
+    });
     setItems((list) => [...list, ...added]);
   };
 
+  const pendingFiles = items.filter((i) => i.status === "waiting" || i.status === "error");
+  const failed = items.filter((i) => i.status === "error").length;
+  const done = items.filter((i) => i.status === "done").length;
+  const hasNote = note.trim().length > 0;
+  const toSend = pendingFiles.length + (hasNote ? 1 : 0);
+
   const start = async () => {
+    if (busy || toSend === 0) return;
+    if (!consent) {
+      setConsentNudge(true);
+      consentRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      consentRef.current?.focus({ preventScroll: true });
+      return;
+    }
+
+    const queue = [...pendingFiles];
+    if (hasNote) {
+      // A BOM so a browser opens the Thai text as UTF-8.
+      const file = new File(["﻿" + note.trim() + "\n"], "notes.txt", { type: "text/plain" });
+      const noteItem: Item = { id: nextId.current++, file, status: "waiting", progress: 0 };
+      queue.unshift(noteItem);
+      setItems((list) => [noteItem, ...list]);
+      setNote("");
+    }
+
     setBusy(true);
+    setRanOnce(true);
+    const lock = await holdScreen();
+    let current = readReceipt(signature);
+    writeReceipt(signature, { ...current, unfinished: true });
     const uploaded: string[] = [];
-    for (const it of items.filter((i) => i.status === "waiting" || i.status === "error")) {
+
+    for (const it of queue) {
       update(it.id, { status: "uploading", progress: 0, error: undefined });
       try {
-        const res = await fetch("/api/hackathon/elemental/owner-upload", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ o: org, el: element, s: signature, fileName: it.file.name, fileType: it.file.type, fileSize: it.file.size }),
-        });
+        let res: Response;
+        try {
+          res = await fetch("/api/hackathon/elemental/owner-upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ o: org, el: element, s: signature, fileName: it.file.name, fileType: it.file.type, fileSize: it.file.size }),
+          });
+        } catch {
+          throw new Error("เน็ตหลุด ลองอีกครั้ง");
+        }
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.error || "อัปโหลดไม่สำเร็จ");
-        await put(data.uploadUrl, it.file, data.contentType, (p) => update(it.id, { progress: p }));
+        if (!res.ok) throw new Error(data.error || "อัปโหลดไม่สำเร็จ ลองอีกครั้ง");
+        await put(data.uploadUrl, it.file, data.contentType, (loaded) => update(it.id, { progress: Math.min(1, loaded / it.file.size) }));
         update(it.id, { status: "done", progress: 1 });
         uploaded.push(data.key);
+        current = { ...current, sent: [...current.sent, { name: it.file.name, size: it.file.size, at: new Date().toISOString() }] };
+        writeReceipt(signature, { ...current, unfinished: true });
       } catch (error) {
-        update(it.id, { status: "error", error: error instanceof Error ? error.message : "อัปโหลดไม่สำเร็จ" });
+        update(it.id, { status: "error", error: error instanceof Error ? error.message : "อัปโหลดไม่สำเร็จ ลองอีกครั้ง" });
       }
     }
+
+    writeReceipt(signature, { ...current, unfinished: false });
+    await lock?.release().catch(() => {});
     setBusy(false);
     // Tell the team on Discord. The owner's files are safe either way, so a failure here stays silent.
     if (uploaded.length > 0) {
       fetch("/api/hackathon/elemental/owner-upload/done", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ o: org, el: element, s: signature, keys: uploaded }),
+        body: JSON.stringify({ o: org, el: element, s: signature, keys: uploaded, minors }),
         keepalive: true,
       }).catch(() => {});
     }
   };
 
-  const pending = items.filter((i) => i.status === "waiting" || i.status === "error").length;
-  const done = items.filter((i) => i.status === "done").length;
+  const label = busy
+    ? "กำลังอัปโหลด อย่าเพิ่งปิดหน้านี้"
+    : failed > 0 && failed === toSend
+      ? `ลองส่ง ${failed} ไฟล์ที่ไม่สำเร็จอีกครั้ง`
+      : toSend > 0
+        ? pendingFiles.length === 0
+          ? "ส่งข้อความ"
+          : `อัปโหลด ${toSend} ไฟล์`
+        : done > 0
+          ? "อัปโหลดครบแล้ว"
+          : "อัปโหลด";
+  const idle = !busy && toSend === 0;
 
   return (
-    <div>
+    <div style={{ fontFamily: EL_FONT.display }}>
+      <ShareLink />
+
+      {(receipt.sent.length > 0 || receipt.unfinished) && done === 0 && !busy && (
+        <div className="mt-6 text-[16px] leading-[1.55]" style={{ fontWeight: 300, color: EL.creamSoft }}>
+          {receipt.sent.length > 0 && (
+            <>
+              <p style={{ color: EL.toxicCyan }}>ส่งจากเครื่องนี้แล้ว {receipt.sent.length} ไฟล์ ส่งเพิ่มได้</p>
+              <ul className="mt-1">
+                {receipt.sent.slice(-5).map((f) => (
+                  <li key={`${f.name}-${f.at}`} className="truncate">
+                    {f.name} ({shortDate(f.at)})
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          {receipt.unfinished && <p className="mt-1" style={{ color: EL.flame }}>ครั้งก่อนอัปโหลดไม่เสร็จ เลือกไฟล์ที่ยังไม่ขึ้นว่าได้รับแล้วอีกครั้ง</p>}
+        </div>
+      )}
+
       <label
-        className="flex cursor-pointer flex-col items-center justify-center gap-2 border-2 border-dashed px-4 py-8 text-center"
-        style={{ borderColor: "rgba(243,239,230,0.45)", fontFamily: EL_FONT.display }}
+        className="mt-6 flex cursor-pointer flex-col items-center justify-center gap-2 border-2 border-dashed px-4 py-8 text-center focus-within:outline focus-within:outline-2 focus-within:outline-offset-4"
+        style={{ borderColor: "rgba(243,239,230,0.45)", outlineColor: EL.cream }}
       >
-        <span style={{ fontSize: 22, fontWeight: 400 }}>เลือกคลิป รูป หรือ PDF</span>
+        <span style={{ fontSize: 22, fontWeight: 400 }}>เลือกคลิปหรือรูปจากคลังภาพ</span>
         <span style={{ fontSize: 16, fontWeight: 300, color: EL.creamSoft }}>เลือกได้ทีละหลายไฟล์ ไฟล์ละไม่เกิน 2 GB</span>
-        <input type="file" multiple accept={OWNER_UPLOAD_ACCEPT} className="sr-only" disabled={busy} onChange={(e) => { add(e.target.files); e.target.value = ""; }} />
+        <input type="file" multiple accept={OWNER_UPLOAD_ACCEPT_MEDIA} className="sr-only" disabled={busy} onChange={(e) => { add(e.target.files); e.target.value = ""; }} />
+      </label>
+      <label className="mt-2 inline-flex min-h-[44px] cursor-pointer items-center text-[16px] focus-within:outline focus-within:outline-2" style={{ fontWeight: 300, color: EL.creamSoft, outlineColor: EL.cream }}>
+        <span style={{ textDecoration: "underline", textUnderlineOffset: 4 }}>หรือเลือกไฟล์ PDF</span>
+        <input type="file" multiple accept={OWNER_UPLOAD_ACCEPT_PDF} className="sr-only" disabled={busy} onChange={(e) => { add(e.target.files); e.target.value = ""; }} />
       </label>
 
       {items.length > 0 && (
-        <ul className="mt-4 space-y-3">
-          {items.map((it) => (
-            <li key={it.id} style={{ borderTop: "1px solid rgba(243,239,230,0.28)", paddingTop: 10 }}>
-              <div className="flex items-baseline justify-between gap-3" style={{ fontFamily: EL_FONT.display, fontSize: 17, fontWeight: 300 }}>
-                <span className="min-w-0 truncate">{it.file.name}</span>
-                <span className="flex-none" style={{ fontFamily: EL_FONT.mono, fontSize: 13, color: it.status === "error" ? EL.flame : it.status === "done" ? EL.toxicCyan : EL.creamSoft }}>
-                  {it.status === "done" ? "ได้รับแล้ว" : it.status === "uploading" ? `${Math.round(it.progress * 100)}%` : it.status === "error" ? "ไม่สำเร็จ" : formatFileSize(it.file.size)}
-                </span>
-              </div>
-              <div className="mt-2 h-1" style={{ background: "rgba(243,239,230,0.18)" }}>
-                <div className="h-full transition-[width]" style={{ width: `${it.progress * 100}%`, background: it.status === "error" ? EL.flame : EL.cream }} />
-              </div>
-              {it.error && <p className="mt-1" style={{ fontFamily: EL_FONT.display, fontSize: 15, color: EL.flame }}>{it.error}</p>}
-            </li>
-          ))}
+        <ul className="mt-3 space-y-3" aria-live="polite">
+          {items.map((it) => {
+            const removable = !busy && (it.status === "waiting" || it.status === "error" || it.status === "rejected");
+            const color = it.status === "error" || it.status === "rejected" ? EL.flame : it.status === "done" ? EL.toxicCyan : EL.creamSoft;
+            return (
+              <li key={it.id} style={{ borderTop: RULE, paddingTop: 10 }}>
+                <div className="flex items-center justify-between gap-3" style={{ fontSize: 17, fontWeight: 300 }}>
+                  <span className="min-w-0 truncate">{it.file.name}</span>
+                  <span className="flex flex-none items-center gap-1">
+                    <span style={{ fontFamily: EL_FONT.mono, fontSize: 13, color }}>
+                      {it.status === "done"
+                        ? "ได้รับแล้ว"
+                        : it.status === "uploading"
+                          ? `${formatFileSize(it.progress * it.file.size)} / ${formatFileSize(it.file.size)} · ${Math.round(it.progress * 100)}%`
+                          : it.status === "rejected"
+                            ? "ส่งไม่ได้"
+                            : it.status === "error"
+                              ? "ไม่สำเร็จ"
+                            : formatFileSize(it.file.size)}
+                    </span>
+                    {removable && (
+                      <button
+                        type="button"
+                        onClick={() => remove(it.id)}
+                        aria-label={`ลบ ${it.file.name}`}
+                        className="flex h-11 min-w-[44px] items-center justify-center px-2 text-[15px]"
+                        style={{ color: EL.cream, textDecoration: "underline", textUnderlineOffset: 3 }}
+                      >
+                        ลบ
+                      </button>
+                    )}
+                  </span>
+                </div>
+                <div
+                  className="mt-1 h-1"
+                  style={{ background: "rgba(243,239,230,0.18)" }}
+                  role="progressbar"
+                  aria-label={it.file.name}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.round(it.progress * 100)}
+                >
+                  <div className="h-full transition-[width]" style={{ width: `${it.progress * 100}%`, background: it.status === "error" ? EL.flame : EL.cream }} />
+                </div>
+                {it.error && <p className="mt-1" style={{ fontSize: 15, color: EL.flame }}>{it.error}</p>}
+              </li>
+            );
+          })}
         </ul>
       )}
 
-      <label className="mt-5 flex cursor-pointer items-start gap-3" style={{ fontFamily: EL_FONT.display, fontSize: 17, fontWeight: 300, lineHeight: 1.5 }}>
-        <input type="checkbox" className="mt-1.5 h-4 w-4 flex-none accent-[#f3efe6]" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+      <label className="mt-7 block">
+        <span className="text-[18px]" style={{ fontWeight: 400 }}>ข้อความถึงทีมงาน</span>{" "}
+        <span className="text-[15px]" style={{ fontWeight: 300, color: EL.creamSoft }}>ถ้ามี</span>
+        <textarea
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          disabled={busy}
+          rows={3}
+          maxLength={4000}
+          placeholder="ชื่อและตำแหน่งคนเล่า ลิงก์เพจ หรือเรื่องที่อยากบอก"
+          className="mt-2 block w-full px-3 py-2.5 text-[17px] leading-[1.5] placeholder:text-[rgba(243,239,230,0.45)] focus:outline focus:outline-2"
+          style={{ background: "rgba(30,28,26,0.6)", border: "1px solid rgba(243,239,230,0.45)", color: EL.cream, fontWeight: 300, outlineColor: EL.cream }}
+        />
+      </label>
+
+      <label className="mt-5 flex min-h-[44px] cursor-pointer items-start gap-3 py-1" style={{ fontSize: 17, fontWeight: 300, lineHeight: 1.5 }}>
+        <input type="checkbox" className="mt-0.5 h-6 w-6 flex-none accent-[#f3efe6]" checked={minors} onChange={(e) => setMinors(e.target.checked)} />
         <span>
-          อนุญาตให้ PassionSeed ใช้คลิปและรูปเหล่านี้บนเว็บและโซเชียลของ Elemental Hackathon และในห้องเรียนของงาน
+          มีเด็กหรือนักเรียนเห็นหน้าในคลิป และผู้ปกครองอนุญาตเป็นลายลักษณ์อักษรแล้ว
+          <span className="mt-0.5 block text-[15px]" style={{ color: EL.creamSoft }}>
+            ถ่ายรูปใบอนุญาตแล้วอัปโหลดมาพร้อมคลิปได้
+          </span>
         </span>
       </label>
+
+      <label
+        className="mt-3 flex min-h-[44px] cursor-pointer items-start gap-3 p-2"
+        style={{ fontSize: 17, fontWeight: 300, lineHeight: 1.5, outline: consentNudge && !consent ? `2px solid ${EL.flame}` : "none", outlineOffset: 2, marginLeft: -8, marginRight: -8 }}
+      >
+        <input
+          ref={consentRef}
+          type="checkbox"
+          className="mt-0.5 h-6 w-6 flex-none accent-[#f3efe6]"
+          checked={consent}
+          onChange={(e) => {
+            setConsent(e.target.checked);
+            if (e.target.checked) setConsentNudge(false);
+          }}
+        />
+        <span>
+          อนุญาตให้ PassionSeed ใช้คลิปและรูปเหล่านี้บนเว็บและโซเชียลของ Elemental Hackathon และในห้องเรียนของงาน
+          {consentNudge && !consent && (
+            <span className="mt-1 block text-[16px]" style={{ color: EL.flame, fontWeight: 400 }} role="alert">
+              ติ๊กอนุญาตก่อนอัปโหลด
+            </span>
+          )}
+        </span>
+      </label>
+
+      <p className="mt-5 text-[16px] leading-[1.55]" style={{ fontWeight: 300, color: EL.creamSoft }}>
+        ส่งภายใน {due} ระหว่างอัปโหลด เปิดหน้านี้ค้างไว้ อย่าล็อกจอหรือสลับแอปจนขึ้นว่าได้รับแล้ว ถ้ามี Wi-Fi ใช้ Wi-Fi
+      </p>
 
       <button
         type="button"
         onClick={start}
-        disabled={!consent || pending === 0 || busy}
-        className="mt-5 w-full px-5 py-4 disabled:opacity-40"
-        style={{ background: EL.cream, color: EL.ink, fontFamily: EL_FONT.display, fontSize: 20, fontWeight: 400 }}
+        disabled={idle || busy}
+        aria-busy={busy}
+        className={`mt-3 min-h-[56px] w-full px-5 py-4 ${idle ? "opacity-40" : ""}`}
+        style={{ background: EL.cream, color: EL.ink, fontSize: 20, fontWeight: 400 }}
       >
-        {busy ? "กำลังอัปโหลด อย่าเพิ่งปิดหน้านี้" : pending > 0 ? `อัปโหลด ${pending} ไฟล์` : done > 0 ? "อัปโหลดครบแล้ว" : "อัปโหลด"}
+        {label}
       </button>
 
-      {done > 0 && !busy && pending === 0 && (
-        <p className="mt-4" style={{ fontFamily: EL_FONT.display, fontSize: 18, fontWeight: 300, color: EL.toxicCyan }}>
-          ได้รับครบ {done} ไฟล์แล้ว ขอบคุณมาก ทีมงานจะติดต่อกลับถ้ามีอะไรเพิ่ม
+      {ranOnce && !busy && failed > 0 && (
+        <p className="mt-3 text-[17px]" style={{ fontWeight: 300, color: EL.flame }}>
+          ส่งแล้ว {done} ไฟล์ ไม่สำเร็จ {failed} ไฟล์
+        </p>
+      )}
+      {done > 0 && !busy && toSend === 0 && (
+        <p className="mt-4 text-[18px] leading-[1.55]" style={{ fontWeight: 300, color: EL.toxicCyan }}>
+          ได้รับครบ {done} ไฟล์แล้ว ขอบคุณมาก มีรูปหรือคลิปเพิ่มส่งที่เดิมได้ทุกเมื่อ
         </p>
       )}
     </div>

@@ -22,5 +22,7 @@ export default async function OwnerKitPage({ searchParams }: { searchParams: Pro
   const org = one(params.o);
   const signature = one(params.s);
   const upload = org && signature && verifyOwnerLink(org, element, signature) ? { org, signature } : null;
-  return <OwnerKit element={element} upload={upload} />;
+  // A link that tried to be signed but doesn't check out: say so, rather than quietly showing the public guide.
+  const linkBroken = Boolean(org || signature) && !upload;
+  return <OwnerKit element={element} upload={upload} linkBroken={linkBroken} />;
 }

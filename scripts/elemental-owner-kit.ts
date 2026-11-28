@@ -4,6 +4,9 @@
  *   pnpm elemental:owner-kit link <org> [earth|water|air|fire|aether]
  *     Prints the upload link to send one organisation. The org is a short
  *     slug (mekong-school); their files land under elemental-owners/<org>/.
+ *     The link ends in openExternalBrowser=1, so LINE opens it in Safari or
+ *     Chrome instead of its in-app browser, which drops long uploads. The
+ *     page ignores that parameter and the signature doesn't cover it.
  *
  *   pnpm elemental:owner-kit list [org]
  *     Lists what owners have uploaded, newest last, with public URLs.
@@ -30,7 +33,7 @@ async function main() {
       console.error(`Unknown element "${el}". Use earth, water, air, fire or aether.`);
       process.exit(1);
     }
-    console.log(SITE + ownerKitPath(org, element, signOwnerLink(org, element)));
+    console.log(`${SITE}${ownerKitPath(org, element, signOwnerLink(org, element))}&openExternalBrowser=1`);
     return;
   }
 
