@@ -21,7 +21,7 @@ import {
   type RegistrationTotalsRow,
 } from "@/lib/hackathon/elemental/seats";
 import { summarizeAudience, type AudienceSummary } from "@/lib/hackathon/elemental/audience";
-import { summarizeFunnel, type FunnelSummary } from "@/lib/hackathon/elemental/funnel";
+import { summarizeFunnel, type FunnelRow } from "@/lib/hackathon/elemental/funnel";
 import { dailySummary } from "@/lib/hackathon/elemental/summary";
 import { ELEMENTAL_TARGETS } from "@/lib/hackathon/elemental/targets";
 import { buildTodayRows } from "@/lib/hackathon/elemental/today";
@@ -58,10 +58,10 @@ async function loadAudience(): Promise<AudienceSummary | null> {
 
 const FUNNEL_DAYS = 30;
 
-async function loadFunnel(now: Date): Promise<FunnelSummary | null> {
+async function loadFunnelRows(now: Date): Promise<FunnelRow[] | null> {
   try {
     const since = new Date(now.getTime() - FUNNEL_DAYS * 24 * 60 * 60 * 1000).toISOString();
-    return summarizeFunnel(await listElementalFunnelRows(since));
+    return await listElementalFunnelRows(since);
   } catch (error) {
     console.error("[admin/hackathon/elemental] funnel failed to load", error);
     return null;
@@ -92,17 +92,22 @@ export default async function AdminHackathonElementalPage() {
   await requireAdmin();
   const now = new Date();
   const today = bangkokDate(now);
-  const [seatRows, tasks, pipeline, funnel, audience] = await Promise.all([
+  const [seatRows, tasks, pipeline, funnelRows, audience] = await Promise.all([
     loadSeatRows(),
     loadTasks(today),
     loadPipelineState(),
-    loadFunnel(now),
+    loadFunnelRows(now),
     loadAudience(),
   ]);
 
   const totals = seatRows ? summarizeRegistrations(seatRows, now) : null;
   const pace = totals ? seatPace(totals.paidSeats, today) : null;
   const line = seatRows && totals ? paceLine(seatRows, totals.paidSeats, now) : null;
+  // Paid comes from the sign-ups table, not from browsers that opened the paid page.
+  const funnelTruth = totals
+    ? { paidPeople: totals.paidSeats, signedUpPeople: totals.paidSeats + totals.reviewPeople + totals.unpaidPeople }
+    : null;
+  const funnel = funnelRows ? summarizeFunnel(funnelRows, funnelTruth) : null;
   const items = pipeline.status === "ok" ? pipeline.items : null;
   const progress = items ? pipelineProgress(items) : null;
   const { start, end } = ELEMENTAL_TARGETS.event;
