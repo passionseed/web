@@ -24,7 +24,7 @@ export type SignupNotice = {
   /** Sign-ups so far that aren't cancelled, this one included. */
   signupNumber: number;
   members: { name: string; school: string }[];
-  teamMode: "solo" | "create" | "join";
+  teamMode: "solo" | "create" | "join" | "buddy";
   teamName: string | null;
   amountBaht: number;
   source: string | null;
@@ -90,6 +90,7 @@ export function crossedCheckpoint(before: number, after: number): number | null 
 function teamLine(mode: SignupNotice["teamMode"], teamName: string | null): string {
   if (mode === "create") return `ตั้งทีมใหม่ “${truncate(teamName ?? "", 80)}”`;
   if (mode === "join") return `เข้าทีม “${truncate(teamName ?? "", 80)}”`;
+  if (mode === "buddy") return "บัตรเพื่อน";
   return "เดี่ยว";
 }
 

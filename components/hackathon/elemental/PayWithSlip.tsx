@@ -253,6 +253,11 @@ export function PayWithSlip({ token, amountBaht, qrSrc, demo }: Props) {
             {error}
           </p>
         )}
+        {/* Credit owed to RDCW, who sponsor the slip checks (RDCW email, 2026-11-23). */}
+        <p className="mt-5 flex items-center justify-center gap-2 text-xs" style={{ color: EL.inkSoft }}>
+          <Image src="/hackathon/sponsors/rdcw.png" alt="" width={20} height={20} className="h-5 w-5 rounded" />
+          ตรวจสลิปโดย RDCW Slip Verify
+        </p>
       </section>
 
       <p className="px-1 text-xs leading-relaxed" style={{ color: EL.inkSoft }}>

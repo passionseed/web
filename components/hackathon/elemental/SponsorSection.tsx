@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
 import { motion, useInView, useReducedMotion, useTransform, type Variants } from "framer-motion";
@@ -12,6 +13,20 @@ import { EditorialLink } from "./EditorialLink";
 import { useSectionScroll } from "./use-section-scroll";
 
 const BODY_FONT = "var(--font-bai-jamjuree), sans-serif";
+
+/**
+ * Sponsors who have signed, shown above the packages. RDCW Slip Verify
+ * gave slip-check credits for Elemental sign-ups (RDCW email, 2026-11-23;
+ * company-brain private/hackathon-ops/sponsors.md).
+ */
+const SIGNED_SPONSORS = [
+  {
+    name: "RDCW Slip Verify",
+    gives: "ตรวจสลิปค่าสมัครให้อัตโนมัติ",
+    logo: "/hackathon/sponsors/rdcw.png",
+    href: "https://slip.rdcw.co.th",
+  },
+];
 
 /**
  * Pixel damage beside each package, drawn by hand as uneven patches
@@ -182,6 +197,34 @@ export function SponsorSection() {
             ที่ผลงานที่ดีที่สุดได้ไปต่อยอด
           </p>
         </motion.div>
+
+        <div className="mt-10">
+          <p className="text-sm" style={{ fontFamily: BODY_FONT, color: EL.creamSoft }}>
+            ขอบคุณผู้สนับสนุน
+          </p>
+          <ul className="mt-4 flex flex-wrap gap-6">
+            {SIGNED_SPONSORS.map((s) => (
+              <li key={s.name}>
+                <a
+                  href={s.href}
+                  target="_blank"
+                  rel="noopener noreferrer sponsored"
+                  className="flex items-center gap-3 hover:opacity-90"
+                >
+                  <Image src={s.logo} alt={s.name} width={56} height={56} className="h-14 w-14 rounded-xl" />
+                  <span>
+                    <span className="block text-base" style={{ fontFamily: BODY_FONT, color: EL.cream }}>
+                      {s.name}
+                    </span>
+                    <span className="block text-sm" style={{ fontFamily: BODY_FONT, color: EL.creamSoft }}>
+                      {s.gives}
+                    </span>
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
 
         <ul className="mt-12 grid grid-cols-1 border-y border-[#f3efe6]/15 lg:grid-cols-3">
           {ELEMENTAL.sponsorPackagesBaht.map((baht, i) => (

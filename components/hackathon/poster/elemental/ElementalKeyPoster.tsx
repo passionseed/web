@@ -348,15 +348,17 @@ export function Fact({ icon, children, color = EL.cream }: { icon: keyof typeof 
  * form, so sign-ups from the posters can still be counted (the tag is
  * Claude's choice, 2026-11-23). A numbered printed copy tags its own number,
  * ?src=poster-7, so each copy is counted on its own (Big, 2026-11-26).
+ * A copy made for one listing site or channel tags that channel instead,
+ * ?src=dekd, so each site gets its own code (Big, 2026-11-28).
  */
-export function registerUrl(posterNo?: number): string {
-  return `https://www.${ELEMENTAL.url}?src=${posterSource(posterNo)}`;
+export function registerUrl(posterNo?: number, src?: string): string {
+  return `https://www.${ELEMENTAL.url}?src=${src ?? posterSource(posterNo)}`;
 }
 export const REGISTER_URL = registerUrl();
 
 /** The sign-up QR code as ink pixels, drawn from the link above. */
-export function RegisterQr({ size, fill = EL.ink, posterNo }: { size: number; fill?: string; posterNo?: number }) {
-  const { modules } = QRCode.create(registerUrl(posterNo), { errorCorrectionLevel: "M" });
+export function RegisterQr({ size, fill = EL.ink, posterNo, src }: { size: number; fill?: string; posterNo?: number; src?: string }) {
+  const { modules } = QRCode.create(registerUrl(posterNo, src), { errorCorrectionLevel: "M" });
   const n = modules.size;
   let d = "";
   for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (modules.get(y, x)) d += `M${x} ${y}h1v1h-1z`;
@@ -391,8 +393,8 @@ const QR_SCATTER: [number, number, number, string][] = [
  * to scan: the data cells stay ink on cream, and the error correction level
  * (Q) covers the cells the flame hides.
  */
-function RegisterQrArt({ cell, fire = false, label = true, posterNo }: { cell: number; fire?: boolean; label?: boolean; posterNo?: number }) {
-  const { modules } = QRCode.create(registerUrl(posterNo), { errorCorrectionLevel: "Q" });
+function RegisterQrArt({ cell, fire = false, label = true, posterNo, src }: { cell: number; fire?: boolean; label?: boolean; posterNo?: number; src?: string }) {
+  const { modules } = QRCode.create(registerUrl(posterNo, src), { errorCorrectionLevel: "Q" });
   const n = modules.size;
   const quiet = 3;
   const eyes: [number, number][] = [[0, 0], [n - 7, 0], [0, n - 7]];
@@ -467,7 +469,7 @@ function Tag({ children }: { children: string }) {
 /** How the prize label is kept readable in the "number" design. */
 export type PrizeLabel = "tag" | "shadow" | "outline" | "beside";
 
-function BottomBlock({ design, label = "tag", rule = true, side = "facts", trophy = "line", prizeWeight = 200, posterNo }: { design: Exclude<BottomDesign, "stack">; label?: PrizeLabel; rule?: boolean; side?: "facts" | "qr"; trophy?: TrophyDesign; prizeWeight?: number; posterNo?: number }) {
+function BottomBlock({ design, label = "tag", rule = true, side = "facts", trophy = "line", prizeWeight = 200, posterNo, src }: { design: Exclude<BottomDesign, "stack">; label?: PrizeLabel; rule?: boolean; side?: "facts" | "qr"; trophy?: TrophyDesign; prizeWeight?: number; posterNo?: number; src?: string }) {
   const date = thaiDayRange();
   const prize = prizeTotal();
   const friends = `฿${ELEMENTAL.groupPriceBaht}`;
@@ -541,7 +543,7 @@ function BottomBlock({ design, label = "tag", rule = true, side = "facts", troph
           {side === "qr" ? (
             // The sign-up QR code takes the facts' place; the facts are a row under the title (review note, 2026-11-23).
             <div className="relative" style={{ background: EL.cream, padding: 9, flex: "none", marginBottom: 0 }}>
-              <RegisterQr size={150} posterNo={posterNo} />
+              <RegisterQr size={150} posterNo={posterNo} src={src} />
               {posterNo ? <PosterNoTag posterNo={posterNo} /> : null}
             </div>
           ) : (
@@ -649,11 +651,13 @@ function PosterNoTag({ posterNo }: { posterNo: number }) {
  * them. The other values are the layouts tried on the way there.
  * `posterNo` makes a numbered printed copy: its QR code tags ?src=poster-<n>
  * and its number is printed under the code (Big, 2026-11-26).
+ * `src` makes a copy for one listing site or channel: its QR code tags
+ * ?src=<src>, with no number printed (Big, 2026-11-28).
  * `format="a4"` makes the canvas A4-shaped: the scene and title stay where
  * they are, the dark foot runs on below the scene, and the bottom block (prize,
  * QR, line) moves down with the bottom edge.
  */
-export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs = true, bottom = "number", label = "beside", rule = false, qr = "bottom", facts = "top", qrStyle = "art", trophy = "solid", prizeWeight = 200, who = WHO, posterNo, format = "feed" }: { id?: string; who?: string; sky?: keyof typeof PLATES; glyphs?: boolean; bottom?: BottomDesign; label?: PrizeLabel; rule?: boolean; qr?: false | "left" | "right" | "bottom"; facts?: "bottom" | "top"; trophy?: TrophyDesign; prizeWeight?: number; qrStyle?: "art" | "plain" | "glass" | "scan" | "fire"; posterNo?: number; format?: "feed" | "a4" }) {
+export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs = true, bottom = "number", label = "beside", rule = false, qr = "bottom", facts = "top", qrStyle = "art", trophy = "solid", prizeWeight = 200, who = WHO, posterNo, src, format = "feed" }: { id?: string; who?: string; sky?: keyof typeof PLATES; glyphs?: boolean; bottom?: BottomDesign; label?: PrizeLabel; rule?: boolean; qr?: false | "left" | "right" | "bottom"; facts?: "bottom" | "top"; trophy?: TrophyDesign; prizeWeight?: number; qrStyle?: "art" | "plain" | "glass" | "scan" | "fire"; posterNo?: number; src?: string; format?: "feed" | "a4" }) {
   const height = format === "a4" ? H_A4 : H;
   return (
     <div id={id} className={`${trirong.variable} relative overflow-hidden`} style={{ width: W, height, backgroundColor: "#2a2b26" }}>
@@ -702,13 +706,13 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
             // It stands beside the title, as tall as "Elemental Hackathon", and
             // 32px higher than the title's top (Angpao, same day: "move up a bit").
             <div style={{ background: EL.cream, padding: 10 }}>
-              <RegisterQr size={194} posterNo={posterNo} />
+              <RegisterQr size={194} posterNo={posterNo} src={src} />
             </div>
           ) : qrStyle === "glass" ? (
             // Plain code on blurred glass, no text (Angpao, 2026-11-23). Only the
             // panel is see-through: the code's cells are solid black.
             <div style={{ padding: 14, background: "rgba(243,239,230,0.62)", backdropFilter: "blur(9px)", WebkitBackdropFilter: "blur(9px)", border: "1.5px solid rgba(243,239,230,0.75)" }}>
-              <RegisterQr size={165} fill="#000000" posterNo={posterNo} />
+              <RegisterQr size={165} fill="#000000" posterNo={posterNo} src={src} />
             </div>
           ) : qrStyle === "scan" ? (
             // A scan box that has locked on to the code, like the teaser video's boxes.
@@ -721,11 +725,11 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
                 สแกนเพื่อสมัคร
               </span>
               <div style={{ background: EL.cream, padding: 12 }}>
-                <RegisterQr size={165} posterNo={posterNo} />
+                <RegisterQr size={165} posterNo={posterNo} src={src} />
               </div>
             </div>
           ) : (
-            <RegisterQrArt cell={5} fire={qrStyle === "fire"} label={qrStyle !== "fire"} posterNo={posterNo} />
+            <RegisterQrArt cell={5} fire={qrStyle === "fire"} label={qrStyle !== "fire"} posterNo={posterNo} src={src} />
           )}
         </div>
       ) : null}
@@ -736,7 +740,7 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
         {qr === "left" ? (
           <div className="flex items-center gap-[22px]" style={{ marginLeft: 4 }}>
             <div style={{ background: EL.cream, padding: 8, flex: "none" }}>
-              <RegisterQr size={132} posterNo={posterNo} />
+              <RegisterQr size={132} posterNo={posterNo} src={src} />
             </div>
             <div>
               <div className="flex items-center gap-[18px]">
@@ -814,7 +818,7 @@ export function ElementalKeyPoster({ id = "elemental-key", sky = "grey", glyphs 
           </div>
         </div>
       ) : (
-        <BottomBlock design={bottom} label={label} rule={rule} side={qr === "bottom" ? "qr" : "facts"} trophy={trophy} prizeWeight={prizeWeight} posterNo={posterNo} />
+        <BottomBlock design={bottom} label={label} rule={rule} side={qr === "bottom" ? "qr" : "facts"} trophy={trophy} prizeWeight={prizeWeight} posterNo={posterNo} src={src} />
       )}
 
       {/* Grain over the type too, so it sits in the same film */}
