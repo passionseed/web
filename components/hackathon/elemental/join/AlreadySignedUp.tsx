@@ -28,8 +28,8 @@ export function AlreadySignedUp({ team, demo }: { team: { name: string; inviteCo
   useEffect(() => setToken(rememberedPageToken()), []);
 
   const label = teamLabel(team.name);
-  const send = async (e: { preventDefault(): void }) => {
-    e.preventDefault();
+  // Not a <form>: this sits inside the sign-up form, and a nested form would submit (and reload) the outer one.
+  const send = async () => {
     if (!EMAIL_RE.test(email.trim())) return setError("ใส่อีเมลที่ใช้สมัคร");
     setError(null);
     setState("sending");
@@ -61,7 +61,7 @@ export function AlreadySignedUp({ team, demo }: { team: { name: string; inviteCo
   }
 
   return (
-    <section className="mt-8 space-y-5 border-t pt-6" style={{ borderColor: v.rule }}>
+    <section className="mt-6 space-y-5">
       <div className="space-y-1">
         <p style={{ fontSize: 18, lineHeight: "28px" }}>สมัครไว้แล้ว ไม่ต้องสมัครใหม่</p>
         <p style={{ color: v.secondary, fontSize: 15, lineHeight: "24px" }}>
@@ -75,7 +75,7 @@ export function AlreadySignedUp({ team, demo }: { team: { name: string; inviteCo
         </PrimaryButton>
       )}
 
-      <form onSubmit={send} className="space-y-3">
+      <div className="space-y-3">
         <TextInput
           id="el-my-page-email"
           type="email"
@@ -90,8 +90,14 @@ export function AlreadySignedUp({ team, demo }: { team: { name: string; inviteCo
             setError(null);
             if (state !== "sending") setState("idle");
           }}
+          onKeyDown={(e) => {
+            // Enter sends the email instead of moving the sign-up form on.
+            if (e.key !== "Enter") return;
+            e.preventDefault();
+            void send();
+          }}
         />
-        <SecondaryButton type="submit" full disabled={state === "sending"}>
+        <SecondaryButton type="button" onClick={() => void send()} full disabled={state === "sending"}>
           {state === "sending" ? "กำลังส่ง" : "ส่งลิงก์"}
         </SecondaryButton>
         {state === "sent" && (
@@ -99,7 +105,7 @@ export function AlreadySignedUp({ team, demo }: { team: { name: string; inviteCo
             ถ้าอีเมลนี้สมัครไว้ เราส่งลิงก์ไปแล้ว เปิดลิงก์ในอีเมล แล้วกดเข้า{label}ได้เลย (ดูในโฟลเดอร์สแปมด้วย)
           </p>
         )}
-      </form>
+      </div>
 
       <p style={{ color: v.secondary, fontSize: 15, lineHeight: "24px" }}>
         หรือเปิดหน้าของคุณจากอีเมลตอนสมัคร แล้วใส่รหัสทีม{" "}

@@ -88,7 +88,8 @@ export function Ticket({ who, people, place, number }: Props) {
       </div>
         </div>
 
-        <div className="rounded-b-[28px]" style={{ backgroundColor: EL.char, ...cutAt("top") }}>
+        {/* -1px: the halves overlap by a pixel, so no hairline of page shows between them at a fractional height. */}
+        <div className="-mt-px rounded-b-[28px]" style={{ backgroundColor: EL.char, ...cutAt("top") }}>
       <div className="mx-6 border-t-2 border-dashed" style={{ borderColor: "rgba(243,239,230,0.22)" }} />
 
       <div className="grid grid-cols-3 gap-4 px-5 pb-5 pt-5 sm:px-6">
