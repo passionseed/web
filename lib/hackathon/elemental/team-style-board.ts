@@ -21,7 +21,14 @@ import { clampStyle, readStyle, type TeamNameStyle } from "./team-style";
  *   schools. Never a person's name, nickname or contact.
  */
 
-export type BoardTeamRow = { id: string; boardName: string | null; style: unknown; hidden: boolean };
+export type BoardTeamRow = {
+  id: string;
+  boardName: string | null;
+  style: unknown;
+  hidden: boolean;
+  /** When the board name was last set (the lobby lists teams in the order they arrived). */
+  nameSetAt?: string | null;
+};
 
 export type BoardRegistrationRow = {
   id: string;
@@ -38,6 +45,8 @@ export type BoardRegistrationRow = {
   style: unknown;
   hidden: boolean;
   schools: string[];
+  /** Without a team: when its board name was last set. */
+  nameSetAt?: string | null;
 };
 
 export type BoardView = { source: string; ipHash: string; createdAt?: string };
@@ -57,6 +66,10 @@ export type BoardEntry = {
   devices: number;
   paid: number;
   hidden: boolean;
+  /** People signed up in the team (a group sign-up counts each member). The lobby's head count. */
+  people?: number;
+  /** When the board name was last set, or null. */
+  nameSetAt?: string | null;
 };
 
 /** A row as the public page and API show it. */
@@ -153,6 +166,8 @@ export function buildBoard(input: {
       devices,
       paid,
       hidden: r.hidden,
+      people: Math.max(1, r.memberCount),
+      nameSetAt: r.nameSetAt ?? null,
     });
   }
 
@@ -174,6 +189,8 @@ export function buildBoard(input: {
       devices,
       paid,
       hidden: team.hidden,
+      people: regs.reduce((n, r) => n + Math.max(1, r.memberCount), 0),
+      nameSetAt: team.nameSetAt ?? null,
     });
   }
   return out;

@@ -1,9 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
@@ -11,6 +9,7 @@ import { teamLabel } from "@/lib/hackathon/elemental/team-name";
 import type { PublicTeam } from "@/lib/supabase/hackathon-event-registrations";
 
 import { RecoveringPlace } from "../RecoveringPlace";
+import { Page, PixelIcon, PrimaryButton, SecondaryButton, StickyBar, Tag, v } from "../share/ui";
 import { trackElemental } from "../track";
 import {
   emptyDraft,
@@ -33,6 +32,10 @@ import styles from "./join.module.css";
  * (sessionStorage) until they're sent, so a refresh or a detour to LINE
  * loses nothing. The phone's back button steps back. Each step sends one
  * funnel event (track.ts), so the admin page shows where people stop.
+ *
+ * Looks like the rest of Elemental: the cream "paper" page (share/ui.tsx Page) that the pay
+ * page continues, the ink top bar with "← Elemental", a hairline progress meter with [2/6],
+ * and each step's one primary action in a sticky bar at the bottom, with "back" beside it.
  */
 
 type Props = {
@@ -43,7 +46,7 @@ type Props = {
   /** Shown above the first step, e.g. "this team is full". */
   notice?: string;
   backHref: string;
-  /** Dev only: fake the submit and open the demo pay page instead. */
+  /** Development and PR previews only: fake the submit, send no funnel events, and open the demo pay page instead. */
   demo?: boolean;
 };
 
@@ -81,6 +84,8 @@ function buttonLabel(step: StepKey, mode: Mode, saving: boolean, teamName = ""):
 
 export function JoinFlow({ source, utm, team, buddyPass, notice, backHref, demo }: Props) {
   const router = useRouter();
+  // The demo runs on PR previews too: keep its clicks out of the funnel.
+  const track: typeof trackElemental = demo ? () => {} : trackElemental;
   const initialMode: Mode | null = team ? "join" : buddyPass ? "buddy" : null;
   const [draft, setDraft] = useState<Draft>(() => emptyDraft(initialMode));
   const [step, setStep] = useState<StepKey>("mode");
@@ -98,7 +103,6 @@ export function JoinFlow({ source, utm, team, buddyPass, notice, backHref, demo 
 
   const steps = useMemo(() => stepsFor(draft), [draft]);
   const index = Math.max(0, steps.indexOf(step));
-  const progress = (index + 1) / steps.length;
 
   // Restore this tab's answers once, after hydration.
   useEffect(() => {
@@ -116,7 +120,7 @@ export function JoinFlow({ source, utm, team, buddyPass, notice, backHref, demo 
     }
     window.history.replaceState({ ...window.history.state, elStep: restoredStep }, "");
     setRestored(true);
-    trackElemental({ step: "join", source, mode: initialMode ?? undefined });
+    track({ step: "join", source, mode: initialMode ?? undefined });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -132,7 +136,7 @@ export function JoinFlow({ source, utm, team, buddyPass, notice, backHref, demo 
   // Count each step once, and put the cursor in its first box.
   useEffect(() => {
     if (!restored) return;
-    trackElemental({ step: `step:${step}`, mode: draft.mode ?? undefined, source });
+    track({ step: `step:${step}`, mode: draft.mode ?? undefined, source });
     if (step === "review") setEditing(false);
     const el = body.current?.querySelector<HTMLElement>("[data-autofocus]");
     if (el && window.matchMedia("(hover: hover)").matches) el.focus({ preventScroll: true });
@@ -179,9 +183,9 @@ export function JoinFlow({ source, utm, team, buddyPass, notice, backHref, demo 
     // Restart the shake without remounting the fields, so the cursor stays put.
     const el = shaker.current;
     if (el) {
-      el.classList.remove(styles.shake);
+      el.classList.remove(styles.nudge);
       void el.offsetWidth;
-      el.classList.add(styles.shake);
+      el.classList.add(styles.nudge);
     }
     // After the errors render: bring the first one into view and, if it's a box, open the keyboard on it.
     requestAnimationFrame(() => {
@@ -190,7 +194,7 @@ export function JoinFlow({ source, utm, team, buddyPass, notice, backHref, demo 
       bad.scrollIntoView({ block: "center", behavior: "smooth" });
       if (bad instanceof HTMLInputElement) bad.focus({ preventScroll: true });
     });
-    trackElemental({ step: "invalid", detail: Object.keys(found).join(","), mode: draft.mode ?? undefined }, { once: false });
+    track({ step: "invalid", detail: Object.keys(found).join(","), mode: draft.mode ?? undefined }, { once: false });
   };
 
   const submit = async () => {
@@ -220,12 +224,12 @@ export function JoinFlow({ source, utm, team, buddyPass, notice, backHref, demo 
         issues?: { path: (string | number)[] }[];
       };
       if (res.ok && data.payToken) {
-        trackElemental({ step: "submitted", mode: draft.mode ?? undefined, source });
+        track({ step: "submitted", mode: draft.mode ?? undefined, source });
         sessionStorage.removeItem(storageKey(team, buddyPass));
         router.push(`/hackathon/join/${data.payToken}`);
         return; // keep the spinner until the pay page opens
       }
-      trackElemental({ step: "submit_failed", detail: data.error ?? String(res.status) }, { once: false });
+      track({ step: "submit_failed", detail: data.error ?? String(res.status) }, { once: false });
       if (data.error === "invalid" && data.issues?.length) {
         const target = stepForServerPath(data.issues[0].path);
         goTo(target, "back");
@@ -280,95 +284,110 @@ export function JoinFlow({ source, utm, team, buddyPass, notice, backHref, demo 
   const detour = editing && steps.slice(index + 1).some((s) => s !== "review" && Object.keys(validateStep(s, draft)).length > 0);
   const View = STEP_VIEWS[step];
   const isFirst = index === 0;
-  const showContinue =
-    step !== "mode" ||
-    (draft.mode !== null && !(team && draft.mode === "join") && !(buddyPass && draft.mode === "buddy"));
+  // An invite (team link or buddy pass) opens on one offer; taking it is the step's primary action.
+  const invite: Mode | null =
+    step === "mode" && team && draft.mode === "join" ? "join" : step === "mode" && buddyPass && draft.mode === "buddy" ? "buddy" : null;
+  const showContinue = step !== "mode" || (draft.mode !== null && invite === null);
   const cta = buttonLabel(step, draft.mode ?? "solo", editing && !detour, team?.name);
 
-  return (
-    <form onSubmit={onSubmit} noValidate className="flex min-h-[100dvh] flex-col">
-      <div className="sticky top-0 z-10" style={{ backgroundColor: EL.cream }}>
-        <div className="mx-auto flex max-w-xl items-center justify-between gap-3 px-5 py-4">
-          {isFirst ? (
-            <Link href={backHref} className="inline-flex items-center gap-2 text-sm" style={{ fontFamily: EL_FONT.mono, color: EL.inkSoft }}>
-              <ArrowLeft className="h-4 w-4" /> {ELEMENTAL.edition}
-            </Link>
-          ) : (
-            <button
-              type="button"
-              onClick={back}
-              className="inline-flex items-center gap-2 text-sm"
-              style={{ fontFamily: EL_FONT.mono, color: EL.inkSoft }}
-            >
-              <ArrowLeft className="h-4 w-4" /> ย้อนกลับ
-            </button>
-          )}
-          {/* The total depends on the first answer, so it shows from step 2 on. */}
-          {!isFirst && (
-            <span className="text-xs" style={{ fontFamily: EL_FONT.mono, color: EL.inkSoft }} aria-live="polite">
-              {index + 1}/{steps.length}
-            </span>
-          )}
-        </div>
-        <div className="h-[3px] w-full" style={{ backgroundColor: "rgba(29,33,31,0.08)" }}>
-          <div
-            className={`${styles.progress} h-full`}
-            style={{ width: `${progress * 100}%`, backgroundColor: EL.flame }}
-            role="progressbar"
-            aria-valuemin={1}
-            aria-valuemax={steps.length}
-            aria-valuenow={index + 1}
-            aria-label="ความคืบหน้าการสมัคร"
-          />
-        </div>
+  // Solid cream here: the 96% bar let the big footer wordmark show through behind the buttons.
+  const bar =
+    invite || showContinue ? (
+      <div style={{ "--el-bar": EL.cream } as CSSProperties}>
+        <StickyBar>
+          <div className="min-w-0 flex-1">
+            {step === "review" && <LegalLine />}
+            <div className="flex items-stretch gap-2">
+              {!isFirst && (
+                <SecondaryButton onClick={back} className="w-[52px] shrink-0 !px-0" aria-label="ย้อนกลับ">
+                  <PixelIcon name="back" />
+                </SecondaryButton>
+              )}
+              {invite ? (
+                <PrimaryButton full arrow onClick={() => choose(invite)}>
+                  {invite === "join" ? `เข้า${teamLabel(team?.name ?? "")}` : `ใช้บัตรเพื่อน ฿${ELEMENTAL.buddyPriceBaht}`}
+                </PrimaryButton>
+              ) : (
+                <PrimaryButton
+                  type="submit"
+                  full
+                  disabled={submitting}
+                  aria-busy={submitting || undefined}
+                  arrow={!submitting && step !== "review" && (!editing || detour)}
+                  className={`min-w-0 flex-1 ${styles.busy}`}
+                >
+                  {submitting ? (
+                    <>
+                      กำลังสมัคร{" "}
+                      <span className={styles.dots} aria-hidden="true">
+                        <span />
+                        <span />
+                        <span />
+                      </span>
+                    </>
+                  ) : (
+                    cta
+                  )}
+                </PrimaryButton>
+              )}
+            </div>
+          </div>
+        </StickyBar>
       </div>
+    ) : undefined;
 
-      <div className="mx-auto w-full max-w-xl flex-1 px-5 pb-36 pt-6 sm:pt-10">
-        {/* Before and after: washed out here, in full colour on the paid seat. */}
-        {step === "mode" && <RecoveringPlace restored={0.25} className="mb-8 sm:mb-10" />}
+  return (
+    <form onSubmit={onSubmit} noValidate>
+      <Page surface="paper" back={{ href: backHref, label: ELEMENTAL.edition }} bar={bar}>
+        {/* The total depends on the first answer, so the meter shows from step 2 on. */}
+        {!isFirst && <ProgressMeter index={index} total={steps.length} />}
         {notice && step === "mode" && (
-          <p className="mb-6 rounded-xl p-4 text-sm" style={{ backgroundColor: "rgba(236,100,36,0.08)" }}>
+          <p className="mb-8 border-l-2 py-1 pl-4 text-pretty" style={{ borderColor: EL.flame, fontFamily: EL_FONT.body, fontSize: 16, lineHeight: "26px" }}>
             {notice}
           </p>
         )}
-        <div key={step} ref={body} className={dir === "forward" ? styles.stepForward : styles.stepBack}>
+        {/* At least a screen tall, so on a short step the wordmark footer starts under the sticky bar, not cut by it. */}
+        <div key={step} ref={body} className={`${dir === "forward" ? styles.flowIn : styles.flowBack} min-h-[calc(100dvh-15rem)]`}>
           <div ref={shaker}>
             <View draft={draft} set={set} errors={errors} team={team} buddyPass={buddyPass} choose={choose} goTo={edit} />
           </div>
+          {/* Before and after: washed out here, in full colour on the paid seat. After the choice, so both options fit on the first screen. */}
+          {step === "mode" && !invite && <RecoveringPlace restored={0.25} className="mt-10" />}
         </div>
         {serverError && (
-          <p role="alert" className="mt-6 rounded-xl p-4 text-sm" style={{ backgroundColor: "rgba(184,48,26,0.08)", color: EL.ember }}>
+          <p
+            role="alert"
+            className="mt-8 border-l-2 py-1 pl-4 text-pretty"
+            style={{ borderColor: v.error, color: v.error, fontFamily: EL_FONT.body, fontSize: 16, lineHeight: "26px" }}
+          >
             {serverError}
           </p>
         )}
-      </div>
-
-      {showContinue && (
-        <div
-          className="fixed inset-x-0 bottom-0 z-10 border-t px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4"
-          style={{ backgroundColor: "rgba(243,239,230,0.94)", borderColor: "rgba(29,33,31,0.08)", backdropFilter: "blur(8px)" }}
-        >
-          <div className="mx-auto max-w-xl">
-            {step === "review" && <LegalLine />}
-            <button
-              type="submit"
-              disabled={submitting}
-              className={`${styles.choice} inline-flex w-full items-center justify-center gap-2 rounded-full px-7 py-4 text-lg font-semibold disabled:opacity-70`}
-              style={{ backgroundColor: EL.flame, color: EL.flameWhite }}
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" /> กำลังสมัคร
-                </>
-              ) : (
-                <>
-                  {cta} {step !== "review" && (!editing || detour) && <ArrowRight className="h-5 w-5" />}
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      )}
+      </Page>
     </form>
+  );
+}
+
+/** Where you are: a hairline that fills in flame, and the count as a Space Mono [2/6]. */
+function ProgressMeter({ index, total }: { index: number; total: number }) {
+  return (
+    <div className="-mt-4 mb-8 flex items-center gap-3">
+      <div
+        className="relative h-[2px] flex-1 overflow-hidden"
+        style={{ backgroundColor: v.rule }}
+        role="progressbar"
+        aria-valuemin={1}
+        aria-valuemax={total}
+        aria-valuenow={index + 1}
+        aria-label="ความคืบหน้าการสมัคร"
+      >
+        <div className={styles.meterFill} style={{ transform: `scaleX(${(index + 1) / total})`, backgroundColor: EL.flame }} />
+      </div>
+      <span aria-live="polite">
+        <Tag>
+          {index + 1}/{total}
+        </Tag>
+      </span>
+    </div>
   );
 }

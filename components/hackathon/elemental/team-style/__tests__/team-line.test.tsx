@@ -56,6 +56,7 @@ describe("TeamLine", () => {
     expect(screen.getByRole("link", { name: /custom ชื่อทีม/ }).getAttribute("href")).toBe(`/hackathon/join/${"a".repeat(32)}/team`);
     const board = screen.getByRole("link", { name: /กระดาน/ }).getAttribute("href");
     expect(board).toBe("/hackathon/elemental/leaderboard#tabc");
+    expect(screen.getByRole("link", { name: /ห้องรอ/ }).getAttribute("href")).toBe("/hackathon/elemental/lobby");
     expect(screen.getByText("ไฟป่า")).toBeTruthy();
   });
 
@@ -81,6 +82,7 @@ describe("the compact team line (the share page)", () => {
     const { unmount } = render(<TeamLine token="t" data={data} compact />);
     expect(screen.queryByRole("link", { name: /custom/ })).toBeNull();
     expect(screen.getByRole("link", { name: /กระดาน/ })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /ห้องรอ/ })).toBeTruthy();
     expect(screen.getByText("อันดับ 5 จาก 23")).toBeTruthy();
     expect(screen.queryByText(/ปลดล็อก/)).toBeNull();
     unmount();

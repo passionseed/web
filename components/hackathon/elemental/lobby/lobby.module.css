@@ -1,0 +1,63 @@
+/*
+ * The waiting room (LobbyView): name tiles and the pop a new team arrives
+ * with. Easings are the landing's (--el-ease-snap, --el-ease-tension, set by
+ * the share shell). No glows: a new tile's rule is flameCore for a moment,
+ * then goes back to the hairline. Nothing moves under prefers-reduced-motion.
+ */
+
+.tile {
+  border-radius: 2px;
+  background-color: rgba(243, 239, 230, 0.035);
+  box-shadow: inset 0 0 0 1px var(--el-rule);
+}
+
+/* A team that just arrived: scales in, overshoots a touch, settles (delays set inline, 60ms apart). */
+.pop {
+  animation:
+    lobby-pop 520ms var(--el-ease-tension, cubic-bezier(0.05, 0.7, 0.35, 0.99)) both,
+    lobby-rule 1800ms var(--el-ease-snap, cubic-bezier(0.4, 0, 0.2, 1)) both;
+}
+
+@keyframes lobby-pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  55% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes lobby-rule {
+  0%,
+  45% {
+    box-shadow: inset 0 0 0 2px var(--el-action);
+  }
+  100% {
+    box-shadow: inset 0 0 0 1px var(--el-rule);
+  }
+}
+
+/* Your own tile, pinned: the board's "your row" rule. */
+.you {
+  border-radius: 2px;
+  background-color: #121311;
+  box-shadow: inset 2px 0 0 var(--el-action), inset 0 0 0 1px var(--el-rule);
+}
+
+/* Before the first team: dashed ghosts where names will go. */
+.ghost {
+  border-radius: 2px;
+  border: 1px dashed rgba(243, 239, 230, 0.22);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pop {
+    animation: none;
+  }
+}

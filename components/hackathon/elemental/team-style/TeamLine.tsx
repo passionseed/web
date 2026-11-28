@@ -49,6 +49,7 @@ const COPY = {
   editSolo: "custom ชื่อ",
   setName: "ตั้งชื่อ",
   board: "กระดาน",
+  lobby: "ห้องรอ",
 };
 
 /** The status line's parts, in order. Exported for tests and the editor. */
@@ -136,6 +137,8 @@ export function TeamLine({
   const payHref = demo ? "/hackathon/join/demo" : `/hackathon/join/${token}`;
   const editHref = data.editHref ?? `/hackathon/join/${token}/team`;
   const boardHref = `/hackathon/elemental/leaderboard${demo ? "/demo" : ""}#${data.key}`;
+  // The waiting room finds this team from the same sessionStorage note as the board.
+  const lobbyHref = `/hackathon/elemental/lobby${demo ? "/demo" : ""}`;
 
   // Lets the board (same tab) mark "your team" and link back, without the pay token ever going in a URL.
   useEffect(() => {
@@ -176,6 +179,9 @@ export function TeamLine({
         )}
         <EditorialLink href={boardHref} size="sm">
           {COPY.board}
+        </EditorialLink>
+        <EditorialLink href={lobbyHref} size="sm">
+          {COPY.lobby}
         </EditorialLink>
       </div>
     </div>

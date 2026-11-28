@@ -73,6 +73,7 @@ const COPY = {
   saving: "กำลังบันทึก…",
   saved: "บันทึกแล้ว",
   seeBoard: "ดูบนกระดาน",
+  lobby: "ห้องรอ",
   failed: "บันทึกไม่สำเร็จ ลองอีกครั้ง",
   closed: "ตอนนี้แก้ไม่ได้แล้ว",
   closedBack: "กลับหน้าของฉัน",
@@ -100,6 +101,7 @@ export function TeamEditor({
   data,
   payHref,
   boardHref,
+  lobbyHref = "/hackathon/elemental/lobby",
   demo = false,
   demoFail = false,
 }: {
@@ -108,6 +110,8 @@ export function TeamEditor({
   /** "← หน้าของฉัน". */
   payHref: string;
   boardHref: string;
+  /** The waiting room (its demo on the demo page). */
+  lobbyHref?: string;
   demo?: boolean;
   /** Demo only: the save fails, to see the error. */
   demoFail?: boolean;
@@ -174,7 +178,18 @@ export function TeamEditor({
     : error
       ? { text: error, tone: "error", alert: true }
       : justSaved
-        ? { text: COPY.saved, tone: "action" }
+        ? {
+            text: (
+              <span className="flex flex-wrap items-baseline justify-between gap-x-4">
+                <span>{COPY.saved}</span>
+                {/* Secondary to "ดูบนกระดาน": the waiting room shows the name too. */}
+                <EditorialLink href={lobbyHref} size="sm">
+                  {COPY.lobby}
+                </EditorialLink>
+              </span>
+            ),
+            tone: "action",
+          }
         : locked.length > 0
           ? { text: COPY.tryOnly(lockAt, lockAt - devices), tone: "secondary" }
           : !trimmed

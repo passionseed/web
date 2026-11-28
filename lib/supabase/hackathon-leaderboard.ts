@@ -13,6 +13,7 @@ import {
   type PublicBoardEntry,
 } from "@/lib/hackathon/elemental/team-style-board";
 import type { BoardPhase } from "@/lib/hackathon/elemental/team-style-phase";
+import { lobbyState, lobbyTeams, openingAt, type LobbyPayload } from "@/lib/hackathon/elemental/lobby";
 
 /**
  * The Elemental team board's numbers (service role; rules in
@@ -56,7 +57,7 @@ async function withColumnFallback<T>(run: (full: boolean) => Promise<T>): Promis
   }
 }
 
-type TeamDbRow = { id: string; board_name?: string | null; name_style?: unknown; leaderboard_hidden?: boolean | null };
+type TeamDbRow = { id: string; board_name?: string | null; board_name_set_at?: string | null; name_style?: unknown; leaderboard_hidden?: boolean | null };
 type RegDbRow = {
   id: string;
   team_id: string | null;
@@ -66,6 +67,7 @@ type RegDbRow = {
   created_at: string;
   slip_path: string | null;
   board_name?: string | null;
+  board_name_set_at?: string | null;
   name_style?: unknown;
   leaderboard_hidden?: boolean | null;
   hackathon_event_registration_members: { school: string | null }[] | null;
@@ -77,13 +79,19 @@ async function loadTeams(eventSlug: string): Promise<BoardTeamRow[]> {
     allRows<TeamDbRow>((from, to) =>
       db
         .from("hackathon_event_teams")
-        .select(full ? "id, board_name, name_style, leaderboard_hidden" : "id")
+        .select(full ? "id, board_name, board_name_set_at, name_style, leaderboard_hidden" : "id")
         .eq("event_slug", eventSlug)
         .order("id")
         .range(from, to) as unknown as Page<TeamDbRow>,
     ),
   );
-  return rows.map((t) => ({ id: t.id, boardName: t.board_name ?? null, style: t.name_style ?? null, hidden: Boolean(t.leaderboard_hidden) }));
+  return rows.map((t) => ({
+    id: t.id,
+    boardName: t.board_name ?? null,
+    nameSetAt: t.board_name_set_at ?? null,
+    style: t.name_style ?? null,
+    hidden: Boolean(t.leaderboard_hidden),
+  }));
 }
 
 async function loadRegistrations(eventSlug: string, endsAt: string): Promise<BoardRegistrationRow[]> {
@@ -93,7 +101,7 @@ async function loadRegistrations(eventSlug: string, endsAt: string): Promise<Boa
     allRows<RegDbRow>((from, to) =>
       db
         .from("hackathon_event_registrations")
-        .select(full ? `${base}, board_name, name_style, leaderboard_hidden` : base)
+        .select(full ? `${base}, board_name, board_name_set_at, name_style, leaderboard_hidden` : base)
         .eq("event_slug", eventSlug)
         .neq("status", "cancelled")
         .lte("created_at", endsAt)
@@ -105,6 +113,7 @@ async function loadRegistrations(eventSlug: string, endsAt: string): Promise<Boa
     id: r.id,
     teamId: r.team_id,
     boardName: r.board_name ?? null,
+    nameSetAt: r.board_name_set_at ?? null,
     status: r.status,
     memberCount: r.member_count ?? 1,
     source: r.source,
@@ -192,5 +201,23 @@ export async function leaderboardPayload(eventSlug: string, phase: BoardPhase): 
   } catch (error) {
     console.error("[elemental leaderboard] failed to load", error);
     return { state: "unavailable", teams: [], updatedAt, countedUntil };
+  }
+}
+
+/**
+ * The waiting room's answer (lib/hackathon/elemental/lobby.ts): every team
+ * with a board name that isn't hidden, newest first, and the head count.
+ * Never throws: a failed load is "unavailable". Uses the same kept numbers as the board.
+ */
+export async function lobbyPayload(eventSlug: string, now: Date = new Date()): Promise<LobbyPayload> {
+  const state = lobbyState(process.env, now);
+  const base = { openingAt: openingAt().toISOString(), now: now.toISOString() };
+  if (state === "soon") return { state, teams: [], people: 0, ...base };
+  try {
+    const { teams, people } = lobbyTeams(await loadBoardEntries(eventSlug));
+    return { state, teams, people, ...base };
+  } catch (error) {
+    console.error("[elemental lobby] failed to load", error);
+    return { state: "unavailable", teams: [], people: 0, ...base };
   }
 }

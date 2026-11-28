@@ -49,6 +49,7 @@ const COPY = {
   joinNote: "เปิดซ้ำจากเครื่องเดิมนับครั้งเดียว ทีมงานซ่อนชื่อที่ไม่เหมาะสมได้",
   finalNote: "ปิดรับสมัครแล้ว ตัวเลขหยุดนับ ทีมงานซ่อนชื่อที่ไม่เหมาะสมได้",
   back: `หน้า ${ELEMENTAL.edition} Hackathon`,
+  lobby: "ห้องรอ",
   live: (change: string) => `ทีมคุณ ${change}`,
   liveDevices: (d: number, total: number) => `เพิ่ม ${d} เครื่อง รวม ${total}`,
   livePaid: (d: number, total: number) => `จ่ายเพิ่ม ${d} ที่ รวม ${total}`,
@@ -93,10 +94,13 @@ export function LeaderboardView({
   poll,
   you: youProp,
   simulate = false,
+  lobbyHref = "/hackathon/elemental/lobby",
 }: {
   initial: LeaderboardPayload;
   poll: boolean;
   you?: BoardYou | null;
+  /** The waiting room (its demo on the demo page). */
+  lobbyHref?: string;
   /** Demo only: numbers change every few seconds, to see the motion. */
   simulate?: boolean;
 }) {
@@ -196,7 +200,7 @@ export function LeaderboardView({
         <Soon />
       ) : (
         <>
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
             {final ? (
               <Tag tone="action">
                 <span suppressHydrationWarning>{COPY.final(bangkok(data.countedUntil, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }))}</span>
@@ -205,7 +209,12 @@ export function LeaderboardView({
               <Tag>
                 <span suppressHydrationWarning>{COPY.updated(bangkok(data.updatedAt, { hour: "2-digit", minute: "2-digit" }))}</span>
               </Tag>
-            ) : null}
+            ) : (
+              <span />
+            )}
+            <EditorialLink href={lobbyHref} size="sm">
+              {COPY.lobby}
+            </EditorialLink>
           </div>
 
           {you && !youEntry && data.state !== "unavailable" && <YouOffBoard you={you} final={final} />}

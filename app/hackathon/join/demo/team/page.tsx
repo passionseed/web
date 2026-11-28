@@ -39,7 +39,7 @@ export default async function TeamEditorDemoPage({ searchParams }: { searchParam
       {first(params.soon) === "1" ? (
         <TeamEditorUnavailable payHref={payHref} />
       ) : (
-        <TeamEditor token="demo" demo demoFail={first(params.fail) === "1"} data={data} payHref={payHref} boardHref={`/hackathon/elemental/leaderboard/demo#${data.key}`} />
+        <TeamEditor token="demo" demo demoFail={first(params.fail) === "1"} data={data} payHref={payHref} boardHref={`/hackathon/elemental/leaderboard/demo#${data.key}`} lobbyHref="/hackathon/elemental/lobby/demo" />
       )}
     </div>
   );

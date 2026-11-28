@@ -52,7 +52,7 @@ export default async function LeaderboardDemoPage({ searchParams }: { searchPara
   };
   return (
     <div className={`${trirong.variable} ${teamStyleFonts}`}>
-      <LeaderboardView initial={initial} poll={false} you={you} simulate={first(params.sim) === "1"} />
+      <LeaderboardView initial={initial} poll={false} you={you} simulate={first(params.sim) === "1"} lobbyHref="/hackathon/elemental/lobby/demo" />
     </div>
   );
 }
