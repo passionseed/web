@@ -226,8 +226,8 @@ export function OwnerKit({
       </div>
 
       <div className="relative mx-auto max-w-[920px] px-5 pb-24 pt-8 sm:px-10 sm:pt-12">
-        <header className="flex items-center justify-between gap-4">
-          <span className="flex items-center gap-3 sm:gap-4">
+        <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+          <span className="flex flex-none items-center gap-3 sm:gap-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/hackathon/HackLogo.png" alt={ELEMENTAL.series} width={90} height={36} className="h-7 w-auto sm:h-9" style={{ filter: "brightness(0) invert(1)", opacity: 0.9 }} />
             <span style={{ fontFamily: EL_FONT.mono, color: KIT.soft }} aria-hidden="true">×</span>

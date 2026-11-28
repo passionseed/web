@@ -35,6 +35,15 @@ const KEEP = [
   "ข้อความเดิม",
   "พิงกองหนังสือ",
   "รูปและอย่างอื่น",
+  // Chrome's Thai dictionary splits these at 360px (contrast/readability audit, 28 Nov).
+  "อัปโหลด",
+  "นิดหน่อย",
+  "ภาพหน้าจอ",
+  "หยุดอัด",
+  "เล็กกว่ามาก",
+  "แก้ไม่ได้",
+  "ขอลิงก์ใหม่",
+  "คุยกับชาวบ้าน",
 ];
 
 const PATTERN = new RegExp(`(${KEEP.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`);

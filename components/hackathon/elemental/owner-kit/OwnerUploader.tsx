@@ -158,7 +158,7 @@ function ShareLink() {
   };
   return (
     <div className="flex flex-col gap-3 pb-6 sm:flex-row sm:items-center sm:justify-between" style={{ borderBottom: RULE }}>
-      <p className="text-[17px] leading-[1.65] [text-wrap:pretty]" style={{ fontWeight: 400 }}>
+      <p className="max-w-[640px] text-[17px] leading-[1.65] [text-wrap:pretty]" style={{ fontWeight: 400 }}>
         {keep("ส่งต่อลิงก์นี้ให้คนที่ถ่ายได้เลย ไฟล์จะถึงทีมงานโดยตรง")}
       </p>
       <button
@@ -315,8 +315,9 @@ export function OwnerUploader({ org, element, signature, due }: { org: string; e
               <p className="text-[17px]" style={{ color: KIT.ok }}>ส่งจากเครื่องนี้แล้ว {receipt.sent.length} ไฟล์ ส่งเพิ่มได้</p>
               <ul className="mt-1">
                 {receipt.sent.slice(-5).map((f) => (
-                  <li key={`${f.name}-${f.at}`} className="truncate">
-                    {f.name} ({shortDate(f.at)})
+                  <li key={`${f.name}-${f.at}`} className="flex items-start gap-2">
+                    <span className="line-clamp-2 min-w-0 [overflow-wrap:anywhere]">{f.name}</span>
+                    <span className="flex-none">({shortDate(f.at)})</span>
                   </li>
                 ))}
               </ul>
@@ -421,7 +422,7 @@ export function OwnerUploader({ org, element, signature, due }: { org: string; e
 
       <label className="mt-5 flex min-h-[44px] cursor-pointer items-start gap-3 py-1" style={{ fontSize: 17, fontWeight: 400, lineHeight: 1.65 }}>
         <Box checked={minors} onChange={setMinors} />
-        <span className="[text-wrap:pretty]">
+        <span className="max-w-[640px] [text-wrap:pretty]">
           {keep("มีเด็กหรือนักเรียนเห็นหน้าในคลิป และผู้ปกครองอนุญาตเป็นลายลักษณ์อักษรแล้ว")}
           <span className="mt-0.5 block text-[16px]" style={{ color: KIT.soft }}>
             ถ่ายรูปใบอนุญาตแล้วอัปโหลดมาพร้อมคลิปได้
@@ -441,7 +442,7 @@ export function OwnerUploader({ org, element, signature, due }: { org: string; e
             if (v) setConsentNudge(false);
           }}
         />
-        <span className="[text-wrap:pretty]">
+        <span className="max-w-[640px] [text-wrap:pretty]">
           อนุญาตให้ PassionSeed ใช้คลิปและรูปเหล่านี้บนเว็บและโซเชียลของ Elemental Hackathon และในห้องเรียนของงาน
           {consentNudge && !consent && (
             <span className="mt-2 block w-fit px-3 py-1.5 text-[17px]" style={{ color: KIT.warn, background: KIT.panel, fontWeight: 600 }} role="alert">
@@ -451,7 +452,7 @@ export function OwnerUploader({ org, element, signature, due }: { org: string; e
         </span>
       </label>
 
-      <p className="mt-5 text-[17px] leading-[1.65] [text-wrap:pretty]" style={{ fontWeight: 400, color: KIT.body }}>
+      <p className="mt-5 max-w-[640px] text-[17px] leading-[1.65] [text-wrap:pretty]" style={{ fontWeight: 400, color: KIT.body }}>
         ส่งภายใน {due} {keep("ระหว่างอัปโหลด เปิดหน้านี้ค้างไว้ อย่าล็อกจอหรือสลับแอปจนขึ้นว่าได้รับแล้ว ถ้ามี Wi-Fi ใช้ Wi-Fi")}
       </p>
 
