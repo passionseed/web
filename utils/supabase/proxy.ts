@@ -69,8 +69,31 @@ async function needsOnboard(
       .maybeSingle(),
   ])
   if (isProfileComplete(profile, guardianConsent) && profile?.is_onboarded) return false
+  // Staff (admins and instructors) are adults who run the product, not
+  // students: the student onboard (interests, career quiz) does not apply.
+  if (await hasStaffRole(supabase, userId)) return false
   // A linked hackathon sign-up counts as a finished onboard.
   return !(await hasHackathonRegistration(supabase))
+}
+
+const STAFF_ROLES = ['admin', 'instructor']
+
+/** Whether the user holds a staff role. Any failure reads as "no", which keeps the onboard gate. */
+async function hasStaffRole(
+  supabase: ReturnType<typeof createServerClient>,
+  userId: string
+): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .in('role', STAFF_ROLES)
+      .limit(1)
+    return !error && Array.isArray(data) && data.length > 0
+  } catch {
+    return false
+  }
 }
 
 /** decodeURIComponent that keeps any escape it cannot decode, instead of throwing. */
