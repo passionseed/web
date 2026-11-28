@@ -6,7 +6,7 @@ import { Loader2 } from "lucide-react";
 
 import { EL } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
-import { parseTeamCode } from "@/lib/hackathon/elemental/team-change";
+import { TEAM_CODE_LENGTH, parseTeamCode } from "@/lib/hackathon/elemental/team-change";
 import { isRudeTeamName } from "@/lib/hackathon/elemental/team-name";
 
 import { TEAM_NAME_RUDE } from "./join/draft";
@@ -18,6 +18,7 @@ export const TEAM_CHANGE_ERRORS: Record<string, string> = {
   team_full: "ทีมนี้ครบแล้ว",
   in_team: "หน้านี้อยู่ในทีมแล้ว ลองรีเฟรชหน้า",
   not_in_team: "หน้านี้ไม่ได้อยู่ในทีมแล้ว ลองรีเฟรชหน้า",
+  closed: "ปิดการเปลี่ยนทีมแล้ว",
   rude: TEAM_NAME_RUDE,
 };
 export const TEAM_CHANGE_FAILED = "ทำรายการไม่สำเร็จ ลองอีกครั้ง";
@@ -48,19 +49,19 @@ const button = "inline-flex shrink-0 items-center justify-center gap-2 rounded-f
 /**
  * For a sign-up without a team, on its own page: join a team with its code
  * (or a pasted invite link), or start a new one. The way into a team after
- * signing up alone (Angpao, 2026-11-27).
+ * signing up alone (Angpao, 2026-11-27), until the deadline (2026-11-28).
  */
 export function TeamJoin({
   token,
-  priceNote,
-  buddyPassNote,
+  notes,
+  until,
   demo,
 }: {
   token: string;
-  /** What joining does to the price of this sign-up, in one line. */
-  priceNote: string;
-  /** Set when this page holds a buddy pass that stops working inside a team. */
-  buddyPassNote?: string;
+  /** What joining does to this sign-up: its price, its slip, its buddy pass. One line each. */
+  notes: string[];
+  /** When team changes close, as shown: "5 ธ.ค. 10:00 น." */
+  until: string;
   demo?: boolean;
 }) {
   const router = useRouter();
@@ -76,7 +77,7 @@ export function TeamJoin({
     let body: TeamAction;
     if (mode === "join") {
       if (!code.trim()) return setError("ใส่รหัสทีมก่อน");
-      if (!parseTeamCode(code)) return setError("รหัสทีมมี 12 ตัว ลองเช็กอีกครั้ง หรือวางลิงก์เชิญทั้งลิงก์");
+      if (!parseTeamCode(code)) return setError(`รหัสทีมมี ${TEAM_CODE_LENGTH} ตัว ลองเช็กอีกครั้ง หรือวางลิงก์เชิญทั้งลิงก์`);
       body = { action: "join", code };
     } else {
       const next = name.trim();
@@ -114,7 +115,7 @@ export function TeamJoin({
           {mode === "join" ? (
             <TextInput
               aria-label="รหัสทีม"
-              placeholder="เช่น 0123 4567 89ab"
+              placeholder="เช่น 0123 4567"
               value={code}
               maxLength={400}
               autoCapitalize="none"
@@ -158,8 +159,12 @@ export function TeamJoin({
       </form>
 
       <div className="space-y-1 text-sm" style={{ color: EL.inkSoft }}>
-        <p>{priceNote}</p>
-        {buddyPassNote && <p>{buddyPassNote}</p>}
+        {notes.map((note) => (
+          <p key={note}>{note}</p>
+        ))}
+        <p>
+          เปลี่ยนทีมได้ถึง <span className="whitespace-nowrap">{until}</span>
+        </p>
       </div>
 
       <button type="button" onClick={() => swap(mode === "join" ? "create" : "join")} className={`${button} w-full`} style={outline}>

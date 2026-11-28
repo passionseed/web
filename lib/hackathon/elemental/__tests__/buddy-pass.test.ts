@@ -15,7 +15,6 @@ const paidSolo: BuddyPassSender = {
   status: "paid",
   memberCount: 1,
   amountBaht: 199,
-  teamId: null,
   fromRegistrationId: null,
 };
 
@@ -27,9 +26,8 @@ describe("buddy pass price", () => {
 });
 
 describe("holdsBuddyPass", () => {
-  it("is only for one person alone at the full solo price", () => {
+  it("is only for one person at the full solo price", () => {
     expect(holdsBuddyPass(paidSolo)).toBe(true);
-    expect(holdsBuddyPass({ ...paidSolo, teamId: "t1" })).toBe(false);
     expect(holdsBuddyPass({ ...paidSolo, amountBaht: 149 })).toBe(false);
     expect(holdsBuddyPass({ ...paidSolo, memberCount: 2, amountBaht: 298 })).toBe(false);
   });
@@ -57,7 +55,7 @@ describe("buddyPassState", () => {
   it("is invalid for no sender, a cancelled sender, or a sign-up without a pass", () => {
     expect(buddyPassState(null, false)).toBe("invalid");
     expect(buddyPassState({ ...paidSolo, status: "cancelled" }, false)).toBe("invalid");
-    expect(buddyPassState({ ...paidSolo, teamId: "t1" }, false)).toBe("invalid");
+    expect(buddyPassState({ ...paidSolo, amountBaht: 149 }, false)).toBe("invalid");
   });
 });
 

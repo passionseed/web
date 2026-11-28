@@ -5,6 +5,7 @@ import {
   joinTeamError,
   leaveTeamError,
   parseTeamCode,
+  teamChangeOpen,
   type TeamChanger,
 } from "../team-change";
 
@@ -12,10 +13,15 @@ const solo: TeamChanger = { status: "pending", memberCount: 1, amountBaht: 199, 
 const room = { id: "t1", spotsLeft: 3 };
 
 describe("parseTeamCode", () => {
-  it("reads the code as typed, with spaces, dashes or capitals", () => {
+  it("reads the 8-character team code as typed, with spaces, dashes or capitals", () => {
+    expect(parseTeamCode("0123abcd")).toBe("0123abcd");
+    expect(parseTeamCode(" 0123 ABCD ")).toBe("0123abcd");
+    expect(parseTeamCode("0123-abcd")).toBe("0123abcd");
+  });
+
+  it("still reads a whole invite code", () => {
     expect(parseTeamCode("0123456789ab")).toBe("0123456789ab");
     expect(parseTeamCode(" 0123 4567 89AB ")).toBe("0123456789ab");
-    expect(parseTeamCode("0123-4567-89ab")).toBe("0123456789ab");
   });
 
   it("reads the code out of a pasted invite link", () => {
@@ -25,17 +31,27 @@ describe("parseTeamCode", () => {
 
   it("refuses anything that isn't a team code", () => {
     expect(parseTeamCode("")).toBeNull();
+    expect(parseTeamCode("0123456")).toBeNull();
     expect(parseTeamCode("0123456789a")).toBeNull();
     expect(parseTeamCode("0123456789abc")).toBeNull();
-    expect(parseTeamCode("zzzzzzzzzzzz")).toBeNull();
+    expect(parseTeamCode("zzzzzzzz")).toBeNull();
     expect(parseTeamCode("https://passionseed.org/hackathon/join?team=0123456789abcd")).toBeNull();
   });
 });
 
 describe("formatTeamCode", () => {
-  it("shows the code in three groups that parse back", () => {
-    expect(formatTeamCode("0123456789ab")).toBe("0123 4567 89ab");
-    expect(parseTeamCode(formatTeamCode("0123456789ab"))).toBe("0123456789ab");
+  it("shows the first 8 characters of the invite code in two groups that parse back", () => {
+    expect(formatTeamCode("0123456789ab")).toBe("0123 4567");
+    expect(parseTeamCode(formatTeamCode("0123456789ab"))).toBe("01234567");
+  });
+});
+
+describe("teamChangeOpen", () => {
+  it("is open until Sat 5 Dec 2026 at 10:00 in Bangkok, then closed", () => {
+    expect(teamChangeOpen(new Date("2026-11-28T12:00:00+07:00"))).toBe(true);
+    expect(teamChangeOpen(new Date("2026-12-05T10:00:00+07:00"))).toBe(true);
+    expect(teamChangeOpen(new Date("2026-12-05T03:00:01Z"))).toBe(false);
+    expect(teamChangeOpen(new Date("2026-12-06T00:00:00+07:00"))).toBe(false);
   });
 });
 

@@ -70,6 +70,8 @@ const SCHEDULE: readonly ElementalSlot[] = [
  *   Thu 3 Dec, announced 2026-11-26; unchanged by the 12 Dec extension).
  *   A group is 2 or more people (Big's draft in hackathon-ops
  *   registration.md) and pays on one slip.
+ * - Joining, starting or leaving a team from a person's own page closes on
+ *   Sat 5 Dec 2026 at 10:00 (Angpao, 2026-11-28).
  * Change a fact here, never in a poster.
  */
 export const ELEMENTAL = {
@@ -115,6 +117,8 @@ export const ELEMENTAL = {
   slug: "elemental-2026",
   /** Last day to sign up, Bangkok time (inclusive). */
   registrationClosesOn: "2026-12-04",
+  /** The last moment to join, start or leave a team from a person's own page, Bangkok time. */
+  teamChangeClosesAt: "2026-12-05T10:00:00+07:00",
   /** Where it happens: online until Demo Day, then onsite. */
   venueTh: "ออนไลน์ทาง Discord, Demo Day ที่ตึก CSII จุฬาฯ",
   /** The same, short enough for a ticket stub. */
@@ -184,6 +188,12 @@ export function thaiDateLine(): string {
   const s = parts(ELEMENTAL.startDate);
   const e = parts(ELEMENTAL.endDate);
   return `${s.day} ถึง ${formatThaiDate(ELEMENTAL.endDate, false)} ${e.year + 543}`;
+}
+
+/** "5 ธ.ค. 10:00 น.": when team changes close. */
+export function teamChangeDeadlineTh(): string {
+  const at = ELEMENTAL.teamChangeClosesAt;
+  return `${formatThaiDate(at.slice(0, 10), false)} ${at.slice(11, 16)} น.`;
 }
 
 /** "Demo Day 12 ธ.ค. ที่ ตึก CSII จุฬาฯ": the one onsite day. */

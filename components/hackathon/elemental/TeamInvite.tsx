@@ -24,12 +24,18 @@ export function TeamInvite({
   team,
   renameToken,
   leave,
+  closedNote,
   demo,
 }: {
   team: PublicTeam;
   renameToken?: string;
-  /** Lets this page leave the team. note: what leaving does to the price, if anything. */
-  leave?: { token: string; note?: string };
+  /**
+   * Lets this page leave the team. notes: what leaving does to the price and
+   * the slip, if anything. until: when team changes close, as shown.
+   */
+  leave?: { token: string; notes: string[]; until: string };
+  /** Shown in place of the way out once team changes have closed. */
+  closedNote?: string;
   demo?: boolean;
 }) {
   const [name, setName] = useState(team.name);
@@ -47,6 +53,8 @@ export function TeamInvite({
   const url = `${origin}/hackathon/join?team=${team.inviteCode}&src=team`;
   const message = `มาเข้า${teamLabel(name)} ลง ${ELEMENTAL.edition} Hackathon ด้วยกัน สมัครที่ลิงก์นี้: ${url}`;
   const full = team.spotsLeft === 0;
+  // After team changes close the team code no longer lets anyone in, so it isn't shown.
+  const codeWorks = Boolean(leave) || !closedNote;
 
   const copy = async () => {
     trackElemental({ step: "invite_shared", detail: "copy" }, { once: false });
@@ -117,34 +125,41 @@ export function TeamInvite({
             )}
           </div>
           {/* A friend who has already signed up (alone, say) types this on their own page instead of signing up again. */}
-          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-xl px-4 py-3" style={{ backgroundColor: "rgba(29,33,31,0.05)" }}>
-            <div className="min-w-0">
-              <p className="text-xs" style={{ color: EL.inkSoft }}>
-                รหัสทีม สำหรับเพื่อนที่สมัครแล้ว
-              </p>
-              <p className="whitespace-nowrap text-xl tracking-wide" style={{ fontFamily: EL_FONT.mono }}>
-                {formatTeamCode(team.inviteCode)}
-              </p>
+          {codeWorks && (
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-xl px-4 py-3" style={{ backgroundColor: "rgba(29,33,31,0.05)" }}>
+              <div className="min-w-0">
+                <p className="text-xs" style={{ color: EL.inkSoft }}>
+                  รหัสทีม สำหรับเพื่อนที่สมัครแล้ว
+                </p>
+                <p className="whitespace-nowrap text-xl tracking-wide" style={{ fontFamily: EL_FONT.mono }}>
+                  {formatTeamCode(team.inviteCode)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={copyCode}
+                className="inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold"
+                style={outline}
+              >
+                {codeCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} {codeCopied ? "คัดลอกแล้ว" : "คัดลอกรหัส"}
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={copyCode}
-              className="inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold"
-              style={outline}
-            >
-              {codeCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} {codeCopied ? "คัดลอกแล้ว" : "คัดลอกรหัส"}
-            </button>
-          </div>
+          )}
         </div>
       )}
 
-      {leave && <LeaveTeam token={leave.token} note={leave.note} demo={demo} />}
+      {leave && <LeaveTeam {...leave} demo={demo} />}
+      {!leave && closedNote && (
+        <p className="border-t pt-4 text-sm" style={{ borderColor: "rgba(29,33,31,0.12)", color: EL.inkSoft }}>
+          {closedNote}
+        </p>
+      )}
     </section>
   );
 }
 
 /** Leave the team: a quiet link, then one question before anything changes. */
-function LeaveTeam({ token, note, demo }: { token: string; note?: string; demo?: boolean }) {
+function LeaveTeam({ token, notes, until, demo }: { token: string; notes: string[]; until: string; demo?: boolean }) {
   const router = useRouter();
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -172,10 +187,11 @@ function LeaveTeam({ token, note, demo }: { token: string; note?: string; demo?:
 
   if (!asking) {
     return (
-      <div className="border-t pt-4" style={{ borderColor: "rgba(29,33,31,0.12)" }}>
-        <button type="button" onClick={() => setAsking(true)} className="text-sm underline underline-offset-4" style={{ color: EL.inkSoft }}>
+      <div className="flex flex-wrap items-baseline gap-x-2 border-t pt-4 text-sm" style={{ borderColor: "rgba(29,33,31,0.12)", color: EL.inkSoft }}>
+        <button type="button" onClick={() => setAsking(true)} className="underline underline-offset-4">
           ออกจากทีม
         </button>
+        <span className="whitespace-nowrap">ได้ถึง {until}</span>
       </div>
     );
   }
@@ -183,11 +199,11 @@ function LeaveTeam({ token, note, demo }: { token: string; note?: string; demo?:
   return (
     <div className="space-y-3 border-t pt-4" style={{ borderColor: "rgba(29,33,31,0.12)" }}>
       <p className="text-sm">ออกจากทีมนี้ใช่ไหม กลับเข้าได้ด้วยรหัสทีม ถ้าทีมยังมีที่ว่าง</p>
-      {note && (
-        <p className="text-sm" style={{ color: EL.inkSoft }}>
+      {notes.map((note) => (
+        <p key={note} className="text-sm" style={{ color: EL.inkSoft }}>
           {note}
         </p>
-      )}
+      ))}
       {error && (
         <p role="alert" className="text-sm" style={{ color: EL.ember }}>
           {error}

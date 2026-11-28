@@ -4,15 +4,22 @@
 import { NextRequest } from "next/server";
 
 const getRegistrationByToken = jest.fn();
-const getTeamByInviteCode = jest.fn();
+const getTeamByCode = jest.fn();
 const createTeam = jest.fn();
 const setRegistrationTeam = jest.fn();
+const teamSeatsTaken = jest.fn();
+const teamChangeOpen = jest.fn();
 
 jest.mock("@/lib/supabase/hackathon-event-registrations", () => ({
   getRegistrationByToken: (...args: unknown[]) => getRegistrationByToken(...args),
-  getTeamByInviteCode: (...args: unknown[]) => getTeamByInviteCode(...args),
+  getTeamByCode: (...args: unknown[]) => getTeamByCode(...args),
   createTeam: (...args: unknown[]) => createTeam(...args),
   setRegistrationTeam: (...args: unknown[]) => setRegistrationTeam(...args),
+  teamSeatsTaken: (...args: unknown[]) => teamSeatsTaken(...args),
+}));
+jest.mock("@/lib/hackathon/elemental/team-change", () => ({
+  ...jest.requireActual("@/lib/hackathon/elemental/team-change"),
+  teamChangeOpen: () => teamChangeOpen(),
 }));
 
 import { POST } from "./route";
@@ -33,22 +40,24 @@ async function post(payload: unknown, headers: Record<string, string> = { origin
 beforeEach(() => {
   jest.clearAllMocks();
   getRegistrationByToken.mockResolvedValue(solo);
-  getTeamByInviteCode.mockResolvedValue(team);
+  getTeamByCode.mockResolvedValue(team);
+  teamSeatsTaken.mockResolvedValue(2);
+  teamChangeOpen.mockReturnValue(true);
   createTeam.mockResolvedValue({ id: "team-2", inviteCode: "ba9876543210" });
   setRegistrationTeam.mockResolvedValue(undefined);
 });
 
 describe("join", () => {
   it("puts an unpaid solo sign-up in the team at the group price", async () => {
-    const res = await post({ action: "join", code: "0123 4567 89AB" });
+    const res = await post({ action: "join", code: "0123 4567" });
     expect(res).toEqual({ status: 200, json: { team: { name: "ไฟป่า", inviteCode: CODE }, amountBaht: 149 } });
-    expect(getTeamByInviteCode).toHaveBeenCalledWith("elemental-2026", CODE, 5);
+    expect(getTeamByCode).toHaveBeenCalledWith("elemental-2026", "01234567", 5);
     expect(setRegistrationTeam).toHaveBeenCalledWith("reg-1", { id: "team-1", name: "ไฟป่า" }, 149);
   });
 
   it("takes a pasted invite link", async () => {
     await post({ action: "join", code: `https://passionseed.org/hackathon/join?team=${CODE}&src=team` });
-    expect(getTeamByInviteCode).toHaveBeenCalledWith("elemental-2026", CODE, 5);
+    expect(getTeamByCode).toHaveBeenCalledWith("elemental-2026", CODE, 5);
   });
 
   it("leaves what a paid sign-up paid as it is", async () => {
@@ -59,18 +68,25 @@ describe("join", () => {
 
   it("refuses a code no team has, without looking up something that isn't a code", async () => {
     expect(await post({ action: "join", code: "hello" })).toEqual({ status: 404, json: { error: "team_not_found" } });
-    expect(getTeamByInviteCode).not.toHaveBeenCalled();
-    getTeamByInviteCode.mockResolvedValue(null);
+    expect(getTeamByCode).not.toHaveBeenCalled();
+    getTeamByCode.mockResolvedValue(null);
     expect(await post({ action: "join", code: CODE })).toEqual({ status: 404, json: { error: "team_not_found" } });
     expect(setRegistrationTeam).not.toHaveBeenCalled();
   });
 
   it("refuses a full team and a sign-up already in a team", async () => {
-    getTeamByInviteCode.mockResolvedValue({ ...team, spotsLeft: 0 });
+    getTeamByCode.mockResolvedValue({ ...team, spotsLeft: 0 });
     expect(await post({ action: "join", code: CODE })).toEqual({ status: 409, json: { error: "team_full" } });
     getRegistrationByToken.mockResolvedValue({ ...solo, team: { ...team, id: "team-0" } });
     expect(await post({ action: "join", code: CODE })).toEqual({ status: 409, json: { error: "in_team" } });
     expect(setRegistrationTeam).not.toHaveBeenCalled();
+  });
+
+  it("steps back out when someone else took the last seat at the same moment", async () => {
+    teamSeatsTaken.mockResolvedValue(6);
+    expect(await post({ action: "join", code: CODE })).toEqual({ status: 409, json: { error: "team_full" } });
+    expect(setRegistrationTeam).toHaveBeenNthCalledWith(1, "reg-1", { id: "team-1", name: "ไฟป่า" }, 149);
+    expect(setRegistrationTeam).toHaveBeenNthCalledWith(2, "reg-1", null, 199);
   });
 });
 
@@ -105,6 +121,18 @@ describe("leave", () => {
 
   it("refuses when there is no team to leave", async () => {
     expect(await post({ action: "leave" })).toEqual({ status: 409, json: { error: "not_in_team" } });
+  });
+});
+
+describe("after the deadline", () => {
+  it("refuses every team change", async () => {
+    teamChangeOpen.mockReturnValue(false);
+    expect(await post({ action: "join", code: CODE })).toEqual({ status: 410, json: { error: "closed" } });
+    expect(await post({ action: "create", name: "น้ำใส" })).toEqual({ status: 410, json: { error: "closed" } });
+    getRegistrationByToken.mockResolvedValue({ ...solo, team });
+    expect(await post({ action: "leave" })).toEqual({ status: 410, json: { error: "closed" } });
+    expect(setRegistrationTeam).not.toHaveBeenCalled();
+    expect(createTeam).not.toHaveBeenCalled();
   });
 });
 

@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/utils/supabase/admin";
 import { INVITE_CODE_RE, type Registration } from "@/lib/hackathon/elemental/registration";
+import { TEAM_CODE_LENGTH } from "@/lib/hackathon/elemental/team-change";
 import {
   BUDDY_PASS_CODE_RE,
   buddyPassState,
@@ -62,6 +63,8 @@ export type PublicBuddyPass =
 export type BuddyPassLookup = {
   state: BuddyPassState;
   registrationId: string | null;
+  /** The team the pass's holder is in now, if any: their friend joins it while it has a seat. */
+  teamId: string | null;
   senderName: string | null;
   contactEmail: string | null;
   contactPhone: string | null;
@@ -142,7 +145,7 @@ async function loadBuddyClaim(registrationId: string) {
 
 /** Look up a pass by its code, for the sign-up form and the API route. */
 export async function getBuddyPass(eventSlug: string, code: string): Promise<BuddyPassLookup> {
-  const none: BuddyPassLookup = { state: "invalid", registrationId: null, senderName: null, contactEmail: null, contactPhone: null };
+  const none: BuddyPassLookup = { state: "invalid", registrationId: null, teamId: null, senderName: null, contactEmail: null, contactPhone: null };
   if (!BUDDY_PASS_CODE_RE.test(code)) return none;
   const { data, error } = await createAdminClient()
     .from("hackathon_event_registrations")
@@ -158,13 +161,13 @@ export async function getBuddyPass(eventSlug: string, code: string): Promise<Bud
     status: data.status as RegistrationStatus,
     memberCount: data.member_count,
     amountBaht: data.amount_baht,
-    teamId: data.team_id,
     fromRegistrationId: data.buddy_pass_from_registration_id,
   };
   const claimed = data.status === "paid" ? Boolean(await loadBuddyClaim(data.id)) : false;
   return {
     state: buddyPassState(sender, claimed),
     registrationId: data.id,
+    teamId: data.team_id,
     senderName: leadName(data.hackathon_event_registration_members) || null,
     contactEmail: data.contact_email,
     contactPhone: data.contact_phone,
@@ -274,6 +277,40 @@ export async function getTeamByInviteCode(
   return loadTeam({ inviteCode, eventSlug }, maxSize);
 }
 
+export async function getTeamById(teamId: string, maxSize: number): Promise<PublicTeam | null> {
+  return loadTeam({ id: teamId }, maxSize);
+}
+
+/**
+ * A team by the code a person typed on their own page: the whole invite code,
+ * or its first TEAM_CODE_LENGTH characters (the team code). Two teams that
+ * share a team code are not told apart: neither is found, and their invite
+ * links still work.
+ */
+export async function getTeamByCode(eventSlug: string, code: string, maxSize: number): Promise<PublicTeam | null> {
+  if (INVITE_CODE_RE.test(code)) return loadTeam({ inviteCode: code, eventSlug }, maxSize);
+  if (!new RegExp(`^[0-9a-f]{${TEAM_CODE_LENGTH}}$`).test(code)) return null;
+  const { data, error } = await createAdminClient()
+    .from("hackathon_event_teams")
+    .select("id")
+    .eq("event_slug", eventSlug)
+    .like("invite_code", `${code}%`)
+    .limit(2);
+  if (error) throw error;
+  return data?.length === 1 ? loadTeam({ id: data[0].id }, maxSize) : null;
+}
+
+/** How many people are in a team now, over every sign-up that isn't cancelled. */
+export async function teamSeatsTaken(teamId: string): Promise<number> {
+  const { data, error } = await createAdminClient()
+    .from("hackathon_event_registrations")
+    .select("member_count")
+    .eq("team_id", teamId)
+    .neq("status", "cancelled");
+  if (error) throw error;
+  return (data ?? []).reduce((n, r) => n + r.member_count, 0);
+}
+
 /** Save a new sign-up and its members. Returns the pay token. */
 export async function createRegistration(
   eventSlug: string,
@@ -373,7 +410,6 @@ async function loadOwnBuddyPass(r: {
   status: string;
   member_count: number;
   amount_baht: number;
-  team_id: string | null;
   buddy_pass_code: string | null;
   buddy_pass_from_registration_id: string | null;
 }): Promise<PublicBuddyPass | null> {
@@ -381,7 +417,6 @@ async function loadOwnBuddyPass(r: {
     status: r.status as RegistrationStatus,
     memberCount: r.member_count,
     amountBaht: r.amount_baht,
-    teamId: r.team_id,
     fromRegistrationId: r.buddy_pass_from_registration_id,
   };
   if (!r.buddy_pass_code || r.status === "cancelled" || !holdsBuddyPass(sender)) return null;
