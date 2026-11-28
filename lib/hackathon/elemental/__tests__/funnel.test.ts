@@ -96,6 +96,16 @@ describe("cleanFunnelEvent", () => {
     });
   });
 
+  it("keeps buddy-pass sign-ups' mode, so their steps count", () => {
+    expect(cleanFunnelEvent({ sid, step: "step:name", mode: "buddy" }, "passionseed.org")).toEqual({
+      sid,
+      step: "step:name",
+      mode: "buddy",
+      host: "passionseed.org",
+    });
+    expect(cleanFunnelEvent({ sid, step: "step:name", mode: "friend" }, "passionseed.org")).toBeNull();
+  });
+
   it("rejects unknown steps, bad ids and odd details", () => {
     expect(cleanFunnelEvent({ sid, step: "paid_for_real" }, "passionseed.org")).toBeNull();
     expect(cleanFunnelEvent({ sid: "abc", step: "landing" }, "passionseed.org")).toBeNull();
