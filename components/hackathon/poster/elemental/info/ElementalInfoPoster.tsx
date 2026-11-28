@@ -95,7 +95,8 @@ function Fact({ tag, big, below, size = 40 }: { tag: string; big: ReactNode; bel
   );
 }
 
-export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) {
+/** `src` makes a copy for one listing site or channel: its QR code tags ?src=<src> (Big, 2026-11-28). */
+export function ElementalInfoPoster({ id = "elemental-info", src }: { id?: string; src?: string }) {
   const el = (k: string) => ELEMENTAL.elements.find((e) => e.key === k);
   // The Demo Day has its own lit box at the end, and sign-up closing is in
   // block 04, so neither gets a line in the day columns.
@@ -264,7 +265,7 @@ export function ElementalInfoPoster({ id = "elemental-info" }: { id?: string }) 
         </div>
         <div className="absolute" style={{ right: 0, bottom: 0, width: QR }}>
           <div style={{ background: EL.cream, padding: 8 }}>
-            <RegisterQr size={QR - 16} />
+            <RegisterQr size={QR - 16} src={src} />
           </div>
           {/* The line sits under the cream block, not in it (Angpao, 2026-11-23). */}
           <p className="whitespace-nowrap text-center" style={{ margin: "5px 0 0", fontFamily: EL_FONT.display, fontWeight: 300, fontSize: 17, lineHeight: "22px", color: EL.cream }}>สแกนเพื่อสมัครได้เลย</p>
