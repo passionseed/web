@@ -6,6 +6,7 @@ import { AdminEmptyState, AdminErrorState } from "@/components/admin/shared/Admi
 import { ELEMENTAL } from "@/components/hackathon/poster/elemental/facts";
 import { formatBangkokDateTime } from "@/lib/admin/queue-tools/format";
 import { requireAdmin } from "@/lib/admin/requireAdmin";
+import { GRADE_LABEL_TH, type Grade } from "@/lib/hackathon/elemental/registration";
 import { linkSource } from "@/lib/hackathon/elemental/share";
 import {
   listRegistrations,
@@ -99,7 +100,7 @@ function RegistrationCard({ r, buddy, link }: { r: AdminRegistration; buddy: Bud
         {r.members.map((m) => (
           <li key={m.position}>
             {m.fullName}
-            {m.nickname && ` (${m.nickname})`} · {m.age} · {m.school}
+            {m.nickname && ` (${m.nickname})`} · {m.grade && `${GRADE_LABEL_TH[m.grade as Grade] ?? m.grade} · `}{m.age} · {m.school}
             {m.age < 20 && (
               <span className="text-muted-foreground">
                 {" "}· parent {m.parentName} {m.parentPhone} {m.parentConsent ? "consented" : "NO CONSENT"}

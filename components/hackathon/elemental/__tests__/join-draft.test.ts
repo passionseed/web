@@ -18,6 +18,7 @@ const filled = (patch: Partial<Draft> = {}): Draft => ({
   fullName: "สมชาย ใจดี",
   nickname: "ชาย",
   age: "16",
+  grade: "m5",
   school: "โรงเรียนตัวอย่าง",
   parentName: "สมศรี ใจดี",
   parentPhone: "081-234-5678",
@@ -139,5 +140,17 @@ describe("teamNameFor", () => {
   });
   it("sends a rejected team name back to the name step", () => {
     expect(stepForServerPath(["teamName"])).toBe("name");
+  });
+});
+
+describe("grade", () => {
+  it("must be picked on the school step, and goes to the server with the member", () => {
+    expect(validateStep("school", filled({ grade: "" })).grade).toBe("เลือกชั้น");
+    expect(validateStep("school", filled({ grade: "m4" }))).toEqual({});
+    expect(firstInvalidStep(filled({ grade: "" }))).toBe("school");
+    expect(stepForServerPath(["members", 0, "grade"])).toBe("school");
+    const body = registrationBody(filled({ grade: "m6" }), undefined);
+    expect(body.members[0].grade).toBe("m6");
+    expect(registrationSchema.parse(body).members[0].grade).toBe("m6");
   });
 });

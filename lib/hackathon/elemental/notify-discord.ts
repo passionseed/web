@@ -23,7 +23,8 @@ const BAR_CELLS = 20;
 export type SignupNotice = {
   /** Sign-ups so far that aren't cancelled, this one included. */
   signupNumber: number;
-  members: { name: string; school: string }[];
+  /** grade: "ม.5" and so on, when the form had the question. */
+  members: { name: string; school: string; grade?: string | null }[];
   teamMode: "solo" | "create" | "join" | "buddy";
   teamName: string | null;
   amountBaht: number;
@@ -96,7 +97,7 @@ function teamLine(mode: SignupNotice["teamMode"], teamName: string | null): stri
 
 export function buildSignupPayload(n: SignupNotice, now: Date = new Date()) {
   const people = n.members
-    .map((m) => `**${truncate(m.name, 60)}** · ${truncate(m.school, 80)}`)
+    .map((m) => `**${truncate(m.name, 60)}** · ${m.grade ? `${m.grade} · ` : ""}${truncate(m.school, 80)}`)
     .join("\n");
   const progress = [seatBar(n.paidSeats), nextCheckpointLine(n.paidSeats, now)].filter(Boolean).join("\n");
   return {

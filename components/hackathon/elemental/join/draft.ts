@@ -1,4 +1,4 @@
-import { ADULT_AGE } from "@/lib/hackathon/elemental/registration";
+import { ADULT_AGE, GRADE_VALUES, type Grade } from "@/lib/hackathon/elemental/registration";
 import type { BuddyOwe } from "@/lib/hackathon/elemental/buddy-pass";
 import { HEARD_FROM_VALUES } from "@/lib/hackathon/elemental/heard-from";
 import { isRudeTeamName } from "@/lib/hackathon/elemental/team-name";
@@ -23,6 +23,8 @@ export type Draft = {
   fullName: string;
   nickname: string;
   age: string;
+  /** "" until picked; one of GRADE_VALUES after. */
+  grade: string;
   school: string;
   parentName: string;
   parentPhone: string;
@@ -42,6 +44,7 @@ export const emptyDraft = (mode: Mode | null = null): Draft => ({
   fullName: "",
   nickname: "",
   age: "",
+  grade: "",
   school: "",
   parentName: "",
   parentPhone: "",
@@ -111,6 +114,7 @@ export function validateStep(step: StepKey, d: Draft): Errors {
       else if (d.mode === "create" && isRudeTeamName(teamNameFor(d))) e.nickname = TEAM_NAME_RUDE;
       break;
     case "school": {
+      if (!(GRADE_VALUES as readonly string[]).includes(d.grade)) e.grade = "เลือกชั้น";
       const age = Number(d.age);
       if (!d.age || !Number.isInteger(age) || age < 10 || age > 99) e.age = "เลือกอายุ";
       if (!d.school.trim()) e.school = "ใส่ชื่อโรงเรียนหรือสถาบัน";
@@ -149,7 +153,7 @@ export function stepForServerPath(path: (string | number)[]): StepKey {
   // The team name comes from the nickname, so a rejected one is fixed there.
   if (key === "teamName") return "name";
   if (key === "fullName" || key === "nickname") return "name";
-  if (key === "age" || key === "school") return "school";
+  if (key === "age" || key === "grade" || key === "school") return "school";
   if (key.startsWith("parent")) return "parent";
   if (key.startsWith("contact")) return "contact";
   if (key === "heardFrom") return "heard";
@@ -177,6 +181,7 @@ export function registrationBody(
         fullName: d.fullName,
         nickname: d.nickname,
         age: Number(d.age),
+        grade: (GRADE_VALUES as readonly string[]).includes(d.grade) ? (d.grade as Grade) : undefined,
         school: d.school,
         parentName: minor ? d.parentName : undefined,
         parentPhone: minor ? cleanPhone(d.parentPhone) : undefined,

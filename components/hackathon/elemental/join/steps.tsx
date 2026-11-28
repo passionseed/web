@@ -3,7 +3,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { EL, EL_FONT } from "@/components/hackathon/poster/elemental/brand";
 import { ELEMENTAL, prizeTotal, thaiDateLine } from "@/components/hackathon/poster/elemental/facts";
 import { buddyOweLabel, type BuddyOwe } from "@/lib/hackathon/elemental/buddy-pass";
-import { ADULT_AGE, elementalPriceBaht } from "@/lib/hackathon/elemental/registration";
+import { ADULT_AGE, GRADE_LABEL_TH, GRADE_VALUES, elementalPriceBaht, type Grade } from "@/lib/hackathon/elemental/registration";
 import { HEARD_FROM, heardFromLabel } from "@/lib/hackathon/elemental/heard-from";
 import { teamLabel } from "@/lib/hackathon/elemental/team-name";
 import type { PublicTeam } from "@/lib/supabase/hackathon-event-registrations";
@@ -11,6 +11,7 @@ import type { PublicTeam } from "@/lib/supabase/hackathon-event-registrations";
 import cinema from "../elemental-cinema.module.css";
 import { Body, DarkSlab, EditorialLink, H1, PixelEdge, PixelIcon, Tag, TextInput, v, type PixelIconName } from "../share/ui";
 import { formatPhone, teamNameFor, type BuddyPassOffer, type Draft, type Errors, type Mode, type StepKey } from "./draft";
+import { AlreadySignedUp } from "./AlreadySignedUp";
 import { CheckRow } from "./fields";
 import styles from "./join.module.css";
 
@@ -30,6 +31,8 @@ export type StepProps = {
   /** Pick a mode and move on, for the one step that's a single tap. */
   choose: (mode: Mode) => void;
   goTo: (step: StepKey) => void;
+  /** PR previews and local dev: nothing is sent. */
+  demo?: boolean;
 };
 
 // ---------- Type helpers (spans, so they can sit inside buttons) ----------
@@ -93,7 +96,7 @@ function AltChoice({ onClick, children }: { onClick: () => void; children: React
 
 type Option = { value: Mode; icon: PixelIconName; title: string; price: number; note: string; unit: string; extra: string | null };
 
-function ModeStep({ draft, team, buddyPass, choose }: StepProps) {
+function ModeStep({ draft, team, buddyPass, choose, demo }: StepProps) {
   if (team && draft.mode === "join") {
     return (
       <>
@@ -122,6 +125,7 @@ function ModeStep({ draft, team, buddyPass, choose }: StepProps) {
             )}
           </ul>
         </section>
+        <AlreadySignedUp team={team} demo={demo} />
         <AltChoice onClick={() => choose("create")}>ไม่ใช่ทีมนี้? สร้างทีมใหม่หรือมาคนเดียว</AltChoice>
       </>
     );
@@ -306,8 +310,30 @@ function SchoolStep({ draft, set, errors }: StepProps) {
   const custom = draft.age !== "" && !QUICK_AGES.includes(draft.age);
   return (
     <>
-      <StepTitle sub={`งานนี้สำหรับ ${ELEMENTAL.gradesTh}`}>อายุและโรงเรียน</StepTitle>
+      <StepTitle sub={`งานนี้สำหรับ ${ELEMENTAL.gradesTh}`}>ชั้น อายุ และโรงเรียน</StepTitle>
       <div className="space-y-6">
+        <div>
+          <span id="el-join-grade" className="block" style={{ fontFamily: EL_FONT.body, fontSize: 16, lineHeight: "26px" }}>
+            ตอนนี้เรียนชั้น
+          </span>
+          <div className="mt-2 grid grid-cols-5 gap-2" role="radiogroup" aria-labelledby="el-join-grade">
+            {GRADE_VALUES.map((g) => (
+              <button
+                key={g}
+                type="button"
+                role="radio"
+                aria-checked={draft.grade === g}
+                data-error={errors.grade ? true : undefined}
+                onClick={() => set({ grade: g })}
+                className={`${styles.pick} h-[52px] rounded-[2px]`}
+                style={g === "other" ? { fontFamily: EL_FONT.body, fontSize: 16, lineHeight: 1 } : display(300, 22, 1)}
+              >
+                {GRADE_LABEL_TH[g]}
+              </button>
+            ))}
+          </div>
+          <GroupError>{errors.grade}</GroupError>
+        </div>
         <div>
           <span id="el-join-age" className="block" style={{ fontFamily: EL_FONT.body, fontSize: 16, lineHeight: "26px" }}>
             อายุ
@@ -531,7 +557,11 @@ function ReviewStep({ draft, set, errors, team, buddyPass, goTo }: StepProps) {
           onEdit={() => goTo("mode")}
         />
         <SummaryRow label="ชื่อ" value={`${draft.fullName}${draft.nickname ? ` (${draft.nickname})` : ""}`} onEdit={() => goTo("name")} />
-        <SummaryRow label="อายุ · โรงเรียน" value={`${draft.age} ปี · ${draft.school}`} onEdit={() => goTo("school")} />
+        <SummaryRow
+          label="ชั้น · อายุ · โรงเรียน"
+          value={`${draft.grade in GRADE_LABEL_TH ? `${GRADE_LABEL_TH[draft.grade as Grade]} · ` : ""}${draft.age} ปี · ${draft.school}`}
+          onEdit={() => goTo("school")}
+        />
         {Number(draft.age) < ADULT_AGE && (
           <SummaryRow label="ผู้ปกครอง" value={`${draft.parentName} · ${draft.parentPhone}`} onEdit={() => goTo("parent")} />
         )}

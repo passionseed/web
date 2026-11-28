@@ -133,3 +133,12 @@ describe("registrationSchema buddy mode", () => {
     expect(r.buddyOwe).toBe("boba");
   });
 });
+
+describe("registrationSchema grade", () => {
+  it("takes M.3 to M.6 or other, and is optional for forms opened before the question", () => {
+    expect(registrationSchema.parse({ ...base, members: [{ ...adult, grade: "m5" }] }).members[0].grade).toBe("m5");
+    expect(registrationSchema.parse({ ...base, members: [{ ...adult, grade: "other" }] }).members[0].grade).toBe("other");
+    expect(registrationSchema.parse({ ...base, members: [adult] }).members[0].grade).toBeUndefined();
+    expect(registrationSchema.safeParse({ ...base, members: [{ ...adult, grade: "m2" }] }).success).toBe(false);
+  });
+});
